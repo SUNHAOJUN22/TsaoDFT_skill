@@ -1,3 +1,3 @@
 # TsaoDFT Skill
 
-Repository initialization in progress.
+The integrated repository is being reconstructed and validated by GitHub Actions directly on `main`.

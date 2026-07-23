@@ -1,0 +1,16 @@
+schema_version: "1.0"
+network_id: DEMO
+temperature_K: 298.15
+standard_state: solution_1M
+species:
+  - {id: A, formula: A, free_energy_kcal_mol: 0.0, artifact_id: ART-A}
+  - {id: B, formula: B, free_energy_kcal_mol: -2.0, artifact_id: ART-B}
+reactions:
+  - id: R1
+    reactants: {A: 1}
+    products: {B: 1}
+    reversible: true
+    forward_barrier: 15.0
+    reaction_free_energy: -2.0
+site_balance: null
+status: validated

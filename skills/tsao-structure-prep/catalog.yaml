@@ -1,0 +1,21 @@
+source_workbook: AI_for_Science_最全Skill目录(3).xlsx
+catalog_ids:
+- S0115
+- S0116
+- S0117
+- S0118
+- S0119
+- S0131
+- S0132
+- S0133
+- S0134
+- S0171
+- S0172
+applies_to:
+- molecular structure preparation
+- periodic model preparation
+- candidate campaigns
+not_for:
+- silent charge/multiplicity assignment
+- production DFT execution
+- claiming force-field energies as DFT

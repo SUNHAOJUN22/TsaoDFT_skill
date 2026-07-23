@@ -1,0 +1,16 @@
+[project]
+name = "tsao-dft-skill"
+version = "0.3.0a1"
+description = "Auditable molecular and periodic DFT, scientific visualization, ML, HPC and multiscale Agent Skills"
+requires-python = ">=3.10"
+dependencies = [
+  "PyYAML>=6.0",
+  "matplotlib>=3.8",
+  "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+dev = []
+
+[tool.ruff]
+line-length = 120

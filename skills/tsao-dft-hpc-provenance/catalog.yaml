@@ -1,0 +1,35 @@
+source_workbook: AI_for_Science_最全Skill目录(3).xlsx
+catalog_ids:
+- S0279
+- S0280
+- S0281
+- S0282
+- S0283
+- S0284
+- S0285
+- S0286
+- S0287
+- S0288
+- S0289
+- S0290
+- S0291
+- S0292
+- S0293
+- S0294
+- S0295
+- S0296
+- S0297
+- S0298
+engine_ids:
+- E018
+- E031
+- E032
+applies_to:
+- Gaussian/periodic DFT HPC
+- batch campaigns
+- provenance and restart
+- scientific CI
+not_for:
+- silent job submission
+- scientific method selection
+- redistribution of licensed software

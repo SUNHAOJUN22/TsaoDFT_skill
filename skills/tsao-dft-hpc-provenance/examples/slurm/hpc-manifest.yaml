@@ -1,0 +1,12 @@
+schema_version: "1.0"
+job_id: G16-DEMO
+engine: gaussian
+executable: g16
+input: demo.gjf
+workdir: ./run
+scheduler: slurm
+resources: {nodes: 1, tasks_per_node: 8, cpus_per_task: 1, memory_gb: 32, walltime: "12:00:00", gpus: 0}
+environment: {modules: [gaussian/16], source: []}
+expected_outputs: [demo.log, demo.chk]
+checkpoint_policy: preserve
+approval: pending

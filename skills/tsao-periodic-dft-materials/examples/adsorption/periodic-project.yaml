@@ -1,0 +1,18 @@
+schema_version: "1.0"
+project_id: ADS-DEMO
+engine: cp2k
+engine_version: "2025.x"
+task_type: adsorption
+structure_id: SLAB-ADS-001
+model_review_id: REVIEW-001
+method_fingerprint:
+  xc: PBE
+  dispersion: D3(BJ)
+  pseudopotential_family: GTH-PBE
+  cutoff_policy: "reviewed demo policy"
+  kpoint_policy: gamma-supercell
+  smearing: none
+  spin_policy: restricted
+  hubbard_u: {}
+convergence: {electronic: "1e-6 Ha", ionic_force: "4.5e-4 Ha/bohr"}
+status: validated

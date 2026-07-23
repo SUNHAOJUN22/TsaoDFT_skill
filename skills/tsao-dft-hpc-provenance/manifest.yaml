@@ -1,0 +1,53 @@
+version: 0.3.0-alpha.1
+always_load:
+- references/execution-contract.md
+- references/provenance.md
+routes:
+  environment:
+    triggers:
+    - environment
+    - module
+    - dependency
+    - CUDA
+    - MPI
+    - software version
+    load:
+    - references/environment.md
+  job_script:
+    triggers:
+    - Slurm
+    - PBS
+    - job script
+    - resources
+    - walltime
+    load:
+    - references/job-scripts.md
+  batch:
+    triggers:
+    - batch
+    - campaign
+    - DAG
+    - Snakemake
+    - Nextflow
+    - AiiDA
+    load:
+    - references/batch-dag.md
+  recovery:
+    triggers:
+    - failure
+    - error
+    - restart
+    - checkpoint
+    - monitor
+    load:
+    - references/recovery.md
+  provenance:
+    triggers:
+    - provenance
+    - reproducibility
+    - container
+    - CI
+    - supply chain
+    load:
+    - references/provenance.md
+    - references/security.md

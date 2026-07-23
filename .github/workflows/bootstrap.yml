@@ -3,17 +3,23 @@ name: Bootstrap integrated TsaoDFT repository
 on:
   push:
     branches: [main]
+  issues:
+    types: [opened]
 
 permissions:
   contents: write
+  issues: read
 
 jobs:
   publish:
-    if: contains(github.event.head_commit.message, 'bootstrap integrated TsaoDFT repository')
+    if: >-
+      (github.event_name == 'push' && contains(github.event.head_commit.message, 'bootstrap integrated TsaoDFT repository')) ||
+      (github.event_name == 'issues' && contains(github.event.issue.title, 'bootstrap integrated TsaoDFT repository'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:

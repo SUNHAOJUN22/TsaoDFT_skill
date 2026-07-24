@@ -1,4 +1,4 @@
-version: 0.3.0-alpha.1
+version: 0.4.0-alpha.1
 always_load:
 - references/00-scientific-contract.md
 - references/14-validation-status.md
@@ -74,6 +74,7 @@ routes:
     - references/07-electronic-structure.md
     - references/08-multiwfn-analysis.md
     - references/19-wavefunction-analysis.md
+    - references/29-uncertainty-budget.md
   render:
     triggers:
     - VMD
@@ -161,3 +162,13 @@ routes:
     - references/26-engine-routing.md
     - references/27-cross-skill-handoffs.md
     - references/28-structure-periodic-boundaries.md
+  uncertainty:
+    triggers:
+    - uncertainty
+    - sensitivity
+    - error budget
+    - robustness
+    load:
+    - references/29-uncertainty-budget.md
+    - references/02-method-selection.md
+    - references/14-validation-status.md

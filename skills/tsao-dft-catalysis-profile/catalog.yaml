@@ -19,6 +19,13 @@ not_for:
 - unrelated homogeneous/heterogeneous catalysis without explicit adaptation
 - industrial catalyst poisoning claims from isolated-molecule DFT alone
 requires:
+- tsao-dft-suite
 - tsao-dft-researcher
 - tsao-structure-prep
 - tsao-dft-kinetics-multiscale
+version: 0.4.0-alpha.1
+implementation_status: implemented_profile
+support_level: L2_VALIDATED_ADAPTER
+external_requirements:
+- scope activation required
+orchestrated_by: tsao-dft-suite

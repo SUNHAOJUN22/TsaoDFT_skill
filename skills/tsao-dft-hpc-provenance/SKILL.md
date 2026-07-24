@@ -3,7 +3,7 @@ name: tsao-dft-hpc-provenance
 description: "Prepare and audit local, Slurm, PBS and cloud/HPC computational-chemistry execution: environment inspection, dependency checks, resource estimates, job scripts, batch DAGs, monitoring, failure classification, checkpoint/restart policy, provenance, reproducibility and scientific CI."
 license: MIT
 compatibility: Python 3.10+ and PyYAML. Slurm, PBS, containers, AiiDA, Snakemake and Nextflow are optional external systems.
-metadata: {"version": "0.3.0-alpha.1", "author": "SUNHAOJUN22", "repository": "https://github.com/SUNHAOJUN22/TsaoDFT_skill"}
+metadata: {"version": "0.4.0-alpha.1", "author": "SUNHAOJUN22", "repository": "https://github.com/SUNHAOJUN22/TsaoDFT_skill"}
 ---
 
 # Tsao DFT HPC and Provenance
@@ -39,3 +39,12 @@ This Skill owns execution mechanics, not scientific method selection. It consume
 - Containers do not solve licensed-software or pseudopotential distribution rights.
 - Scheduler completion means only that the process ended; the engine-specific validator owns result quality.
 
+## Deterministic DFT execution controls
+
+- engine-aware Gaussian/VASP/QE/CP2K job-script generation;
+- site-profile validation without credentials;
+- CPU/GPU allocation estimates;
+- checkpoint/restart lineage compatibility;
+- immutable provenance collection and failure classification.
+
+Submission remains approval-gated.

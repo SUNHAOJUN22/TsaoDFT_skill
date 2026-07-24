@@ -41,3 +41,11 @@ handoffs:
 - tsao-dft-ml-active-learning
 - tsao-dft-hpc-provenance
 - tsao-dft-kinetics-multiscale
+version: 0.4.0-alpha.1
+implementation_status: implemented_selected_fields
+support_level: L2_VALIDATED_ADAPTER
+external_requirements:
+- Gaussian 16
+- Multiwfn
+- VMD/Tachyon
+orchestrated_by: tsao-dft-suite

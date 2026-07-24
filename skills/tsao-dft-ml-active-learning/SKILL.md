@@ -3,7 +3,7 @@ name: tsao-dft-ml-active-learning
 description: "Build leakage-aware DFT descriptor, surrogate, GNN, uncertainty, applicability-domain, active-learning, Bayesian/multi-objective optimization and inverse-design workflows with optional DeepChem, RDKit and scikit-learn backends."
 license: MIT
 compatibility: Python 3.10+. DeepChem, RDKit, scikit-learn and graph frameworks are optional external backends.
-metadata: {"version": "0.3.0-alpha.1", "author": "SUNHAOJUN22", "repository": "https://github.com/SUNHAOJUN22/TsaoDFT_skill"}
+metadata: {"version": "0.4.0-alpha.1", "author": "SUNHAOJUN22", "repository": "https://github.com/SUNHAOJUN22/TsaoDFT_skill"}
 ---
 
 # Tsao DFT + ML and Active Learning
@@ -39,3 +39,10 @@ Use only after the independent scientific sample unit is defined. A conformer, s
 - Active-learning acquisition scores do not establish synthesizability, stability or novelty.
 - Report uncertainty calibration and applicability domain; a single high R² is insufficient.
 
+## Deterministic DFT-ML tools
+
+- `validate_dft_dataset.py` checks parent identities, method/fidelity provenance, duplicates and split leakage.
+- `train_ridge_baseline.py` provides a transparent NumPy baseline with train-only standardization and grouped splitting.
+- `validate_model_card.py` checks metrics, applicability domain and uncertainty records.
+
+DeepChem or GNN backends are optional; they cannot bypass the same data contract.

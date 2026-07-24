@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If this Skill suite contributes to your work, cite this repository and the scientific software actually used."
-title: "TsaoDFT Skill: Auditable Computational Chemistry, Periodic DFT and Multiscale Research"
-version: "0.3.0-alpha.1"
+title: "TsaoDFT Skill: Auditable DFT Research from Structure to Multiscale Models"
+version: "0.4.0-alpha.1"
 date-released: 2026-07-24
 authors:
   - family-names: "Sun"

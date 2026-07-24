@@ -1,6 +1,39 @@
-version: 0.3.0-alpha.1
+version: 0.4.0-alpha.1
 source_workbook: AI_for_Science_最全Skill目录(3).xlsx
 skills:
+  tsao-dft-suite:
+    catalog_ids:
+    - S0001
+    - S0002
+    - S0006
+    - S0013
+    - S0014
+    - S0015
+    - S0016
+    - S0017
+    - S0028
+    - S0029
+    - S0030
+    - S0031
+    - S0320
+    - S0321
+    - S0322
+    slugs:
+    - research-intent-router
+    - research-question-formulator
+    - feasibility-assessor
+    - research-route-planner
+    - human-approval-gate
+    - scientific-validation-gate
+    - long-task-state-manager
+    - research-artifact-manager
+    - audit-log-manager
+    - method-extractor
+    - parameter-extractor
+    - claim-evidence-linker
+    - reference-integrity-checker
+    - evidence-level-labeler
+    - model-governance
   tsao-dft-researcher:
     catalog_ids:
     - S0001

@@ -33,3 +33,9 @@ not_for:
 - silent job submission
 - scientific method selection
 - redistribution of licensed software
+version: 0.4.0-alpha.1
+implementation_status: implemented_generation_validation
+support_level: L2_VALIDATED_ADAPTER
+external_requirements:
+- real scheduler/site required for L3
+orchestrated_by: tsao-dft-suite

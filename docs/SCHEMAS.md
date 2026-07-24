@@ -1,34 +1,36 @@
 # Manifest Schemas
 
-TsaoDFT uses small release-layer manifests around immutable scientific files. Deterministic validators enforce semantic rules beyond lightweight YAML/JSON schemas.
+TsaoDFT uses small machine-readable contracts around immutable scientific files. Deterministic validators enforce semantic rules beyond lightweight YAML/JSON syntax.
 
-## Core research and figure manifests
+## Root orchestration
 
-`tsao-dft-researcher` retains:
+- `tsao-dft-suite/templates/method-fingerprint.yaml`: molecular/periodic model chemistry, numerical settings, spin/charge, standard state and provenance.
+- `tsao-dft-suite/templates/handoff.yaml`: cross-Skill artifacts, accepted parents, support level, unknowns, resources and approval.
+- `tsao-dft-suite/templates/dft-project.yaml`: DFT-first project graph.
+
+## Molecular DFT
 
 - `research-manifest.json`: calculations → artifacts → claims;
-- `figure-manifest.json`: artifacts → panels → comparison groups → outputs.
+- `figure-manifest.json`: artifacts → panels → comparison groups → outputs;
+- `multiwfn-recipe.yaml`: semantic analysis, version, input hash, parameters and expected outputs;
+- `uncertainty-budget.yaml`: model/method sensitivity components and combination/reporting policy.
 
-Accepted minima, TS/IRC, open-shell work, evidence grades, shared ESP scales and AI-schematic labeling are enforced.
+## Structure preparation
 
-## Structure manifest
+The structure manifest records identity, source/hash, units, model type, charge/multiplicity candidates, transformations and review checks. Periodic models additionally record termination/defect, cell, vacuum, fixed-region, electrostatic/correction and periodic-image policies. Atom reordering is represented by an explicit mapping.
 
-Records identity, model type, source/hash, units, periodicity, charge/multiplicity candidates, transformations and review status. Periodic surfaces/defects/adsorbates add cell, vacuum and image-separation fields.
+## Periodic DFT
 
-## Periodic DFT manifest
+The periodic project records engine/version/support level, structure hash, task type, method fingerprint, convergence studies, technical/scientific validation plan and task-specific model fields. Surface, adsorption, defect, NEB, phonon and electronic-property tasks have different parent/reference requirements.
 
-Records engine/version, task type, structure/model review IDs, method fingerprint, convergence and status. Separate energy-expression manifests require compatible method fingerprints across every term.
+## DFT-labelled ML
 
-## ML manifest
+Dataset cards record independent sample unit, parent ID, structure/method/fidelity provenance, target units, split and exclusion policy. Model cards record train-only preprocessing, grouped split, features, seeds, metrics, uncertainty/calibration, applicability domain and interpretation status.
 
-Records target/unit, independent sample unit, group column, split policy, train-only preprocessing, seeds/folds, metrics, applicability domain and status.
+## HPC/provenance
 
-## HPC manifest
+HPC manifests record engine/version/support level, method fingerprint, scheduler, resources, environment, scratch, expected outputs, preflight/parser commands and approval. Site profiles contain no credentials. Restart-lineage manifests distinguish exact restart from geometry/wavefunction reuse.
 
-Records engine/executable/input, scheduler, resources, environment, expected outputs, checkpoint policy and approval.
+## Kinetics/multiscale
 
-## Kinetics network
-
-Records temperature, phase/standard state, species/artifacts, elementary reactions, barriers/free energies, site balance and status.
-
-Templates are located inside each Skill under `templates/`.
+Networks record phase/standard state, temperature, species composition/charge/site occupancy, accepted DFT artifacts, elementary reactions, barriers, reaction free energies, degeneracy and transition-state artifacts. External Cantera/CatMAP/Pyomo files remain review-required handoffs until downstream validation.

@@ -1,7 +1,8 @@
-version: 0.3.0-alpha.1
+version: 0.4.0-alpha.1
 always_load:
 - references/periodic-contract.md
 - references/validation.md
+- references/deterministic-adapters.md
 routes:
   ground_state:
     triggers:
@@ -65,3 +66,16 @@ routes:
     - campaign
     load:
     - references/high-throughput.md
+  engine_preflight:
+    triggers:
+    - INCAR
+    - POSCAR
+    - OUTCAR
+    - pw.x
+    - QE input
+    - CP2K input
+    - parse output
+    load:
+    - references/deterministic-adapters.md
+    - references/engine-adapters.md
+    - references/validation.md

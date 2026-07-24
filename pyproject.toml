@@ -1,6 +1,6 @@
 [project]
 name = "tsao-dft-skill"
-version = "0.3.0a1"
+version = "0.4.0a1"
 description = "Auditable molecular and periodic DFT, scientific visualization, ML, HPC and multiscale Agent Skills"
 requires-python = ">=3.10"
 dependencies = [

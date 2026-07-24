@@ -6,6 +6,7 @@ The catalog was not copied blindly. Related entries were consolidated into reusa
 
 | Repository Skill | Catalog coverage | Scientific boundary |
 |---|---|---|
+| `tsao-dft-suite` | S0001, S0002, S0006, S0013, S0014, S0015, S0016, S0017, S0028, S0029, S0030, S0031, S0320, S0321, S0322 | Cross-cutting DFT-first orchestration, support levels, handoffs and approval; does not duplicate engine execution. |
 | `tsao-dft-researcher` | S0001, S0002, S0006, S0008, S0013, S0014, S0015, S0016, S0017, S0028, S0029, S0030, S0031, S0119, S0120, S0121, S0122, S0123, S0124, S0125, S0126, S0127, S0128, S0129, S0130, S0320, S0321, S0322 | Universal molecular DFT research control; Gaussian is the deepest executable adapter. |
 | `tsao-structure-prep` | S0115, S0116, S0117, S0118, S0119, S0131, S0132, S0133, S0134, S0171, S0172 | Engine-neutral molecular/periodic model preparation; it does not decide chemistry silently. |
 | `tsao-periodic-dft-materials` | S0131, S0132, S0133, S0134, S0135, S0136, S0137, S0138, S0139, S0140, S0141, S0142, S0143, S0144 | Periodic materials workflows for VASP/QE/CP2K handoffs, convergence and comparable-energy validation. |

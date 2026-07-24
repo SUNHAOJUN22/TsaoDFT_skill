@@ -1,7 +1,8 @@
-version: 0.3.0-alpha.1
+version: 0.4.0-alpha.1
 always_load:
 - references/execution-contract.md
 - references/provenance.md
+- references/site-profiles-and-lineage.md
 routes:
   environment:
     triggers:
@@ -51,3 +52,13 @@ routes:
     load:
     - references/provenance.md
     - references/security.md
+  site_and_restart:
+    triggers:
+    - site profile
+    - resource estimate
+    - restart lineage
+    - checkpoint compatibility
+    load:
+    - references/site-profiles-and-lineage.md
+    - references/environment.md
+    - references/recovery.md

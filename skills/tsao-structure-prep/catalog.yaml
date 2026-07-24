@@ -19,3 +19,9 @@ not_for:
 - silent charge/multiplicity assignment
 - production DFT execution
 - claiming force-field energies as DFT
+version: 0.4.0-alpha.1
+implementation_status: implemented_selected_fields
+support_level: L2_VALIDATED_ADAPTER
+external_requirements:
+- RDKit/Open Babel/pymatgen/ASE optional
+orchestrated_by: tsao-dft-suite

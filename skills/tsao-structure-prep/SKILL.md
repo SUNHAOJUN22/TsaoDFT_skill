@@ -3,7 +3,7 @@ name: tsao-structure-prep
 description: "Prepare and audit molecular and periodic structures before DFT: identity, bond/valence cleanup, tautomers and protonation, conformers, charge/multiplicity candidates, complexes, crystals, supercells, slabs, defects and adsorbate placements, with explicit provenance and model-review gates."
 license: MIT
 compatibility: Python 3.10+ and PyYAML. RDKit, Open Babel, pymatgen and ASE are optional external tools.
-metadata: {"version": "0.3.0-alpha.1", "author": "SUNHAOJUN22", "repository": "https://github.com/SUNHAOJUN22/TsaoDFT_skill"}
+metadata: {"version": "0.4.0-alpha.1", "author": "SUNHAOJUN22", "repository": "https://github.com/SUNHAOJUN22/TsaoDFT_skill"}
 ---
 
 # Tsao Structure Prep
@@ -38,3 +38,8 @@ Use this Skill before any engine-specific input is written. It converts a scient
 - Adsorption-site generation must preserve clean-slab and isolated-adsorbate references and avoid periodic-image collisions.
 - A pretty preview is not a structure review. Check valence, closest contacts, stoichiometry, symmetry, periodicity and chemical intent.
 
+## Deterministic DFT preparation tools
+
+- `inspect_xyz.py` detects malformed geometries, duplicate coordinates and severe contacts; radius-based bonds are heuristic only.
+- `validate_atom_mapping.py` checks atom identity/order between structures used for restarts, NEB, density differences or fragments.
+- campaign and structure-manifest validators preserve alternatives and review state before DFT handoff.

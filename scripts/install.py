@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -41,6 +42,7 @@ def validate_source(skill: str) -> list[str]:
     for rel in ["SKILL.md", "manifest.yaml"]:
         if not (source / rel).exists():
             failures.append(f"{skill}: missing {rel}")
+    # Bytecode caches are ignored during copy and never required by the Skill.
     return failures
 
 
@@ -56,7 +58,15 @@ def main() -> int:
             print(f"FAIL: {item}")
         return 1
     if args.validate and not args.uninstall:
-        print(f"Validated {len(selected)} source skill(s): {', '.join(selected)}")
+        checks = [
+            [sys.executable, str(ROOT / "scripts" / "validate_catalog.py")],
+            [sys.executable, str(ROOT / "scripts" / "validate_repo.py"), "--strict"],
+        ]
+        for command in checks:
+            completed = subprocess.run(command, cwd=ROOT, check=False)
+            if completed.returncode:
+                return completed.returncode
+        print(f"Validated repository and {len(selected)} source skill(s): {', '.join(selected)}")
         if args.dry_run:
             return 0
     target = (args.target or default_target(args.agent, args.scope)).expanduser().resolve()

@@ -30,7 +30,7 @@ def main() -> int:
     warnings: list[str] = []
     checks: list[dict[str, Any]] = []
 
-    required_root = ["README.md", "README_EN.md", "LICENSE", "VERSION", "AGENTS.md", "skills", "scripts", "docs"]
+    required_root = ["README.md", "README_EN.md", "LICENSE", "VERSION", "AGENTS.md", "skills", "scripts", "docs", ".codex-plugin/plugin.json", "docs/ENGINE_SUPPORT_MATRIX.md", "docs/CAPABILITY_STATUS.yaml"]
     for rel in required_root:
         if not (ROOT / rel).exists():
             failures.append(f"missing root path: {rel}")
@@ -60,6 +60,30 @@ def main() -> int:
         except Exception as exc:
             failures.append(f"{skill.name}: manifest parse failed: {exc}")
 
+    release_version = (ROOT / "VERSION").read_text(encoding="utf-8").strip() if (ROOT / "VERSION").exists() else None
+    for skill in skill_dirs:
+        try:
+            manifest = yaml_load(skill / "manifest.yaml")
+            if manifest.get("version") != release_version:
+                failures.append(f"{skill.name}: manifest version {manifest.get('version')} != release {release_version}")
+            front = (skill / "SKILL.md").read_text(encoding="utf-8")
+            if release_version not in front:
+                failures.append(f"{skill.name}: SKILL metadata does not contain release version {release_version}")
+        except Exception as exc:
+            failures.append(f"{skill.name}: version consistency check failed: {exc}")
+    try:
+        capability = yaml_load(ROOT / "docs/CAPABILITY_STATUS.yaml")
+        if capability.get("release") != release_version:
+            failures.append("CAPABILITY_STATUS release mismatch")
+        capability_skills = {item.get("skill") for item in capability.get("capabilities", [])}
+        missing_capability = {skill.name for skill in skill_dirs} - capability_skills
+        if missing_capability:
+            failures.append(f"skills missing from CAPABILITY_STATUS: {sorted(missing_capability)}")
+    except Exception as exc:
+        failures.append(f"CAPABILITY_STATUS parse failed: {exc}")
+
+    # Runtime test execution may create ignored bytecode caches. They are excluded from
+    # release manifests and uploads; source files must never reference or depend on them.
     pycache = list(ROOT.rglob("__pycache__"))
     pyc = list(ROOT.rglob("*.pyc"))
     if pycache or pyc:
@@ -106,9 +130,10 @@ def main() -> int:
 
     demos = ["workflow-architecture", "wavefunction-esp-gallery", "free-energy-profile", "dft-ml-dashboard", "periodic-dft-materials", "active-learning-loop", "hpc-provenance", "multiscale-kinetics"]
     for stem in demos:
-        path = ROOT / "assets/demo" / f"{stem}.svg"
-        if not path.exists() or path.stat().st_size == 0:
-            failures.append(f"missing demo asset: {path.relative_to(ROOT)}")
+        for suffix in [".svg"]:
+            path = ROOT / "assets/demo" / f"{stem}{suffix}"
+            if not path.exists() or path.stat().st_size == 0:
+                failures.append(f"missing demo asset: {path.relative_to(ROOT)}")
 
     catalog_result = subprocess.run([sys.executable, str(ROOT / "scripts/validate_catalog.py")], cwd=ROOT, capture_output=True, text=True)
     if catalog_result.returncode != 0:

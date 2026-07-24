@@ -29,3 +29,9 @@ not_for:
 - treating conformers as independent samples
 - causal claims from SHAP
 - unreviewed autonomous production calculations
+version: 0.4.0-alpha.1
+implementation_status: implemented_baseline
+support_level: L2_VALIDATED_ADAPTER
+external_requirements:
+- DeepChem/RDKit/GNN optional
+orchestrated_by: tsao-dft-suite

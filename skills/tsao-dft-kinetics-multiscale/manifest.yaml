@@ -1,7 +1,8 @@
-version: 0.3.0-alpha.1
+version: 0.4.0-alpha.1
 always_load:
 - references/kinetics-contract.md
 - references/thermodynamic-consistency.md
+- references/rate-uncertainty-and-export.md
 routes:
   tst:
     triggers:
@@ -43,4 +44,14 @@ routes:
     - population balance
     - polymerization kinetics
     load:
+    - references/multiscale-handoff.md
+  uncertainty_export:
+    triggers:
+    - barrier uncertainty
+    - detailed balance
+    - Cantera export
+    - kinetics handoff
+    load:
+    - references/rate-uncertainty-and-export.md
+    - references/thermodynamic-consistency.md
     - references/multiscale-handoff.md

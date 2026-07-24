@@ -1,4 +1,4 @@
-version: 0.3.0-alpha.1
+version: 0.4.0-alpha.1
 always_load:
 - references/model-contract.md
 - references/validation.md
@@ -47,4 +47,14 @@ routes:
     - hash
     - review
     load:
+    - references/validation.md
+  geometry_audit:
+    triggers:
+    - XYZ
+    - atom mapping
+    - closest contact
+    - geometry audit
+    - atom order
+    load:
+    - references/geometry-audit.md
     - references/validation.md

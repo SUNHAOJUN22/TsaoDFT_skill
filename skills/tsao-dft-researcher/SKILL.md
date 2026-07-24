@@ -3,7 +3,7 @@ name: tsao-dft-researcher
 description: Plan, prepare, execute, validate, analyze, visualize, and report auditable molecular DFT and quantum-chemistry computational-chemistry research with Multiwfn and VMD/Tachyon, optional DeepChem molecular ML and MDAnalysis trajectory analysis. Use for DFT/TDDFT, Opt/Freq, conformers, TS/IRC, thermochemistry, kinetics, NMR, NBO, charges, HOMO/LUMO/SOMO, ESP/Fukui/MPI, NTO/hole-electron, spin density, IRI/IGMH/QTAIM/ICSS, binding/BDE/redox calculations, publication figures, evidence manifests, and reproducible research reports.
 license: MIT
 compatibility: Python 3.10+ for helper scripts. PyYAML and matplotlib are required for the full helper suite. Gaussian, Multiwfn, VMD/Tachyon, DeepChem, MDAnalysis, schedulers, and licensed data are external and must be installed or licensed separately.
-metadata: {"version": "0.3.0-alpha.1", "author": "SUNHAOJUN22", "repository": "https://github.com/SUNHAOJUN22/TsaoDFT_skill"}
+metadata: {"version": "0.4.0-alpha.1", "author": "SUNHAOJUN22", "repository": "https://github.com/SUNHAOJUN22/TsaoDFT_skill"}
 ---
 
 # TsaoDFT Researcher
@@ -72,3 +72,12 @@ Acceptance: <accepted / pending / inconclusive / contradicted>
 Assumptions: <all non-user-confirmed choices>
 Next: <next stage or the single blocking decision>
 ```
+
+## Deterministic DFT tools added in v0.4
+
+- `preflight_gaussian_input.py`: input structure/route/checkpoint and open-shell planning checks.
+- `parse_gaussian.py`: route/method, convergence, frequency, thermochemistry, S²/stability, orbitals, dipole, NMR, TD contributions, IRC and final-coordinate evidence.
+- `validate_multiwfn_recipe.py`: semantic, versioned Multiwfn recipe validation.
+- `validate_uncertainty_budget.py`: DFT sensitivity and uncertainty-budget audit.
+
+These scripts classify evidence; they do not select the scientifically correct method or accept a mechanism automatically.

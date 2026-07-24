@@ -1,0 +1,125 @@
+schema_version: '1.1'
+release: 0.4.0-alpha.1
+policy: AI images and AI-assisted derivatives are illustrative only; deterministic
+  or accepted real data owns quantitative claims.
+assets:
+- path: assets/ai/hero/tsao-dft-hero.svg
+  role: hero
+  topic: tsao_dft_hero
+  ai_generated: true
+  ai_assisted_derivative: true
+  illustrative_only: true
+  quantitative: false
+  computed_surface: false
+  source_generation_id: 7c8b8cf4-d731-4a55-8320-b13a5f81f9ce
+  source_prompt: assets/ai/prompts/README-ai-concept-montage.md
+  width_px: 1200
+  height_px: 360
+  sha256: 2ec4ae72702c29aab7d50efb452f012999589a9532d9badc2439e5b8e306af54
+  allowed_uses: [README conceptual introduction, module visual identity]
+  forbidden_uses: [quantitative evidence, computed surface, mechanistic proof, experimental result]
+- path: assets/ai/modules/catalysis.svg
+  role: module_concept
+  topic: catalysis
+  ai_generated: true
+  ai_assisted_derivative: true
+  illustrative_only: true
+  quantitative: false
+  computed_surface: false
+  source_generation_id: 7c8b8cf4-d731-4a55-8320-b13a5f81f9ce
+  source_prompt: assets/ai/prompts/README-ai-concept-montage.md
+  width_px: 360
+  height_px: 197
+  sha256: 51b5f3bacf3dc944b42b4522e6e15ec96cd0b544ca5cc1e6d3f69bc84fa5d991
+  allowed_uses: [README conceptual introduction, module visual identity]
+  forbidden_uses: [quantitative evidence, computed surface, mechanistic proof, experimental result]
+- path: assets/ai/modules/dft-kinetics.svg
+  role: module_concept
+  topic: dft_kinetics
+  ai_generated: true
+  ai_assisted_derivative: true
+  illustrative_only: true
+  quantitative: false
+  computed_surface: false
+  source_generation_id: 7c8b8cf4-d731-4a55-8320-b13a5f81f9ce
+  source_prompt: assets/ai/prompts/README-ai-concept-montage.md
+  width_px: 360
+  height_px: 197
+  sha256: 4f934c4762abafa4d95bf36cccf1e5213aac4a4b63a2a39921d55fbcebfb8fec
+  allowed_uses: [README conceptual introduction, module visual identity]
+  forbidden_uses: [quantitative evidence, computed surface, mechanistic proof, experimental result]
+- path: assets/ai/modules/dft-ml.svg
+  role: module_concept
+  topic: dft_ml
+  ai_generated: true
+  ai_assisted_derivative: true
+  illustrative_only: true
+  quantitative: false
+  computed_surface: false
+  source_generation_id: 7c8b8cf4-d731-4a55-8320-b13a5f81f9ce
+  source_prompt: assets/ai/prompts/README-ai-concept-montage.md
+  width_px: 360
+  height_px: 197
+  sha256: 0264bc1a0f081d73b2363d7d0f16c4661fb1820c09abf8ed902b8eeea6be7c72
+  allowed_uses: [README conceptual introduction, module visual identity]
+  forbidden_uses: [quantitative evidence, computed surface, mechanistic proof, experimental result]
+- path: assets/ai/modules/ecosystem.svg
+  role: module_concept
+  topic: ecosystem
+  ai_generated: true
+  ai_assisted_derivative: true
+  illustrative_only: true
+  quantitative: false
+  computed_surface: false
+  source_generation_id: 7c8b8cf4-d731-4a55-8320-b13a5f81f9ce
+  source_prompt: assets/ai/prompts/README-ai-concept-montage.md
+  width_px: 360
+  height_px: 197
+  sha256: 06b832480b41535bac726468a2a2654ce9cd0924cf10f134384e4c1dd0054d62
+  allowed_uses: [README conceptual introduction, module visual identity]
+  forbidden_uses: [quantitative evidence, computed surface, mechanistic proof, experimental result]
+- path: assets/ai/modules/hpc-provenance.svg
+  role: module_concept
+  topic: hpc_provenance
+  ai_generated: true
+  ai_assisted_derivative: true
+  illustrative_only: true
+  quantitative: false
+  computed_surface: false
+  source_generation_id: 7c8b8cf4-d731-4a55-8320-b13a5f81f9ce
+  source_prompt: assets/ai/prompts/README-ai-concept-montage.md
+  width_px: 360
+  height_px: 197
+  sha256: 633875fd316742fa16aba7bef717cadd7f7a69e50cdaf9f2ac1519a5242fa21c
+  allowed_uses: [README conceptual introduction, module visual identity]
+  forbidden_uses: [quantitative evidence, computed surface, mechanistic proof, experimental result]
+- path: assets/ai/modules/molecular-dft.svg
+  role: module_concept
+  topic: molecular_dft
+  ai_generated: true
+  ai_assisted_derivative: true
+  illustrative_only: true
+  quantitative: false
+  computed_surface: false
+  source_generation_id: 7c8b8cf4-d731-4a55-8320-b13a5f81f9ce
+  source_prompt: assets/ai/prompts/README-ai-concept-montage.md
+  width_px: 360
+  height_px: 197
+  sha256: 36e9095b203de755a3119b98aa4e10f14885f30956a1ad12f83df09db484be94
+  allowed_uses: [README conceptual introduction, module visual identity]
+  forbidden_uses: [quantitative evidence, computed surface, mechanistic proof, experimental result]
+- path: assets/ai/modules/periodic-dft.svg
+  role: module_concept
+  topic: periodic_dft
+  ai_generated: true
+  ai_assisted_derivative: true
+  illustrative_only: true
+  quantitative: false
+  computed_surface: false
+  source_generation_id: 7c8b8cf4-d731-4a55-8320-b13a5f81f9ce
+  source_prompt: assets/ai/prompts/README-ai-concept-montage.md
+  width_px: 360
+  height_px: 197
+  sha256: a703682e50dd2c13b4db2207fedbc05ce0966faf4080c96c4fe45662ff77e0b5
+  allowed_uses: [README conceptual introduction, module visual identity]
+  forbidden_uses: [quantitative evidence, computed surface, mechanistic proof, experimental result]

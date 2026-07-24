@@ -5,11 +5,11 @@ Version: `0.4.0-alpha.1`
 
 ## Result
 
-**PASS — 60 unit tests across 9 isolated suites, 0 failed suites.**
+**PASS — 63 unit tests across 9 isolated suites, 0 failed suites.**
 
 | Suite | Tests | Result |
 |---|---:|---|
-| Repository, catalog, installer, plugin, README assets and strict validator | 7 | PASS |
+| Repository, catalog, installer, plugin, AI-image governance, README assets and strict validator | 10 | PASS |
 | `tsao-dft-suite` | 4 | PASS |
 | `tsao-dft-researcher` | 16 | PASS |
 | `tsao-structure-prep` | 4 | PASS |
@@ -21,6 +21,7 @@ Version: `0.4.0-alpha.1`
 
 ## Deterministic coverage
 
+- AI-generated README asset manifest, SHA-256 integrity, dimensions, generation provenance, visible disclosure and non-quantitative policy;
 - DFT-first routing, cross-Skill handoff and method fingerprint validation;
 - Gaussian input preflight and rich synthetic log parsing;
 - minimum/TS evidence, TS/IRC manifest rules, thermochemistry, S², orbital, dipole, NMR and TD fields;
@@ -42,6 +43,7 @@ Version: `0.4.0-alpha.1`
 python -m pip install -r requirements.txt
 python scripts/generate_readme_demos.py
 python scripts/validate_catalog.py
+python scripts/validate_ai_assets.py
 python scripts/validate_repo.py --strict
 python scripts/run_all_tests.py
 ```

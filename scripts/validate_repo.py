@@ -30,7 +30,7 @@ def main() -> int:
     warnings: list[str] = []
     checks: list[dict[str, Any]] = []
 
-    required_root = ["README.md", "README_EN.md", "LICENSE", "VERSION", "AGENTS.md", "skills", "scripts", "docs", ".codex-plugin/plugin.json", "docs/ENGINE_SUPPORT_MATRIX.md", "docs/CAPABILITY_STATUS.yaml"]
+    required_root = ["README.md", "README_EN.md", "LICENSE", "VERSION", "AGENTS.md", "skills", "scripts", "docs", ".codex-plugin/plugin.json", "docs/ENGINE_SUPPORT_MATRIX.md", "docs/CAPABILITY_STATUS.yaml", "docs/AI_IMAGE_GOVERNANCE.md", "assets/ai/manifest.yaml", "docs/CI_VERIFIED.md"]
     for rel in required_root:
         if not (ROOT / rel).exists():
             failures.append(f"missing root path: {rel}")
@@ -82,8 +82,6 @@ def main() -> int:
     except Exception as exc:
         failures.append(f"CAPABILITY_STATUS parse failed: {exc}")
 
-    # Runtime test execution may create ignored bytecode caches. They are excluded from
-    # release manifests and uploads; source files must never reference or depend on them.
     pycache = list(ROOT.rglob("__pycache__"))
     pyc = list(ROOT.rglob("*.pyc"))
     if pycache or pyc:
@@ -130,14 +128,21 @@ def main() -> int:
 
     demos = ["workflow-architecture", "wavefunction-esp-gallery", "free-energy-profile", "dft-ml-dashboard", "periodic-dft-materials", "active-learning-loop", "hpc-provenance", "multiscale-kinetics"]
     for stem in demos:
-        for suffix in [".svg"]:
-            path = ROOT / "assets/demo" / f"{stem}{suffix}"
-            if not path.exists() or path.stat().st_size == 0:
-                failures.append(f"missing demo asset: {path.relative_to(ROOT)}")
+        path = ROOT / "assets/demo" / f"{stem}.svg"
+        if not path.exists() or path.stat().st_size == 0:
+            failures.append(f"missing demo asset: {path.relative_to(ROOT)}")
 
     catalog_result = subprocess.run([sys.executable, str(ROOT / "scripts/validate_catalog.py")], cwd=ROOT, capture_output=True, text=True)
     if catalog_result.returncode != 0:
         failures.append(f"catalog validation failed: {catalog_result.stdout}{catalog_result.stderr}")
+
+    ai_result = subprocess.run([sys.executable, str(ROOT / "scripts/validate_ai_assets.py")], cwd=ROOT, capture_output=True, text=True)
+    if ai_result.returncode != 0:
+        failures.append(f"AI asset validation failed: {ai_result.stdout}{ai_result.stderr}")
+
+    visual_result = subprocess.run([sys.executable, str(ROOT / "scripts/validate_readme_visuals.py"), "--strict"], cwd=ROOT, capture_output=True, text=True)
+    if visual_result.returncode != 0:
+        failures.append(f"README visual validation failed: {visual_result.stdout}{visual_result.stderr}")
 
     self_tests = [
         ROOT / "skills/tsao-dft-researcher/scripts/validate_research_manifest.py",

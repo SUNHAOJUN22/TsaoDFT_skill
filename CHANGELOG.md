@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — README visual and CI hardening
+
+- Added a prominent governed AI-generated research-scene gallery rather than relying on workflow diagrams alone.
+- Added README visual cross-validation against the AI asset manifest and deterministic demo set.
+- Hardened CI with Python 3.10/3.12/3.13, pip caching, concurrency control, deterministic-demo diff checks, and manual dispatch.
+- Added a main-only GitHub-hosted attestation workflow that records a bot-authored proof only after the full validation suite passes.
+- Expanded the repository test count from 63 to 66 with README visual-governance coverage.
+
 ## 0.4.0-alpha.1 — 2026-07-24
 
 - Added `tsao-dft-suite`, a DFT-first root orchestrator that routes molecular, periodic, ML, HPC, kinetics, and scoped catalysis work without hiding scientific decisions.

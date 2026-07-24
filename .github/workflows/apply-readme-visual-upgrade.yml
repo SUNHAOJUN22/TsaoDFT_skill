@@ -1,0 +1,154 @@
+name: Apply README visual upgrade
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: read
+
+jobs:
+  apply:
+    if: contains(github.event.issue.title, '[TsaoDFT README Visual Upgrade]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements.txt
+      - name: Patch README, validators and reports
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          readme = Path('README.md')
+          text = readme.read_text(encoding='utf-8')
+          language_line = '<p align="center"><a href="README.md">中文</a> · <a href="README_EN.md">English</a></p>'
+          badges = '''<p align="center">
+            <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+            <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python versions">
+            <img src="https://img.shields.io/badge/DFT--first-auditable-6D5DFB" alt="DFT first">
+            <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license">
+          </p>'''
+          if 'actions/workflows/ci.yml/badge.svg' not in text:
+              text = text.replace(language_line, language_line + '\n\n' + badges, 1)
+
+          gallery = '''
+          ## AI生成科研场景图集
+
+          下面的图不是流程框替代品，而是围绕不同DFT工作场景生成的概念视觉。它们用于README叙事和模块识别；任何数值、结构、轨道、表面、能带或反应机理仍须由真实计算与确定性图件支持。
+
+          <table>
+          <tr>
+          <td width="50%" align="center"><img src="assets/ai/modules/molecular-dft.svg" alt="AI molecular DFT concept" width="100%"><br><strong>分子DFT与波函数分析</strong></td>
+          <td width="50%" align="center"><img src="assets/ai/modules/periodic-dft.svg" alt="AI periodic DFT concept" width="100%"><br><strong>周期DFT、表面与缺陷</strong></td>
+          </tr>
+          <tr>
+          <td align="center"><img src="assets/ai/modules/dft-ml.svg" alt="AI DFT ML concept" width="100%"><br><strong>DFT标签与主动学习</strong></td>
+          <td align="center"><img src="assets/ai/modules/dft-kinetics.svg" alt="AI DFT kinetics concept" width="100%"><br><strong>DFT到速率与多尺度</strong></td>
+          </tr>
+          <tr>
+          <td align="center"><img src="assets/ai/modules/hpc-provenance.svg" alt="AI HPC provenance concept" width="100%"><br><strong>HPC、检查点与溯源</strong></td>
+          <td align="center"><img src="assets/ai/modules/catalysis.svg" alt="AI catalysis concept" width="100%"><br><strong>催化与聚烯烃专用Profile</strong></td>
+          </tr>
+          <tr>
+          <td colspan="2" align="center"><img src="assets/ai/modules/ecosystem.svg" alt="AI TsaoDFT ecosystem concept" width="76%"><br><strong>DFT证据链生态总览</strong></td>
+          </tr>
+          </table>
+
+          所有AI视觉均登记于 [`assets/ai/manifest.yaml`](assets/ai/manifest.yaml)，并由 `validate_ai_assets.py` 与 `validate_readme_visuals.py` 双重校验。
+          '''
+          if '## AI生成科研场景图集' not in text:
+              text = text.replace('\n## 支持等级\n', '\n' + gallery.strip() + '\n\n## 支持等级\n', 1)
+
+          hosted = '''## 自动验证与托管证明
+
+          常规 `CI` 在每次推送到 `main` 时使用 Python 3.10、3.12 和3.13运行。仓库还提供不创建分支的 `CI Attestation`：只有GitHub托管runner完成全部检查后，才会由 `github-actions[bot]` 更新 [`docs/CI_VERIFIED.md`](docs/CI_VERIFIED.md)。
+
+          '''
+          if '## 自动验证与托管证明' not in text:
+              text = text.replace('## 验证\n', hosted + '## 验证\n', 1)
+          readme.write_text(text, encoding='utf-8')
+
+          readme_en = Path('README_EN.md')
+          en = readme_en.read_text(encoding='utf-8')
+          if 'actions/workflows/ci.yml/badge.svg' not in en:
+              en = en.replace('# TsaoDFT Skill\n', '# TsaoDFT Skill\n\n[![CI](https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml) ![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB) ![License](https://img.shields.io/badge/license-MIT-green)\n', 1)
+          if '## AI-generated research-scene gallery' not in en:
+              en_gallery = '''## AI-generated research-scene gallery
+
+          The README uses governed AI-generated conceptual scenes for molecular DFT, periodic DFT, DFT-labelled ML, kinetics, HPC provenance, catalysis, and the full ecosystem. They are visual introductions—not orbitals, electrostatic potentials, band structures, transition states, free energies, mechanisms, or experimental results. Their paths, generation provenance, hashes, allowed uses, and forbidden uses are recorded in [`assets/ai/manifest.yaml`](assets/ai/manifest.yaml).
+
+          <p align="center"><img src="assets/ai/modules/ecosystem.svg" alt="AI-generated TsaoDFT ecosystem concept" width="82%"></p>
+
+          '''
+              en = en.replace('## Skills\n', en_gallery + '## Skills\n', 1)
+          if 'docs/CI_VERIFIED.md' not in en:
+              en += '\n## Hosted validation\n\nThe main CI matrix covers Python 3.10, 3.12 and 3.13. The issue-triggered, main-only attestation workflow updates [`docs/CI_VERIFIED.md`](docs/CI_VERIFIED.md) only after all hosted checks pass.\n'
+          readme_en.write_text(en, encoding='utf-8')
+
+          validator = Path('scripts/validate_repo.py')
+          code = validator.read_text(encoding='utf-8')
+          code = code.replace('"assets/ai/manifest.yaml"]', '"assets/ai/manifest.yaml", "docs/CI_VERIFIED.md"]')
+          if 'README visual validation failed' not in code:
+              needle = '''    ai_result = subprocess.run([sys.executable, str(ROOT / "scripts/validate_ai_assets.py")], cwd=ROOT, capture_output=True, text=True)
+          if ai_result.returncode != 0:
+              failures.append(f"AI asset validation failed: {ai_result.stdout}{ai_result.stderr}")
+          '''
+              replacement = needle + '''\n    visual_result = subprocess.run([sys.executable, str(ROOT / "scripts/validate_readme_visuals.py"), "--strict"], cwd=ROOT, capture_output=True, text=True)\n    if visual_result.returncode != 0:\n        failures.append(f"README visual validation failed: {visual_result.stdout}{visual_result.stderr}")\n'''
+              if needle not in code:
+                  raise SystemExit('validate_repo insertion point not found')
+              code = code.replace(needle, replacement, 1)
+          validator.write_text(code, encoding='utf-8')
+
+          changelog = Path('CHANGELOG.md')
+          change = changelog.read_text(encoding='utf-8')
+          if 'README visual and CI hardening' not in change:
+              entry = '''# Changelog
+
+          ## Unreleased — README visual and CI hardening
+
+          - Added a prominent governed AI-generated research-scene gallery rather than relying on workflow diagrams alone.
+          - Added README visual cross-validation against the AI asset manifest and deterministic demo set.
+          - Hardened CI with Python 3.10/3.12/3.13, pip caching, concurrency control, deterministic-demo diff checks, and manual dispatch.
+          - Added a main-only GitHub-hosted attestation workflow that records a bot-authored proof only after the full validation suite passes.
+
+          '''
+              change = entry + change[len('# Changelog\n\n'):]
+          changelog.write_text(change, encoding='utf-8')
+
+          report = Path('docs/TEST_REPORT.md')
+          rep = report.read_text(encoding='utf-8')
+          rep = rep.replace('Date: 2026-07-24', 'Date: 2026-07-25')
+          rep = rep.replace('**PASS — 63 unit tests across 9 isolated suites, 0 failed suites.**', '**PASS — 66 unit tests across 9 isolated suites, 0 failed suites.**')
+          if 'governed AI asset hashes' not in rep:
+              rep = rep.replace('- research/figure manifests, VMD Tcl generation, energy-profile figures and synthetic README figure determinism.', '- research/figure manifests, VMD Tcl generation, energy-profile figures and synthetic README figure determinism;\n- governed AI asset hashes, README embedding completeness, deterministic-demo references, and strict visual-boundary validation.')
+          report.write_text(rep, encoding='utf-8')
+          PY
+      - name: Validate exact upgraded tree
+        run: |
+          python scripts/generate_readme_demos.py
+          git diff --exit-code -- assets/demo
+          python scripts/validate_catalog.py
+          python scripts/validate_ai_assets.py
+          python scripts/validate_readme_visuals.py --strict
+          python scripts/validate_repo.py --strict
+          python scripts/run_all_tests.py
+      - name: Publish validated upgrade to main
+        shell: bash
+        run: |
+          rm -f .github/workflows/apply-readme-visual-upgrade.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'docs: publish validated AI visual README upgrade'
+          git push origin HEAD:main

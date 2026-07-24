@@ -1,0 +1,24 @@
+name: Apply governed AI README patch
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: read
+
+jobs:
+  apply:
+    if: contains(github.event.issue.title, 'apply governed AI README patch')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Apply patch, validate, test and publish to main
+        run: python _patch_bootstrap/apply_patch.py

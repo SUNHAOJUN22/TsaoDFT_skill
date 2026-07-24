@@ -1,6 +1,8 @@
 name: Apply governed AI README patch
 
 on:
+  push:
+    branches: [main]
   issues:
     types: [opened]
 
@@ -10,7 +12,9 @@ permissions:
 
 jobs:
   apply:
-    if: contains(github.event.issue.title, 'apply governed AI README patch')
+    if: >-
+      (github.event_name == 'issues' && contains(github.event.issue.title, 'apply governed AI README patch')) ||
+      (github.event_name == 'push' && contains(github.event.head_commit.message, 'trigger governed AI README patch'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

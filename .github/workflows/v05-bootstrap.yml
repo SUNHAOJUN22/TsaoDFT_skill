@@ -1,0 +1,28 @@
+name: TsaoDFT v0.5 bootstrap
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: read
+
+jobs:
+  probe:
+    if: contains(github.event.issue.title, '[TsaoDFT v0.5 bootstrap]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Probe workflow
+        shell: bash
+        run: |
+          printf 'workflow probe ok\n' > .v05-workflow-probe
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .v05-workflow-probe
+          git commit -m 'chore: verify v0.5 bootstrap workflow'
+          git push origin HEAD:main

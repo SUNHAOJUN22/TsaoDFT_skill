@@ -1,1 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="344" viewBox="0 0 1200 344" role="img" aria-label="AI-generated conceptual illustration; not computational data"><rect width="1200" height="344" fill="#07111f"/><text x="600" y="172" text-anchor="middle" fill="#cbe6ff" font-family="Arial" font-size="34" font-weight="700">AI-GENERATED CONCEPTUAL ILLUSTRATION</text><text x="600" y="216" text-anchor="middle" fill="#8ab4e8" font-family="Arial" font-size="22">TsaoDFT · Not Computational Data</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-label="AI-assisted conceptual illustration; not computational data">
+<defs>
+<linearGradient id="bg" x1="0" x2="1"><stop stop-color="#050b16"/><stop offset=".5" stop-color="#102b4d"/><stop offset="1" stop-color="#160d2e"/></linearGradient>
+<radialGradient id="core"><stop stop-color="#8ff7ff"/><stop offset=".45" stop-color="#3478d4"/><stop offset="1" stop-color="#172554"/></radialGradient>
+<filter id="glow"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="1200" height="360" rx="24" fill="url(#bg)"/>
+<g opacity=".23" stroke="#76c7ff"><path d="M0 290 C180 230 250 310 410 240 S700 180 830 245 S1070 320 1200 250" fill="none"/><path d="M0 70 C180 130 260 55 420 110 S720 180 900 95 S1080 50 1200 120" fill="none"/></g>
+<g filter="url(#glow)" stroke="#9bdcff" stroke-width="3"><circle cx="155" cy="176" r="22" fill="#12365f"/><circle cx="230" cy="122" r="16" fill="#6d28d9"/><circle cx="245" cy="222" r="18" fill="#0f766e"/><line x1="174" y1="162" x2="216" y2="132"/><line x1="177" y1="191" x2="229" y2="215"/></g>
+<path d="M92 190 C118 86 252 70 302 159 C263 254 142 267 92 190Z" fill="#8b5cf6" opacity=".22"/>
+<path d="M110 174 C150 116 226 111 279 163 C242 215 161 226 110 174Z" fill="#2dd4bf" opacity=".28"/>
+<text x="83" y="302" fill="#bde7ff" font-family="Arial" font-size="18">molecular DFT · orbitals · ESP · TS/IRC</text>
+<circle cx="600" cy="170" r="88" fill="url(#core)" stroke="#9bdcff" stroke-width="4" filter="url(#glow)"/>
+<text x="600" y="161" text-anchor="middle" fill="#ffffff" font-family="Arial" font-weight="700" font-size="34">TsaoDFT</text>
+<text x="600" y="194" text-anchor="middle" fill="#d8f5ff" font-family="Arial" font-size="17">DFT evidence core</text>
+<g fill="#0b1f36" stroke="#60a5fa" stroke-width="2"><rect x="447" y="67" width="92" height="42" rx="12"/><rect x="663" y="67" width="92" height="42" rx="12"/><rect x="447" y="242" width="92" height="42" rx="12"/><rect x="663" y="242" width="92" height="42" rx="12"/></g>
+<g fill="#d9efff" font-family="Arial" font-size="13" text-anchor="middle"><text x="493" y="93">structure</text><text x="709" y="93">HPC</text><text x="493" y="268">ML</text><text x="709" y="268">kinetics</text></g>
+<g stroke="#a78bfa" stroke-width="2" stroke-dasharray="5 4"><line x1="528" y1="109" x2="554" y2="125"/><line x1="672" y1="109" x2="646" y2="125"/><line x1="528" y1="242" x2="554" y2="216"/><line x1="672" y1="242" x2="646" y2="216"/></g>
+<g stroke="#60a5fa" fill="#0f2743" stroke-width="2"><path d="M870 236 L944 196 L1018 236 L944 276 Z"/><path d="M870 236 V151 L944 111 L1018 151 V236"/><path d="M944 111 V196"/></g>
+<g fill="#2dd4bf"><circle cx="870" cy="151" r="9"/><circle cx="944" cy="111" r="9"/><circle cx="1018" cy="151" r="9"/></g>
+<g fill="#fbbf24"><circle cx="907" cy="173" r="8"/><circle cx="981" cy="173" r="8"/></g>
+<path d="M832 92 q45-72 90 0 t90 0 t90 0" fill="none" stroke="#f472b6" stroke-width="4" filter="url(#glow)"/>
+<path d="M832 117 q45-36 90 0 t90 0 t90 0" fill="none" stroke="#2dd4bf" stroke-width="4"/>
+<text x="830" y="302" fill="#bde7ff" font-family="Arial" font-size="18">periodic DFT · surfaces · defects · bands/DOS</text>
+<rect y="327" width="1200" height="33" fill="#030711" opacity=".95"/>
+<text x="600" y="349" text-anchor="middle" fill="#8cbce8" font-family="Arial" font-size="13">AI-ASSISTED CONCEPTUAL ILLUSTRATION · NOT COMPUTATIONAL DATA</text>
+</svg>

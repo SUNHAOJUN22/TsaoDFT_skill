@@ -1,13 +1,47 @@
-name: CI maintenance
+name: TsaoDFT quality gate
 
 on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: tsao-dft-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  maintenance:
+  quality-gate:
+    name: Quality gate
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
     steps:
-      - run: echo "Repository maintenance in progress; push CI will be restored in the final validated commit."
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Generate deterministic demo assets
+        run: python scripts/generate_readme_demos.py
+
+      - name: Validate repository
+        run: python scripts/validate_repo.py --strict
+
+      - name: Run tests
+        run: python scripts/run_all_tests.py
+
+      - name: Quality summary
+        run: |
+          echo "TsaoDFT main quality gate completed"

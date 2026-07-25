@@ -40,34 +40,55 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
 
-      - name: Run complete quality gate
+      - name: Capture complete quality gate
+        id: gate
         env:
           PYTHONDONTWRITEBYTECODE: "1"
-        run: python scripts/quality_gate.py
+        shell: bash
+        run: |
+          set +e
+          python scripts/quality_gate.py 2>&1 | tee quality-gate.log
+          code=${PIPESTATUS[0]}
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload failure log
+        if: always() && steps.gate.outputs.exit_code != '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-gate-python-${{ matrix.python-version }}
+          path: quality-gate.log
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Publish commit status
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
-          JOB_STATUS: ${{ job.status }}
+          GATE_EXIT_CODE: ${{ steps.gate.outputs.exit_code }}
           PYTHON_VERSION: ${{ matrix.python-version }}
+        shell: bash
         run: |
-          case "$JOB_STATUS" in
-            success) state=success ;;
-            cancelled) state=error ;;
-            *) state=failure ;;
-          esac
-          export state
+          if [ "$GATE_EXIT_CODE" = "0" ]; then
+            state=success
+            summary="TsaoDFT quality gate passed"
+          else
+            state=failure
+            summary=$(grep -E '^(FAIL:|.*validation: FAIL|RESULT: FAIL|QUALITY GATE: FAIL|.*Failed suites:)' quality-gate.log | tail -n 1 | tr '\n' ' ' | cut -c1-120)
+            if [ -z "$summary" ]; then
+              summary="TsaoDFT quality gate failed; inspect workflow artifact"
+            fi
+          fi
+          export state summary
           python - <<'PY'
           import json, os, urllib.request
           repository = os.environ["GITHUB_REPOSITORY"]
           sha = os.environ["GITHUB_SHA"]
-          state = os.environ["state"]
           version = os.environ["PYTHON_VERSION"]
           payload = json.dumps({
-              "state": state,
+              "state": os.environ["state"],
               "context": f"tsao-dft/python-{version}",
-              "description": f"TsaoDFT quality gate on Python {version}",
+              "description": os.environ["summary"],
               "target_url": f"https://github.com/{repository}/actions/runs/{os.environ['GITHUB_RUN_ID']}",
           }).encode()
           request = urllib.request.Request(
@@ -84,4 +105,7 @@ jobs:
           with urllib.request.urlopen(request, timeout=30) as response:
               print(response.status)
           PY
-        shell: bash
+
+      - name: Fail job when quality gate fails
+        if: always() && steps.gate.outputs.exit_code != '0'
+        run: exit 1

@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  statuses: write
 
 concurrency:
   group: tsao-dft-${{ github.workflow }}-${{ github.ref }}
@@ -43,3 +44,43 @@ jobs:
         env:
           PYTHONDONTWRITEBYTECODE: "1"
         run: python scripts/quality_gate.py
+
+      - name: Publish commit status
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_STATUS: ${{ job.status }}
+          PYTHON_VERSION: ${{ matrix.python-version }}
+        run: |
+          case "$JOB_STATUS" in
+            success) state=success ;;
+            cancelled) state=error ;;
+            *) state=failure ;;
+          esac
+          python - <<'PY'
+          import json, os, urllib.request
+          repository = os.environ["GITHUB_REPOSITORY"]
+          sha = os.environ["GITHUB_SHA"]
+          state = os.environ["state"] if "state" in os.environ else "failure"
+          version = os.environ["PYTHON_VERSION"]
+          payload = json.dumps({
+              "state": state,
+              "context": f"tsao-dft/python-{version}",
+              "description": f"TsaoDFT quality gate on Python {version}",
+              "target_url": f"https://github.com/{repository}/actions/runs/{os.environ['GITHUB_RUN_ID']}",
+          }).encode()
+          request = urllib.request.Request(
+              f"https://api.github.com/repos/{repository}/statuses/{sha}",
+              data=payload,
+              method="POST",
+              headers={
+                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                  "Accept": "application/vnd.github+json",
+                  "X-GitHub-Api-Version": "2022-11-28",
+                  "Content-Type": "application/json",
+              },
+          )
+          with urllib.request.urlopen(request, timeout=30) as response:
+              print(response.status, response.read().decode())
+          PY
+        shell: bash

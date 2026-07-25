@@ -9,9 +9,19 @@
   <filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#020617" flood-opacity=".42"/></filter>
   <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#7dd3fc" stroke-opacity=".055"/></pattern>
-  <style><![CDATA[.title{font:700 34px Inter,Arial,sans-serif;fill:#f8fafc;letter-spacing:-.7px}.sub{font:400 15px Inter,Arial,sans-serif;fill:#a8c7e8}.kicker{font:700 11px Inter,Arial,sans-serif;fill:#67e8f9;letter-spacing:1.6px}.h{font:700 18px Inter,Arial,sans-serif;fill:#f8fafc}.b{font:400 12px Inter,Arial,sans-serif;fill:#b8cce2}.tiny{font:600 10px Inter,Arial,sans-serif;fill:#90aac5;letter-spacing:.45px}.pill{fill:#0b1f36;stroke:#2f5d85;stroke-width:1}]]></style>
+  <style><![CDATA[
+    .title{font:700 34px Inter,Arial,sans-serif;fill:#f8fafc;letter-spacing:-.7px}
+    .sub{font:400 15px Inter,Arial,sans-serif;fill:#a8c7e8}
+    .kicker{font:700 11px Inter,Arial,sans-serif;fill:#67e8f9;letter-spacing:1.6px}
+    .h{font:700 18px Inter,Arial,sans-serif;fill:#f8fafc}
+    .b{font:400 12px Inter,Arial,sans-serif;fill:#b8cce2}
+    .tiny{font:600 10px Inter,Arial,sans-serif;fill:#90aac5;letter-spacing:.45px}
+    .pill{fill:#0b1f36;stroke:#2f5d85;stroke-width:1}
+  ]]></style>
 </defs>
-<rect width="560" height="300" rx="24" fill="url(#bg)"/><rect width="560" height="300" rx="24" fill="url(#grid)"/>
+<rect width="560" height="300" rx="24" fill="url(#bg)"/>
+<rect width="560" height="300" rx="24" fill="url(#grid)"/>
 <text x="24" y="34" class="kicker">WAVEFUNCTION · THERMOCHEMISTRY</text><text x="24" y="66" class="h" font-size="23">Molecular DFT</text><text x="24" y="88" class="b">Electronic structure with explicit state checks</text><rect x="22" y="106" width="516" height="150" rx="20" fill="#07192d" stroke="#2c557a"/><ellipse cx="160" cy="182" rx="74" ry="36" fill="#8b5cf6" opacity=".28" transform="rotate(-17 160 182)"/><ellipse cx="246" cy="182" rx="74" ry="36" fill="#22d3ee" opacity=".26" transform="rotate(17 246 182)"/><g stroke="#dbeafe" stroke-width="2.4" filter="url(#glow)"><line x1="176" y1="182" x2="230" y2="182"/><circle cx="162" cy="182" r="12" fill="#0ea5e9"/><circle cx="244" cy="182" r="12" fill="#8b5cf6"/></g><rect x="342" y="132" width="164" height="94" rx="15" fill="#0b2742" stroke="#336b96"/><text x="360" y="157" class="tiny">METHOD FINGERPRINT</text><text x="360" y="180" class="b">ωB97X-D / def2-TZVP</text><text x="360" y="201" class="b">SCF ✓  Freq ✓  Spin ✓</text>
-<rect x="0" y="272" width="560" height="28" fill="#020617" fill-opacity=".9"/><text x="542" y="290" text-anchor="end" class="tiny" fill="#7dd3fc">AI-ASSISTED CONCEPTUAL ILLUSTRATION · NOT COMPUTATIONAL DATA</text>
+<rect x="0" y="272" width="560" height="28" fill="#020617" fill-opacity=".9"/>
+<text x="542" y="290" text-anchor="end" class="tiny" fill="#7dd3fc">AI-ASSISTED CONCEPTUAL ILLUSTRATION · NOT COMPUTATIONAL DATA</text>
 </svg>

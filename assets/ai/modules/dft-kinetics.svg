@@ -1,27 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="560" height="300" viewBox="0 0 560 300" role="img" aria-label="AI-assisted conceptual illustration; not computational data">
-<title>DFT to Kinetics</title>
-<defs>
-  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#050914"/><stop offset=".48" stop-color="#0b2442"/><stop offset="1" stop-color="#24113e"/></linearGradient>
-  <linearGradient id="cyan" x1="0" x2="1"><stop stop-color="#67e8f9"/><stop offset="1" stop-color="#38bdf8"/></linearGradient>
-  <linearGradient id="violet" x1="0" x2="1"><stop stop-color="#c4b5fd"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient>
-  <linearGradient id="gold" x1="0" x2="1"><stop stop-color="#fde68a"/><stop offset="1" stop-color="#f59e0b"/></linearGradient>
-  <radialGradient id="orb"><stop stop-color="#67e8f9" stop-opacity=".92"/><stop offset=".45" stop-color="#8b5cf6" stop-opacity=".55"/><stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/></radialGradient>
-  <filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#020617" flood-opacity=".42"/></filter>
-  <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#7dd3fc" stroke-opacity=".055"/></pattern>
-  <style><![CDATA[
-    .title{font:700 34px Inter,Arial,sans-serif;fill:#f8fafc;letter-spacing:-.7px}
-    .sub{font:400 15px Inter,Arial,sans-serif;fill:#a8c7e8}
-    .kicker{font:700 11px Inter,Arial,sans-serif;fill:#67e8f9;letter-spacing:1.6px}
-    .h{font:700 18px Inter,Arial,sans-serif;fill:#f8fafc}
-    .b{font:400 12px Inter,Arial,sans-serif;fill:#b8cce2}
-    .tiny{font:600 10px Inter,Arial,sans-serif;fill:#90aac5;letter-spacing:.45px}
-    .pill{fill:#0b1f36;stroke:#2f5d85;stroke-width:1}
-  ]]></style>
-</defs>
-<rect width="560" height="300" rx="24" fill="url(#bg)"/>
-<rect width="560" height="300" rx="24" fill="url(#grid)"/>
-<text x="24" y="34" class="kicker">TST · NETWORKS · MULTISCALE</text><text x="24" y="66" class="h" font-size="23">DFT to Kinetics</text><text x="24" y="88" class="b">Thermodynamic closure before rate handoff</text><rect x="22" y="106" width="516" height="150" rx="20" fill="#07192d" stroke="#2c557a"/><g transform="translate(46 130)"><path d="M0 105H470" stroke="#466786"/><path d="M12 91C75 91 80 29 130 29s64 68 115 68 61-83 112-83 54 69 103 69" fill="none" stroke="#67e8f9" stroke-width="4"/><g fill="#081a30" stroke="#fde68a" stroke-width="2"><circle cx="12" cy="91" r="8"/><circle cx="130" cy="29" r="8"/><circle cx="245" cy="97" r="8"/><circle cx="357" cy="14" r="8"/><circle cx="460" cy="83" r="8"/></g><text x="130" y="18" text-anchor="middle" class="tiny">TS1</text><text x="357" y="8" text-anchor="middle" class="tiny">TS2</text><text x="237" y="125" text-anchor="middle" class="tiny">TST · detailed balance · uncertainty</text></g>
-<rect x="0" y="272" width="560" height="28" fill="#020617" fill-opacity=".9"/>
-<text x="542" y="290" text-anchor="end" class="tiny" fill="#7dd3fc">AI-ASSISTED CONCEPTUAL ILLUSTRATION · NOT COMPUTATIONAL DATA</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" role="img" aria-label="AI-assisted conceptual illustration; not computational data"><title>DFT to Kinetics</title><defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#030711"/><stop offset=".44" stop-color="#071d35"/><stop offset="1" stop-color="#1b0b35"/></linearGradient>
+<linearGradient id="panel" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0e2946" stop-opacity=".96"/><stop offset="1" stop-color="#0a1427" stop-opacity=".98"/></linearGradient>
+<linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#a5f3fc"/><stop offset=".48" stop-color="#22d3ee"/><stop offset="1" stop-color="#0284c7"/></linearGradient>
+<linearGradient id="violet" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ddd6fe"/><stop offset=".5" stop-color="#a78bfa"/><stop offset="1" stop-color="#6d28d9"/></linearGradient>
+<linearGradient id="amber" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fef3c7"/><stop offset=".5" stop-color="#fbbf24"/><stop offset="1" stop-color="#d97706"/></linearGradient>
+<linearGradient id="emerald" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d1fae5"/><stop offset=".5" stop-color="#34d399"/><stop offset="1" stop-color="#059669"/></linearGradient>
+<linearGradient id="rose" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffe4e6"/><stop offset=".5" stop-color="#fb7185"/><stop offset="1" stop-color="#be123c"/></linearGradient>
+<radialGradient id="halo"><stop stop-color="#67e8f9" stop-opacity=".7"/><stop offset=".38" stop-color="#8b5cf6" stop-opacity=".28"/><stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/></radialGradient>
+<pattern id="grid" width="34" height="34" patternUnits="userSpaceOnUse"><path d="M34 0H0V34" fill="none" stroke="#7dd3fc" stroke-opacity=".045" stroke-width="1"/></pattern>
+<filter id="glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="18"/></filter>
+<filter id="shadow" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#020617" flood-opacity=".55"/></filter>
+<marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#67e8f9"/></marker>
+<style><![CDATA[
+.t{font-family:Inter,Segoe UI,Arial,sans-serif}.k{font-family:Inter,Segoe UI,Arial,sans-serif;font-weight:700;font-size:11px;fill:#67e8f9;letter-spacing:1.8px}.h1{font-family:Inter,Segoe UI,Arial,sans-serif;font-weight:700;font-size:42px;fill:#f8fafc;letter-spacing:-1px}.h2{font-family:Inter,Segoe UI,Arial,sans-serif;font-weight:700;font-size:24px;fill:#f8fafc;letter-spacing:-.4px}.s{font-family:Inter,Segoe UI,Arial,sans-serif;font-weight:400;font-size:14px;fill:#a9c4df}.b{font-family:Inter,Segoe UI,Arial,sans-serif;font-weight:500;font-size:12px;fill:#c7d9eb}.m{font-family:Inter,Segoe UI,Arial,sans-serif;font-weight:600;font-size:10px;fill:#89a9c7;letter-spacing:.45px}.n{font-family:Inter,Segoe UI,Arial,sans-serif;font-weight:700;font-size:9px;fill:#dbeafe;letter-spacing:.6px}.glass{fill:url(#panel);stroke:#2d5b82;stroke-width:1.2}.chip{fill:#0a2139;stroke:#2f638c;stroke-width:1}.hair{stroke:#4e789a;stroke-width:1}.axis{stroke:#3d607f;stroke-width:1}.dim{fill:#7e9bb8}.white{fill:#f8fafc}
+]]></style>
+</defs><rect width="640" height="360" rx="26" fill="url(#bg)"/><rect width="640" height="360" rx="26" fill="url(#grid)"/><circle cx="520" cy="125" r="150" fill="url(#halo)" opacity=".22"/><text x="28" y="38" class="k">TST · NETWORKS · MULTISCALE</text><text x="28" y="72" class="h2" font-size="27">DFT to Kinetics</text><text x="28" y="96" class="s">Thermodynamic closure before rate handoff</text><rect x="22" y="116" width="596" height="202" rx="22" class="glass" filter="url(#shadow)"/><g transform="translate(52 152)"><path d="M0 137H536M0 0V137" class="axis" fill="none"/><path d="M12 120C76 120 82 40 137 40s66 84 126 84 68-103 128-103 66 83 133 83" fill="none" stroke="#67e8f9" stroke-width="4"/><g fill="#081a30" stroke="#fbbf24" stroke-width="2"><circle cx="12" cy="120" r="8"/><circle cx="137" cy="40" r="8"/><circle cx="263" cy="124" r="8"/><circle cx="391" cy="21" r="8"/><circle cx="524" cy="104" r="8"/></g><text x="137" y="24" text-anchor="middle" class="n">TS1</text><text x="391" y="11" text-anchor="middle" class="n">TS2</text><rect x="176" y="83" width="176" height="28" rx="14" class="chip"/><text x="264" y="102" text-anchor="middle" class="m">EYRING · DETAILED BALANCE · UQ</text><text x="268" y="161" text-anchor="middle" class="m">FREE ENERGY → RATE CONSTANTS → MICROKINETICS → REACTOR</text></g><rect x="0" y="332" width="640" height="28" fill="#020617" fill-opacity=".92"/><text x="622" y="351" text-anchor="end" class="m" fill="#7dd3fc">AI-ASSISTED CONCEPTUAL ILLUSTRATION · NOT COMPUTATIONAL DATA</text></svg>

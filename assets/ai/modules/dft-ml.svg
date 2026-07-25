@@ -1,1 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="360" height="197" viewBox="0 0 360 197" role="img" aria-label="AI-assisted conceptual illustration; not computational data"><defs><radialGradient id="g"><stop stop-color="#17365a"/><stop offset="1" stop-color="#07111f"/></radialGradient><filter id="gl"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><rect width="360" height="197" rx="16" fill="url(#g)"/><text x="18" y="28" fill="#e5f3ff" font-family="Arial" font-size="14" font-weight="700">DFT + ML</text><g fill="none" stroke-width="2" filter="url(#gl)"><circle cx="74" cy="102" r="28" stroke="#2dd4bf"/><circle cx="180" cy="65" r="18" stroke="#a78bfa"/><circle cx="180" cy="137" r="18" stroke="#a78bfa"/><circle cx="286" cy="102" r="28" stroke="#f472b6"/><path d="M102 92 L162 69 M102 112 L162 133 M198 69 L258 92 M198 133 L258 112" stroke="#60a5fa"/><path d="M286 70 C310 39 317 139 286 134" stroke="#fbbf24" stroke-dasharray="5 4"/></g><text x="47" y="106" fill="#e5f3ff" font-family="Arial" font-size="9">DFT</text><text x="270" y="106" fill="#e5f3ff" font-family="Arial" font-size="9">ML</text><text x="110" y="164" fill="#e5f3ff" font-family="Arial" font-size="10">validated labels · uncertainty · active learning</text><rect y="176" width="360" height="21" fill="#050b13"/><text x="180" y="190" text-anchor="middle" fill="#7aa2c8" font-family="Arial" font-size="8">AI-ASSISTED CONCEPT · NOT COMPUTATIONAL DATA</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="300" viewBox="0 0 560 300" role="img" aria-label="AI-assisted conceptual illustration; not computational data">
+<title>DFT + ML</title>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#050914"/><stop offset=".48" stop-color="#0b2442"/><stop offset="1" stop-color="#24113e"/></linearGradient>
+  <linearGradient id="cyan" x1="0" x2="1"><stop stop-color="#67e8f9"/><stop offset="1" stop-color="#38bdf8"/></linearGradient>
+  <linearGradient id="violet" x1="0" x2="1"><stop stop-color="#c4b5fd"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient>
+  <linearGradient id="gold" x1="0" x2="1"><stop stop-color="#fde68a"/><stop offset="1" stop-color="#f59e0b"/></linearGradient>
+  <radialGradient id="orb"><stop stop-color="#67e8f9" stop-opacity=".92"/><stop offset=".45" stop-color="#8b5cf6" stop-opacity=".55"/><stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/></radialGradient>
+  <filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#020617" flood-opacity=".42"/></filter>
+  <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#7dd3fc" stroke-opacity=".055"/></pattern>
+  <style><![CDATA[
+    .title{font:700 34px Inter,Arial,sans-serif;fill:#f8fafc;letter-spacing:-.7px}
+    .sub{font:400 15px Inter,Arial,sans-serif;fill:#a8c7e8}
+    .kicker{font:700 11px Inter,Arial,sans-serif;fill:#67e8f9;letter-spacing:1.6px}
+    .h{font:700 18px Inter,Arial,sans-serif;fill:#f8fafc}
+    .b{font:400 12px Inter,Arial,sans-serif;fill:#b8cce2}
+    .tiny{font:600 10px Inter,Arial,sans-serif;fill:#90aac5;letter-spacing:.45px}
+    .pill{fill:#0b1f36;stroke:#2f5d85;stroke-width:1}
+  ]]></style>
+</defs>
+<rect width="560" height="300" rx="24" fill="url(#bg)"/>
+<rect width="560" height="300" rx="24" fill="url(#grid)"/>
+<text x="24" y="34" class="kicker">DATASET · UNCERTAINTY · ACTIVE LEARNING</text><text x="24" y="66" class="h" font-size="23">DFT + ML</text><text x="24" y="88" class="b">Leakage-aware labels and bounded predictions</text><rect x="22" y="106" width="516" height="150" rx="20" fill="#07192d" stroke="#2c557a"/><g transform="translate(58 128)"><path d="M0 105H220M0 0V105" stroke="#466786"/><g fill="#67e8f9"><circle cx="20" cy="84" r="4"/><circle cx="48" cy="72" r="4"/><circle cx="78" cy="62" r="4"/><circle cx="113" cy="45" r="4"/><circle cx="150" cy="36" r="4"/><circle cx="192" cy="17" r="4"/></g><path d="M12 91L202 12" stroke="#a78bfa" stroke-width="3"/><path d="M15 104C70 84 125 75 205 23" fill="none" stroke="#f59e0b" stroke-opacity=".5" stroke-width="18"/></g><path d="M350 158c38-28 91-23 122 9" fill="none" stroke="#67e8f9" stroke-width="3" marker-end="url(#none)"/><circle cx="354" cy="181" r="32" fill="#102f4c" stroke="#34d399"/><circle cx="464" cy="181" r="32" fill="#102f4c" stroke="#f59e0b"/><text x="354" y="178" text-anchor="middle" class="tiny">TRAIN</text><text x="354" y="195" text-anchor="middle" class="tiny">grouped</text><text x="464" y="178" text-anchor="middle" class="tiny">QUERY</text><text x="464" y="195" text-anchor="middle" class="tiny">uncertain</text>
+<rect x="0" y="272" width="560" height="28" fill="#020617" fill-opacity=".9"/>
+<text x="542" y="290" text-anchor="end" class="tiny" fill="#7dd3fc">AI-ASSISTED CONCEPTUAL ILLUSTRATION · NOT COMPUTATIONAL DATA</text>
+</svg>

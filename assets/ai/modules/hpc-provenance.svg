@@ -1,1 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="360" height="197" viewBox="0 0 360 197" role="img" aria-label="AI-assisted conceptual illustration; not computational data"><defs><radialGradient id="g"><stop stop-color="#17365a"/><stop offset="1" stop-color="#07111f"/></radialGradient><filter id="gl"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><rect width="360" height="197" rx="16" fill="url(#g)"/><text x="18" y="28" fill="#e5f3ff" font-family="Arial" font-size="14" font-weight="700">HPC + PROVENANCE</text><g fill="#102a47" stroke="#60a5fa"><rect x="38" y="56" width="70" height="92" rx="6"/><rect x="145" y="56" width="70" height="92" rx="6"/><rect x="252" y="56" width="70" height="92" rx="6"/></g><g fill="#2dd4bf"><circle cx="54" cy="75" r="4"/><circle cx="161" cy="75" r="4"/><circle cx="268" cy="75" r="4"/></g><g stroke="#a78bfa" stroke-width="2" stroke-dasharray="4 3"><line x1="108" y1="102" x2="145" y2="102"/><line x1="215" y1="102" x2="252" y2="102"/></g><path d="M63 126 h24 M170 126 h24 M277 126 h24" stroke="#fbbf24" stroke-width="3"/><text x="70" y="166" fill="#e5f3ff" font-family="Arial" font-size="10">job ID · hashes · checkpoints · restart lineage</text><rect y="176" width="360" height="21" fill="#050b13"/><text x="180" y="190" text-anchor="middle" fill="#7aa2c8" font-family="Arial" font-size="8">AI-ASSISTED CONCEPT · NOT COMPUTATIONAL DATA</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="300" viewBox="0 0 560 300" role="img" aria-label="AI-assisted conceptual illustration; not computational data">
+<title>HPC Provenance</title>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#050914"/><stop offset=".48" stop-color="#0b2442"/><stop offset="1" stop-color="#24113e"/></linearGradient>
+  <linearGradient id="cyan" x1="0" x2="1"><stop stop-color="#67e8f9"/><stop offset="1" stop-color="#38bdf8"/></linearGradient>
+  <linearGradient id="violet" x1="0" x2="1"><stop stop-color="#c4b5fd"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient>
+  <linearGradient id="gold" x1="0" x2="1"><stop stop-color="#fde68a"/><stop offset="1" stop-color="#f59e0b"/></linearGradient>
+  <radialGradient id="orb"><stop stop-color="#67e8f9" stop-opacity=".92"/><stop offset=".45" stop-color="#8b5cf6" stop-opacity=".55"/><stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/></radialGradient>
+  <filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#020617" flood-opacity=".42"/></filter>
+  <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#7dd3fc" stroke-opacity=".055"/></pattern>
+  <style><![CDATA[
+    .title{font:700 34px Inter,Arial,sans-serif;fill:#f8fafc;letter-spacing:-.7px}
+    .sub{font:400 15px Inter,Arial,sans-serif;fill:#a8c7e8}
+    .kicker{font:700 11px Inter,Arial,sans-serif;fill:#67e8f9;letter-spacing:1.6px}
+    .h{font:700 18px Inter,Arial,sans-serif;fill:#f8fafc}
+    .b{font:400 12px Inter,Arial,sans-serif;fill:#b8cce2}
+    .tiny{font:600 10px Inter,Arial,sans-serif;fill:#90aac5;letter-spacing:.45px}
+    .pill{fill:#0b1f36;stroke:#2f5d85;stroke-width:1}
+  ]]></style>
+</defs>
+<rect width="560" height="300" rx="24" fill="url(#bg)"/>
+<rect width="560" height="300" rx="24" fill="url(#grid)"/>
+<text x="24" y="34" class="kicker">EXECUTION · RESTART · HASHES</text><text x="24" y="66" class="h" font-size="23">HPC Provenance</text><text x="24" y="88" class="b">Every run traceable from input to accepted artifact</text><rect x="22" y="106" width="516" height="150" rx="20" fill="#07192d" stroke="#2c557a"/><g transform="translate(48 128)"><g fill="#102f4c" stroke="#67e8f9"><rect x="0" y="0" width="110" height="98" rx="14"/><rect x="135" y="0" width="110" height="98" rx="14"/><rect x="270" y="0" width="110" height="98" rx="14"/></g><g class="tiny"><text x="55" y="27" text-anchor="middle">INPUT HASH</text><text x="190" y="27" text-anchor="middle">JOB RECORD</text><text x="325" y="27" text-anchor="middle">OUTPUT HASH</text></g><g fill="#34d399"><circle cx="31" cy="53" r="6"/><circle cx="55" cy="53" r="6"/><circle cx="79" cy="53" r="6"/></g><g fill="#a78bfa"><rect x="160" y="48" width="60" height="9" rx="4"/><rect x="160" y="67" width="42" height="9" rx="4"/></g><path d="M110 49H135M245 49H270" stroke="#fde68a" stroke-width="3"/><rect x="405" y="0" width="72" height="98" rx="14" fill="#102f4c" stroke="#f59e0b"/><text x="441" y="37" text-anchor="middle" class="tiny">RESTART</text><path d="M425 61a17 17 0 1 0 14-19" fill="none" stroke="#f59e0b" stroke-width="3"/><path d="M437 37l8 8-11 4" fill="#f59e0b"/></g>
+<rect x="0" y="272" width="560" height="28" fill="#020617" fill-opacity=".9"/>
+<text x="542" y="290" text-anchor="end" class="tiny" fill="#7dd3fc">AI-ASSISTED CONCEPTUAL ILLUSTRATION · NOT COMPUTATIONAL DATA</text>
+</svg>

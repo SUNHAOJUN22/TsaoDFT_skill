@@ -1,27 +1,37 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-label="AI-assisted conceptual illustration; not computational data">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420" role="img" aria-label="AI-assisted conceptual illustration; not computational data">
+<title>TsaoDFT evidence architecture</title>
 <defs>
-<linearGradient id="bg" x1="0" x2="1"><stop stop-color="#050b16"/><stop offset=".5" stop-color="#102b4d"/><stop offset="1" stop-color="#160d2e"/></linearGradient>
-<radialGradient id="core"><stop stop-color="#8ff7ff"/><stop offset=".45" stop-color="#3478d4"/><stop offset="1" stop-color="#172554"/></radialGradient>
-<filter id="glow"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#050914"/><stop offset=".48" stop-color="#0b2442"/><stop offset="1" stop-color="#24113e"/></linearGradient>
+  <linearGradient id="cyan" x1="0" x2="1"><stop stop-color="#67e8f9"/><stop offset="1" stop-color="#38bdf8"/></linearGradient>
+  <linearGradient id="violet" x1="0" x2="1"><stop stop-color="#c4b5fd"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient>
+  <linearGradient id="gold" x1="0" x2="1"><stop stop-color="#fde68a"/><stop offset="1" stop-color="#f59e0b"/></linearGradient>
+  <radialGradient id="orb"><stop stop-color="#67e8f9" stop-opacity=".92"/><stop offset=".45" stop-color="#8b5cf6" stop-opacity=".55"/><stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/></radialGradient>
+  <filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#020617" flood-opacity=".42"/></filter>
+  <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#7dd3fc" stroke-opacity=".055"/></pattern>
+  <style><![CDATA[
+    .title{font:700 34px Inter,Arial,sans-serif;fill:#f8fafc;letter-spacing:-.7px}
+    .sub{font:400 15px Inter,Arial,sans-serif;fill:#a8c7e8}
+    .kicker{font:700 11px Inter,Arial,sans-serif;fill:#67e8f9;letter-spacing:1.6px}
+    .h{font:700 18px Inter,Arial,sans-serif;fill:#f8fafc}
+    .b{font:400 12px Inter,Arial,sans-serif;fill:#b8cce2}
+    .tiny{font:600 10px Inter,Arial,sans-serif;fill:#90aac5;letter-spacing:.45px}
+    .pill{fill:#0b1f36;stroke:#2f5d85;stroke-width:1}
+  ]]></style>
 </defs>
-<rect width="1200" height="360" rx="24" fill="url(#bg)"/>
-<g opacity=".23" stroke="#76c7ff"><path d="M0 290 C180 230 250 310 410 240 S700 180 830 245 S1070 320 1200 250" fill="none"/><path d="M0 70 C180 130 260 55 420 110 S720 180 900 95 S1080 50 1200 120" fill="none"/></g>
-<g filter="url(#glow)" stroke="#9bdcff" stroke-width="3"><circle cx="155" cy="176" r="22" fill="#12365f"/><circle cx="230" cy="122" r="16" fill="#6d28d9"/><circle cx="245" cy="222" r="18" fill="#0f766e"/><line x1="174" y1="162" x2="216" y2="132"/><line x1="177" y1="191" x2="229" y2="215"/></g>
-<path d="M92 190 C118 86 252 70 302 159 C263 254 142 267 92 190Z" fill="#8b5cf6" opacity=".22"/>
-<path d="M110 174 C150 116 226 111 279 163 C242 215 161 226 110 174Z" fill="#2dd4bf" opacity=".28"/>
-<text x="83" y="302" fill="#bde7ff" font-family="Arial" font-size="18">molecular DFT · orbitals · ESP · TS/IRC</text>
-<circle cx="600" cy="170" r="88" fill="url(#core)" stroke="#9bdcff" stroke-width="4" filter="url(#glow)"/>
-<text x="600" y="161" text-anchor="middle" fill="#ffffff" font-family="Arial" font-weight="700" font-size="34">TsaoDFT</text>
-<text x="600" y="194" text-anchor="middle" fill="#d8f5ff" font-family="Arial" font-size="17">DFT evidence core</text>
-<g fill="#0b1f36" stroke="#60a5fa" stroke-width="2"><rect x="447" y="67" width="92" height="42" rx="12"/><rect x="663" y="67" width="92" height="42" rx="12"/><rect x="447" y="242" width="92" height="42" rx="12"/><rect x="663" y="242" width="92" height="42" rx="12"/></g>
-<g fill="#d9efff" font-family="Arial" font-size="13" text-anchor="middle"><text x="493" y="93">structure</text><text x="709" y="93">HPC</text><text x="493" y="268">ML</text><text x="709" y="268">kinetics</text></g>
-<g stroke="#a78bfa" stroke-width="2" stroke-dasharray="5 4"><line x1="528" y1="109" x2="554" y2="125"/><line x1="672" y1="109" x2="646" y2="125"/><line x1="528" y1="242" x2="554" y2="216"/><line x1="672" y1="242" x2="646" y2="216"/></g>
-<g stroke="#60a5fa" fill="#0f2743" stroke-width="2"><path d="M870 236 L944 196 L1018 236 L944 276 Z"/><path d="M870 236 V151 L944 111 L1018 151 V236"/><path d="M944 111 V196"/></g>
-<g fill="#2dd4bf"><circle cx="870" cy="151" r="9"/><circle cx="944" cy="111" r="9"/><circle cx="1018" cy="151" r="9"/></g>
-<g fill="#fbbf24"><circle cx="907" cy="173" r="8"/><circle cx="981" cy="173" r="8"/></g>
-<path d="M832 92 q45-72 90 0 t90 0 t90 0" fill="none" stroke="#f472b6" stroke-width="4" filter="url(#glow)"/>
-<path d="M832 117 q45-36 90 0 t90 0 t90 0" fill="none" stroke="#2dd4bf" stroke-width="4"/>
-<text x="830" y="302" fill="#bde7ff" font-family="Arial" font-size="18">periodic DFT · surfaces · defects · bands/DOS</text>
-<rect y="327" width="1200" height="33" fill="#030711" opacity=".95"/>
-<text x="600" y="349" text-anchor="middle" fill="#8cbce8" font-family="Arial" font-size="13">AI-ASSISTED CONCEPTUAL ILLUSTRATION · NOT COMPUTATIONAL DATA</text>
+<rect width="1200" height="420" rx="24" fill="url(#bg)"/>
+<rect width="1200" height="420" rx="24" fill="url(#grid)"/>
+<circle cx="600" cy="176" r="140" fill="url(#orb)" opacity=".36"/>
+<path d="M54 84C228 18 347 73 470 143S739 261 1148 62" fill="none" stroke="#38bdf8" stroke-opacity=".18" stroke-width="2"/>
+<path d="M35 300C236 239 378 320 528 245S844 104 1170 268" fill="none" stroke="#c4b5fd" stroke-opacity=".15" stroke-width="2"/>
+<text x="64" y="64" class="kicker">DFT-FIRST · EVIDENCE-LOCKED · MULTISCALE</text>
+<text x="64" y="112" class="title" font-size="42">TsaoDFT</text>
+<text x="64" y="141" class="sub">Auditable computational chemistry from model to evidence</text>
+<g filter="url(#shadow)"><rect x="64" y="184" width="292" height="146" rx="22" fill="#081a30" stroke="#28557d"/><text x="86" y="215" class="h">Molecular evidence</text><text x="86" y="238" class="b">Opt/Freq · TS/IRC · TDDFT · NMR</text><ellipse cx="143" cy="278" rx="48" ry="24" fill="#8b5cf6" opacity=".28" transform="rotate(-18 143 278)"/><ellipse cx="205" cy="278" rx="48" ry="24" fill="#22d3ee" opacity=".28" transform="rotate(18 205 278)"/><g stroke="#b6e8ff" stroke-width="2.2" filter="url(#glow)"><line x1="151" y1="278" x2="198" y2="278"/><circle cx="143" cy="278" r="10" fill="#0ea5e9"/><circle cx="207" cy="278" r="10" fill="#8b5cf6"/></g><rect x="248" y="260" width="82" height="42" rx="12" fill="#0a2946" stroke="#2b6c97"/><text x="289" y="278" text-anchor="middle" class="tiny">SCF ✓</text><text x="289" y="293" text-anchor="middle" class="tiny">modes ✓</text></g>
+<g filter="url(#glow)"><circle cx="600" cy="190" r="88" fill="#081d34" stroke="#67e8f9" stroke-width="2.5"/><circle cx="600" cy="190" r="60" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-dasharray="5 7"/><circle cx="600" cy="190" r="13" fill="#67e8f9"/><circle cx="600" cy="130" r="8" fill="#c4b5fd"/><circle cx="652" cy="220" r="8" fill="#fde68a"/><circle cx="548" cy="220" r="8" fill="#34d399"/><path d="M600 143V177M612 197L642 215M588 197L558 215" stroke="#dbeafe" stroke-width="2"/></g>
+<text x="600" y="304" text-anchor="middle" class="kicker">CALCULATION → ARTIFACT → CLAIM</text>
+<g filter="url(#shadow)"><rect x="844" y="184" width="292" height="146" rx="22" fill="#081a30" stroke="#5a3b86"/><text x="866" y="215" class="h">Periodic materials</text><text x="866" y="238" class="b">Surfaces · defects · bands · NEB</text><g stroke="#89ddff" stroke-width="1.5"><path d="M878 292l46-27 46 27-46 27z" fill="#12314f"/><path d="M878 292v-45l46-27 46 27v45M924 220v45" fill="none"/></g><g fill="#34d399"><circle cx="878" cy="247" r="5"/><circle cx="924" cy="220" r="5"/><circle cx="970" cy="247" r="5"/></g><path d="M1000 304C1020 294 1027 263 1044 274s22 31 39 11 24-42 40-31" fill="none" stroke="#f59e0b" stroke-width="3"/><path d="M1000 289C1020 276 1036 279 1051 258s29-8 42-25 25-15 34-29" fill="none" stroke="#a78bfa" stroke-width="3"/></g>
+<rect x="392" y="50" width="126" height="30" rx="15" class="pill"/><circle cx="408" cy="65" r="4" fill="#34d399"/><text x="421" y="70" class="tiny" fill="#dbeafe">STRUCTURE</text><rect x="530" y="50" width="112" height="30" rx="15" class="pill"/><circle cx="546" cy="65" r="4" fill="#67e8f9"/><text x="559" y="70" class="tiny" fill="#dbeafe">DFT</text><rect x="654" y="50" width="132" height="30" rx="15" class="pill"/><circle cx="670" cy="65" r="4" fill="#fde68a"/><text x="683" y="70" class="tiny" fill="#dbeafe">VALIDATE</text><rect x="419" y="338" width="98" height="30" rx="15" class="pill"/><circle cx="435" cy="353" r="4" fill="#f472b6"/><text x="448" y="358" class="tiny" fill="#dbeafe">HPC</text><rect x="528" y="338" width="102" height="30" rx="15" class="pill"/><circle cx="544" cy="353" r="4" fill="#a78bfa"/><text x="557" y="358" class="tiny" fill="#dbeafe">ML</text><rect x="641" y="338" width="140" height="30" rx="15" class="pill"/><circle cx="657" cy="353" r="4" fill="#34d399"/><text x="670" y="358" class="tiny" fill="#dbeafe">KINETICS</text>
+<rect x="0" y="392" width="1200" height="28" fill="#020617" fill-opacity=".9"/>
+<text x="1182" y="410" text-anchor="end" class="tiny" fill="#7dd3fc">AI-ASSISTED CONCEPTUAL ILLUSTRATION · NOT COMPUTATIONAL DATA</text>
 </svg>

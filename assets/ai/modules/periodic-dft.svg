@@ -1,4 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="560" height="300" viewBox="0 0 560 300" role="img" aria-label="AI-assisted conceptual illustration; not computational data">
 <title>Periodic DFT</title>
-<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#050914"/><stop offset=".48" stop-color="#0b2442"/><stop offset="1" stop-color="#24113e"/></linearGradient><filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter><pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#7dd3fc" stroke-opacity=".055"/></pattern><style><![CDATA[.kicker{font:700 11px Inter,Arial,sans-serif;fill:#67e8f9;letter-spacing:1.6px}.h{font:700 18px Inter,Arial,sans-serif;fill:#f8fafc}.b{font:400 12px Inter,Arial,sans-serif;fill:#b8cce2}.tiny{font:600 10px Inter,Arial,sans-serif;fill:#90aac5;letter-spacing:.45px}]]></style></defs>
-<rect width="560" height="300" rx="24" fill="url(#bg)"/><rect width="560" height="300" rx="24" fill="url(#grid)"/><text x="24" y="34" class="kicker">SOLIDS · SURFACES · DEFECTS</text><text x="24" y="66" class="h" font-size="23">Periodic DFT</text><text x="24" y="88" class="b">Comparable energies, convergence and provenance</text><rect x="22" y="106" width="516" height="150" rx="20" fill="#07192d" stroke="#2c557a"/><g stroke="#8adfff" stroke-width="1.7"><path d="M70 223l73-42 73 42-73 42z" fill="#102f4c"/><path d="M70 223v-66l73-42 73 42v66M143 115v66" fill="none"/></g><g fill="#34d399"><circle cx="70" cy="157" r="7"/><circle cx="143" cy="115" r="7"/><circle cx="216" cy="157" r="7"/></g><g transform="translate(278 128)"><path d="M0 105H226M0 0V105" stroke="#466786"/><path d="M8 91C43 84 60 39 91 61s44 35 69 2 39-33 59-51" fill="none" stroke="#c4b5fd" stroke-width="3"/><path d="M8 75C36 54 59 71 84 36s49-19 71-6 43 8 64-17" fill="none" stroke="#f59e0b" stroke-width="3"/><text x="110" y="126" text-anchor="middle" class="tiny">BANDS / DOS / DEFECTS</text></g><rect x="0" y="272" width="560" height="28" fill="#020617" fill-opacity=".9"/><text x="542" y="290" text-anchor="end" class="tiny" fill="#7dd3fc">AI-ASSISTED CONCEPTUAL ILLUSTRATION · NOT COMPUTATIONAL DATA</text></svg>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#050914"/><stop offset=".48" stop-color="#0b2442"/><stop offset="1" stop-color="#24113e"/></linearGradient>
+  <linearGradient id="cyan" x1="0" x2="1"><stop stop-color="#67e8f9"/><stop offset="1" stop-color="#38bdf8"/></linearGradient>
+  <linearGradient id="violet" x1="0" x2="1"><stop stop-color="#c4b5fd"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient>
+  <linearGradient id="gold" x1="0" x2="1"><stop stop-color="#fde68a"/><stop offset="1" stop-color="#f59e0b"/></linearGradient>
+  <radialGradient id="orb"><stop stop-color="#67e8f9" stop-opacity=".92"/><stop offset=".45" stop-color="#8b5cf6" stop-opacity=".55"/><stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/></radialGradient>
+  <filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#020617" flood-opacity=".42"/></filter>
+  <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#7dd3fc" stroke-opacity=".055"/></pattern>
+  <style><![CDATA[
+    .title{font:700 34px Inter,Arial,sans-serif;fill:#f8fafc;letter-spacing:-.7px}
+    .sub{font:400 15px Inter,Arial,sans-serif;fill:#a8c7e8}
+    .kicker{font:700 11px Inter,Arial,sans-serif;fill:#67e8f9;letter-spacing:1.6px}
+    .h{font:700 18px Inter,Arial,sans-serif;fill:#f8fafc}
+    .b{font:400 12px Inter,Arial,sans-serif;fill:#b8cce2}
+    .tiny{font:600 10px Inter,Arial,sans-serif;fill:#90aac5;letter-spacing:.45px}
+    .pill{fill:#0b1f36;stroke:#2f5d85;stroke-width:1}
+  ]]></style>
+</defs>
+<rect width="560" height="300" rx="24" fill="url(#bg)"/>
+<rect width="560" height="300" rx="24" fill="url(#grid)"/>
+<text x="24" y="34" class="kicker">SOLIDS · SURFACES · DEFECTS</text><text x="24" y="66" class="h" font-size="23">Periodic DFT</text><text x="24" y="88" class="b">Comparable energies, convergence and provenance</text><rect x="22" y="106" width="516" height="150" rx="20" fill="#07192d" stroke="#2c557a"/><g stroke="#8adfff" stroke-width="1.7"><path d="M70 223l73-42 73 42-73 42z" fill="#102f4c"/><path d="M70 223v-66l73-42 73 42v66M143 115v66" fill="none"/></g><g fill="#34d399"><circle cx="70" cy="157" r="7"/><circle cx="143" cy="115" r="7"/><circle cx="216" cy="157" r="7"/></g><g transform="translate(278 128)"><path d="M0 105H226M0 0V105" stroke="#466786"/><path d="M8 91C43 84 60 39 91 61s44 35 69 2 39-33 59-51" fill="none" stroke="#c4b5fd" stroke-width="3"/><path d="M8 75C36 54 59 71 84 36s49-19 71-6 43 8 64-17" fill="none" stroke="#f59e0b" stroke-width="3"/><text x="110" y="126" text-anchor="middle" class="tiny">BANDS / DOS / DEFECTS</text></g>
+<rect x="0" y="272" width="560" height="28" fill="#020617" fill-opacity=".9"/>
+<text x="542" y="290" text-anchor="end" class="tiny" fill="#7dd3fc">AI-ASSISTED CONCEPTUAL ILLUSTRATION · NOT COMPUTATIONAL DATA</text>
+</svg>

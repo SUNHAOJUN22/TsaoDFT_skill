@@ -21,16 +21,42 @@
 </defs>
 <rect width="1200" height="420" rx="24" fill="url(#bg)"/>
 <rect width="1200" height="420" rx="24" fill="url(#grid)"/>
+
 <circle cx="600" cy="176" r="140" fill="url(#orb)" opacity=".36"/>
 <path d="M54 84C228 18 347 73 470 143S739 261 1148 62" fill="none" stroke="#38bdf8" stroke-opacity=".18" stroke-width="2"/>
 <path d="M35 300C236 239 378 320 528 245S844 104 1170 268" fill="none" stroke="#c4b5fd" stroke-opacity=".15" stroke-width="2"/>
 <text x="64" y="64" class="kicker">DFT-FIRST · EVIDENCE-LOCKED · MULTISCALE</text>
 <text x="64" y="112" class="title" font-size="42">TsaoDFT</text>
 <text x="64" y="141" class="sub">Auditable computational chemistry from model to evidence</text>
-<g filter="url(#shadow)"><rect x="64" y="184" width="292" height="146" rx="22" fill="#081a30" stroke="#28557d"/><text x="86" y="215" class="h">Molecular evidence</text><text x="86" y="238" class="b">Opt/Freq · TS/IRC · TDDFT · NMR</text><ellipse cx="143" cy="278" rx="48" ry="24" fill="#8b5cf6" opacity=".28" transform="rotate(-18 143 278)"/><ellipse cx="205" cy="278" rx="48" ry="24" fill="#22d3ee" opacity=".28" transform="rotate(18 205 278)"/><g stroke="#b6e8ff" stroke-width="2.2" filter="url(#glow)"><line x1="151" y1="278" x2="198" y2="278"/><circle cx="143" cy="278" r="10" fill="#0ea5e9"/><circle cx="207" cy="278" r="10" fill="#8b5cf6"/></g><rect x="248" y="260" width="82" height="42" rx="12" fill="#0a2946" stroke="#2b6c97"/><text x="289" y="278" text-anchor="middle" class="tiny">SCF ✓</text><text x="289" y="293" text-anchor="middle" class="tiny">modes ✓</text></g>
-<g filter="url(#glow)"><circle cx="600" cy="190" r="88" fill="#081d34" stroke="#67e8f9" stroke-width="2.5"/><circle cx="600" cy="190" r="60" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-dasharray="5 7"/><circle cx="600" cy="190" r="13" fill="#67e8f9"/><circle cx="600" cy="130" r="8" fill="#c4b5fd"/><circle cx="652" cy="220" r="8" fill="#fde68a"/><circle cx="548" cy="220" r="8" fill="#34d399"/><path d="M600 143V177M612 197L642 215M588 197L558 215" stroke="#dbeafe" stroke-width="2"/></g>
+<!-- molecular field -->
+<g filter="url(#shadow)">
+ <rect x="64" y="184" width="292" height="146" rx="22" fill="#081a30" stroke="#28557d"/>
+ <text x="86" y="215" class="h">Molecular evidence</text>
+ <text x="86" y="238" class="b">Opt/Freq · TS/IRC · TDDFT · NMR</text>
+ <ellipse cx="143" cy="278" rx="48" ry="24" fill="#8b5cf6" opacity=".28" transform="rotate(-18 143 278)"/>
+ <ellipse cx="205" cy="278" rx="48" ry="24" fill="#22d3ee" opacity=".28" transform="rotate(18 205 278)"/>
+ <g stroke="#b6e8ff" stroke-width="2.2" filter="url(#glow)"><line x1="151" y1="278" x2="198" y2="278"/><circle cx="143" cy="278" r="10" fill="#0ea5e9"/><circle cx="207" cy="278" r="10" fill="#8b5cf6"/></g>
+ <rect x="248" y="260" width="82" height="42" rx="12" fill="#0a2946" stroke="#2b6c97"/><text x="289" y="278" text-anchor="middle" class="tiny">SCF ✓</text><text x="289" y="293" text-anchor="middle" class="tiny">modes ✓</text>
+</g>
+<!-- core -->
+<g filter="url(#glow)">
+ <circle cx="600" cy="190" r="88" fill="#081d34" stroke="#67e8f9" stroke-width="2.5"/>
+ <circle cx="600" cy="190" r="60" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-dasharray="5 7"/>
+ <circle cx="600" cy="190" r="13" fill="#67e8f9"/>
+ <circle cx="600" cy="130" r="8" fill="#c4b5fd"/><circle cx="652" cy="220" r="8" fill="#fde68a"/><circle cx="548" cy="220" r="8" fill="#34d399"/>
+ <path d="M600 143V177M612 197L642 215M588 197L558 215" stroke="#dbeafe" stroke-width="2"/>
+</g>
 <text x="600" y="304" text-anchor="middle" class="kicker">CALCULATION → ARTIFACT → CLAIM</text>
-<g filter="url(#shadow)"><rect x="844" y="184" width="292" height="146" rx="22" fill="#081a30" stroke="#5a3b86"/><text x="866" y="215" class="h">Periodic materials</text><text x="866" y="238" class="b">Surfaces · defects · bands · NEB</text><g stroke="#89ddff" stroke-width="1.5"><path d="M878 292l46-27 46 27-46 27z" fill="#12314f"/><path d="M878 292v-45l46-27 46 27v45M924 220v45" fill="none"/></g><g fill="#34d399"><circle cx="878" cy="247" r="5"/><circle cx="924" cy="220" r="5"/><circle cx="970" cy="247" r="5"/></g><path d="M1000 304C1020 294 1027 263 1044 274s22 31 39 11 24-42 40-31" fill="none" stroke="#f59e0b" stroke-width="3"/><path d="M1000 289C1020 276 1036 279 1051 258s29-8 42-25 25-15 34-29" fill="none" stroke="#a78bfa" stroke-width="3"/></g>
+<!-- periodic field -->
+<g filter="url(#shadow)">
+ <rect x="844" y="184" width="292" height="146" rx="22" fill="#081a30" stroke="#5a3b86"/>
+ <text x="866" y="215" class="h">Periodic materials</text>
+ <text x="866" y="238" class="b">Surfaces · defects · bands · NEB</text>
+ <g stroke="#89ddff" stroke-width="1.5"><path d="M878 292l46-27 46 27-46 27z" fill="#12314f"/><path d="M878 292v-45l46-27 46 27v45M924 220v45" fill="none"/></g>
+ <g fill="#34d399"><circle cx="878" cy="247" r="5"/><circle cx="924" cy="220" r="5"/><circle cx="970" cy="247" r="5"/></g>
+ <path d="M1000 304C1020 294 1027 263 1044 274s22 31 39 11 24-42 40-31" fill="none" stroke="#f59e0b" stroke-width="3"/>
+ <path d="M1000 289C1020 276 1036 279 1051 258s29-8 42-25 25-15 34-29" fill="none" stroke="#a78bfa" stroke-width="3"/>
+</g>
 <rect x="392" y="50" width="126" height="30" rx="15" class="pill"/><circle cx="408" cy="65" r="4" fill="#34d399"/><text x="421" y="70" class="tiny" fill="#dbeafe">STRUCTURE</text><rect x="530" y="50" width="112" height="30" rx="15" class="pill"/><circle cx="546" cy="65" r="4" fill="#67e8f9"/><text x="559" y="70" class="tiny" fill="#dbeafe">DFT</text><rect x="654" y="50" width="132" height="30" rx="15" class="pill"/><circle cx="670" cy="65" r="4" fill="#fde68a"/><text x="683" y="70" class="tiny" fill="#dbeafe">VALIDATE</text><rect x="419" y="338" width="98" height="30" rx="15" class="pill"/><circle cx="435" cy="353" r="4" fill="#f472b6"/><text x="448" y="358" class="tiny" fill="#dbeafe">HPC</text><rect x="528" y="338" width="102" height="30" rx="15" class="pill"/><circle cx="544" cy="353" r="4" fill="#a78bfa"/><text x="557" y="358" class="tiny" fill="#dbeafe">ML</text><rect x="641" y="338" width="140" height="30" rx="15" class="pill"/><circle cx="657" cy="353" r="4" fill="#34d399"/><text x="670" y="358" class="tiny" fill="#dbeafe">KINETICS</text>
 <rect x="0" y="392" width="1200" height="28" fill="#020617" fill-opacity=".9"/>
 <text x="1182" y="410" text-anchor="end" class="tiny" fill="#7dd3fc">AI-ASSISTED CONCEPTUAL ILLUSTRATION · NOT COMPUTATIONAL DATA</text>

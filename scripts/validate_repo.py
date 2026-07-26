@@ -14,15 +14,42 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 TEXT_SUFFIXES = {
-    ".md", ".yaml", ".yml", ".json", ".py", ".gjf", ".tcl", ".txt",
-    ".cff", ".toml", ".sh", ".ps1", ".svg",
+    ".md",
+    ".yaml",
+    ".yml",
+    ".json",
+    ".py",
+    ".gjf",
+    ".tcl",
+    ".txt",
+    ".cff",
+    ".toml",
+    ".sh",
+    ".ps1",
+    ".svg",
 }
-IGNORED_DIRS = {".git", ".venv", "venv", "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache"}
+IGNORED_DIRS = {
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+}
 FORBIDDEN_PATH_PATTERNS = (
     r"\b[A-Za-z]:\\(?:Users|Documents|Projects|codex|work|data)\\",
     r"/home/[^/]+/",
     r"/Users/[^/]+/",
 )
+FORBIDDEN_ROOT_ENTRIES = {
+    ".v05-workflow-probe",
+    "_maintenance",
+    "_patch_bootstrap",
+    "_v05_bundle",
+}
+BACKUP_SUFFIXES = (".bak", ".old", ".orig", ".rej", ".swp", ".tmp", "~")
+BASE64_PAYLOAD_RE = re.compile(r"[A-Za-z0-9+/=\r\n]+\Z")
 REQUIRED_DEMOS = {
     "workflow-architecture.svg",
     "wavefunction-esp-gallery.svg",
@@ -49,6 +76,26 @@ def iter_files(root: Path) -> Iterable[Path]:
             yield path
 
 
+def audit_repository_shape(failures: list[str]) -> None:
+    for name in sorted(FORBIDDEN_ROOT_ENTRIES):
+        if (ROOT / name).exists():
+            failures.append(f"obsolete temporary root entry remains: {name}")
+
+    for child in ROOT.iterdir():
+        if child.name.startswith("_"):
+            failures.append(f"private bootstrap/bundle entry is forbidden at repository root: {child.name}")
+        if child.name.endswith(BACKUP_SUFFIXES):
+            failures.append(f"backup or editor-temporary root entry is forbidden: {child.name}")
+
+    workflows = ROOT / ".github" / "workflows"
+    if not workflows.is_dir():
+        failures.append("missing .github/workflows directory")
+        return
+    workflow_files = sorted(path.name for path in workflows.iterdir() if path.is_file())
+    if workflow_files != ["ci.yml"]:
+        failures.append(f"unexpected workflow files: {workflow_files}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--strict", action="store_true")
@@ -60,25 +107,34 @@ def main() -> int:
     checks: list[dict[str, Any]] = []
 
     required_root = (
-        "README.md", "README_EN.md", "LICENSE", "VERSION", "AGENTS.md",
-        "requirements.txt", "skills", "scripts", "tests", "docs",
-        ".codex-plugin/plugin.json", ".github/workflows/ci.yml",
-        "scripts/quality_gate.py", "scripts/generate_readme_demos.py",
-        "scripts/validate_ai_assets.py", "scripts/validate_readme_visuals.py",
-        "docs/ENGINE_SUPPORT_MATRIX.md", "docs/CAPABILITY_STATUS.yaml",
-        "docs/AI_IMAGE_GOVERNANCE.md", "assets/ai/manifest.yaml",
+        "README.md",
+        "README_EN.md",
+        "LICENSE",
+        "VERSION",
+        "AGENTS.md",
+        "pyproject.toml",
+        "requirements.txt",
+        "requirements-dev.txt",
+        "skills",
+        "scripts",
+        "tests",
+        "docs",
+        ".codex-plugin/plugin.json",
+        ".github/workflows/ci.yml",
+        "scripts/quality_gate.py",
+        "scripts/generate_readme_demos.py",
+        "scripts/validate_ai_assets.py",
+        "scripts/validate_readme_visuals.py",
+        "docs/ENGINE_SUPPORT_MATRIX.md",
+        "docs/CAPABILITY_STATUS.yaml",
+        "docs/AI_IMAGE_GOVERNANCE.md",
+        "assets/ai/manifest.yaml",
     )
     for rel in required_root:
         if not (ROOT / rel).exists():
             failures.append(f"missing root path: {rel}")
 
-    workflows = ROOT / ".github" / "workflows"
-    if workflows.is_dir():
-        files = sorted(path.name for path in workflows.iterdir() if path.is_file())
-        if files != ["ci.yml"]:
-            failures.append(f"unexpected workflow files: {files}")
-    if (ROOT / "_maintenance").exists():
-        failures.append("temporary _maintenance payload remains in repository")
+    audit_repository_shape(failures)
 
     skills_root = ROOT / "skills"
     skill_dirs = sorted(path for path in skills_root.iterdir() if path.is_dir()) if skills_root.is_dir() else []
@@ -125,7 +181,9 @@ def main() -> int:
             else:
                 if release and capability.get("release") != release:
                     failures.append("CAPABILITY_STATUS release mismatch")
-                registered = {item.get("skill") for item in capability.get("capabilities", []) if isinstance(item, dict)}
+                registered = {
+                    item.get("skill") for item in capability.get("capabilities", []) if isinstance(item, dict)
+                }
                 missing = {skill.name for skill in skill_dirs} - registered
                 if missing:
                     failures.append(f"skills missing from CAPABILITY_STATUS: {sorted(missing)}")
@@ -136,9 +194,14 @@ def main() -> int:
     for path in iter_files(ROOT):
         if path.name == "SHA256SUMS" or path.resolve() == Path(__file__).resolve():
             continue
+        rel = path.relative_to(ROOT)
+        if path.name.endswith(BACKUP_SUFFIXES):
+            failures.append(f"backup or editor-temporary file is forbidden: {rel}")
+        if path.stat().st_size == 0:
+            failures.append(f"empty file is forbidden: {rel}")
+            continue
         if path.suffix.lower() not in TEXT_SUFFIXES and path.name not in {"VERSION", "LICENSE"}:
             continue
-        rel = path.relative_to(ROOT)
         try:
             text = path.read_text(encoding="utf-8")
         except UnicodeDecodeError as exc:
@@ -147,6 +210,8 @@ def main() -> int:
         checked_files += 1
         if "\ufffd" in text:
             failures.append(f"UTF-8 replacement character in {rel}")
+        if path.suffix.lower() == ".txt" and path.stat().st_size > 65_536 and BASE64_PAYLOAD_RE.fullmatch(text):
+            failures.append(f"large encoded bootstrap payload is forbidden: {rel}")
         for pattern in FORBIDDEN_PATH_PATTERNS:
             if re.search(pattern, text):
                 warnings.append(f"possible local absolute path in {rel}")
@@ -185,10 +250,12 @@ def main() -> int:
         elif "SYNTHETIC DEMO · NOT SCIENTIFIC DATA" not in path.read_text(encoding="utf-8"):
             failures.append(f"demo lacks synthetic-data notice: {path.relative_to(ROOT)}")
 
-    checks.extend((
-        {"check": "text-files", "count": checked_files, "ok": True},
-        {"check": "skills", "count": len(skill_dirs), "ok": bool(skill_dirs)},
-    ))
+    checks.extend(
+        (
+            {"check": "text-files", "count": checked_files, "ok": True},
+            {"check": "skills", "count": len(skill_dirs), "ok": bool(skill_dirs)},
+        )
+    )
     if args.strict:
         failures.extend(f"strict warning: {item}" for item in warnings)
 

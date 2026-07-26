@@ -35,6 +35,7 @@
     <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
   </filter>
   <style><![CDATA[
+    .sans{font-family:Inter,Segoe UI,Arial,sans-serif}
     .eyebrow{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:2.1px;fill:#67e8f9}
     .title{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:66px;font-weight:750;letter-spacing:-2px;fill:#f8fafc}
     .subtitle{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:20px;font-weight:400;fill:#b9cfe3}

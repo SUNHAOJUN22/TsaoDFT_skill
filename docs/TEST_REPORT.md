@@ -19,6 +19,20 @@ Version: `0.4.0-alpha.1`
 | `tsao-dft-kinetics-multiscale` | 5 | PASS |
 | `tsao-dft-catalysis-profile` | 5 | PASS |
 
+Every discovered suite must execute at least one test. A missing, unparseable or zero-test suite now fails the repository quality gate instead of producing a false green result.
+
+## Static quality and repository hygiene
+
+- Ruff is pinned in `requirements-dev.txt` and enforced for both lint and formatting;
+- the initial full-repository Ruff audit identified 1,173 findings across 94 Python files;
+- automated normalization was followed by exact review and repair of the remaining semantic and robustness findings;
+- the final enforced Ruff result is zero findings;
+- runtime dependencies now have explicit compatible upper bounds;
+- 14 obsolete bootstrap, patch-bundle and workflow-probe files were removed from the repository root;
+- strict validation permanently rejects private root bundles, workflow probes, backup/editor files, empty files and large encoded bootstrap payloads;
+- `.github/workflows/ci.yml` is the only permitted workflow file;
+- GitHub Actions dependencies are pinned to immutable commit SHAs.
+
 ## Deterministic coverage
 
 - AI-generated README asset manifest, SHA-256 integrity, dimensions, generation provenance, visible disclosure and non-quantitative policy;
@@ -44,7 +58,7 @@ Version: `0.4.0-alpha.1`
 ## Commands
 
 ```bash
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt
 python scripts/quality_gate.py
 ```
 
@@ -55,6 +69,8 @@ python scripts/generate_readme_demos.py
 python scripts/validate_catalog.py
 python scripts/validate_ai_assets.py
 python scripts/validate_readme_visuals.py --strict
+python -m ruff check .
+python -m ruff format --check .
 python scripts/validate_repo.py --strict
 python scripts/run_all_tests.py
 ```

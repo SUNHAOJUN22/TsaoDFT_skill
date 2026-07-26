@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-68%20passing-16A34A" alt="68 tests passing">
+  <img src="https://img.shields.io/badge/tests-70%20passing-16A34A" alt="70 tests passing">
   <img src="https://img.shields.io/badge/support-L0%E2%80%93L3-6D5DFB" alt="Support levels L0 to L3">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
@@ -98,6 +98,7 @@ validate all versioned demo assets
 → catalog validation
 → minimal AI-cover integrity and provenance
 → curated README visual completeness
+→ offline bilingual README local-link validation
 → Ruff lint
 → Ruff formatting check
 → strict repository audit
@@ -111,6 +112,7 @@ python scripts/generate_readme_demos.py
 python scripts/validate_catalog.py
 python scripts/validate_ai_assets.py
 python scripts/validate_readme_visuals.py --strict
+python scripts/validate_readme_links.py
 python -m ruff check .
 python -m ruff format --check .
 python scripts/validate_repo.py --strict

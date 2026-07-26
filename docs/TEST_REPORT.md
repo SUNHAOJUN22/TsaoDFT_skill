@@ -5,11 +5,11 @@ Version: `0.4.0-alpha.1`
 
 ## Result
 
-**PASS — 68 unit tests across 9 isolated suites, 0 failed suites.**
+**PASS — 70 unit tests across 9 isolated suites, 0 failed suites.**
 
 | Suite | Tests | Result |
 |---|---:|---|
-| Repository, catalog, installer, plugin, minimal AI-cover governance, demo-asset integrity, curated README visual completeness and strict validator | 15 | PASS |
+| Repository, catalog, installer, plugin, minimal AI-cover governance, demo-asset integrity, curated README visual completeness, offline link integrity and strict validator | 17 | PASS |
 | `tsao-dft-suite` | 4 | PASS |
 | `tsao-dft-researcher` | 16 | PASS |
 | `tsao-structure-prep` | 4 | PASS |
@@ -33,12 +33,14 @@ Every discovered suite must execute at least one test. A missing, unparseable or
 - `.github/workflows/ci.yml` is the only permitted workflow file;
 - GitHub Actions dependencies are pinned to immutable commit SHAs.
 
-## Visual and deterministic coverage
+## Visual, link and deterministic coverage
 
 - exactly one governed AI-assisted README cover, with SHA-256 integrity, dimensions, provenance, visible disclosure and non-quantitative policy;
 - no AI module-card gallery or deprecated `assets/ai/modules/` references;
 - curated bilingual README embedding of the cover and five representative deterministic demonstrations;
 - strict read-only validation of all eight versioned demo SVGs, including XML, exact dimensions, titles, accessible descriptions and visible synthetic-data notices;
+- offline validation of every bilingual README local file, directory and Markdown-anchor link, while external URLs are never requested;
+- explicit failure for missing, unsafe or unsupported local link targets;
 - explicit failure for missing, degraded or placeholder demo assets, with no automatic fallback writes;
 - explicit rejection of wording that presents conceptual illustrations as calculated orbitals, surfaces or scientific results;
 - local raster review of the editorial `premium_scientific_v5` cover before publication.
@@ -74,6 +76,7 @@ python scripts/generate_readme_demos.py
 python scripts/validate_catalog.py
 python scripts/validate_ai_assets.py
 python scripts/validate_readme_visuals.py --strict
+python scripts/validate_readme_links.py
 python -m ruff check .
 python -m ruff format --check .
 python scripts/validate_repo.py --strict

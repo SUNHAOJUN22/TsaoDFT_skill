@@ -7,11 +7,12 @@
 - Deleted seven redundant AI module-card SVGs and prohibited deprecated `assets/ai/modules/` references from returning.
 - Kept all eight deterministic demo assets under strict, read-only integrity validation while decoupling asset validation from README curation.
 - Added bilingual README cross-validation for the single governed cover and the curated scientific demonstrations.
+- Added an offline bilingual README link gate for local files, directories and Markdown anchors; external URLs are never requested by CI.
 - Replaced the old demo placeholder fallback with strict SVG integrity checks; missing or degraded figures fail CI instead of generating low-quality artwork.
 - Hardened CI with Python 3.10/3.12/3.13, pinned Ruff lint/format gates, dependency bounds, concurrency control, failure-log artifacts, commit statuses and manual dispatch.
 - Removed obsolete issue-triggered bootstrap, README-patch, clean-rebuild and self-attestation workflows; `ci.yml` is the single permanent quality gate.
 - Removed stale maintenance payloads, root patch bundles and workflow probes; closed obsolete maintenance issues.
-- Expanded the repository test count from 63 to 68 with AI-governance, curated visual-completeness and read-only demo-validator coverage.
+- Expanded the repository test count from 63 to 70 with AI-governance, curated visual-completeness, offline link-integrity and read-only demo-validator coverage.
 
 ## 0.4.0-alpha.1 — 2026-07-24
 

@@ -3,10 +3,10 @@ from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 import py_compile
 import re
 import sys
+from pathlib import Path
 from typing import Any
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -50,7 +50,9 @@ def audit(skill_dir: Path) -> dict[str, Any]:
         for key in ("name", "description", "license", "compatibility", "metadata"):
             if key not in fm:
                 failures.append(f"SKILL.md frontmatter missing: {key}")
-        checks.append({"check": "skill-frontmatter", "ok": not any("frontmatter" in x for x in failures), "name": fm.get("name")})
+        checks.append(
+            {"check": "skill-frontmatter", "ok": not any("frontmatter" in x for x in failures), "name": fm.get("name")}
+        )
     except Exception as exc:
         failures.append(str(exc))
 
@@ -71,7 +73,13 @@ def audit(skill_dir: Path) -> dict[str, Any]:
                 for rel in payload.get("load", []) or []:
                     if not (skill_dir / str(rel)).exists():
                         failures.append(f"route {route} references missing file: {rel}")
-        checks.append({"check": "manifest-references", "ok": not any("manifest" in x or "route " in x for x in failures), "routes": len(routes)})
+        checks.append(
+            {
+                "check": "manifest-references",
+                "ok": not any("manifest" in x or "route " in x for x in failures),
+                "routes": len(routes),
+            }
+        )
     except Exception as exc:
         failures.append(f"manifest parse failed: {exc}")
 

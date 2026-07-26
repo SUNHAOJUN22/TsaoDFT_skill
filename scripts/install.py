@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Install, validate, or uninstall TsaoDFT Agent Skills."""
+
 from __future__ import annotations
 
 import argparse
@@ -15,9 +16,17 @@ AVAILABLE = sorted(path.name for path in SKILLS_DIR.iterdir() if path.is_dir() a
 
 def default_target(agent: str, scope: str) -> Path:
     if scope == "project":
-        mapping = {"codex": Path.cwd() / ".codex/skills", "claude-code": Path.cwd() / ".claude/skills", "open-agent": Path.cwd() / ".agents/skills"}
+        mapping = {
+            "codex": Path.cwd() / ".codex/skills",
+            "claude-code": Path.cwd() / ".claude/skills",
+            "open-agent": Path.cwd() / ".agents/skills",
+        }
     else:
-        mapping = {"codex": Path.home() / ".codex/skills", "claude-code": Path.home() / ".claude/skills", "open-agent": Path.home() / ".agents/skills"}
+        mapping = {
+            "codex": Path.home() / ".codex/skills",
+            "claude-code": Path.home() / ".claude/skills",
+            "open-agent": Path.home() / ".agents/skills",
+        }
     return mapping[agent]
 
 
@@ -26,7 +35,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--agent", choices=["codex", "claude-code", "open-agent"], default="codex")
     parser.add_argument("--scope", choices=["user", "project"], default="user")
     parser.add_argument("--target", type=Path)
-    parser.add_argument("--skill", action="append", dest="skills", choices=AVAILABLE + ["all"], default=[])
+    parser.add_argument("--skill", action="append", dest="skills", choices=[*AVAILABLE, "all"], default=[])
     parser.add_argument("--method", choices=["copy", "symlink"], default="copy")
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--dry-run", action="store_true")

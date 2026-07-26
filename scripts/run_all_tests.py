@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """Run root and per-Skill unittest suites deterministically and report a stable summary."""
+
 from __future__ import annotations
 
 import argparse
 import json
 import os
-from pathlib import Path
 import re
 import subprocess
 import sys
+from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]

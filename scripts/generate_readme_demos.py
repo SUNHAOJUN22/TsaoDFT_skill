@@ -5,14 +5,15 @@ The historical command name is retained for compatibility. The command is delibe
 read-only: a missing, malformed, undersized, unlabeled, or placeholder asset fails the
 quality gate instead of being silently replaced with low-quality fallback artwork.
 """
+
 from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 import re
-from typing import Any
 import xml.etree.ElementTree as ET
+from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "assets" / "demo"
@@ -94,8 +95,7 @@ def validate() -> tuple[list[str], list[dict[str, Any]]]:
             continue
         if (width, height) != (expected_width, expected_height):
             failures.append(
-                f"demo dimensions changed for {rel}: {(width, height)} != "
-                f"{(expected_width, expected_height)}"
+                f"demo dimensions changed for {rel}: {(width, height)} != {(expected_width, expected_height)}"
             )
         if root.attrib.get("role") != "img":
             failures.append(f"demo lacks role=img: {rel}")

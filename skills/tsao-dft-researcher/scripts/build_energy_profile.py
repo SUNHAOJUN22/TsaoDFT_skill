@@ -45,7 +45,13 @@ def main() -> int:
         writer = csv.DictWriter(handle, fieldnames=["label", args.column, "relative_kcal_mol"])
         writer.writeheader()
         for row in rows:
-            writer.writerow({"label": row["label"], args.column: row["energy"], "relative_kcal_mol": f"{row['relative_kcal_mol']:.4f}"})
+            writer.writerow(
+                {
+                    "label": row["label"],
+                    args.column: row["energy"],
+                    "relative_kcal_mol": f"{row['relative_kcal_mol']:.4f}",
+                }
+            )
 
     try:
         import matplotlib.pyplot as plt
@@ -60,14 +66,14 @@ def main() -> int:
     ax.set_ylabel("Relative energy (kcal mol$^{-1}$)")
     ax.set_xlabel("Reaction coordinate")
     ax.axhline(0.0, linewidth=0.8)
-    for xi, yi in zip(x, y):
+    for xi, yi in zip(x, y, strict=False):
         ax.annotate(f"{yi:.1f}", (xi, yi), xytext=(0, 6), textcoords="offset points", ha="center", fontsize=8)
     fig.tight_layout()
     fig.savefig(args.out.with_suffix(".svg"), bbox_inches="tight")
     fig.savefig(args.out.with_suffix(".pdf"), bbox_inches="tight")
     fig.savefig(args.out.with_suffix(".png"), dpi=600, bbox_inches="tight")
     plt.close(fig)
-    outputs = [args.out.with_suffix(ext) for ext in ('.svg', '.pdf', '.png')]
+    outputs = [args.out.with_suffix(ext) for ext in (".svg", ".pdf", ".png")]
     print(f"Wrote {table_path} and {', '.join(str(path) for path in outputs)}")
     return 0
 

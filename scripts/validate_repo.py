@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """Static, deterministic and side-effect-free audit for the TsaoDFT repository."""
+
 from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 import re
-import sys
-from typing import Any, Iterable
 import xml.etree.ElementTree as ET
+from collections.abc import Iterable
+from pathlib import Path
+from typing import Any
 
 import yaml
 

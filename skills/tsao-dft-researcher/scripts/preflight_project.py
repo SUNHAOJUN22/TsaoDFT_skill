@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Preflight a TsaoDFT project before expensive calculation or publication work."""
+
 from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Any
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -15,9 +16,18 @@ from validate_figure_manifest import validate_manifest as validate_figure_manife
 from validate_research_manifest import validate_manifest as validate_research_manifest  # noqa: E402
 
 VALID_STATUSES = {
-    "planned", "awaiting-prerequisite", "prepared", "ready", "running",
-    "completed", "validated", "accepted", "inconclusive", "needs-follow-up",
-    "contradicted", "rejected",
+    "planned",
+    "awaiting-prerequisite",
+    "prepared",
+    "ready",
+    "running",
+    "completed",
+    "validated",
+    "accepted",
+    "inconclusive",
+    "needs-follow-up",
+    "contradicted",
+    "rejected",
 }
 
 
@@ -36,7 +46,7 @@ def find_cycle(tasks: dict[str, list[str]]) -> list[str] | None:
     def visit(node: str, stack: list[str]) -> list[str] | None:
         if node in visiting:
             idx = stack.index(node) if node in stack else 0
-            return stack[idx:] + [node]
+            return [*stack[idx:], node]
         if node in visited:
             return None
         visiting.add(node)
@@ -86,7 +96,18 @@ def main() -> int:
 
     project = load_yaml(project_path)
     passport = load_yaml(passport_path)
-    required = ["project_id", "name", "status", "research_question", "objective", "observable", "model_system", "method_fingerprint", "success_criteria", "execution"]
+    required = [
+        "project_id",
+        "name",
+        "status",
+        "research_question",
+        "objective",
+        "observable",
+        "model_system",
+        "method_fingerprint",
+        "success_criteria",
+        "execution",
+    ]
     for key in required:
         if key not in project:
             failures.append(f"project missing required field: {key}")
@@ -100,9 +121,30 @@ def main() -> int:
         if _unknown(project.get(key)):
             unresolved.append(key)
     for section, keys in {
-        "model_system": ["identity", "charge", "multiplicity", "electronic_state", "phase_or_solvent", "conformer_scope"],
-        "method_fingerprint": ["code", "code_version", "functional_or_method", "basis_or_ecp", "temperature_K", "standard_state"],
-        "execution": ["target", "task_count_estimate", "cpu_assumption", "memory_assumption", "disk_assumption", "wall_time_estimate"],
+        "model_system": [
+            "identity",
+            "charge",
+            "multiplicity",
+            "electronic_state",
+            "phase_or_solvent",
+            "conformer_scope",
+        ],
+        "method_fingerprint": [
+            "code",
+            "code_version",
+            "functional_or_method",
+            "basis_or_ecp",
+            "temperature_K",
+            "standard_state",
+        ],
+        "execution": [
+            "target",
+            "task_count_estimate",
+            "cpu_assumption",
+            "memory_assumption",
+            "disk_assumption",
+            "wall_time_estimate",
+        ],
     }.items():
         value = project.get(section, {})
         if not isinstance(value, dict):
@@ -156,7 +198,19 @@ def main() -> int:
     if ready_without_approval:
         failures.append("tasks require approval before ready/running: " + ", ".join(ready_without_approval))
 
-    required_dirs = ["00_input", "01_structures", "02_calculations", "03_wavefunctions", "04_analysis", "05_figures", "06_tables", "07_reports", "08_logs", "09_provenance", "10_source_data"]
+    required_dirs = [
+        "00_input",
+        "01_structures",
+        "02_calculations",
+        "03_wavefunctions",
+        "04_analysis",
+        "05_figures",
+        "06_tables",
+        "07_reports",
+        "08_logs",
+        "09_provenance",
+        "10_source_data",
+    ]
     for rel in required_dirs:
         if not (root / rel).exists():
             warnings.append(f"recommended directory missing: {rel}")
@@ -178,7 +232,9 @@ def main() -> int:
     if figure_path.exists():
         try:
             figure_data = _load_json(figure_path)
-            figure_errors, figure_warnings = validate_figure_manifest(figure_data, figure_path.parent, research_data, False)
+            figure_errors, figure_warnings = validate_figure_manifest(
+                figure_data, figure_path.parent, research_data, False
+            )
             failures.extend(f"figure manifest: {item}" for item in figure_errors)
             warnings.extend(f"figure manifest: {item}" for item in figure_warnings)
         except Exception as exc:

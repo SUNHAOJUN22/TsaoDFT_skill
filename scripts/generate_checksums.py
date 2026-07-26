@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Generate a stable SHA-256 manifest for repository release files."""
+
 from __future__ import annotations
 
 import hashlib

@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 import sys
+from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
@@ -44,7 +44,13 @@ def main() -> int:
         if qa.get(key) is not True:
             warnings.append(f"QA flag not complete: {key}")
 
-    result = {"ok": not failures, "figure_id": spec.get("figure_id"), "outputs": output_info, "failures": failures, "warnings": warnings}
+    result = {
+        "ok": not failures,
+        "figure_id": spec.get("figure_id"),
+        "outputs": output_info,
+        "failures": failures,
+        "warnings": warnings,
+    }
     print_result(result, args.json)
     return 0 if not failures else 1
 

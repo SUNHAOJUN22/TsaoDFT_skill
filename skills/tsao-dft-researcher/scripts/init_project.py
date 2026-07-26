@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Initialize an auditable TsaoDFT computational-chemistry project."""
+
 from __future__ import annotations
 
 import argparse
@@ -37,10 +38,20 @@ def main() -> int:
     project_dir = args.project_dir.resolve()
     project_dir.mkdir(parents=True, exist_ok=True)
     dirs = [
-        ".research/tasks", ".research/manifests", ".research/leases",
-        "00_input", "01_structures", "02_calculations", "03_wavefunctions",
-        "04_analysis", "05_figures", "06_tables", "07_reports", "08_logs",
-        "09_provenance", "10_source_data",
+        ".research/tasks",
+        ".research/manifests",
+        ".research/leases",
+        "00_input",
+        "01_structures",
+        "02_calculations",
+        "03_wavefunctions",
+        "04_analysis",
+        "05_figures",
+        "06_tables",
+        "07_reports",
+        "08_logs",
+        "09_provenance",
+        "10_source_data",
     ]
     for rel in dirs:
         (project_dir / rel).mkdir(parents=True, exist_ok=True)

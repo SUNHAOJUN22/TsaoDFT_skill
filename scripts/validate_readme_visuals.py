@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Validate README image references and the AI/deterministic visual boundary."""
+
 from __future__ import annotations
 
 import argparse
 import hashlib
-from pathlib import Path
 import re
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 import yaml
 
@@ -70,7 +71,7 @@ def validate() -> tuple[list[str], list[str]]:
     try:
         manifest = yaml.safe_load(AI_MANIFEST.read_text(encoding="utf-8"))
     except Exception as exc:
-        return failures + [f"AI manifest parse failed: {exc}"], warnings
+        return [*failures, f"AI manifest parse failed: {exc}"], warnings
     assets = manifest.get("assets", []) if isinstance(manifest, dict) else []
     if len(assets) < 8:
         failures.append("AI manifest must contain at least eight governed assets")

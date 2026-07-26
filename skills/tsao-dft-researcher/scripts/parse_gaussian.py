@@ -1,21 +1,104 @@
 #!/usr/bin/env python3
 """Parse Gaussian logs into auditable DFT evidence without claiming scientific acceptance."""
+
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
-import math
 import re
 from pathlib import Path
 from typing import Any
 
 FLOAT = r"[-+]?\d*\.?\d+(?:[DEde][-+]?\d+)?"
 ATOMIC_SYMBOLS = [
-    "X", "H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar",
-    "K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge", "As", "Se", "Br", "Kr",
-    "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Tc", "Ru", "Rh", "Pd", "Ag", "Cd", "In", "Sn", "Sb", "Te", "I", "Xe",
-    "Cs", "Ba", "La", "Ce", "Pr", "Nd", "Pm", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu",
-    "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb", "Bi", "Po", "At", "Rn",
+    "X",
+    "H",
+    "He",
+    "Li",
+    "Be",
+    "B",
+    "C",
+    "N",
+    "O",
+    "F",
+    "Ne",
+    "Na",
+    "Mg",
+    "Al",
+    "Si",
+    "P",
+    "S",
+    "Cl",
+    "Ar",
+    "K",
+    "Ca",
+    "Sc",
+    "Ti",
+    "V",
+    "Cr",
+    "Mn",
+    "Fe",
+    "Co",
+    "Ni",
+    "Cu",
+    "Zn",
+    "Ga",
+    "Ge",
+    "As",
+    "Se",
+    "Br",
+    "Kr",
+    "Rb",
+    "Sr",
+    "Y",
+    "Zr",
+    "Nb",
+    "Mo",
+    "Tc",
+    "Ru",
+    "Rh",
+    "Pd",
+    "Ag",
+    "Cd",
+    "In",
+    "Sn",
+    "Sb",
+    "Te",
+    "I",
+    "Xe",
+    "Cs",
+    "Ba",
+    "La",
+    "Ce",
+    "Pr",
+    "Nd",
+    "Pm",
+    "Sm",
+    "Eu",
+    "Gd",
+    "Tb",
+    "Dy",
+    "Ho",
+    "Er",
+    "Tm",
+    "Yb",
+    "Lu",
+    "Hf",
+    "Ta",
+    "W",
+    "Re",
+    "Os",
+    "Ir",
+    "Pt",
+    "Au",
+    "Hg",
+    "Tl",
+    "Pb",
+    "Bi",
+    "Po",
+    "At",
+    "Rn",
 ]
 
 
@@ -55,11 +138,20 @@ def _error_links(text: str) -> list[str]:
 def _error_taxonomy(text: str) -> list[dict[str, str]]:
     rules = [
         ("SCF_CONVERGENCE", r"Convergence failure -- run terminated|SCF has not converged|No convergence is achieved"),
-        ("OPTIMIZATION", r"Number of steps exceeded|Optimization stopped|FormBX had a problem|Error in internal coordinate system"),
+        (
+            "OPTIMIZATION",
+            r"Number of steps exceeded|Optimization stopped|FormBX had a problem|Error in internal coordinate system",
+        ),
         ("MEMORY", r"Out-of-memory|Not enough memory|galloc: could not allocate|Erroneous write|malloc failed"),
-        ("DISK_OR_IO", r"No space left on device|FileIO operation on non-existent file|Erroneous write|read-write file error"),
+        (
+            "DISK_OR_IO",
+            r"No space left on device|FileIO operation on non-existent file|Erroneous write|read-write file error",
+        ),
         ("GEOMETRY", r"Atoms too close|Problem with the distance matrix|End of file in ZSymb|Linear angle in Bend"),
-        ("BASIS_ECP", r"Unrecognized atomic symbol|Atomic number out of range|No basis functions|ECP.*not found|Error reading general basis"),
+        (
+            "BASIS_ECP",
+            r"Unrecognized atomic symbol|Atomic number out of range|No basis functions|ECP.*not found|Error reading general basis",
+        ),
         ("CHECKPOINT", r"FileIO operation on non-existent file|No data on checkpoint file|GetChg"),
         ("L502", r"l502\.exe"),
         ("L9999", r"l9999\.exe"),
@@ -80,13 +172,24 @@ def _gaussian_version(text: str) -> str | None:
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
-            return "Gaussian " + " ".join(match.groups()) if len(match.groups()) > 1 else f"Gaussian 16 Revision {match.group(1)}"
+            return (
+                "Gaussian " + " ".join(match.groups())
+                if len(match.groups()) > 1
+                else f"Gaussian 16 Revision {match.group(1)}"
+            )
     return None
 
 
 def _route_metadata(route: str | None) -> dict[str, Any]:
     if not route:
-        return {"method": None, "basis": None, "job_types": [], "solvent": None, "dispersion": None, "integration_grid": None}
+        return {
+            "method": None,
+            "basis": None,
+            "job_types": [],
+            "solvent": None,
+            "dispersion": None,
+            "integration_grid": None,
+        }
     cleaned = re.sub(r"^#\s*[pPnNtT]?\s*", "", route).strip()
     method = basis = None
     for token in cleaned.split():
@@ -98,12 +201,17 @@ def _route_metadata(route: str | None) -> dict[str, Any]:
     low = route.lower()
     job_types = []
     job_rules = [
-        ("optimization", r"\bopt(?:=|\b)"), ("frequency", r"\bfreq(?:=|\b)"),
+        ("optimization", r"\bopt(?:=|\b)"),
+        ("frequency", r"\bfreq(?:=|\b)"),
         ("transition_state", r"opt\s*=\s*\([^)]*\bts\b|opt\s*=\s*ts|\bqst[23]\b"),
-        ("irc", r"\birc(?:=|\b)"), ("td_dft", r"\btd(?:=|\b)|\btddft\b"),
-        ("nmr", r"\bnmr(?:=|\b)"), ("stability", r"\bstable(?:=|\b)"),
-        ("population", r"\bpop(?:=|\b)"), ("single_point", r"\bsp\b"),
-        ("scan", r"modredundant|\bscan\b"), ("counterpoise", r"counterpoise"),
+        ("irc", r"\birc(?:=|\b)"),
+        ("td_dft", r"\btd(?:=|\b)|\btddft\b"),
+        ("nmr", r"\bnmr(?:=|\b)"),
+        ("stability", r"\bstable(?:=|\b)"),
+        ("population", r"\bpop(?:=|\b)"),
+        ("single_point", r"\bsp\b"),
+        ("scan", r"modredundant|\bscan\b"),
+        ("counterpoise", r"counterpoise"),
     ]
     for name, pattern in job_rules:
         if re.search(pattern, low):
@@ -122,7 +230,14 @@ def _route_metadata(route: str | None) -> dict[str, Any]:
     gm = re.search(r"(?:int|integral)\s*=\s*(?:\(([^)]*)\)|([^\s]+))", route, re.IGNORECASE)
     if gm:
         grid = next((x for x in gm.groups() if x), None)
-    return {"method": method, "basis": basis, "job_types": job_types, "solvent": solvent, "dispersion": dispersion, "integration_grid": grid}
+    return {
+        "method": method,
+        "basis": basis,
+        "job_types": job_types,
+        "solvent": solvent,
+        "dispersion": dispersion,
+        "integration_grid": grid,
+    }
 
 
 def _orientation_blocks(text: str) -> list[list[dict[str, Any]]]:
@@ -147,8 +262,21 @@ def _orientation_blocks(text: str) -> list[list[dict[str, Any]]]:
                     try:
                         center, atomic_number = int(parts[0]), int(parts[1])
                         x, y, z = map(float, parts[-3:])
-                        symbol = ATOMIC_SYMBOLS[atomic_number] if 0 <= atomic_number < len(ATOMIC_SYMBOLS) else str(atomic_number)
-                        atoms.append({"center": center, "atomic_number": atomic_number, "element": symbol, "x_angstrom": x, "y_angstrom": y, "z_angstrom": z})
+                        symbol = (
+                            ATOMIC_SYMBOLS[atomic_number]
+                            if 0 <= atomic_number < len(ATOMIC_SYMBOLS)
+                            else str(atomic_number)
+                        )
+                        atoms.append(
+                            {
+                                "center": center,
+                                "atomic_number": atomic_number,
+                                "element": symbol,
+                                "x_angstrom": x,
+                                "y_angstrom": y,
+                                "z_angstrom": z,
+                            }
+                        )
                     except ValueError:
                         pass
                 i += 1
@@ -170,10 +298,8 @@ def _orbital_energies(text: str) -> dict[str, Any]:
         vals: list[float] = []
         for line in re.findall(pattern, text):
             for token in line.split():
-                try:
+                with contextlib.suppress(ValueError):
                     vals.append(fnum(token))
-                except ValueError:
-                    pass
         if vals:
             result[key] = vals
     if result.get("alpha_occ_hartree"):
@@ -189,7 +315,7 @@ def _orbital_energies(text: str) -> dict[str, Any]:
 
 def _dipole(text: str) -> dict[str, float] | None:
     matches = re.findall(
-        r"Dipole moment \(field-independent basis, Debye\):\s*\n\s*X=\s*(%s)\s+Y=\s*(%s)\s+Z=\s*(%s)\s+Tot=\s*(%s)" % (FLOAT, FLOAT, FLOAT, FLOAT),
+        rf"Dipole moment \(field-independent basis, Debye\):\s*\n\s*X=\s*({FLOAT})\s+Y=\s*({FLOAT})\s+Z=\s*({FLOAT})\s+Tot=\s*({FLOAT})",
         text,
     )
     if not matches:
@@ -200,17 +326,21 @@ def _dipole(text: str) -> dict[str, float] | None:
 
 def _nmr_shieldings(text: str) -> list[dict[str, Any]]:
     values = []
-    pattern = re.compile(r"^\s*(\d+)\s+([A-Za-z]{1,2})\s+Isotropic\s*=\s*(%s)\s+Anisotropy\s*=\s*(%s)" % (FLOAT, FLOAT), re.MULTILINE)
+    pattern = re.compile(
+        rf"^\s*(\d+)\s+([A-Za-z]{{1,2}})\s+Isotropic\s*=\s*({FLOAT})\s+Anisotropy\s*=\s*({FLOAT})", re.MULTILINE
+    )
     for idx, element, iso, aniso in pattern.findall(text):
-        values.append({"atom_index": int(idx), "element": element, "isotropic_ppm": fnum(iso), "anisotropy_ppm": fnum(aniso)})
+        values.append(
+            {"atom_index": int(idx), "element": element, "isotropic_ppm": fnum(iso), "anisotropy_ppm": fnum(aniso)}
+        )
     return values
 
 
 def _excited_states(text: str) -> list[dict[str, Any]]:
     lines = text.splitlines()
     output: list[dict[str, Any]] = []
-    header = re.compile(r"Excited State\s+(\d+):\s+(.+?)\s+(%s)\s+eV\s+(%s)\s+nm\s+f=(%s)" % (FLOAT, FLOAT, FLOAT))
-    contribution = re.compile(r"\s*(\d+)([AB])?\s*->\s*(\d+)([AB])?\s+(%s)" % FLOAT)
+    header = re.compile(rf"Excited State\s+(\d+):\s+(.+?)\s+({FLOAT})\s+eV\s+({FLOAT})\s+nm\s+f=({FLOAT})")
+    contribution = re.compile(rf"\s*(\d+)([AB])?\s*->\s*(\d+)([AB])?\s+({FLOAT})")
     i = 0
     while i < len(lines):
         match = header.search(lines[i])
@@ -218,13 +348,28 @@ def _excited_states(text: str) -> list[dict[str, Any]]:
             i += 1
             continue
         state, label, ev, nm, osc = match.groups()
-        item = {"state": int(state), "label": label.strip(), "energy_eV": fnum(ev), "wavelength_nm": fnum(nm), "oscillator_strength": fnum(osc), "contributions": []}
+        item = {
+            "state": int(state),
+            "label": label.strip(),
+            "energy_eV": fnum(ev),
+            "wavelength_nm": fnum(nm),
+            "oscillator_strength": fnum(osc),
+            "contributions": [],
+        }
         j = i + 1
         while j < len(lines) and j <= i + 30:
             cm = contribution.match(lines[j])
             if cm:
                 src, src_spin, dst, dst_spin, coeff = cm.groups()
-                item["contributions"].append({"from_orbital": int(src), "from_spin": src_spin or None, "to_orbital": int(dst), "to_spin": dst_spin or None, "coefficient": fnum(coeff)})
+                item["contributions"].append(
+                    {
+                        "from_orbital": int(src),
+                        "from_spin": src_spin or None,
+                        "to_orbital": int(dst),
+                        "to_spin": dst_spin or None,
+                        "coefficient": fnum(coeff),
+                    }
+                )
             elif lines[j].strip().startswith("Excited State") or (not lines[j].strip() and item["contributions"]):
                 break
             j += 1
@@ -243,25 +388,23 @@ def parse_log(text: str) -> dict[str, Any]:
     charge_mult = re.findall(r"Charge\s*=\s*(-?\d+)\s+Multiplicity\s*=\s*(\d+)", text)
     charge = int(charge_mult[-1][0]) if charge_mult else None
     multiplicity = int(charge_mult[-1][1]) if charge_mult else None
-    scf = [fnum(x) for x in re.findall(r"SCF Done:\s+E\([^)]*\)\s*=\s*(%s)" % FLOAT, text)]
+    scf = [fnum(x) for x in re.findall(rf"SCF Done:\s+E\([^)]*\)\s*=\s*({FLOAT})", text)]
     frequencies: list[float] = []
     for line in re.findall(r"Frequencies --\s+([^\n]+)", text):
         for token in line.split():
-            try:
+            with contextlib.suppress(ValueError):
                 frequencies.append(fnum(token))
-            except ValueError:
-                pass
     imag = [x for x in frequencies if x < -1e-6]
 
     thermal_patterns = {
-        "zero_point_correction_hartree": r"Zero-point correction=\s*(%s)" % FLOAT,
-        "thermal_correction_energy_hartree": r"Thermal correction to Energy=\s*(%s)" % FLOAT,
-        "thermal_correction_enthalpy_hartree": r"Thermal correction to Enthalpy=\s*(%s)" % FLOAT,
-        "thermal_correction_gibbs_hartree": r"Thermal correction to Gibbs Free Energy=\s*(%s)" % FLOAT,
-        "sum_electronic_zpe_hartree": r"Sum of electronic and zero-point Energies=\s*(%s)" % FLOAT,
-        "sum_electronic_thermal_hartree": r"Sum of electronic and thermal Energies=\s*(%s)" % FLOAT,
-        "sum_electronic_enthalpy_hartree": r"Sum of electronic and thermal Enthalpies=\s*(%s)" % FLOAT,
-        "sum_electronic_gibbs_hartree": r"Sum of electronic and thermal Free Energies=\s*(%s)" % FLOAT,
+        "zero_point_correction_hartree": rf"Zero-point correction=\s*({FLOAT})",
+        "thermal_correction_energy_hartree": rf"Thermal correction to Energy=\s*({FLOAT})",
+        "thermal_correction_enthalpy_hartree": rf"Thermal correction to Enthalpy=\s*({FLOAT})",
+        "thermal_correction_gibbs_hartree": rf"Thermal correction to Gibbs Free Energy=\s*({FLOAT})",
+        "sum_electronic_zpe_hartree": rf"Sum of electronic and zero-point Energies=\s*({FLOAT})",
+        "sum_electronic_thermal_hartree": rf"Sum of electronic and thermal Energies=\s*({FLOAT})",
+        "sum_electronic_enthalpy_hartree": rf"Sum of electronic and thermal Enthalpies=\s*({FLOAT})",
+        "sum_electronic_gibbs_hartree": rf"Sum of electronic and thermal Free Energies=\s*({FLOAT})",
     }
     thermal: dict[str, float] = {}
     for key, pattern in thermal_patterns.items():
@@ -269,12 +412,12 @@ def parse_log(text: str) -> dict[str, Any]:
         if values:
             thermal[key] = fnum(values[-1])
 
-    temperature_matches = re.findall(r"Temperature\s+(%s)\s+Kelvin\.\s+Pressure\s+(%s)\s+Atm" % (FLOAT, FLOAT), text)
+    temperature_matches = re.findall(rf"Temperature\s+({FLOAT})\s+Kelvin\.\s+Pressure\s+({FLOAT})\s+Atm", text)
     temperature_K = fnum(temperature_matches[-1][0]) if temperature_matches else None
     pressure_atm = fnum(temperature_matches[-1][1]) if temperature_matches else None
 
     s2 = []
-    for before, after in re.findall(r"S\*\*2 before annihilation\s+(%s),\s+after\s+(%s)" % (FLOAT, FLOAT), text):
+    for before, after in re.findall(rf"S\*\*2 before annihilation\s+({FLOAT}),\s+after\s+({FLOAT})", text):
         s2.append({"before": fnum(before), "after": fnum(after)})
     spin_diag = s2[-1] if s2 else None
     if spin_diag and multiplicity:
@@ -285,17 +428,26 @@ def parse_log(text: str) -> dict[str, Any]:
     excited_states = _excited_states(text)
     opt_completed = "Optimization completed" in text or "Stationary point found" in text
     convergence_rows = re.findall(
-        r"(Maximum Force|RMS\s+Force|Maximum Displacement|RMS\s+Displacement)\s+(%s)\s+(%s)\s+(YES|NO)" % (FLOAT, FLOAT),
+        rf"(Maximum Force|RMS\s+Force|Maximum Displacement|RMS\s+Displacement)\s+({FLOAT})\s+({FLOAT})\s+(YES|NO)",
         text,
     )
     convergence = [
-        {"criterion": name.replace("  ", " "), "value": fnum(value), "threshold": fnum(threshold), "converged": flag == "YES"}
+        {
+            "criterion": name.replace("  ", " "),
+            "value": fnum(value),
+            "threshold": fnum(threshold),
+            "converged": flag == "YES",
+        }
         for name, value, threshold, flag in convergence_rows[-4:]
     ]
     convergence_all_yes = bool(convergence) and all(row["converged"] for row in convergence)
 
     stable_requested = bool(route and re.search(r"\bstable(?:=|\b)", route, flags=re.IGNORECASE))
-    stable_optimized = bool(re.search(r"wavefunction is stable under the perturbations considered|wavefunction is stable", text, re.IGNORECASE))
+    stable_optimized = bool(
+        re.search(
+            r"wavefunction is stable under the perturbations considered|wavefunction is stable", text, re.IGNORECASE
+        )
+    )
 
     forward_points = len(re.findall(r"Point Number\s+\d+\s+in FORWARD path direction", text))
     reverse_points = len(re.findall(r"Point Number\s+\d+\s+in REVERSE path direction", text))
@@ -318,19 +470,25 @@ def parse_log(text: str) -> dict[str, Any]:
 
     warnings: list[str] = []
     if status == "TS_CANDIDATE":
-        warnings.append("One imaginary frequency is insufficient: inspect displacement and confirm required IRC endpoints.")
+        warnings.append(
+            "One imaginary frequency is insufficient: inspect displacement and confirm required IRC endpoints."
+        )
     if status == "MINIMUM_CANDIDATE" and frequencies and min(frequencies) < 20:
         warnings.append("Very low positive modes detected; inspect geometry and qRRHO/low-frequency treatment.")
     if frequencies and not opt_completed and route and "opt" in route.lower():
         warnings.append("Frequency data were found but optimization completion was not detected.")
     if spin_diag:
-        warnings.append("Open-shell S^2 values were found; compare after-annihilation S^2 with the ideal value and run stability checks when needed.")
+        warnings.append(
+            "Open-shell S^2 values were found; compare after-annihilation S^2 with the ideal value and run stability checks when needed."
+        )
         if abs(spin_diag.get("after_minus_ideal", 0.0)) > 0.2:
             warnings.append("Substantial post-annihilation spin contamination may be present.")
     if stable_requested and not stable_optimized:
         warnings.append("A stability check appears requested but a stable-wavefunction confirmation was not detected.")
     if normal_count > 1:
-        warnings.append("Multiple Gaussian jobs/normal terminations detected; extracted scalar values use the last matching record.")
+        warnings.append(
+            "Multiple Gaussian jobs/normal terminations detected; extracted scalar values use the last matching record."
+        )
     if route_meta["method"] is None or route_meta["basis"] is None:
         warnings.append("Method/basis could not be inferred reliably from the last route section.")
     if route_meta["job_types"] and "irc" in route_meta["job_types"] and not (forward_complete or reverse_complete):

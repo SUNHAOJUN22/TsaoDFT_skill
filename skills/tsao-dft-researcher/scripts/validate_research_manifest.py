@@ -4,6 +4,7 @@
 The validator is deterministic and intentionally stricter than a JSON Schema alone:
 it checks calculation-artifact-claim relationships and evidence-grade promotion rules.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -14,14 +15,37 @@ from pathlib import Path
 from typing import Any
 
 STATUSES = {
-    "planned", "awaiting-prerequisite", "prepared", "ready", "running",
-    "completed", "validated", "accepted", "inconclusive", "needs-follow-up",
-    "contradicted", "rejected",
+    "planned",
+    "awaiting-prerequisite",
+    "prepared",
+    "ready",
+    "running",
+    "completed",
+    "validated",
+    "accepted",
+    "inconclusive",
+    "needs-follow-up",
+    "contradicted",
+    "rejected",
 }
 TASK_TYPES = {
-    "minimum", "transition_state", "irc", "single_point", "tddft", "excited_opt",
-    "nmr", "scan", "conformer", "counterpoise", "thermochemistry", "redox",
-    "bond_dissociation", "trajectory", "analysis", "render", "report",
+    "minimum",
+    "transition_state",
+    "irc",
+    "single_point",
+    "tddft",
+    "excited_opt",
+    "nmr",
+    "scan",
+    "conformer",
+    "counterpoise",
+    "thermochemistry",
+    "redox",
+    "bond_dissociation",
+    "trajectory",
+    "analysis",
+    "render",
+    "report",
 }
 ARTIFACT_SOURCE_TYPES = {"calculation", "experiment", "literature", "external", "mock"}
 ARTIFACT_STATUSES = {"raw", "completed", "validated", "accepted", "rejected"}
@@ -204,14 +228,19 @@ def validate_manifest(data: Any) -> tuple[list[str], list[str]]:
                 errors.append(f"calculation {calc_id}: artifact {artifact_id} belongs to another calculation")
         validation = calc.get("validation", {})
         if isinstance(validation, dict):
-            for key, expected_kind in (("irc_forward_artifact_id", "irc_forward"), ("irc_reverse_artifact_id", "irc_reverse")):
+            for key, expected_kind in (
+                ("irc_forward_artifact_id", "irc_forward"),
+                ("irc_reverse_artifact_id", "irc_reverse"),
+            ):
                 value = validation.get(key)
                 if value:
                     artifact = artifact_by_id.get(value)
                     if artifact is None:
                         errors.append(f"calculation {calc_id}: {key}={value} does not exist")
                     elif artifact.get("kind") not in {expected_kind, "irc_log", "gaussian_log"}:
-                        errors.append(f"calculation {calc_id}: {key}={value} has incompatible kind {artifact.get('kind')!r}")
+                        errors.append(
+                            f"calculation {calc_id}: {key}={value} has incompatible kind {artifact.get('kind')!r}"
+                        )
                     elif artifact.get("status") not in {"validated", "accepted"}:
                         errors.append(f"calculation {calc_id}: {key}={value} is not validated")
 
@@ -255,7 +284,9 @@ def validate_manifest(data: Any) -> tuple[list[str], list[str]]:
                     errors.append(f"{where}: grade A artifact is not backed by an accepted calculation")
                     break
         if grade == "B" and linked_artifacts:
-            if not any(a.get("source_type") == "experiment" and a.get("status") == "accepted" for a in linked_artifacts):
+            if not any(
+                a.get("source_type") == "experiment" and a.get("status") == "accepted" for a in linked_artifacts
+            ):
                 errors.append(f"{where}: grade B requires at least one accepted experimental artifact")
         if grade == "C" and linked_artifacts:
             if not any(a.get("source_type") in {"literature", "external"} for a in linked_artifacts):
@@ -270,27 +301,51 @@ def _self_test() -> int:
         "schema_version": "1.0",
         "project_id": "demo",
         "research_question": "Is structure A a minimum?",
-        "calculations": [{
-            "id": "calc-1", "task_type": "minimum", "status": "accepted",
-            "method": "wB97X-D", "basis": "def2-SVP", "charge": 0,
-            "multiplicity": 1, "phase_or_solvent": "SMD(acetonitrile)",
-            "temperature_K": 298.15, "structure_sha256": structure_hash,
-            "artifact_ids": ["art-1"],
-            "validation": {"normal_termination": True, "scf_converged": True,
-                           "optimization_converged": True, "imaginary_frequency_count": 0},
-        }],
-        "artifacts": [{
-            "id": "art-1", "calculation_id": "calc-1", "kind": "gaussian_log",
-            "path": "calc-1.log", "sha256": "a" * 64,
-            "source_type": "calculation", "status": "accepted",
-        }],
-        "claims": [{
-            "id": "claim-1", "text": "A is a validated minimum.",
-            "scope": "specified method", "evidence_grade": "A",
-            "artifact_ids": ["art-1"], "limitations": ["static model"],
-            "falsification_condition": "a reproducible imaginary mode appears",
-            "paper_ready": True, "is_mock": False,
-        }],
+        "calculations": [
+            {
+                "id": "calc-1",
+                "task_type": "minimum",
+                "status": "accepted",
+                "method": "wB97X-D",
+                "basis": "def2-SVP",
+                "charge": 0,
+                "multiplicity": 1,
+                "phase_or_solvent": "SMD(acetonitrile)",
+                "temperature_K": 298.15,
+                "structure_sha256": structure_hash,
+                "artifact_ids": ["art-1"],
+                "validation": {
+                    "normal_termination": True,
+                    "scf_converged": True,
+                    "optimization_converged": True,
+                    "imaginary_frequency_count": 0,
+                },
+            }
+        ],
+        "artifacts": [
+            {
+                "id": "art-1",
+                "calculation_id": "calc-1",
+                "kind": "gaussian_log",
+                "path": "calc-1.log",
+                "sha256": "a" * 64,
+                "source_type": "calculation",
+                "status": "accepted",
+            }
+        ],
+        "claims": [
+            {
+                "id": "claim-1",
+                "text": "A is a validated minimum.",
+                "scope": "specified method",
+                "evidence_grade": "A",
+                "artifact_ids": ["art-1"],
+                "limitations": ["static model"],
+                "falsification_condition": "a reproducible imaginary mode appears",
+                "paper_ready": True,
+                "is_mock": False,
+            }
+        ],
     }
     errors, _ = validate_manifest(valid)
     broken = json.loads(json.dumps(valid))

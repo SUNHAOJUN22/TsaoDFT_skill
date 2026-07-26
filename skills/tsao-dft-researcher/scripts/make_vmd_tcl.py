@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Generate a reviewable VMD/Tachyon Tcl script from a legacy figure spec or a figure manifest."""
+
 from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Any
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -15,10 +16,7 @@ from utils import load_yaml  # noqa: E402
 
 
 def load_document(path: Path) -> dict[str, Any]:
-    if path.suffix.lower() == ".json":
-        data = json.loads(path.read_text(encoding="utf-8"))
-    else:
-        data = load_yaml(path)
+    data = json.loads(path.read_text(encoding="utf-8")) if path.suffix.lower() == ".json" else load_yaml(path)
     if not isinstance(data, dict):
         raise ValueError("spec root must be a mapping/object")
     return data
@@ -52,18 +50,28 @@ def camera_commands(panel: dict[str, Any]) -> str:
     return "\n".join(commands) if commands else "# camera registry contains no transform commands"
 
 
-def select_panel(data: dict[str, Any], figure_id: str | None, panel_id: str | None, panel_index: int) -> tuple[dict[str, Any], dict[str, Any]]:
+def select_panel(
+    data: dict[str, Any], figure_id: str | None, panel_id: str | None, panel_index: int
+) -> tuple[dict[str, Any], dict[str, Any]]:
     if "figures" in data:
         figures = data.get("figures")
         if not isinstance(figures, list) or not figures:
             raise ValueError("figure manifest contains no figures")
-        figure = next((f for f in figures if isinstance(f, dict) and f.get("id") == figure_id), None) if figure_id else figures[0]
+        figure = (
+            next((f for f in figures if isinstance(f, dict) and f.get("id") == figure_id), None)
+            if figure_id
+            else figures[0]
+        )
         if not isinstance(figure, dict):
             raise ValueError(f"figure_id not found: {figure_id}")
         panels = figure.get("panels")
         if not isinstance(panels, list) or not panels:
             raise ValueError("selected figure has no panels")
-        panel = next((p for p in panels if isinstance(p, dict) and p.get("id") == panel_id), None) if panel_id else panels[panel_index]
+        panel = (
+            next((p for p in panels if isinstance(p, dict) and p.get("id") == panel_id), None)
+            if panel_id
+            else panels[panel_index]
+        )
         if not isinstance(panel, dict):
             raise ValueError(f"panel_id not found: {panel_id}")
         return figure, panel

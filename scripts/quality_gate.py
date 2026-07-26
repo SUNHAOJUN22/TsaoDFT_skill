@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """Run the complete TsaoDFT quality gate in a deterministic fail-fast sequence."""
+
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
 import time
+from dataclasses import dataclass
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 

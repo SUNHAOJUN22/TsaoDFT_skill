@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Validate provenance, integrity, dimensions and non-quantitative policy for README AI concepts."""
+
 from __future__ import annotations
 
 import argparse
 import hashlib
-from pathlib import Path
 import re
-from typing import Any
 import xml.etree.ElementTree as ET
+from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -49,7 +50,7 @@ def validate(manifest_path: Path = MANIFEST) -> list[str]:
 
     assets = data.get("assets")
     if not isinstance(assets, list) or len(assets) < 8:
-        return failures + ["manifest assets must contain at least eight entries"]
+        return [*failures, "manifest assets must contain at least eight entries"]
 
     paths: set[str] = set()
     for index, item in enumerate(assets):

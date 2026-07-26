@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Validate scientific-figure provenance, comparison consistency, and AI-schematic labeling."""
+
 from __future__ import annotations
 
 import argparse
@@ -11,8 +12,32 @@ from typing import Any
 
 FORBIDDEN_PALETTES = {"jet", "rainbow", "gist_rainbow", "nipy_spectral"}
 ROLES = {"main", "extended", "si", "qa", "exploratory"}
-QUANTITATIVE_TYPES = {"energy_profile", "bar", "scatter", "histogram", "heatmap", "box", "violin", "spectrum", "parity", "residual"}
-SURFACE_TYPES = {"mo", "esp", "spin_density", "difference_density", "nci", "iri", "igmh", "elf", "lol", "nto", "hole_electron", "icss"}
+QUANTITATIVE_TYPES = {
+    "energy_profile",
+    "bar",
+    "scatter",
+    "histogram",
+    "heatmap",
+    "box",
+    "violin",
+    "spectrum",
+    "parity",
+    "residual",
+}
+SURFACE_TYPES = {
+    "mo",
+    "esp",
+    "spin_density",
+    "difference_density",
+    "nci",
+    "iri",
+    "igmh",
+    "elf",
+    "lol",
+    "nto",
+    "hole_electron",
+    "icss",
+}
 
 
 def _configure_stdout() -> None:
@@ -43,7 +68,9 @@ def _path_exists(base: Path, value: str) -> bool:
     return path.exists() and path.stat().st_size > 0
 
 
-def validate_manifest(data: Any, base: Path, research: dict[str, Any] | None = None, check_files: bool = False) -> tuple[list[str], list[str]]:
+def validate_manifest(
+    data: Any, base: Path, research: dict[str, Any] | None = None, check_files: bool = False
+) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
     if not isinstance(data, dict):
@@ -51,7 +78,7 @@ def validate_manifest(data: Any, base: Path, research: dict[str, Any] | None = N
     _require_string(data, "project_id", "root", errors)
     figures = data.get("figures")
     if not isinstance(figures, list):
-        return errors + ["root: figures must be an array"], warnings
+        return [*errors, "root: figures must be an array"], warnings
 
     research_artifacts: dict[str, dict[str, Any]] = {}
     if isinstance(research, dict):
@@ -140,7 +167,14 @@ def validate_manifest(data: Any, base: Path, research: dict[str, Any] | None = N
                         if not params.get("spin_channel"):
                             errors.append(f"{pwhere}: open-shell orbital panel requires spin_channel")
                 if panel_type == "esp":
-                    for field in ("density_isovalue_au", "esp_min", "esp_max", "unit", "negative_color", "positive_color"):
+                    for field in (
+                        "density_isovalue_au",
+                        "esp_min",
+                        "esp_max",
+                        "unit",
+                        "negative_color",
+                        "positive_color",
+                    ):
                         if field not in params:
                             errors.append(f"{pwhere}: ESP panel missing {field}")
                     vmin, vmax = params.get("esp_min"), params.get("esp_max")
@@ -150,8 +184,12 @@ def validate_manifest(data: Any, base: Path, research: dict[str, Any] | None = N
                         if not math.isclose(abs(float(vmin)), abs(float(vmax)), rel_tol=1e-6, abs_tol=1e-12):
                             errors.append(f"{pwhere}: ESP comparison scale must be symmetric")
                 if panel_type in {"spin_density", "difference_density"}:
-                    if not isinstance(params.get("positive_isovalue"), (int, float)) or not isinstance(params.get("negative_isovalue"), (int, float)):
-                        errors.append(f"{pwhere}: signed density panel requires positive_isovalue and negative_isovalue")
+                    if not isinstance(params.get("positive_isovalue"), (int, float)) or not isinstance(
+                        params.get("negative_isovalue"), (int, float)
+                    ):
+                        errors.append(
+                            f"{pwhere}: signed density panel requires positive_isovalue and negative_isovalue"
+                        )
                 group = panel.get("comparison_group")
                 if isinstance(group, str) and group:
                     groups.setdefault(group, []).append((pwhere, panel, str(role)))
@@ -164,12 +202,16 @@ def validate_manifest(data: Any, base: Path, research: dict[str, Any] | None = N
                 elif check_files and not _path_exists(base, source_data):
                     errors.append(f"{pwhere}: source_data is missing or empty: {source_data}")
                 panel_outputs = panel.get("outputs", [])
-                if not isinstance(panel_outputs, list) or not any(str(x).lower().endswith((".svg", ".pdf")) for x in panel_outputs):
+                if not isinstance(panel_outputs, list) or not any(
+                    str(x).lower().endswith((".svg", ".pdf")) for x in panel_outputs
+                ):
                     warnings.append(f"{pwhere}: quantitative panel should provide SVG or PDF output")
             elif panel_type == "schematic":
                 if panel.get("ai_generated") is True:
                     if panel.get("illustrative_only") is not True or panel.get("quantitative") is True:
-                        errors.append(f"{pwhere}: AI-generated schematic must be illustrative_only and non-quantitative")
+                        errors.append(
+                            f"{pwhere}: AI-generated schematic must be illustrative_only and non-quantitative"
+                        )
                     if panel.get("computed_surface") is True:
                         errors.append(f"{pwhere}: AI-generated schematic cannot be marked as a computed surface")
                 else:
@@ -183,7 +225,16 @@ def validate_manifest(data: Any, base: Path, research: dict[str, Any] | None = N
         baseline_where, baseline, baseline_role = entries[0]
         base_params = baseline.get("parameters", {}) if isinstance(baseline.get("parameters"), dict) else {}
         fields = ["method", "basis", "phase_or_solvent", "renderer", "camera_id"]
-        param_fields = ["isovalue_au", "density_isovalue_au", "esp_min", "esp_max", "unit", "palette", "positive_phase_color", "negative_phase_color"]
+        param_fields = [
+            "isovalue_au",
+            "density_isovalue_au",
+            "esp_min",
+            "esp_max",
+            "unit",
+            "palette",
+            "positive_phase_color",
+            "negative_phase_color",
+        ]
         for where, panel, role in entries[1:]:
             strict = role in {"main", "extended"} or baseline_role in {"main", "extended"}
             for field in fields:
@@ -194,7 +245,9 @@ def validate_manifest(data: Any, base: Path, research: dict[str, Any] | None = N
             for field in param_fields:
                 if field in base_params or field in params:
                     if params.get(field) != base_params.get(field):
-                        message = f"comparison_group {group}: parameter {field} differs between {baseline_where} and {where}"
+                        message = (
+                            f"comparison_group {group}: parameter {field} differs between {baseline_where} and {where}"
+                        )
                         (errors if strict else warnings).append(message)
 
     return errors, warnings
@@ -202,24 +255,60 @@ def validate_manifest(data: Any, base: Path, research: dict[str, Any] | None = N
 
 def _self_test() -> int:
     valid = {
-        "schema_version": "1.0", "project_id": "demo",
-        "figures": [{
-            "id": "F1", "title": "ESP comparison", "role": "main",
-            "conclusion": "The accepted structures have different surface potentials.",
-            "evidence_grade": "A", "outputs": ["F1.svg"],
-            "panels": [
-                {"id": "a", "type": "esp", "source_artifact_ids": ["art-a"],
-                 "method": "wB97X-D", "basis": "def2-SVP", "phase_or_solvent": "SMD",
-                 "renderer": "VMD/Tachyon", "camera_id": "cam-1", "comparison_group": "g1",
-                 "parameters": {"density_isovalue_au": 0.001, "esp_min": -0.05, "esp_max": 0.05,
-                                "unit": "a.u.", "negative_color": "red", "positive_color": "blue", "palette": "diverging"}},
-                {"id": "b", "type": "esp", "source_artifact_ids": ["art-b"],
-                 "method": "wB97X-D", "basis": "def2-SVP", "phase_or_solvent": "SMD",
-                 "renderer": "VMD/Tachyon", "camera_id": "cam-1", "comparison_group": "g1",
-                 "parameters": {"density_isovalue_au": 0.001, "esp_min": -0.05, "esp_max": 0.05,
-                                "unit": "a.u.", "negative_color": "red", "positive_color": "blue", "palette": "diverging"}},
-            ],
-        }],
+        "schema_version": "1.0",
+        "project_id": "demo",
+        "figures": [
+            {
+                "id": "F1",
+                "title": "ESP comparison",
+                "role": "main",
+                "conclusion": "The accepted structures have different surface potentials.",
+                "evidence_grade": "A",
+                "outputs": ["F1.svg"],
+                "panels": [
+                    {
+                        "id": "a",
+                        "type": "esp",
+                        "source_artifact_ids": ["art-a"],
+                        "method": "wB97X-D",
+                        "basis": "def2-SVP",
+                        "phase_or_solvent": "SMD",
+                        "renderer": "VMD/Tachyon",
+                        "camera_id": "cam-1",
+                        "comparison_group": "g1",
+                        "parameters": {
+                            "density_isovalue_au": 0.001,
+                            "esp_min": -0.05,
+                            "esp_max": 0.05,
+                            "unit": "a.u.",
+                            "negative_color": "red",
+                            "positive_color": "blue",
+                            "palette": "diverging",
+                        },
+                    },
+                    {
+                        "id": "b",
+                        "type": "esp",
+                        "source_artifact_ids": ["art-b"],
+                        "method": "wB97X-D",
+                        "basis": "def2-SVP",
+                        "phase_or_solvent": "SMD",
+                        "renderer": "VMD/Tachyon",
+                        "camera_id": "cam-1",
+                        "comparison_group": "g1",
+                        "parameters": {
+                            "density_isovalue_au": 0.001,
+                            "esp_min": -0.05,
+                            "esp_max": 0.05,
+                            "unit": "a.u.",
+                            "negative_color": "red",
+                            "positive_color": "blue",
+                            "palette": "diverging",
+                        },
+                    },
+                ],
+            }
+        ],
     }
     errors, _ = validate_manifest(valid, Path.cwd())
     broken = json.loads(json.dumps(valid))

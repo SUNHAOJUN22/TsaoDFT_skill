@@ -85,7 +85,12 @@ def validate(manifest_path: Path = MANIFEST) -> list[str]:
     if digest(path) != item.get("sha256"):
         failures.append(f"asset[0] SHA-256 mismatch for {rel}")
 
-    for key, expected in (("ai_generated", True), ("illustrative_only", True), ("quantitative", False), ("computed_surface", False)):
+    for key, expected in (
+        ("ai_generated", True),
+        ("illustrative_only", True),
+        ("quantitative", False),
+        ("computed_surface", False),
+    ):
         if item.get(key) is not expected:
             failures.append(f"asset[0] {key} must be {expected}")
 

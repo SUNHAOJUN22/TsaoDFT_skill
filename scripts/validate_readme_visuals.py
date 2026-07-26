@@ -18,7 +18,13 @@ AI_MANIFEST = ROOT / "assets/ai/manifest.yaml"
 
 MD_IMAGE_RE = re.compile(r"!\[[^\]]*\]\(([^)\s]+)(?:\s+[^)]*)?\)")
 HTML_IMAGE_RE = re.compile(r"<img\s+[^>]*src=[\"']([^\"']+)[\"'][^>]*>", re.IGNORECASE)
-REQUIRED_DEMOS = {"assets/demo/workflow-architecture.svg", "assets/demo/wavefunction-esp-gallery.svg", "assets/demo/dft-ml-dashboard.svg", "assets/demo/periodic-dft-materials.svg", "assets/demo/multiscale-kinetics.svg"}
+REQUIRED_DEMOS = {
+    "assets/demo/workflow-architecture.svg",
+    "assets/demo/wavefunction-esp-gallery.svg",
+    "assets/demo/dft-ml-dashboard.svg",
+    "assets/demo/periodic-dft-materials.svg",
+    "assets/demo/multiscale-kinetics.svg",
+}
 
 
 def digest(path: Path) -> str:
@@ -36,7 +42,10 @@ def validate() -> tuple[list[str], list[str]]:
         missing = [str(path.relative_to(ROOT)) for path in (README, README_EN) if not path.is_file()]
         return [f"missing README file(s): {missing}"], warnings
 
-    readmes = {"README.md": README.read_text(encoding="utf-8"), "README_EN.md": README_EN.read_text(encoding="utf-8")}
+    readmes = {
+        "README.md": README.read_text(encoding="utf-8"),
+        "README_EN.md": README_EN.read_text(encoding="utf-8"),
+    }
     refs_by_readme = {name: image_refs(text) for name, text in readmes.items()}
 
     for name, refs in refs_by_readme.items():
@@ -86,7 +95,11 @@ def validate() -> tuple[list[str], list[str]]:
         text = path.read_text(encoding="utf-8", errors="strict")
         if "NOT COMPUTATIONAL DATA" not in text and "NOT SCIENTIFIC DATA" not in text:
             failures.append(f"AI cover lacks visible non-data label: {path_value}")
-        for key, expected in {"illustrative_only": True, "quantitative": False, "computed_surface": False}.items():
+        for key, expected in {
+            "illustrative_only": True,
+            "quantitative": False,
+            "computed_surface": False,
+        }.items():
             if item.get(key) is not expected:
                 failures.append(f"AI cover {path_value} has invalid {key}")
 

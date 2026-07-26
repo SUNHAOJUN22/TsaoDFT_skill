@@ -80,7 +80,9 @@ def validate() -> tuple[list[str], list[dict[str, Any]]]:
             failures.append(f"{rel}: {exc}")
             continue
         if (width, height) != (expected_width, expected_height):
-            failures.append(f"demo dimensions changed for {rel}: {(width, height)} != {(expected_width, expected_height)}")
+            failures.append(
+                f"demo dimensions changed for {rel}: {(width, height)} != {(expected_width, expected_height)}"
+            )
         if root.attrib.get("role") != "img":
             failures.append(f"demo lacks role=img: {rel}")
         title = child_text(root, "title")
@@ -112,7 +114,9 @@ def main() -> int:
     else:
         for failure in failures:
             print(f"FAIL: {failure}")
-        print(f"README demo asset validation: {'PASS' if not failures else 'FAIL'} ({len(checked)}/{len(DEMO_SPECS)} checked)")
+        print(
+            f"README demo asset validation: {'PASS' if not failures else 'FAIL'} ({len(checked)}/{len(DEMO_SPECS)} checked)"
+        )
     return 0 if not failures else 1
 
 

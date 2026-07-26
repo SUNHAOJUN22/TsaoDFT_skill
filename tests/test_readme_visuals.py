@@ -10,7 +10,13 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-CURATED_DEMOS = {"assets/demo/workflow-architecture.svg", "assets/demo/wavefunction-esp-gallery.svg", "assets/demo/dft-ml-dashboard.svg", "assets/demo/periodic-dft-materials.svg", "assets/demo/multiscale-kinetics.svg"}
+CURATED_DEMOS = {
+    "assets/demo/workflow-architecture.svg",
+    "assets/demo/wavefunction-esp-gallery.svg",
+    "assets/demo/dft-ml-dashboard.svg",
+    "assets/demo/periodic-dft-materials.svg",
+    "assets/demo/multiscale-kinetics.svg",
+}
 
 
 def load_demo_validator():
@@ -26,7 +32,10 @@ def load_demo_validator():
 class ReadmeVisualTests(unittest.TestCase):
     def test_all_governed_ai_assets_are_embedded(self):
         manifest = yaml.safe_load((ROOT / "assets/ai/manifest.yaml").read_text(encoding="utf-8"))
-        readmes = [(ROOT / "README.md").read_text(encoding="utf-8"), (ROOT / "README_EN.md").read_text(encoding="utf-8")]
+        readmes = [
+            (ROOT / "README.md").read_text(encoding="utf-8"),
+            (ROOT / "README_EN.md").read_text(encoding="utf-8"),
+        ]
         for item in manifest["assets"]:
             for readme in readmes:
                 self.assertIn(item["path"], readme)
@@ -57,12 +66,19 @@ class ReadmeVisualTests(unittest.TestCase):
             self.assertEqual(sum(item.startswith("missing demo asset:") for item in failures), len(module.DEMO_SPECS))
 
     def test_demo_asset_validator_cli(self):
-        result = subprocess.run([sys.executable, str(ROOT / "scripts/generate_readme_demos.py")], cwd=ROOT, capture_output=True, text=True)
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/generate_readme_demos.py")], cwd=ROOT, capture_output=True, text=True
+        )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("README demo asset validation: PASS", result.stdout)
 
     def test_readme_visual_validator(self):
-        result = subprocess.run([sys.executable, str(ROOT / "scripts/validate_readme_visuals.py"), "--strict"], cwd=ROOT, capture_output=True, text=True)
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/validate_readme_visuals.py"), "--strict"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 

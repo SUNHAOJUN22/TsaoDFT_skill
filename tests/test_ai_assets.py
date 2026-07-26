@@ -36,7 +36,9 @@ class AIAssetTests(unittest.TestCase):
             self.assertIn("assets/demo/", text)
 
     def test_validator_cli(self):
-        result = subprocess.run([sys.executable, str(ROOT / "scripts/validate_ai_assets.py")], cwd=ROOT, capture_output=True, text=True)
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/validate_ai_assets.py")], cwd=ROOT, capture_output=True, text=True
+        )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 

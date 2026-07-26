@@ -1,129 +1,127 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1400" height="520" viewBox="0 0 1400 520" role="img" aria-labelledby="title desc" aria-label="AI-assisted conceptual illustration; not computational data">
 <title id="title">TsaoDFT evidence-first computational chemistry</title>
-<desc id="desc">Minimal conceptual cover for an auditable DFT workflow; not computational or scientific data.</desc>
+<desc id="desc">Editorial conceptual cover for an auditable DFT workflow spanning molecular, periodic and multiscale evidence; not computational or scientific data.</desc>
 <defs>
   <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
     <stop offset="0" stop-color="#020617"/>
-    <stop offset="0.58" stop-color="#071a2f"/>
-    <stop offset="1" stop-color="#160c2e"/>
+    <stop offset="0.52" stop-color="#071b31"/>
+    <stop offset="1" stop-color="#140a2a"/>
   </linearGradient>
   <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1">
     <stop offset="0" stop-color="#a5f3fc"/>
-    <stop offset="1" stop-color="#06b6d4"/>
+    <stop offset="1" stop-color="#0891b2"/>
   </linearGradient>
   <linearGradient id="violet" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0" stop-color="#ddd6fe"/>
+    <stop offset="0" stop-color="#ede9fe"/>
     <stop offset="1" stop-color="#7c3aed"/>
   </linearGradient>
-  <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+  <linearGradient id="amber" x1="0" y1="0" x2="1" y2="1">
     <stop offset="0" stop-color="#fef3c7"/>
     <stop offset="1" stop-color="#f59e0b"/>
   </linearGradient>
+  <linearGradient id="emerald" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#d1fae5"/>
+    <stop offset="1" stop-color="#10b981"/>
+  </linearGradient>
   <radialGradient id="halo">
-    <stop offset="0" stop-color="#22d3ee" stop-opacity="0.30"/>
-    <stop offset="0.50" stop-color="#8b5cf6" stop-opacity="0.12"/>
+    <stop offset="0" stop-color="#22d3ee" stop-opacity="0.36"/>
+    <stop offset="0.44" stop-color="#8b5cf6" stop-opacity="0.17"/>
     <stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/>
   </radialGradient>
-  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-    <path d="M40 0H0V40" fill="none" stroke="#7dd3fc" stroke-opacity="0.038"/>
+  <pattern id="grid" width="44" height="44" patternUnits="userSpaceOnUse">
+    <path d="M44 0H0V44" fill="none" stroke="#7dd3fc" stroke-opacity="0.03"/>
   </pattern>
-  <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
-    <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#000" flood-opacity="0.42"/>
-  </filter>
   <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
-    <feGaussianBlur stdDeviation="7" result="b"/>
+    <feGaussianBlur stdDeviation="8" result="b"/>
     <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
   </filter>
+  <filter id="shadow" x="-40%" y="-40%" width="180%" height="180%">
+    <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#000" flood-opacity="0.45"/>
+  </filter>
   <style><![CDATA[
-    .sans{font-family:Inter,Segoe UI,Arial,sans-serif}
-    .eyebrow{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:2.1px;fill:#67e8f9}
-    .title{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:66px;font-weight:750;letter-spacing:-2px;fill:#f8fafc}
-    .subtitle{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:20px;font-weight:400;fill:#b9cfe3}
-    .body{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:14px;font-weight:450;fill:#8eabc6}
-    .pill{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:.8px;fill:#dbeafe}
-    .cardTitle{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:18px;font-weight:700;fill:#f8fafc}
-    .cardBody{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:12px;font-weight:450;fill:#8faac4}
-    .foot{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:10px;font-weight:650;letter-spacing:.65px;fill:#6e8ca8}
+    .eyebrow{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:2.3px;fill:#67e8f9}
+    .title{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:70px;font-weight:760;letter-spacing:-2.4px;fill:#f8fafc}
+    .subtitle{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:21px;font-weight:420;fill:#c0d4e7}
+    .body{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:14px;font-weight:450;fill:#8fa9c2}
+    .stage{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:13px;font-weight:700;fill:#e8f1fa}
+    .small{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:11px;font-weight:500;fill:#8aa5bd}
+    .caption{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:10px;font-weight:650;letter-spacing:.8px;fill:#7593ad}
   ]]></style>
 </defs>
-<rect width="1400" height="520" rx="28" fill="url(#bg)"/>
-<rect width="1400" height="520" rx="28" fill="url(#grid)"/>
-<circle cx="1010" cy="220" r="350" fill="url(#halo)"/>
-<path d="M0 385C250 315 395 407 610 330S980 135 1400 250" fill="none" stroke="#22d3ee" stroke-width="1.5" stroke-opacity=".12"/>
 
-<!-- left: identity -->
-<text x="76" y="82" class="eyebrow">DFT-FIRST · AUDITABLE · EVIDENCE-LOCKED</text>
-<text x="76" y="158" class="title">TsaoDFT</text>
-<text x="76" y="203" class="subtitle">Computational chemistry from model definition to accepted claim.</text>
-<text x="76" y="244" class="body">Molecular and periodic DFT · validation · provenance · ML · kinetics</text>
+<rect width="1400" height="520" rx="30" fill="url(#bg)"/>
+<rect width="1400" height="520" rx="30" fill="url(#grid)"/>
+<circle cx="900" cy="225" r="355" fill="url(#halo)"/>
+<path d="M0 404C210 338 365 416 570 352S975 133 1400 252" fill="none" stroke="#22d3ee" stroke-width="1.4" stroke-opacity=".11"/>
+<path d="M460 36C690 118 782 34 1035 80S1240 164 1400 135" fill="none" stroke="#a78bfa" stroke-width="1.2" stroke-opacity=".09"/>
 
-<g transform="translate(76 292)">
-  <rect width="142" height="34" rx="17" fill="#0b243d" stroke="#245a7e"/>
-  <circle cx="18" cy="17" r="4" fill="#34d399"/>
-  <text x="32" y="21" class="pill">STRUCTURE</text>
-  <rect x="154" width="102" height="34" rx="17" fill="#0b243d" stroke="#245a7e"/>
-  <circle cx="172" cy="17" r="4" fill="#67e8f9"/>
-  <text x="186" y="21" class="pill">DFT</text>
-  <rect x="268" width="138" height="34" rx="17" fill="#0b243d" stroke="#245a7e"/>
-  <circle cx="286" cy="17" r="4" fill="#fbbf24"/>
-  <text x="300" y="21" class="pill">VALIDATE</text>
-  <rect x="418" width="130" height="34" rx="17" fill="#0b243d" stroke="#245a7e"/>
-  <circle cx="436" cy="17" r="4" fill="#a78bfa"/>
-  <text x="450" y="21" class="pill">EVIDENCE</text>
+<!-- identity -->
+<text x="74" y="78" class="eyebrow">DFT-FIRST · AUDITABLE · EVIDENCE-LOCKED</text>
+<text x="74" y="161" class="title">TsaoDFT</text>
+<text x="74" y="208" class="subtitle">Computational chemistry with an explicit path from model to claim.</text>
+<text x="74" y="249" class="body">Molecular DFT · periodic materials · provenance · ML · kinetics</text>
+
+<!-- state rail -->
+<g transform="translate(74 326)">
+  <path d="M0 0H486" stroke="#274b66" stroke-width="2"/>
+  <circle cx="0" cy="0" r="6" fill="url(#emerald)"/>
+  <circle cx="162" cy="0" r="6" fill="url(#cyan)"/>
+  <circle cx="324" cy="0" r="6" fill="url(#amber)"/>
+  <circle cx="486" cy="0" r="6" fill="url(#violet)"/>
+  <text x="0" y="31" class="stage">MODEL</text>
+  <text x="162" y="31" text-anchor="middle" class="stage">COMPUTE</text>
+  <text x="324" y="31" text-anchor="middle" class="stage">VALIDATE</text>
+  <text x="486" y="31" text-anchor="end" class="stage">ACCEPT</text>
+  <text x="0" y="52" class="small">charge · spin · mapping</text>
+  <text x="486" y="52" text-anchor="end" class="small">bounded evidence · claim scope</text>
 </g>
 
-<g transform="translate(76 376)">
-  <path d="M0 0H500" stroke="#21445f"/>
-  <circle cx="0" cy="0" r="5" fill="#34d399"/>
-  <circle cx="166" cy="0" r="5" fill="#67e8f9"/>
-  <circle cx="333" cy="0" r="5" fill="#fbbf24"/>
-  <circle cx="500" cy="0" r="5" fill="#a78bfa"/>
-  <text x="0" y="27" class="body">prepared</text>
-  <text x="166" y="27" text-anchor="middle" class="body">completed</text>
-  <text x="333" y="27" text-anchor="middle" class="body">validated</text>
-  <text x="500" y="27" text-anchor="end" class="body">claim accepted</text>
+<!-- central electronic structure motif -->
+<g transform="translate(770 246)" filter="url(#glow)">
+  <ellipse rx="150" ry="58" fill="#8b5cf6" opacity=".25" transform="rotate(-22)"/>
+  <ellipse rx="150" ry="58" fill="#22d3ee" opacity=".21" transform="rotate(22)"/>
+  <ellipse rx="54" ry="165" fill="#f59e0b" opacity=".07" transform="rotate(90)"/>
+  <line x1="-70" y1="0" x2="70" y2="0" stroke="#dbeafe" stroke-width="3"/>
+  <circle cx="-84" cy="0" r="16" fill="url(#cyan)"/>
+  <circle cx="84" cy="0" r="16" fill="url(#violet)"/>
+  <circle r="13" fill="#f8fafc"/>
 </g>
+<text x="770" y="374" text-anchor="middle" class="eyebrow">ELECTRONIC-STRUCTURE EVIDENCE CORE</text>
 
-<!-- center: electronic structure symbol -->
-<g transform="translate(755 244)" filter="url(#glow)">
-  <ellipse rx="120" ry="47" fill="#8b5cf6" opacity=".26" transform="rotate(-24)"/>
-  <ellipse rx="120" ry="47" fill="#22d3ee" opacity=".23" transform="rotate(24)"/>
-  <line x1="-54" y1="0" x2="54" y2="0" stroke="#dbeafe" stroke-width="3"/>
-  <circle cx="-66" cy="0" r="14" fill="url(#cyan)"/>
-  <circle cx="66" cy="0" r="14" fill="url(#violet)"/>
-  <circle r="11" fill="#f8fafc"/>
-</g>
-<text x="755" y="356" text-anchor="middle" class="eyebrow">ELECTRONIC-STRUCTURE CORE</text>
+<!-- right scientific evidence panel -->
+<g transform="translate(1015 78)" filter="url(#shadow)">
+  <rect width="310" height="354" rx="24" fill="#071a2e" fill-opacity=".92" stroke="#2b5678"/>
+  <text x="28" y="42" class="stage">EVIDENCE WINDOW</text>
+  <text x="28" y="65" class="small">one accepted claim, three independent checks</text>
 
-<!-- right: three clean cards -->
-<g transform="translate(930 100)" filter="url(#shadow)">
-  <rect width="380" height="98" rx="20" fill="#081b30" stroke="#275576"/>
-  <rect width="6" height="98" rx="3" fill="url(#cyan)"/>
-  <text x="30" y="39" class="cardTitle">Define the model</text>
-  <text x="30" y="65" class="cardBody">Charge · spin · structure · method fingerprint</text>
-  <circle cx="337" cy="49" r="18" fill="#0b2c45" stroke="#22d3ee"/>
-  <path d="M329 49l6 6 11-14" fill="none" stroke="#67e8f9" stroke-width="2.5"/>
-</g>
-<g transform="translate(930 214)" filter="url(#shadow)">
-  <rect width="380" height="98" rx="20" fill="#081b30" stroke="#4b3a79"/>
-  <rect width="6" height="98" rx="3" fill="url(#gold)"/>
-  <text x="30" y="39" class="cardTitle">Validate the calculation</text>
-  <text x="30" y="65" class="cardBody">SCF · modes · convergence · state consistency</text>
-  <path d="M303 68C316 62 321 38 333 48s16 18 27-1" fill="none" stroke="#fbbf24" stroke-width="3"/>
-</g>
-<g transform="translate(930 328)" filter="url(#shadow)">
-  <rect width="380" height="98" rx="20" fill="#081b30" stroke="#4b3a79"/>
-  <rect width="6" height="98" rx="3" fill="url(#violet)"/>
-  <text x="30" y="39" class="cardTitle">Accept bounded evidence</text>
-  <text x="30" y="65" class="cardBody">Artifacts · uncertainty · provenance · claim scope</text>
-  <g transform="translate(326 29)">
-    <circle cx="0" cy="0" r="5" fill="#34d399"/>
-    <circle cx="34" cy="18" r="5" fill="#67e8f9"/>
-    <circle cx="0" cy="36" r="5" fill="#a78bfa"/>
-    <path d="M4 3L30 16M30 21L4 33" stroke="#6b8eaa" stroke-width="1.5"/>
+  <!-- energy landscape -->
+  <g transform="translate(28 102)">
+    <path d="M0 70H254M0 0V70" stroke="#355d7a" stroke-width="1"/>
+    <path d="M8 62C42 58 57 18 91 23s48 45 82 42 42-46 73-56" fill="none" stroke="#f59e0b" stroke-width="3"/>
+    <circle cx="91" cy="23" r="5" fill="#fbbf24"/>
+    <circle cx="246" cy="9" r="5" fill="#a78bfa"/>
+    <text x="0" y="91" class="small">stationary points · modes · barriers</text>
+  </g>
+
+  <!-- periodic lattice -->
+  <g transform="translate(30 222)" stroke="#67e8f9" stroke-width="1.4">
+    <path d="M0 55l54-31 54 31-54 31z" fill="#0d2a45"/>
+    <path d="M0 55V11l54-31 54 31v44M54-20V24" fill="none"/>
+  </g>
+  <g transform="translate(30 222)" fill="#34d399">
+    <circle cx="0" cy="11" r="5"/><circle cx="54" cy="-20" r="5"/><circle cx="108" cy="11" r="5"/>
+  </g>
+
+  <!-- provenance chain -->
+  <g transform="translate(164 220)">
+    <circle cx="0" cy="18" r="7" fill="#34d399"/>
+    <circle cx="42" cy="50" r="7" fill="#67e8f9"/>
+    <circle cx="84" cy="18" r="7" fill="#a78bfa"/>
+    <path d="M7 21L35 45M49 45L77 21" stroke="#6f91aa" stroke-width="2"/>
+    <text x="42" y="82" text-anchor="middle" class="small">hash · lineage · scope</text>
   </g>
 </g>
 
 <rect y="492" width="1400" height="28" fill="#020617" fill-opacity=".92"/>
-<text x="1380" y="511" text-anchor="end" class="foot">AI-ASSISTED CONCEPTUAL ILLUSTRATION · NOT COMPUTATIONAL DATA</text>
+<text x="1380" y="511" text-anchor="end" class="caption">AI-ASSISTED CONCEPTUAL ILLUSTRATION · NOT COMPUTATIONAL DATA</text>
 </svg>

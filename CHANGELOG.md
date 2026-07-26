@@ -2,7 +2,8 @@
 
 ## Unreleased — README visual, CI and repository hardening
 
-- Replaced the dense `premium_scientific_v3` module-card gallery with one restrained `premium_scientific_v4_minimal` cover and a curated set of five deterministic README visuals.
+- Refined the single README cover into the `premium_scientific_v5_editorial` composition: larger typography, one evidence rail, one electronic-structure core and one integrated molecular/periodic/provenance panel.
+- Replaced the dense `premium_scientific_v3` module-card gallery with one restrained conceptual cover and a curated set of five deterministic README visuals.
 - Deleted seven redundant AI module-card SVGs and prohibited deprecated `assets/ai/modules/` references from returning.
 - Kept all eight deterministic demo assets under strict, read-only integrity validation while decoupling asset validation from README curation.
 - Added bilingual README cross-validation for the single governed cover and the curated scientific demonstrations.

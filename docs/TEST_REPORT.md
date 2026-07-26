@@ -41,7 +41,7 @@ Every discovered suite must execute at least one test. A missing, unparseable or
 - strict read-only validation of all eight versioned demo SVGs, including XML, exact dimensions, titles, accessible descriptions and visible synthetic-data notices;
 - explicit failure for missing, degraded or placeholder demo assets, with no automatic fallback writes;
 - explicit rejection of wording that presents conceptual illustrations as calculated orbitals, surfaces or scientific results;
-- local raster review of the minimal `premium_scientific_v4` cover before publication.
+- local raster review of the editorial `premium_scientific_v5` cover before publication.
 
 ## Scientific and workflow coverage
 

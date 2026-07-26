@@ -50,9 +50,10 @@ This Skill is the periodic counterpart to `tsao-dft-researcher`. It is engine-ne
 
 ## Deterministic periodic-DFT adapters
 
-- VASP: `preflight_vasp.py` and `parse_vasp.py`.
-- Quantum ESPRESSO: `preflight_qe.py` and `parse_qe.py`.
-- CP2K: `preflight_cp2k.py` and `parse_cp2k.py`.
+- VASP: `preflight_vasp.py` and memory-mapped `parse_vasp.py`.
+- Quantum ESPRESSO: `preflight_qe.py` and memory-mapped `parse_qe.py`.
+- CP2K: `preflight_cp2k.py` and memory-mapped `parse_cp2k.py`.
+- The parsers retain selected last values and small terminal evidence blocks without decoding the complete output into Python memory.
 - `analyze_convergence.py` evaluates a declared one-parameter convergence series.
 
 Adapters cover selected fields and remain L2 until a real site records L3 regression evidence.

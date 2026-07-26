@@ -11,104 +11,185 @@ from pathlib import Path
 
 import numpy as np
 
-
-def read(path):
-    with Path(path).open(encoding="utf-8", newline="") as f:
-        return list(csv.DictReader(f))
+SOLVERS = ("auto", "primal", "dual")
 
 
-def metrics(y, p):
+def read(path: Path) -> list[dict[str, str]]:
+    with path.open(encoding="utf-8", newline="") as handle:
+        return list(csv.DictReader(handle))
+
+
+def metrics(y, prediction):
     y = np.asarray(y, float)
-    p = np.asarray(p, float)
-    err = p - y
-    mae = float(np.mean(np.abs(err)))
-    rmse = float(np.sqrt(np.mean(err**2)))
-    den = float(np.sum((y - y.mean()) ** 2))
-    r2 = float(1 - np.sum(err**2) / den) if den > 0 else None
+    prediction = np.asarray(prediction, float)
+    error = prediction - y
+    mae = float(np.mean(np.abs(error)))
+    rmse = float(np.sqrt(np.mean(error**2)))
+    denominator = float(np.sum((y - y.mean()) ** 2))
+    r2 = float(1 - np.sum(error**2) / denominator) if denominator > 0 else None
     return {"mae": mae, "rmse": rmse, "r2": r2}
 
 
 def split_groups(rows, group, seed, frac_train=0.7, frac_valid=0.15):
-    groups = sorted({r[group] for r in rows})
+    groups = sorted({row[group] for row in rows})
     rng = random.Random(seed)
     rng.shuffle(groups)
-    n = len(groups)
-    nt = max(1, round(n * frac_train))
-    nv = max(1, round(n * frac_valid)) if n >= 3 else 0
-    if nt + nv >= n:
-        nv = max(0, n - nt - 1)
-    assign = {g: "train" if i < nt else "valid" if i < nt + nv else "test" for i, g in enumerate(groups)}
-    return assign
+    count = len(groups)
+    train_count = max(1, round(count * frac_train))
+    valid_count = max(1, round(count * frac_valid)) if count >= 3 else 0
+    if train_count + valid_count >= count:
+        valid_count = max(0, count - train_count - 1)
+    return {
+        value: "train" if index < train_count else "valid" if index < train_count + valid_count else "test"
+        for index, value in enumerate(groups)
+    }
+
+
+def fit_ridge(
+    x_train: np.ndarray,
+    y_train: np.ndarray,
+    alpha: float,
+    solver: str = "auto",
+) -> tuple[float, np.ndarray, str, int]:
+    """Fit ridge with an unpenalized intercept and the smaller linear system when possible."""
+    x_train = np.asarray(x_train, dtype=float)
+    y_train = np.asarray(y_train, dtype=float)
+    if x_train.ndim != 2 or y_train.ndim != 1 or len(x_train) != len(y_train):
+        raise ValueError("x_train must be 2-D and aligned with one-dimensional y_train")
+    if alpha < 0:
+        raise ValueError("alpha must be non-negative")
+    if solver not in SOLVERS:
+        raise ValueError(f"solver must be one of {SOLVERS}")
+
+    sample_count, feature_count = x_train.shape
+    intercept = float(y_train.mean())
+    centered_target = y_train - intercept
+
+    if alpha == 0:
+        design = np.column_stack((np.ones(sample_count), x_train))
+        beta, *_ = np.linalg.lstsq(design, y_train, rcond=None)
+        return float(beta[0]), np.asarray(beta[1:], float), "lstsq", min(design.shape)
+
+    selected = solver
+    if solver == "auto":
+        selected = "dual" if feature_count > sample_count else "primal"
+
+    if selected == "dual":
+        gram = x_train @ x_train.T
+        dual = np.linalg.solve(gram + alpha * np.eye(sample_count), centered_target)
+        coefficients = x_train.T @ dual
+        dimension = sample_count
+    else:
+        gram = x_train.T @ x_train
+        coefficients = np.linalg.solve(gram + alpha * np.eye(feature_count), x_train.T @ centered_target)
+        dimension = feature_count
+
+    return intercept, np.asarray(coefficients, float), selected, dimension
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("dataset", type=Path)
-    ap.add_argument("--features", required=True)
-    ap.add_argument("--target", required=True)
-    ap.add_argument("--group", required=True)
-    ap.add_argument("--seed", type=int, default=17)
-    ap.add_argument("--alpha", type=float, default=1.0)
-    ap.add_argument("--out-dir", type=Path, required=True)
-    a = ap.parse_args()
-    rows = read(a.dataset)
-    features = [x.strip() for x in a.features.split(",") if x.strip()]
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("dataset", type=Path)
+    parser.add_argument("--features", required=True)
+    parser.add_argument("--target", required=True)
+    parser.add_argument("--group", required=True)
+    parser.add_argument("--seed", type=int, default=17)
+    parser.add_argument("--alpha", type=float, default=1.0)
+    parser.add_argument("--solver", choices=SOLVERS, default="auto")
+    parser.add_argument("--out-dir", type=Path, required=True)
+    args = parser.parse_args()
+
+    rows = read(args.dataset)
+    features = [value.strip() for value in args.features.split(",") if value.strip()]
     errors = []
-    try:
-        X = np.array([[float(r[f]) for f in features] for r in rows], float)
-        y = np.array([float(r[a.target]) for r in rows], float)
-    except Exception as exc:
-        print(json.dumps({"ok": False, "errors": [str(exc)]}, indent=2))
-        return 1
-    assign = split_groups(rows, a.group, a.seed)
-    idx = {
-        s: np.array([i for i, r in enumerate(rows) if assign[r[a.group]] == s], int) for s in ["train", "valid", "test"]
-    }
-    if len(idx["train"]) < 2 or len(idx["test"]) < 1:
-        errors.append("insufficient grouped train/test samples")
+    if not rows:
+        errors.append("dataset is empty")
+    if not features:
+        errors.append("at least one feature is required")
+    if args.alpha < 0:
+        errors.append("alpha must be non-negative")
     if errors:
         print(json.dumps({"ok": False, "errors": errors}, indent=2))
         return 1
-    mean = X[idx["train"]].mean(axis=0)
-    std = X[idx["train"]].std(axis=0)
+
+    try:
+        feature_matrix = np.asarray([[float(row[feature]) for feature in features] for row in rows], dtype=float)
+        target = np.asarray([float(row[args.target]) for row in rows], dtype=float)
+    except Exception as exc:
+        print(json.dumps({"ok": False, "errors": [str(exc)]}, indent=2))
+        return 1
+
+    assignment = split_groups(rows, args.group, args.seed)
+    split_labels = np.asarray([assignment[row[args.group]] for row in rows])
+    indices = {name: np.flatnonzero(split_labels == name) for name in ("train", "valid", "test")}
+    if len(indices["train"]) < 2 or len(indices["test"]) < 1:
+        print(json.dumps({"ok": False, "errors": ["insufficient grouped train/test samples"]}, indent=2))
+        return 1
+
+    train_index = indices["train"]
+    mean = feature_matrix[train_index].mean(axis=0)
+    std = feature_matrix[train_index].std(axis=0)
     std[std == 0] = 1.0
-    Xs = (X - mean) / std
-    Xa = np.column_stack([np.ones(len(Xs)), Xs])
-    pen = np.eye(Xa.shape[1])
-    pen[0, 0] = 0
-    beta = np.linalg.solve(Xa[idx["train"]].T @ Xa[idx["train"]] + a.alpha * pen, Xa[idx["train"]].T @ y[idx["train"]])
-    pred = Xa @ beta
-    a.out_dir.mkdir(parents=True, exist_ok=True)
-    with (a.out_dir / "predictions.csv").open("w", newline="", encoding="utf-8") as f:
+    standardized = (feature_matrix - mean) / std
+
+    try:
+        intercept, coefficients, solver_used, solve_dimension = fit_ridge(
+            standardized[train_index],
+            target[train_index],
+            args.alpha,
+            args.solver,
+        )
+    except (ValueError, np.linalg.LinAlgError) as exc:
+        print(json.dumps({"ok": False, "errors": [str(exc)]}, indent=2))
+        return 1
+
+    prediction = intercept + standardized @ coefficients
+    beta = np.concatenate(([intercept], coefficients))
+
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+    with (args.out_dir / "predictions.csv").open("w", newline="", encoding="utf-8") as handle:
         fields = [*list(rows[0]), "split", "prediction", "residual"]
-        w = csv.DictWriter(f, fieldnames=fields)
-        w.writeheader()
-        for i, r in enumerate(rows):
-            w.writerow({**r, "split": assign[r[a.group]], "prediction": pred[i], "residual": pred[i] - y[i]})
+        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer.writeheader()
+        for index, row in enumerate(rows):
+            writer.writerow(
+                {
+                    **row,
+                    "split": split_labels[index],
+                    "prediction": prediction[index],
+                    "residual": prediction[index] - target[index],
+                }
+            )
+
     card = {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "model_id": "ridge-baseline",
         "model_family": "ridge",
         "features": features,
-        "target": a.target,
-        "group_column": a.group,
+        "target": args.target,
+        "group_column": args.group,
         "split_policy": "group",
-        "seed": a.seed,
-        "alpha": a.alpha,
+        "seed": args.seed,
+        "alpha": args.alpha,
+        "solver_requested": args.solver,
+        "solver_used": solver_used,
+        "solve_dimension": solve_dimension,
         "preprocessing_fit_scope": "train_only",
         "standardization": {"mean": mean.tolist(), "std": std.tolist()},
         "coefficients": beta.tolist(),
-        "metrics": {s: metrics(y[ii], pred[ii]) for s, ii in idx.items() if len(ii)},
-        "counts": {s: len(ii) for s, ii in idx.items()},
+        "metrics": {name: metrics(target[index], prediction[index]) for name, index in indices.items() if len(index)},
+        "counts": {name: len(index) for name, index in indices.items()},
         "scientific_interpretation": "baseline_only",
         "status": "validated",
     }
-    (a.out_dir / "model-card.json").write_text(json.dumps(card, indent=2), encoding="utf-8")
+    (args.out_dir / "model-card.json").write_text(json.dumps(card, indent=2), encoding="utf-8")
     print(
         json.dumps(
             {
                 "ok": True,
-                "outputs": [str(a.out_dir / "predictions.csv"), str(a.out_dir / "model-card.json")],
+                "outputs": [str(args.out_dir / "predictions.csv"), str(args.out_dir / "model-card.json")],
+                "solver_used": solver_used,
+                "solve_dimension": solve_dimension,
                 "metrics": card["metrics"],
             },
             indent=2,

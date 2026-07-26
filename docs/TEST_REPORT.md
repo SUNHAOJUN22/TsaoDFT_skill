@@ -1,11 +1,11 @@
 # Test Report
 
-Date: 2026-07-26  
+Date: 2026-07-27  
 Version: `0.4.0-alpha.1`
 
 ## Result
 
-**PASS — 70 unit tests across 9 isolated suites, 0 failed suites.**
+**PASS — 78 unit tests across 9 isolated suites, 0 failed suites.**
 
 | Suite | Tests | Result |
 |---|---:|---|
@@ -13,8 +13,8 @@ Version: `0.4.0-alpha.1`
 | `tsao-dft-suite` | 4 | PASS |
 | `tsao-dft-researcher` | 16 | PASS |
 | `tsao-structure-prep` | 4 | PASS |
-| `tsao-periodic-dft-materials` | 7 | PASS |
-| `tsao-dft-ml-active-learning` | 5 | PASS |
+| `tsao-periodic-dft-materials` | 11 | PASS |
+| `tsao-dft-ml-active-learning` | 9 | PASS |
 | `tsao-dft-hpc-provenance` | 7 | PASS |
 | `tsao-dft-kinetics-multiscale` | 5 | PASS |
 | `tsao-dft-catalysis-profile` | 5 | PASS |
@@ -31,7 +31,16 @@ Every discovered suite must execute at least one test. A missing, unparseable or
 - obsolete bootstrap, patch-bundle and workflow-probe files were removed;
 - strict validation rejects private root bundles, workflow probes, backup/editor files, empty files and large encoded bootstrap payloads;
 - `.github/workflows/ci.yml` is the only permitted workflow file;
-- GitHub Actions dependencies are pinned to immutable commit SHAs.
+- GitHub Actions dependencies are pinned to immutable Node 24-compatible commit SHAs.
+
+## Efficiency coverage
+
+- VASP, Quantum ESPRESSO and CP2K output parsers are verified to operate without `Path.read_text`, preserving selected evidence through read-only memory-mapped scans;
+- VASP regression coverage checks last energy, Fermi level, NIONS, force norm, elapsed time and validation status;
+- QE and CP2K regression coverage checks last values, count semantics and relaxation/static status;
+- the NumPy ridge baseline verifies primal/dual numerical equivalence, automatic solver selection and stable `alpha = 0` least squares;
+- the DFT dataset validator precomputes the duplicate-signature field order instead of sorting it for every row;
+- the implementation benchmark and engine-level boundaries are documented in `docs/PERFORMANCE_GUIDE.md`.
 
 ## Visual, link and deterministic coverage
 

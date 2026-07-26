@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-70%20passing-16A34A" alt="70 tests passing">
+  <img src="https://img.shields.io/badge/tests-78%20passing-16A34A" alt="78 tests passing">
   <img src="https://img.shields.io/badge/support-L0%E2%80%93L3-6D5DFB" alt="Support levels L0 to L3">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
@@ -78,6 +78,15 @@ Every demonstration is labelled `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`. The com
 
 Gaussian, VASP, Quantum ESPRESSO and CP2K currently expose selected-field **L2 adapters**. TsaoDFT does not claim L3 without legal real-engine regression evidence.
 
+## Compute-efficiency architecture
+
+- VASP, Quantum ESPRESSO and CP2K output adapters use read-only memory maps and focused evidence scans instead of repeatedly decoding entire large output files; Python peak memory is largely decoupled from file size.
+- The DFT-ML ridge baseline automatically selects the primal or dual linear system from the training shape; wide feature matrices no longer always solve a large feature covariance system.
+- Dataset duplicate signatures compute their stable field order once rather than sorting identical metadata for every row.
+- Boundaries and guidance for HPC, NumPy, ASE sockets, MPI-safe I/O, scheduler arrays and checkpoint reuse are documented in [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md).
+
+These changes reduce Python, I/O and scheduling overhead. They do not alter DFT methods, convergence thresholds or scientific acceptance. Real engine acceleration still requires measurement on the legal target environment.
+
 ## Installation
 
 ```bash
@@ -129,6 +138,7 @@ Read next:
 - [`docs/ENGINE_SUPPORT_MATRIX.md`](docs/ENGINE_SUPPORT_MATRIX.md)
 - [`docs/CAPABILITY_STATUS.yaml`](docs/CAPABILITY_STATUS.yaml)
 - [`docs/SCIENTIFIC_BOUNDARIES.md`](docs/SCIENTIFIC_BOUNDARIES.md)
+- [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md)
 - [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md)
 - [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md)
 

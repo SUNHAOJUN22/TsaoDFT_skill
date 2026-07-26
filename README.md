@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-70%20passing-16A34A" alt="70 tests passing">
+  <img src="https://img.shields.io/badge/tests-78%20passing-16A34A" alt="78 tests passing">
   <img src="https://img.shields.io/badge/support-L0%E2%80%93L3-6D5DFB" alt="Support levels L0 to L3">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
@@ -78,6 +78,15 @@ README 只展示最能代表核心能力的图件，避免形成重复的“功�
 
 Gaussian、VASP、Quantum ESPRESSO 和 CP2K 当前提供选定字段的 **L2 适配器**。仓库不会在缺少合法真实引擎回归记录时宣称 L3。
 
+## 计算效率架构
+
+- VASP、Quantum ESPRESSO 与 CP2K 输出解析器使用只读内存映射与单次证据扫描，不再把大型输出完整解码并重复扫描；Python 峰值内存近似与文件大小解耦。
+- DFT-ML ridge 基线按训练样本数与特征数自动选择 primal/dual 线性系统；宽特征矩阵不再无条件求解大型特征协方差矩阵。
+- 数据集重复记录签名字段只排序一次，避免按样本重复构建相同元数据顺序。
+- HPC、NumPy、ASE socket、MPI-safe I/O、作业数组和检查点复用的边界与使用建议见 [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md)。
+
+这些优化减少的是 Python、I/O 和调度开销，不改变 DFT 方法、收敛阈值或科学验收条件。真实引擎加速仍必须在合法目标环境中实测。
+
 ## 安装
 
 ```bash
@@ -129,6 +138,7 @@ python scripts/run_all_tests.py
 - [`docs/ENGINE_SUPPORT_MATRIX.md`](docs/ENGINE_SUPPORT_MATRIX.md)
 - [`docs/CAPABILITY_STATUS.yaml`](docs/CAPABILITY_STATUS.yaml)
 - [`docs/SCIENTIFIC_BOUNDARIES.md`](docs/SCIENTIFIC_BOUNDARIES.md)
+- [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md)
 - [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md)
 - [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md)
 

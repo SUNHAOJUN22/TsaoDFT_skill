@@ -1,7 +1,13 @@
 # Changelog
 
-## Unreleased — README visual, CI and repository hardening
+## Unreleased — compute efficiency, README visual, CI and repository hardening
 
+- Replaced repeated full-file VASP, Quantum ESPRESSO and CP2K output decoding with read-only memory-mapped evidence scans; selected fields and acceptance boundaries remain unchanged.
+- Added automatic primal/dual ridge selection so wide DFT descriptor matrices solve the smaller sample-space system, with stable least squares for `alpha = 0` and solver provenance in the model card.
+- Removed repeated duplicate-signature field sorting from the DFT dataset validator.
+- Added eight regression tests for streaming parsers and adaptive ridge solvers, increasing the test count from 70 to 78.
+- Added `docs/PERFORMANCE_GUIDE.md` with implementation benchmarks and official NumPy, Python, ASE and Slurm execution guidance.
+- Upgraded pinned GitHub Actions to Node 24-compatible `checkout` v6, `setup-python` v6 and `upload-artifact` v7 commits.
 - Refined the single README cover into the `premium_scientific_v5_editorial` composition: larger typography, one evidence rail, one electronic-structure core and one integrated molecular/periodic/provenance panel.
 - Replaced the dense `premium_scientific_v3` module-card gallery with one restrained conceptual cover and a curated set of five deterministic README visuals.
 - Deleted seven redundant AI module-card SVGs and prohibited deprecated `assets/ai/modules/` references from returning.
@@ -12,7 +18,6 @@
 - Hardened CI with Python 3.10/3.12/3.13, pinned Ruff lint/format gates, dependency bounds, concurrency control, failure-log artifacts, commit statuses and manual dispatch.
 - Removed obsolete issue-triggered bootstrap, README-patch, clean-rebuild and self-attestation workflows; `ci.yml` is the single permanent quality gate.
 - Removed stale maintenance payloads, root patch bundles and workflow probes; closed obsolete maintenance issues.
-- Expanded the repository test count from 63 to 70 with AI-governance, curated visual-completeness, offline link-integrity and read-only demo-validator coverage.
 
 ## 0.4.0-alpha.1 — 2026-07-24
 

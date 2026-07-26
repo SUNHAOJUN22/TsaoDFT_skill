@@ -41,8 +41,8 @@ Use only after the independent scientific sample unit is defined. A conformer, s
 
 ## Deterministic DFT-ML tools
 
-- `validate_dft_dataset.py` checks parent identities, method/fidelity provenance, duplicates and split leakage.
-- `train_ridge_baseline.py` provides a transparent NumPy baseline with train-only standardization and grouped splitting.
+- `validate_dft_dataset.py` checks parent identities, method/fidelity provenance, duplicates and split leakage; duplicate signature fields are ordered once for large tables.
+- `train_ridge_baseline.py` provides a transparent NumPy baseline with train-only standardization, grouped splitting and automatic primal/dual solver selection based on matrix shape.
 - `validate_model_card.py` checks metrics, applicability domain and uncertainty records.
 
 DeepChem or GNN backends are optional; they cannot bypass the same data contract.

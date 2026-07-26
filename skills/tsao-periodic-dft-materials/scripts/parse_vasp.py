@@ -4,63 +4,118 @@
 from __future__ import annotations
 
 import argparse
-import contextlib
 import json
+import math
+import mmap
 import re
 from pathlib import Path
 
-FLOAT = r"[-+]?\d*\.?\d+(?:[Ee][-+]?\d+)?"
+FLOAT = rb"[-+]?\d*\.?\d+(?:[Ee][-+]?\d+)?"
+VERSION_RE = re.compile(rb"vasp\.([\d.]+)", re.IGNORECASE)
+ENERGY_RE = re.compile(rb"free\s+energy\s+TOTEN\s*=\s*(" + FLOAT + rb")\s+eV", re.IGNORECASE)
+FERMI_RE = re.compile(rb"E-fermi\s*:\s*(" + FLOAT + rb")", re.IGNORECASE)
+NIONS_RE = re.compile(rb"NIONS\s*=\s*(\d+)")
+ELAPSED_RE = re.compile(rb"Elapsed time \(sec\):\s*(" + FLOAT + rb")")
+WARNING_PATTERNS = (
+    (re.compile(rb"BRMIX: very serious problems", re.IGNORECASE), "BRMIX mixing problem"),
+    (re.compile(rb"ZBRENT: fatal error", re.IGNORECASE), "ZBRENT ionic optimization error"),
+    (
+        re.compile(rb"WARNING: Sub-Space-Matrix is not hermitian", re.IGNORECASE),
+        "subspace matrix warning",
+    ),
+    (re.compile(rb"EDDDAV: Call to ZHEGV failed", re.IGNORECASE), "diagonalization failure"),
+)
+
+
+def scan_last(data: mmap.mmap, pattern: re.Pattern[bytes]) -> tuple[bytes | None, int]:
+    value = None
+    count = 0
+    for match in pattern.finditer(data):
+        value = match.group(1)
+        count += 1
+    return value, count
+
+
+def last_match(data: mmap.mmap, marker: bytes, pattern: re.Pattern[bytes], window: int = 512):
+    position = data.rfind(marker)
+    if position < 0:
+        return None
+    match = pattern.search(data, position, min(len(data), position + window))
+    return match.group(1) if match else None
 
 
 def parse(path: Path) -> dict:
     run = path if path.is_dir() else path.parent
     out = run / "OUTCAR" if path.is_dir() else path
-    text = out.read_text(encoding="utf-8", errors="replace") if out.exists() else ""
-    normal = "General timing and accounting informations for this job" in text
-    version = re.search(r"vasp\.([\d.]+)", text, re.I).group(1) if re.search(r"vasp\.([\d.]+)", text, re.I) else None
-    energies = [float(x) for x in re.findall(rf"free\s+energy\s+TOTEN\s*=\s*({FLOAT})\s+eV", text)]
-    efermi = [float(x) for x in re.findall(rf"E-fermi\s*:\s*({FLOAT})", text)]
-    nions = int(re.findall(r"NIONS\s*=\s*(\d+)", text)[-1]) if re.findall(r"NIONS\s*=\s*(\d+)", text) else None
-    electronic_converged = "aborting loop because EDIFF is reached" in text or "EDIFF is reached" in text
-    ionic_converged = "reached required accuracy - stopping structural energy minimisation" in text
-    warnings = []
-    for pat, msg in [
-        (r"BRMIX: very serious problems", "BRMIX mixing problem"),
-        (r"ZBRENT: fatal error", "ZBRENT ionic optimization error"),
-        (r"WARNING: Sub-Space-Matrix is not hermitian", "subspace matrix warning"),
-        (r"EDDDAV: Call to ZHEGV failed", "diagonalization failure"),
-    ]:
-        if re.search(pat, text, re.I):
-            warnings.append(msg)
-    force_blocks = re.findall(r"TOTAL-FORCE \(eV/Angst\)(.*?)total drift", text, re.S | re.I)
+
+    normal = False
+    version = None
+    last_energy = None
+    energy_count = 0
+    last_fermi = None
+    nions = None
+    electronic_converged = False
+    ionic_converged = False
     max_force = None
-    if force_blocks:
-        vals = []
-        for line in force_blocks[-1].splitlines():
-            p = line.split()
-            if len(p) >= 6:
-                with contextlib.suppress(ValueError):
-                    vals.append((float(p[-3]) ** 2 + float(p[-2]) ** 2 + float(p[-1]) ** 2) ** 0.5)
-        max_force = max(vals) if vals else None
-    elapsed = (
-        float(re.findall(rf"Elapsed time \(sec\):\s*({FLOAT})", text)[-1])
-        if re.findall(rf"Elapsed time \(sec\):\s*({FLOAT})", text)
-        else None
-    )
-    status = "RUN_FAILED" if not text else "COMPLETED_UNVALIDATED"
+    elapsed = None
+    warnings: list[str] = []
+
+    if out.exists() and out.stat().st_size:
+        with out.open("rb") as handle, mmap.mmap(handle.fileno(), 0, access=mmap.ACCESS_READ) as data:
+            normal = data.find(b"General timing and accounting informations for this job") >= 0
+            electronic_converged = (
+                data.find(b"aborting loop because EDIFF is reached") >= 0 or data.find(b"EDIFF is reached") >= 0
+            )
+            ionic_converged = data.find(b"reached required accuracy - stopping structural energy minimisation") >= 0
+
+            if match := VERSION_RE.search(data):
+                version = match.group(1).decode("ascii", errors="replace")
+            value, energy_count = scan_last(data, ENERGY_RE)
+            if value is not None:
+                last_energy = float(value)
+            if value := last_match(data, b"E-fermi", FERMI_RE):
+                last_fermi = float(value)
+            if value := last_match(data, b"NIONS", NIONS_RE):
+                nions = int(value)
+            if value := last_match(data, b"Elapsed time (sec):", ELAPSED_RE):
+                elapsed = float(value)
+
+            for pattern, message in WARNING_PATTERNS:
+                if pattern.search(data):
+                    warnings.append(message)
+
+            force_start = data.rfind(b"TOTAL-FORCE (eV/Angst)")
+            if force_start >= 0:
+                force_end = data.find(b"total drift", force_start)
+                if force_end < 0:
+                    force_end = len(data)
+                values = []
+                for line in data[force_start:force_end].splitlines():
+                    fields = line.split()
+                    if len(fields) < 6:
+                        continue
+                    try:
+                        fx, fy, fz = (float(value) for value in fields[-3:])
+                    except ValueError:
+                        continue
+                    values.append(math.sqrt(fx * fx + fy * fy + fz * fz))
+                max_force = max(values) if values else None
+
+    status = "RUN_FAILED" if not out.exists() or not out.stat().st_size else "COMPLETED_UNVALIDATED"
     if normal and electronic_converged:
         status = "STATIC_VALIDATED_CANDIDATE"
     if normal and electronic_converged and ionic_converged:
         status = "RELAX_VALIDATED_CANDIDATE"
     if normal and not electronic_converged:
         warnings.append("VASP ended but electronic convergence marker was not found")
+
     return {
         "status": status,
         "normal_termination": normal,
         "version": version,
-        "last_toten_eV": energies[-1] if energies else None,
-        "energy_count": len(energies),
-        "fermi_energy_eV": efermi[-1] if efermi else None,
+        "last_toten_eV": last_energy,
+        "energy_count": energy_count,
+        "fermi_energy_eV": last_fermi,
         "nions": nions,
         "electronic_converged": electronic_converged,
         "ionic_converged": ionic_converged,
@@ -72,12 +127,12 @@ def parse(path: Path) -> dict:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("path", type=Path)
-    a = ap.parse_args()
-    r = parse(a.path)
-    print(json.dumps(r, indent=2))
-    return 0 if r["normal_termination"] else 1
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("path", type=Path)
+    args = parser.parse_args()
+    result = parse(args.path)
+    print(json.dumps(result, indent=2))
+    return 0 if result["normal_termination"] else 1
 
 
 if __name__ == "__main__":

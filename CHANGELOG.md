@@ -1,14 +1,16 @@
 # Changelog
 
-## Unreleased — README visual and CI hardening
+## Unreleased — README visual, CI and repository hardening
 
-- Rebuilt the README visual system as the governed `premium_scientific_v3` hero and seven-module gallery, with local raster review, dimensions and SHA-256 records.
-- Added bilingual README cross-validation against the governed AI asset manifest and all eight deterministic demo assets.
-- Replaced the old demo placeholder fallback with a strict, read-only SVG integrity validator; missing or degraded figures now fail CI instead of silently generating low-quality artwork.
-- Hardened CI with Python 3.10/3.12/3.13, pip caching, concurrency control, failure-log artifacts, commit statuses and manual dispatch.
+- Replaced the dense `premium_scientific_v3` module-card gallery with one restrained `premium_scientific_v4_minimal` cover and a curated set of five deterministic README visuals.
+- Deleted seven redundant AI module-card SVGs and prohibited deprecated `assets/ai/modules/` references from returning.
+- Kept all eight deterministic demo assets under strict, read-only integrity validation while decoupling asset validation from README curation.
+- Added bilingual README cross-validation for the single governed cover and the curated scientific demonstrations.
+- Replaced the old demo placeholder fallback with strict SVG integrity checks; missing or degraded figures fail CI instead of generating low-quality artwork.
+- Hardened CI with Python 3.10/3.12/3.13, pinned Ruff lint/format gates, dependency bounds, concurrency control, failure-log artifacts, commit statuses and manual dispatch.
 - Removed obsolete issue-triggered bootstrap, README-patch, clean-rebuild and self-attestation workflows; `ci.yml` is the single permanent quality gate.
-- Removed stale maintenance payloads and closed the obsolete bootstrap-probe issue.
-- Expanded the repository test count from 63 to 68 with AI-governance, bilingual visual-completeness and read-only demo-validator coverage.
+- Removed stale maintenance payloads, root patch bundles and workflow probes; closed obsolete maintenance issues.
+- Expanded the repository test count from 63 to 68 with AI-governance, curated visual-completeness and read-only demo-validator coverage.
 
 ## 0.4.0-alpha.1 — 2026-07-24
 

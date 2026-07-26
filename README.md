@@ -12,25 +12,26 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
+  <img src="https://img.shields.io/badge/tests-68%20passing-16A34A" alt="68 tests passing">
   <img src="https://img.shields.io/badge/support-L0%E2%80%93L3-6D5DFB" alt="Support levels L0 to L3">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
 
-> **AI图像声明｜AI-GENERATED CONCEPTUAL ILLUSTRATION：** 下方主视觉与模块卡片属于 AI 生成或 AI 辅助的概念图，仅用于表达 TsaoDFT 的研究场景与软件定位。它们不是分子结构、轨道、静电势、能带、自由能、反应机理或实验结果。所有定量结论必须来自经过验收的计算数据、源文件和可复现脚本。
+> **AI图像声明｜AI-GENERATED CONCEPTUAL ILLUSTRATION：** 下方封面是 AI 辅助的概念图，仅用于表达项目定位；它不是分子结构、轨道、静电势、能带、自由能、反应机理或实验结果。所有定量结论必须来自经过验收的计算数据、源文件和可复现脚本。
 
 <p align="center">
-  <img src="assets/ai/hero/tsao-dft-hero.svg" width="100%" alt="TsaoDFT AI-assisted conceptual architecture">
+  <img src="assets/ai/hero/tsao-dft-hero.svg" width="100%" alt="TsaoDFT AI-assisted conceptual cover">
 </p>
 
 ## 项目定位
 
-`TsaoDFT_skill` 是一套以 **DFT 证据链** 为核心的 Agent Skills 仓库。它不把“程序正常结束”“图像看起来合理”或“模型分数较高”直接等同于科学结论，而是把每一项工作拆分为可检查的状态：
+`TsaoDFT_skill` 以 **DFT 证据链** 为核心。它不把“程序正常结束”“图像看起来合理”或“模型分数较高”直接等同于科学结论，而是把每项工作拆分为可检查状态：
 
 ```text
 planned → prepared → completed → technically validated → scientifically accepted → claim accepted
 ```
 
-核心原则只有一句：**计算、产物和论文主张必须能够逐级追溯，且未解决的假设不能被静默隐藏。**
+核心原则：**计算、产物和论文主张必须逐级可追溯，未解决的假设不得被静默隐藏。**
 
 <p align="center">
   <img src="assets/demo/workflow-architecture.svg" width="100%" alt="Auditable DFT research loop synthetic demo">
@@ -49,49 +50,22 @@ planned → prepared → completed → technically validated → scientifically 
 | [`tsao-dft-kinetics-multiscale`](skills/tsao-dft-kinetics-multiscale/) | Eyring/TST、反应网络、详细平衡、误差传播与微观动力学交接 | 只消费标准态和热化学校验通过的 DFT 数据 |
 | [`tsao-dft-catalysis-profile`](skills/tsao-dft-catalysis-profile/) | DCS/MCSOMe/DMOS、Si–O/Si–C、Ti/TEA、Ziegler–Natta 与聚烯烃催化 | 专用 Profile，不自动外推到无关体系 |
 
-## 概念场景图集
+## 精选科研演示
 
-所有概念图均登记在 [`assets/ai/manifest.yaml`](assets/ai/manifest.yaml)，包含尺寸、SHA-256、生成记录、允许用途和禁止用途。它们只负责讲清“模块做什么”，不承担任何定量证据。
-
-<table>
-<tr>
-<td width="50%" align="center"><img src="assets/ai/modules/molecular-dft.svg" width="100%" alt="Molecular DFT concept"><br><strong>分子 DFT 与波函数证据</strong></td>
-<td width="50%" align="center"><img src="assets/ai/modules/periodic-dft.svg" width="100%" alt="Periodic DFT concept"><br><strong>周期 DFT、表面与缺陷</strong></td>
-</tr>
-<tr>
-<td align="center"><img src="assets/ai/modules/dft-ml.svg" width="100%" alt="DFT and ML concept"><br><strong>DFT 标签、机器学习与主动学习</strong></td>
-<td align="center"><img src="assets/ai/modules/dft-kinetics.svg" width="100%" alt="DFT kinetics concept"><br><strong>DFT 到动力学与多尺度模型</strong></td>
-</tr>
-<tr>
-<td align="center"><img src="assets/ai/modules/hpc-provenance.svg" width="100%" alt="HPC provenance concept"><br><strong>HPC 执行、哈希与重启谱系</strong></td>
-<td align="center"><img src="assets/ai/modules/catalysis.svg" width="100%" alt="Catalysis concept"><br><strong>催化与聚烯烃专用 Profile</strong></td>
-</tr>
-<tr>
-<td colspan="2" align="center"><img src="assets/ai/modules/ecosystem.svg" width="76%" alt="TsaoDFT evidence ecosystem concept"><br><strong>统一 DFT 证据生态</strong></td>
-</tr>
-</table>
-
-## 确定性科研演示
-
-下列 SVG 是版本化、确定性的合成演示资产，并在图内标注 `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`。为兼容既有命令，校验入口仍保留为 [`scripts/generate_readme_demos.py`](scripts/generate_readme_demos.py)，但它现在是**严格只读校验器**：检查 XML、尺寸、标题、可访问性描述、README 引用和非数据标签；图片缺失、退化或出现占位内容时质量门直接失败，绝不自动写入低质量 placeholder。
+README 只展示最能代表核心能力的图件，避免形成重复的“功能海报墙”。仓库中的 8 张确定性演示 SVG 仍全部接受 XML、尺寸、标题、可访问性描述和非数据标签校验；这里只精选 4 张，加上前面的工作流总览。
 
 <table>
 <tr>
 <td width="50%"><img src="assets/demo/wavefunction-esp-gallery.svg" width="100%" alt="Wavefunction and ESP figure contract"></td>
-<td width="50%"><img src="assets/demo/free-energy-profile.svg" width="100%" alt="Free energy evidence gates"></td>
+<td width="50%"><img src="assets/demo/periodic-dft-materials.svg" width="100%" alt="Periodic DFT evidence"></td>
 </tr>
 <tr>
-<td><img src="assets/demo/periodic-dft-materials.svg" width="100%" alt="Periodic DFT evidence"></td>
 <td><img src="assets/demo/dft-ml-dashboard.svg" width="100%" alt="DFT ML evidence dashboard"></td>
-</tr>
-<tr>
-<td><img src="assets/demo/active-learning-loop.svg" width="100%" alt="Active learning provenance loop"></td>
-<td><img src="assets/demo/hpc-provenance.svg" width="100%" alt="HPC provenance"></td>
-</tr>
-<tr>
-<td colspan="2" align="center"><img src="assets/demo/multiscale-kinetics.svg" width="88%" alt="DFT to kinetics multiscale handoff"></td>
+<td><img src="assets/demo/multiscale-kinetics.svg" width="100%" alt="DFT to kinetics multiscale handoff"></td>
 </tr>
 </table>
+
+所有演示图均标注 `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`，用于展示图件规范与证据门，不是生产计算结果。兼容命令 [`scripts/generate_readme_demos.py`](scripts/generate_readme_demos.py) 是严格只读校验器，不会自动写入占位图。
 
 ## 支持等级
 
@@ -119,20 +93,18 @@ python -m pip install -r requirements-dev.txt
 python scripts/quality_gate.py
 ```
 
-质量门按固定顺序执行：
-
 ```text
-validate versioned demo assets
+validate all versioned demo assets
 → catalog validation
-→ AI asset integrity and provenance
-→ README visual completeness
+→ minimal AI-cover integrity and provenance
+→ curated README visual completeness
 → Ruff lint
 → Ruff formatting check
 → strict repository audit
 → all non-empty unittest suites
 ```
 
-需要单独定位问题时，可运行：
+需要单独定位问题时：
 
 ```bash
 python scripts/generate_readme_demos.py

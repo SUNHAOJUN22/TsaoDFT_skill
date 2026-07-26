@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Validate versioned synthetic README SVG demonstrations without modifying them.
+"""Validate all versioned synthetic README SVG demonstrations without modifying them.
 
 The historical command name is retained for compatibility. The command is deliberately
 read-only: a missing, malformed, undersized, unlabeled, or placeholder asset fails the
 quality gate instead of being silently replaced with low-quality fallback artwork.
+README curation is validated separately by ``validate_readme_visuals.py``.
 """
 
 from __future__ import annotations
@@ -17,15 +18,8 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "assets" / "demo"
-README_FILES = (ROOT / "README.md", ROOT / "README_EN.md")
 NOTICE = "SYNTHETIC DEMO · NOT SCIENTIFIC DATA"
-PLACEHOLDER_MARKERS = (
-    "offline placeholder",
-    "replace this compact",
-    "re-run the repository renderer",
-    "todo",
-    "tbd",
-)
+PLACEHOLDER_MARKERS = ("offline placeholder", "replace this compact", "re-run the repository renderer", "todo", "tbd")
 DEMO_SPECS: dict[str, tuple[str, int, int]] = {
     "workflow-architecture.svg": ("TsaoDFT auditable research loop", 1180, 430),
     "wavefunction-esp-gallery.svg": ("Wavefunction and surface figure contract", 1120, 470),
@@ -57,17 +51,9 @@ def child_text(root: ET.Element, local_name: str) -> str:
 def validate() -> tuple[list[str], list[dict[str, Any]]]:
     failures: list[str] = []
     checked: list[dict[str, Any]] = []
-    readmes: dict[str, str] = {}
-    for readme in README_FILES:
-        if not readme.is_file():
-            failures.append(f"missing README file: {readme.relative_to(ROOT)}")
-            continue
-        readmes[readme.name] = readme.read_text(encoding="utf-8")
-
     if not OUT.is_dir():
         failures.append(f"missing demo asset directory: {OUT.relative_to(ROOT)}")
         return failures, checked
-
     for filename, (expected_title, expected_width, expected_height) in DEMO_SPECS.items():
         path = OUT / filename
         rel = path.relative_to(ROOT)
@@ -94,9 +80,7 @@ def validate() -> tuple[list[str], list[dict[str, Any]]]:
             failures.append(f"{rel}: {exc}")
             continue
         if (width, height) != (expected_width, expected_height):
-            failures.append(
-                f"demo dimensions changed for {rel}: {(width, height)} != {(expected_width, expected_height)}"
-            )
+            failures.append(f"demo dimensions changed for {rel}: {(width, height)} != {(expected_width, expected_height)}")
         if root.attrib.get("role") != "img":
             failures.append(f"demo lacks role=img: {rel}")
         title = child_text(root, "title")
@@ -113,12 +97,7 @@ def validate() -> tuple[list[str], list[dict[str, Any]]]:
         for marker in PLACEHOLDER_MARKERS:
             if marker in lower:
                 failures.append(f"demo contains placeholder marker {marker!r}: {rel}")
-        for readme_name, readme_text in readmes.items():
-            reference = rel.as_posix()
-            if reference not in readme_text:
-                failures.append(f"{readme_name} does not embed demo asset: {reference}")
         checked.append({"path": rel.as_posix(), "width": width, "height": height, "title": title})
-
     return failures, checked
 
 
@@ -133,10 +112,7 @@ def main() -> int:
     else:
         for failure in failures:
             print(f"FAIL: {failure}")
-        print(
-            f"README demo asset validation: {'PASS' if not failures else 'FAIL'} "
-            f"({len(checked)}/{len(DEMO_SPECS)} checked)"
-        )
+        print(f"README demo asset validation: {'PASS' if not failures else 'FAIL'} ({len(checked)}/{len(DEMO_SPECS)} checked)")
     return 0 if not failures else 1
 
 

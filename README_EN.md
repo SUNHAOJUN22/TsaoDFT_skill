@@ -12,19 +12,20 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
+  <img src="https://img.shields.io/badge/tests-68%20passing-16A34A" alt="68 tests passing">
   <img src="https://img.shields.io/badge/support-L0%E2%80%93L3-6D5DFB" alt="Support levels L0 to L3">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
 
-> **AI image declaration | AI-GENERATED CONCEPTUAL ILLUSTRATION:** the hero and module cards are AI-generated or AI-assisted concepts used only to communicate research scenarios and product identity. They are not molecular structures, orbitals, electrostatic potentials, band structures, free-energy profiles, mechanisms, or experimental results. Quantitative claims require accepted source data, validated calculations and reproducible scripts.
+> **AI image declaration | AI-GENERATED CONCEPTUAL ILLUSTRATION:** the cover below is an AI-assisted concept used only to communicate project identity. It is not a molecular structure, orbital, electrostatic potential, band structure, free-energy profile, mechanism, or experimental result. Quantitative claims require accepted source data, validated calculations and reproducible scripts.
 
 <p align="center">
-  <img src="assets/ai/hero/tsao-dft-hero.svg" width="100%" alt="TsaoDFT AI-assisted conceptual architecture">
+  <img src="assets/ai/hero/tsao-dft-hero.svg" width="100%" alt="TsaoDFT AI-assisted conceptual cover">
 </p>
 
 ## What TsaoDFT is
 
-`TsaoDFT_skill` is an Agent Skills repository organised around the **DFT evidence chain**. A normal termination, an attractive surface plot, or a high model score is not silently promoted into a scientific conclusion. Work moves through explicit states:
+`TsaoDFT_skill` is organised around the **DFT evidence chain**. A normal termination, an attractive surface plot, or a high model score is not silently promoted into a scientific conclusion. Work moves through explicit states:
 
 ```text
 planned → prepared → completed → technically validated → scientifically accepted → claim accepted
@@ -49,49 +50,22 @@ The governing rule is simple: **calculations, artifacts and publication claims m
 | [`tsao-dft-kinetics-multiscale`](skills/tsao-dft-kinetics-multiscale/) | Eyring/TST, networks, detailed balance, uncertainty and microkinetic handoff | Consumes only accepted thermochemistry with explicit standard states |
 | [`tsao-dft-catalysis-profile`](skills/tsao-dft-catalysis-profile/) | DCS/MCSOMe/DMOS, Si–O/Si–C, Ti/TEA, Ziegler–Natta and polyolefin catalysis | A scoped profile, never auto-applied to unrelated chemistry |
 
-## Concept gallery
+## Selected scientific demonstrations
 
-Every concept is registered in [`assets/ai/manifest.yaml`](assets/ai/manifest.yaml) with dimensions, SHA-256, generation provenance, allowed uses and forbidden uses. These images explain module identity; they carry no quantitative evidence.
-
-<table>
-<tr>
-<td width="50%" align="center"><img src="assets/ai/modules/molecular-dft.svg" width="100%" alt="Molecular DFT concept"><br><strong>Molecular DFT and wavefunction evidence</strong></td>
-<td width="50%" align="center"><img src="assets/ai/modules/periodic-dft.svg" width="100%" alt="Periodic DFT concept"><br><strong>Periodic DFT, surfaces and defects</strong></td>
-</tr>
-<tr>
-<td align="center"><img src="assets/ai/modules/dft-ml.svg" width="100%" alt="DFT and ML concept"><br><strong>DFT labels, ML and active learning</strong></td>
-<td align="center"><img src="assets/ai/modules/dft-kinetics.svg" width="100%" alt="DFT kinetics concept"><br><strong>DFT to kinetics and multiscale models</strong></td>
-</tr>
-<tr>
-<td align="center"><img src="assets/ai/modules/hpc-provenance.svg" width="100%" alt="HPC provenance concept"><br><strong>HPC execution, hashes and restart lineage</strong></td>
-<td align="center"><img src="assets/ai/modules/catalysis.svg" width="100%" alt="Catalysis concept"><br><strong>Catalysis and polyolefin profile</strong></td>
-</tr>
-<tr>
-<td colspan="2" align="center"><img src="assets/ai/modules/ecosystem.svg" width="76%" alt="TsaoDFT evidence ecosystem concept"><br><strong>Unified DFT evidence ecosystem</strong></td>
-</tr>
-</table>
-
-## Deterministic scientific demonstrations
-
-These are versioned, deterministic synthetic SVG assets, each visibly labelled `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`. The historical command name [`scripts/generate_readme_demos.py`](scripts/generate_readme_demos.py) is retained for compatibility, but the command is now a **strict read-only validator**: it checks XML, dimensions, titles, accessible descriptions, README references and non-data labels. Missing, degraded or placeholder assets fail the quality gate instead of being silently replaced with low-quality fallback artwork.
+The landing page deliberately avoids a repetitive wall of module cards. All eight deterministic demo SVGs remain versioned and are validated for XML, dimensions, titles, accessible descriptions and visible non-data labels; the README shows only four representative figures plus the workflow overview above.
 
 <table>
 <tr>
 <td width="50%"><img src="assets/demo/wavefunction-esp-gallery.svg" width="100%" alt="Wavefunction and ESP figure contract"></td>
-<td width="50%"><img src="assets/demo/free-energy-profile.svg" width="100%" alt="Free energy evidence gates"></td>
+<td width="50%"><img src="assets/demo/periodic-dft-materials.svg" width="100%" alt="Periodic DFT evidence"></td>
 </tr>
 <tr>
-<td><img src="assets/demo/periodic-dft-materials.svg" width="100%" alt="Periodic DFT evidence"></td>
 <td><img src="assets/demo/dft-ml-dashboard.svg" width="100%" alt="DFT ML evidence dashboard"></td>
-</tr>
-<tr>
-<td><img src="assets/demo/active-learning-loop.svg" width="100%" alt="Active learning provenance loop"></td>
-<td><img src="assets/demo/hpc-provenance.svg" width="100%" alt="HPC provenance"></td>
-</tr>
-<tr>
-<td colspan="2" align="center"><img src="assets/demo/multiscale-kinetics.svg" width="88%" alt="DFT to kinetics multiscale handoff"></td>
+<td><img src="assets/demo/multiscale-kinetics.svg" width="100%" alt="DFT to kinetics multiscale handoff"></td>
 </tr>
 </table>
+
+Every demonstration is labelled `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`. The compatibility command [`scripts/generate_readme_demos.py`](scripts/generate_readme_demos.py) is a strict read-only validator and never creates placeholder artwork.
 
 ## Support levels
 
@@ -119,13 +93,11 @@ python -m pip install -r requirements-dev.txt
 python scripts/quality_gate.py
 ```
 
-The quality gate runs, in order:
-
 ```text
-validate versioned demo assets
+validate all versioned demo assets
 → catalog validation
-→ AI asset integrity and provenance
-→ README visual completeness
+→ minimal AI-cover integrity and provenance
+→ curated README visual completeness
 → Ruff lint
 → Ruff formatting check
 → strict repository audit

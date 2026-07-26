@@ -10,6 +10,7 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
+CURATED_DEMOS = {"assets/demo/workflow-architecture.svg", "assets/demo/wavefunction-esp-gallery.svg", "assets/demo/dft-ml-dashboard.svg", "assets/demo/periodic-dft-materials.svg", "assets/demo/multiscale-kinetics.svg"}
 
 
 def load_demo_validator():
@@ -25,19 +26,18 @@ def load_demo_validator():
 class ReadmeVisualTests(unittest.TestCase):
     def test_all_governed_ai_assets_are_embedded(self):
         manifest = yaml.safe_load((ROOT / "assets/ai/manifest.yaml").read_text(encoding="utf-8"))
-        readmes = [
-            (ROOT / "README.md").read_text(encoding="utf-8"),
-            (ROOT / "README_EN.md").read_text(encoding="utf-8"),
-        ]
+        readmes = [(ROOT / "README.md").read_text(encoding="utf-8"), (ROOT / "README_EN.md").read_text(encoding="utf-8")]
         for item in manifest["assets"]:
             for readme in readmes:
                 self.assertIn(item["path"], readme)
 
-    def test_readme_has_ai_and_deterministic_visuals(self):
+    def test_readmes_use_minimal_ai_and_curated_demos(self):
         for readme_name in ("README.md", "README_EN.md"):
             readme = (ROOT / readme_name).read_text(encoding="utf-8")
-            self.assertGreaterEqual(readme.count("assets/ai/"), 8)
-            self.assertGreaterEqual(readme.count("assets/demo/"), 8)
+            self.assertEqual(readme.count("assets/ai/"), 1)
+            self.assertNotIn("assets/ai/modules/", readme)
+            for demo in CURATED_DEMOS:
+                self.assertIn(demo, readme)
         self.assertIn("AI图像声明", (ROOT / "README.md").read_text(encoding="utf-8"))
         self.assertIn("AI image declaration", (ROOT / "README_EN.md").read_text(encoding="utf-8"))
         hero = (ROOT / "assets/ai/hero/tsao-dft-hero.svg").read_text(encoding="utf-8")
@@ -49,38 +49,20 @@ class ReadmeVisualTests(unittest.TestCase):
             root = Path(temporary)
             out = root / "assets" / "demo"
             out.mkdir(parents=True)
-            readme = root / "README.md"
-            readme_en = root / "README_EN.md"
-            readme.write_text("# test\n", encoding="utf-8")
-            readme_en.write_text("# test\n", encoding="utf-8")
             module.ROOT = root
             module.OUT = out
-            module.README_FILES = (readme, readme_en)
             failures, checked = module.validate()
             self.assertEqual(checked, [])
             self.assertEqual(list(out.iterdir()), [])
-            self.assertEqual(
-                sum(item.startswith("missing demo asset:") for item in failures),
-                len(module.DEMO_SPECS),
-            )
+            self.assertEqual(sum(item.startswith("missing demo asset:") for item in failures), len(module.DEMO_SPECS))
 
     def test_demo_asset_validator_cli(self):
-        result = subprocess.run(
-            [sys.executable, str(ROOT / "scripts/generate_readme_demos.py")],
-            cwd=ROOT,
-            capture_output=True,
-            text=True,
-        )
+        result = subprocess.run([sys.executable, str(ROOT / "scripts/generate_readme_demos.py")], cwd=ROOT, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn("README demo asset validation: PASS", result.stdout)
 
     def test_readme_visual_validator(self):
-        result = subprocess.run(
-            [sys.executable, str(ROOT / "scripts/validate_readme_visuals.py"), "--strict"],
-            cwd=ROOT,
-            capture_output=True,
-            text=True,
-        )
+        result = subprocess.run([sys.executable, str(ROOT / "scripts/validate_readme_visuals.py"), "--strict"], cwd=ROOT, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 

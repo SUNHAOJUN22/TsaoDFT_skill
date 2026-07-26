@@ -9,7 +9,7 @@ Version: `0.4.0-alpha.1`
 
 | Suite | Tests | Result |
 |---|---:|---|
-| Repository, catalog, installer, plugin, AI-image governance, demo-asset integrity, README visual completeness and strict validator | 15 | PASS |
+| Repository, catalog, installer, plugin, minimal AI-cover governance, demo-asset integrity, curated README visual completeness and strict validator | 15 | PASS |
 | `tsao-dft-suite` | 4 | PASS |
 | `tsao-dft-researcher` | 16 | PASS |
 | `tsao-structure-prep` | 4 | PASS |
@@ -19,7 +19,7 @@ Version: `0.4.0-alpha.1`
 | `tsao-dft-kinetics-multiscale` | 5 | PASS |
 | `tsao-dft-catalysis-profile` | 5 | PASS |
 
-Every discovered suite must execute at least one test. A missing, unparseable or zero-test suite now fails the repository quality gate instead of producing a false green result.
+Every discovered suite must execute at least one test. A missing, unparseable or zero-test suite fails the repository quality gate instead of producing a false green result.
 
 ## Static quality and repository hygiene
 
@@ -27,19 +27,24 @@ Every discovered suite must execute at least one test. A missing, unparseable or
 - the initial full-repository Ruff audit identified 1,173 findings across 94 Python files;
 - automated normalization was followed by exact review and repair of the remaining semantic and robustness findings;
 - the final enforced Ruff result is zero findings;
-- runtime dependencies now have explicit compatible upper bounds;
-- 14 obsolete bootstrap, patch-bundle and workflow-probe files were removed from the repository root;
-- strict validation permanently rejects private root bundles, workflow probes, backup/editor files, empty files and large encoded bootstrap payloads;
+- runtime dependencies have explicit compatible upper bounds;
+- obsolete bootstrap, patch-bundle and workflow-probe files were removed;
+- strict validation rejects private root bundles, workflow probes, backup/editor files, empty files and large encoded bootstrap payloads;
 - `.github/workflows/ci.yml` is the only permitted workflow file;
 - GitHub Actions dependencies are pinned to immutable commit SHAs.
 
-## Deterministic coverage
+## Visual and deterministic coverage
 
-- AI-generated README asset manifest, SHA-256 integrity, dimensions, generation provenance, visible disclosure and non-quantitative policy;
-- README embedding completeness for all governed AI assets and all eight deterministic demonstrations in both languages;
-- strict, read-only demo-asset validation of SVG XML, exact dimensions, titles, accessible descriptions and visible synthetic-data notices;
+- exactly one governed AI-assisted README cover, with SHA-256 integrity, dimensions, provenance, visible disclosure and non-quantitative policy;
+- no AI module-card gallery or deprecated `assets/ai/modules/` references;
+- curated bilingual README embedding of the cover and five representative deterministic demonstrations;
+- strict read-only validation of all eight versioned demo SVGs, including XML, exact dimensions, titles, accessible descriptions and visible synthetic-data notices;
 - explicit failure for missing, degraded or placeholder demo assets, with no automatic fallback writes;
-- explicit rejection of wording that presents AI illustrations as calculated orbitals, surfaces or scientific results;
+- explicit rejection of wording that presents conceptual illustrations as calculated orbitals, surfaces or scientific results;
+- local raster review of the minimal `premium_scientific_v4` cover before publication.
+
+## Scientific and workflow coverage
+
 - DFT-first routing, cross-Skill handoff and method fingerprint validation;
 - Gaussian input preflight and rich synthetic log parsing;
 - minimum/TS evidence, TS/IRC manifest rules, thermochemistry, S², orbital, dipole, NMR and TD fields;

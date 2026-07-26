@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate README image references and the AI/deterministic visual boundary."""
+"""Validate curated README image references and the AI/deterministic visual boundary."""
 
 from __future__ import annotations
 
@@ -18,16 +18,7 @@ AI_MANIFEST = ROOT / "assets/ai/manifest.yaml"
 
 MD_IMAGE_RE = re.compile(r"!\[[^\]]*\]\(([^)\s]+)(?:\s+[^)]*)?\)")
 HTML_IMAGE_RE = re.compile(r"<img\s+[^>]*src=[\"']([^\"']+)[\"'][^>]*>", re.IGNORECASE)
-REQUIRED_DEMOS = {
-    "assets/demo/workflow-architecture.svg",
-    "assets/demo/wavefunction-esp-gallery.svg",
-    "assets/demo/free-energy-profile.svg",
-    "assets/demo/dft-ml-dashboard.svg",
-    "assets/demo/periodic-dft-materials.svg",
-    "assets/demo/active-learning-loop.svg",
-    "assets/demo/hpc-provenance.svg",
-    "assets/demo/multiscale-kinetics.svg",
-}
+REQUIRED_DEMOS = {"assets/demo/workflow-architecture.svg", "assets/demo/wavefunction-esp-gallery.svg", "assets/demo/dft-ml-dashboard.svg", "assets/demo/periodic-dft-materials.svg", "assets/demo/multiscale-kinetics.svg"}
 
 
 def digest(path: Path) -> str:
@@ -45,10 +36,7 @@ def validate() -> tuple[list[str], list[str]]:
         missing = [str(path.relative_to(ROOT)) for path in (README, README_EN) if not path.is_file()]
         return [f"missing README file(s): {missing}"], warnings
 
-    readmes = {
-        "README.md": README.read_text(encoding="utf-8"),
-        "README_EN.md": README_EN.read_text(encoding="utf-8"),
-    }
+    readmes = {"README.md": README.read_text(encoding="utf-8"), "README_EN.md": README_EN.read_text(encoding="utf-8")}
     refs_by_readme = {name: image_refs(text) for name, text in readmes.items()}
 
     for name, refs in refs_by_readme.items():
@@ -73,8 +61,8 @@ def validate() -> tuple[list[str], list[str]]:
     except Exception as exc:
         return [*failures, f"AI manifest parse failed: {exc}"], warnings
     assets = manifest.get("assets", []) if isinstance(manifest, dict) else []
-    if len(assets) < 8:
-        failures.append("AI manifest must contain at least eight governed assets")
+    if len(assets) != 1:
+        failures.append("AI manifest must contain exactly one governed cover")
 
     for item in assets:
         if not isinstance(item, dict):
@@ -87,26 +75,24 @@ def validate() -> tuple[list[str], list[str]]:
         path = ROOT / str(path_value)
         for name, refs in refs_by_readme.items():
             if str(path_value) not in refs:
-                failures.append(f"governed AI asset is not embedded in {name}: {path_value}")
+                failures.append(f"governed AI cover is not embedded in {name}: {path_value}")
+            if any(ref.startswith("assets/ai/modules/") for ref in refs):
+                failures.append(f"{name} embeds deprecated AI module cards")
         if not path.is_file():
-            failures.append(f"AI asset missing: {path_value}")
+            failures.append(f"AI cover missing: {path_value}")
             continue
         if item.get("sha256") != digest(path):
-            failures.append(f"AI asset hash mismatch: {path_value}")
+            failures.append(f"AI cover hash mismatch: {path_value}")
         text = path.read_text(encoding="utf-8", errors="strict")
         if "NOT COMPUTATIONAL DATA" not in text and "NOT SCIENTIFIC DATA" not in text:
-            failures.append(f"AI asset lacks visible non-data label: {path_value}")
-        for key, expected in {
-            "illustrative_only": True,
-            "quantitative": False,
-            "computed_surface": False,
-        }.items():
+            failures.append(f"AI cover lacks visible non-data label: {path_value}")
+        for key, expected in {"illustrative_only": True, "quantitative": False, "computed_surface": False}.items():
             if item.get(key) is not expected:
-                failures.append(f"AI asset {path_value} has invalid {key}")
+                failures.append(f"AI cover {path_value} has invalid {key}")
 
     for name, refs in refs_by_readme.items():
         for ref in sorted(REQUIRED_DEMOS - refs):
-            failures.append(f"deterministic README demo is not embedded in {name}: {ref}")
+            failures.append(f"curated README demo is not embedded in {name}: {ref}")
 
     chinese = readmes["README.md"]
     english = readmes["README_EN.md"]
@@ -120,13 +106,9 @@ def validate() -> tuple[list[str], list[str]]:
         first_ai = text.find("assets/ai/")
         declaration = text.find("AI图像声明") if name == "README.md" else text.find("AI image declaration")
         if first_ai >= 0 and declaration > first_ai + 800:
-            warnings.append(f"{name} AI declaration should appear beside the first AI image")
+            warnings.append(f"{name} AI declaration should appear beside the cover")
 
-    forbidden_phrases = (
-        "AI生成的真实计算结果",
-        "AI-generated computational result",
-        "AI calculated orbital",
-    )
+    forbidden_phrases = ("AI生成的真实计算结果", "AI-generated computational result", "AI calculated orbital")
     for name, text in readmes.items():
         for phrase in forbidden_phrases:
             if phrase.lower() in text.lower():

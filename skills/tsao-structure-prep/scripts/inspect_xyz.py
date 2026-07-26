@@ -52,8 +52,8 @@ def parse_xyz(path: Path) -> tuple[str, list[dict]]:
         raise ValueError("empty XYZ")
     try:
         n = int(lines[0].strip())
-    except ValueError:
-        raise ValueError("first line must be atom count")
+    except ValueError as exc:
+        raise ValueError("first line must be atom count") from exc
     if len(lines) < n + 2:
         raise ValueError(f"expected {n} atoms but file has fewer lines")
     atoms = []
@@ -66,8 +66,8 @@ def parse_xyz(path: Path) -> tuple[str, list[dict]]:
             raise ValueError(f"invalid element token {p[0]} at atom {i}")
         try:
             x, y, z = map(float, p[1:4])
-        except ValueError:
-            raise ValueError(f"non-numeric coordinate at atom {i}")
+        except ValueError as exc:
+            raise ValueError(f"non-numeric coordinate at atom {i}") from exc
         atoms.append({"index": i, "element": el, "x": x, "y": y, "z": z})
     return lines[1] if len(lines) > 1 else "", atoms
 
@@ -142,7 +142,7 @@ def main() -> int:
     text = json.dumps(r, ensure_ascii=False, indent=2)
     if a.out:
         a.out.write_text(text, encoding="utf-8")
-    print(text if True else ("PASS" if r["ok"] else "FAIL"))
+    print(text)
     return 0 if r["ok"] else 1
 
 

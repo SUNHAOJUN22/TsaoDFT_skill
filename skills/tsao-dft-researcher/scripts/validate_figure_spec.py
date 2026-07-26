@@ -40,9 +40,12 @@ def main() -> int:
         for key in ["density_isovalue_e_bohr3", "esp_min", "esp_max", "esp_unit", "camera", "color_map"]:
             if key not in shared:
                 failures.append(f"ESP comparison missing shared parameter: {key}")
-        if shared.get("esp_min") is not None and shared.get("esp_max") is not None:
-            if float(shared["esp_min"]) >= float(shared["esp_max"]):
-                failures.append("esp_min must be less than esp_max")
+        if (
+            shared.get("esp_min") is not None
+            and shared.get("esp_max") is not None
+            and float(shared["esp_min"]) >= float(shared["esp_max"])
+        ):
+            failures.append("esp_min must be less than esp_max")
     if "homo" in ftype or "orbital" in ftype:
         for key in ["orbital_isovalue_au", "camera", "projection", "energy_unit"]:
             if key not in shared:
@@ -60,9 +63,10 @@ def main() -> int:
     suffixes = {Path(str(x)).suffix.lower() for x in outputs}
     if ftype in {"energy_profile", "prediction_plot", "dft_ml_composite"} and not ({".svg", ".pdf"} & suffixes):
         warnings.append("numerical figure has no vector SVG/PDF output")
-    if any(token in ftype for token in ["esp", "orbital", "iri", "igmh", "nto"]):
-        if not ({".png", ".tif", ".tiff"} & suffixes):
-            warnings.append("molecular-surface figure has no high-resolution raster output")
+    if any(token in ftype for token in ["esp", "orbital", "iri", "igmh", "nto"]) and not (
+        {".png", ".tif", ".tiff"} & suffixes
+    ):
+        warnings.append("molecular-surface figure has no high-resolution raster output")
 
     qa = spec.get("qa", {}) or {}
     for key in ["visually_inspected", "final_size_checked", "provenance_complete"]:

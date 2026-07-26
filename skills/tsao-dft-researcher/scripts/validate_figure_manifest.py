@@ -162,7 +162,16 @@ def validate_manifest(
                     multiplicity = panel.get("multiplicity")
                     if isinstance(multiplicity, int) and multiplicity > 1:
                         label = str(params.get("orbital_or_state_label", "")).lower()
-                        if not any(token in label for token in ("somo", "alpha", "beta", "α", "β")):
+                        if not any(
+                            token in label
+                            for token in (
+                                "somo",
+                                "alpha",
+                                "beta",
+                                "\N{GREEK SMALL LETTER ALPHA}",
+                                "\N{GREEK SMALL LETTER BETA}",
+                            )
+                        ):
                             errors.append(f"{pwhere}: open-shell orbital panel must label SOMO or alpha/beta channel")
                         if not params.get("spin_channel"):
                             errors.append(f"{pwhere}: open-shell orbital panel requires spin_channel")
@@ -178,18 +187,18 @@ def validate_manifest(
                         if field not in params:
                             errors.append(f"{pwhere}: ESP panel missing {field}")
                     vmin, vmax = params.get("esp_min"), params.get("esp_max")
-                    if isinstance(vmin, (int, float)) and isinstance(vmax, (int, float)):
-                        if not vmin < 0 < vmax:
-                            errors.append(f"{pwhere}: ESP scale must cross zero")
-                        if not math.isclose(abs(float(vmin)), abs(float(vmax)), rel_tol=1e-6, abs_tol=1e-12):
-                            errors.append(f"{pwhere}: ESP comparison scale must be symmetric")
-                if panel_type in {"spin_density", "difference_density"}:
-                    if not isinstance(params.get("positive_isovalue"), (int, float)) or not isinstance(
-                        params.get("negative_isovalue"), (int, float)
+                    numeric_scale = isinstance(vmin, (int, float)) and isinstance(vmax, (int, float))
+                    if numeric_scale and not vmin < 0 < vmax:
+                        errors.append(f"{pwhere}: ESP scale must cross zero")
+                    if numeric_scale and not math.isclose(
+                        abs(float(vmin)), abs(float(vmax)), rel_tol=1e-6, abs_tol=1e-12
                     ):
-                        errors.append(
-                            f"{pwhere}: signed density panel requires positive_isovalue and negative_isovalue"
-                        )
+                        errors.append(f"{pwhere}: ESP comparison scale must be symmetric")
+                if panel_type in {"spin_density", "difference_density"} and (
+                    not isinstance(params.get("positive_isovalue"), (int, float))
+                    or not isinstance(params.get("negative_isovalue"), (int, float))
+                ):
+                    errors.append(f"{pwhere}: signed density panel requires positive_isovalue and negative_isovalue")
                 group = panel.get("comparison_group")
                 if isinstance(group, str) and group:
                     groups.setdefault(group, []).append((pwhere, panel, str(role)))
@@ -243,12 +252,11 @@ def validate_manifest(
                     (errors if strict else warnings).append(message)
             params = panel.get("parameters", {}) if isinstance(panel.get("parameters"), dict) else {}
             for field in param_fields:
-                if field in base_params or field in params:
-                    if params.get(field) != base_params.get(field):
-                        message = (
-                            f"comparison_group {group}: parameter {field} differs between {baseline_where} and {where}"
-                        )
-                        (errors if strict else warnings).append(message)
+                if (field in base_params or field in params) and params.get(field) != base_params.get(field):
+                    message = (
+                        f"comparison_group {group}: parameter {field} differs between {baseline_where} and {where}"
+                    )
+                    (errors if strict else warnings).append(message)
 
     return errors, warnings
 

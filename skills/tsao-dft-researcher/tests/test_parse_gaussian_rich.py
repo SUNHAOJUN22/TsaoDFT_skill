@@ -4,7 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from parse_gaussian import parse_log
+from parse_gaussian import parse_log  # noqa: E402 -- path injection is intentional for script testing
 
 
 class RichGaussianTests(unittest.TestCase):

@@ -153,12 +153,18 @@ def validate_manifest(data: Any) -> tuple[list[str], list[str]]:
             errors.append(f"{where}: accepted calculation requires normal_termination=true")
         if accepted and validation.get("scf_converged") is not True:
             errors.append(f"{where}: accepted calculation requires scf_converged=true")
-        if accepted and calc.get("task_type") in {"minimum", "transition_state", "excited_opt", "conformer"}:
-            if validation.get("optimization_converged") is not True:
-                errors.append(f"{where}: accepted optimized structure requires optimization_converged=true")
-        if accepted and calc.get("task_type") in {"minimum", "conformer"}:
-            if validation.get("imaginary_frequency_count") != 0:
-                errors.append(f"{where}: accepted minimum/conformer must have zero imaginary frequencies")
+        if (
+            accepted
+            and calc.get("task_type") in {"minimum", "transition_state", "excited_opt", "conformer"}
+            and validation.get("optimization_converged") is not True
+        ):
+            errors.append(f"{where}: accepted optimized structure requires optimization_converged=true")
+        if (
+            accepted
+            and calc.get("task_type") in {"minimum", "conformer"}
+            and validation.get("imaginary_frequency_count") != 0
+        ):
+            errors.append(f"{where}: accepted minimum/conformer must have zero imaginary frequencies")
         if accepted and calc.get("task_type") == "transition_state":
             if validation.get("imaginary_frequency_count") != 1:
                 errors.append(f"{where}: accepted transition state must have exactly one imaginary frequency")
@@ -283,14 +289,21 @@ def validate_manifest(data: Any) -> tuple[list[str], list[str]]:
                 if calc is None or calc.get("status") != "accepted":
                     errors.append(f"{where}: grade A artifact is not backed by an accepted calculation")
                     break
-        if grade == "B" and linked_artifacts:
-            if not any(
-                a.get("source_type") == "experiment" and a.get("status") == "accepted" for a in linked_artifacts
-            ):
-                errors.append(f"{where}: grade B requires at least one accepted experimental artifact")
-        if grade == "C" and linked_artifacts:
-            if not any(a.get("source_type") in {"literature", "external"} for a in linked_artifacts):
-                warnings.append(f"{where}: grade C usually links literature or external evidence")
+        if (
+            grade == "B"
+            and linked_artifacts
+            and not any(
+                artifact.get("source_type") == "experiment" and artifact.get("status") == "accepted"
+                for artifact in linked_artifacts
+            )
+        ):
+            errors.append(f"{where}: grade B requires at least one accepted experimental artifact")
+        if (
+            grade == "C"
+            and linked_artifacts
+            and not any(artifact.get("source_type") in {"literature", "external"} for artifact in linked_artifacts)
+        ):
+            warnings.append(f"{where}: grade C usually links literature or external evidence")
 
     return errors, warnings
 

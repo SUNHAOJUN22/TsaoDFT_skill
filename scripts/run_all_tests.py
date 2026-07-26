@@ -12,10 +12,21 @@ import sys
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
+TEST_COUNT_RE = re.compile(r"Ran\s+(\d+)\s+tests?")
 
 
 def run_suite(path: Path, timeout: int = 240) -> dict[str, Any]:
-    command = [sys.executable, "-m", "unittest", "discover", "-s", str(path), "-p", "test_*.py", "-v"]
+    command = [
+        sys.executable,
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        str(path),
+        "-p",
+        "test_*.py",
+        "-v",
+    ]
     env = os.environ.copy()
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     try:
@@ -27,19 +38,36 @@ def run_suite(path: Path, timeout: int = 240) -> dict[str, Any]:
             timeout=timeout,
             env=env,
         )
-        output = (process.stdout or "") + (process.stderr or "")
-        match = re.search(r"Ran\s+(\d+)\s+tests?", output)
-        return {
-            "path": path,
-            "returncode": process.returncode,
-            "count": int(match.group(1)) if match else 0,
-            "output": output,
-            "timed_out": False,
-        }
     except subprocess.TimeoutExpired as exc:
         stdout = exc.stdout if isinstance(exc.stdout, str) else ""
         stderr = exc.stderr if isinstance(exc.stderr, str) else ""
-        return {"path": path, "returncode": 124, "count": 0, "output": stdout + stderr, "timed_out": True}
+        return {
+            "path": path,
+            "returncode": 124,
+            "count": 0,
+            "output": stdout + stderr,
+            "timed_out": True,
+            "discovery_ok": False,
+        }
+
+    output = (process.stdout or "") + (process.stderr or "")
+    match = TEST_COUNT_RE.search(output)
+    count = int(match.group(1)) if match else 0
+    discovery_ok = match is not None and count > 0
+    returncode = process.returncode
+    if returncode == 0 and not discovery_ok:
+        returncode = 2
+        reason = "test discovery reported zero tests" if match else "test count could not be parsed"
+        output = f"{output.rstrip()}\nFAIL: {reason} for {path.relative_to(ROOT)}\n"
+
+    return {
+        "path": path,
+        "returncode": returncode,
+        "count": count,
+        "output": output,
+        "timed_out": False,
+        "discovery_ok": discovery_ok,
+    }
 
 
 def main() -> int:
@@ -48,14 +76,14 @@ def main() -> int:
     parser.add_argument("--timeout", type=int, default=240, help="Per-suite timeout in seconds")
     args = parser.parse_args()
 
-    candidates = [ROOT / "tests"] + sorted((ROOT / "skills").glob("*/tests"))
+    candidates = [ROOT / "tests", *sorted((ROOT / "skills").glob("*/tests"))]
     suites = [path for path in candidates if path.is_dir()]
     if not suites:
         print("FAIL: no unittest suites found")
         return 1
 
-    # Sequential execution is intentional. Some suites exercise repository-wide files;
-    # parallel discovery made failures intermittent and obscured the first root cause.
+    # Sequential execution is intentional. Several suites inspect shared repository-level
+    # files; parallel discovery made failures intermittent and obscured the first root cause.
     results = [run_suite(path, timeout=args.timeout) for path in suites]
     failed = [result for result in results if result["returncode"] != 0]
     total = sum(result["count"] for result in results)

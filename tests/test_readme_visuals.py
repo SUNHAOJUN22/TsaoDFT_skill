@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import importlib.util
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 import unittest
 
 import yaml
@@ -10,20 +12,67 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def load_demo_validator():
+    path = ROOT / "scripts/generate_readme_demos.py"
+    spec = importlib.util.spec_from_file_location("tsao_demo_validator", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot import {path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 class ReadmeVisualTests(unittest.TestCase):
     def test_all_governed_ai_assets_are_embedded(self):
         manifest = yaml.safe_load((ROOT / "assets/ai/manifest.yaml").read_text(encoding="utf-8"))
-        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        readmes = [
+            (ROOT / "README.md").read_text(encoding="utf-8"),
+            (ROOT / "README_EN.md").read_text(encoding="utf-8"),
+        ]
         for item in manifest["assets"]:
-            self.assertIn(item["path"], readme)
+            for readme in readmes:
+                self.assertIn(item["path"], readme)
 
     def test_readme_has_ai_and_deterministic_visuals(self):
-        readme = (ROOT / "README.md").read_text(encoding="utf-8")
-        self.assertGreaterEqual(readme.count("assets/ai/"), 8)
-        self.assertGreaterEqual(readme.count("assets/demo/"), 6)
-        self.assertIn("AI图像声明", readme)
+        for readme_name in ("README.md", "README_EN.md"):
+            readme = (ROOT / readme_name).read_text(encoding="utf-8")
+            self.assertGreaterEqual(readme.count("assets/ai/"), 8)
+            self.assertGreaterEqual(readme.count("assets/demo/"), 8)
+        self.assertIn("AI图像声明", (ROOT / "README.md").read_text(encoding="utf-8"))
+        self.assertIn("AI image declaration", (ROOT / "README_EN.md").read_text(encoding="utf-8"))
         hero = (ROOT / "assets/ai/hero/tsao-dft-hero.svg").read_text(encoding="utf-8")
         self.assertIn("NOT COMPUTATIONAL DATA", hero)
+
+    def test_demo_validator_is_read_only_when_assets_are_missing(self):
+        module = load_demo_validator()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            out = root / "assets" / "demo"
+            out.mkdir(parents=True)
+            readme = root / "README.md"
+            readme_en = root / "README_EN.md"
+            readme.write_text("# test\n", encoding="utf-8")
+            readme_en.write_text("# test\n", encoding="utf-8")
+            module.ROOT = root
+            module.OUT = out
+            module.README_FILES = (readme, readme_en)
+            failures, checked = module.validate()
+            self.assertEqual(checked, [])
+            self.assertEqual(list(out.iterdir()), [])
+            self.assertEqual(
+                sum(item.startswith("missing demo asset:") for item in failures),
+                len(module.DEMO_SPECS),
+            )
+
+    def test_demo_asset_validator_cli(self):
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/generate_readme_demos.py")],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("README demo asset validation: PASS", result.stdout)
 
     def test_readme_visual_validator(self):
         result = subprocess.run(

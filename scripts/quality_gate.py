@@ -22,7 +22,7 @@ class Stage:
 
 def stages(include_tests: bool = True) -> list[Stage]:
     items = [
-        Stage("regenerate demos", (sys.executable, "scripts/generate_readme_demos.py")),
+        Stage("demo assets", (sys.executable, "scripts/generate_readme_demos.py")),
         Stage("catalog", (sys.executable, "scripts/validate_catalog.py")),
         Stage("AI assets", (sys.executable, "scripts/validate_ai_assets.py")),
         Stage("README visuals", (sys.executable, "scripts/validate_readme_visuals.py", "--strict")),

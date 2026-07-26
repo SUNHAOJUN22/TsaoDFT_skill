@@ -73,7 +73,7 @@ planned → prepared → completed → technically validated → scientifically 
 
 ## 确定性科研演示
 
-下列 SVG 由 [`scripts/generate_readme_demos.py`](scripts/generate_readme_demos.py) 基于固定模板确定性生成，并在图内标注 `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`。它们用于展示图件规范、审计门和交接关系，不是生产计算结果。
+下列 SVG 是版本化、确定性的合成演示资产，并在图内标注 `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`。为兼容既有命令，校验入口仍保留为 [`scripts/generate_readme_demos.py`](scripts/generate_readme_demos.py)，但它现在是**严格只读校验器**：检查 XML、尺寸、标题、可访问性描述、README 引用和非数据标签；图片缺失、退化或出现占位内容时质量门直接失败，绝不自动写入低质量 placeholder。
 
 <table>
 <tr>
@@ -122,7 +122,7 @@ python scripts/quality_gate.py
 质量门按固定顺序执行：
 
 ```text
-regenerate demos
+validate versioned demo assets
 → catalog validation
 → AI asset integrity and provenance
 → README visual completeness

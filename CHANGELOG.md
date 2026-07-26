@@ -2,11 +2,13 @@
 
 ## Unreleased — README visual and CI hardening
 
-- Added a prominent governed AI-generated research-scene gallery rather than relying on workflow diagrams alone.
-- Added README visual cross-validation against the AI asset manifest and deterministic demo set.
-- Hardened CI with Python 3.10/3.12/3.13, pip caching, concurrency control, deterministic-demo diff checks, and manual dispatch.
-- Added a main-only GitHub-hosted attestation workflow that records a bot-authored proof only after the full validation suite passes.
-- Expanded the repository test count from 63 to 66 with README visual-governance coverage.
+- Rebuilt the README visual system as the governed `premium_scientific_v3` hero and seven-module gallery, with local raster review, dimensions and SHA-256 records.
+- Added bilingual README cross-validation against the governed AI asset manifest and all eight deterministic demo assets.
+- Replaced the old demo placeholder fallback with a strict, read-only SVG integrity validator; missing or degraded figures now fail CI instead of silently generating low-quality artwork.
+- Hardened CI with Python 3.10/3.12/3.13, pip caching, concurrency control, failure-log artifacts, commit statuses and manual dispatch.
+- Removed obsolete issue-triggered bootstrap, README-patch, clean-rebuild and self-attestation workflows; `ci.yml` is the single permanent quality gate.
+- Removed stale maintenance payloads and closed the obsolete bootstrap-probe issue.
+- Expanded the repository test count from 63 to 68 with AI-governance, bilingual visual-completeness and read-only demo-validator coverage.
 
 ## 0.4.0-alpha.1 — 2026-07-24
 

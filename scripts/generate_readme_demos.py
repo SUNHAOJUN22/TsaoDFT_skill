@@ -1,52 +1,143 @@
 #!/usr/bin/env python3
-"""Materialize or validate deterministic synthetic README SVG demonstrations.
+"""Validate versioned synthetic README SVG demonstrations without modifying them.
 
-Published demo SVGs are versioned assets. Existing assets are preserved byte-for-byte;
-missing assets are recreated as compact labeled placeholders so CI and offline installs
-never substitute generated artwork for scientific evidence.
+The historical command name is retained for compatibility. The command is deliberately
+read-only: a missing, malformed, undersized, unlabeled, or placeholder asset fails the
+quality gate instead of being silently replaced with low-quality fallback artwork.
 """
 from __future__ import annotations
 
-from html import escape
+import argparse
+import json
 from pathlib import Path
+import re
+from typing import Any
+import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "assets" / "demo"
+README_FILES = (ROOT / "README.md", ROOT / "README_EN.md")
 NOTICE = "SYNTHETIC DEMO · NOT SCIENTIFIC DATA"
-DEMOS = {
-    "workflow-architecture": "TsaoDFT auditable research loop",
-    "wavefunction-esp-gallery": "Wavefunction and surface figure contract",
-    "free-energy-profile": "Free-energy profile with explicit validation gates",
-    "dft-ml-dashboard": "DFT + ML provenance-aware evaluation",
-    "periodic-dft-materials": "Periodic DFT and materials evidence chain",
-    "active-learning-loop": "DFT + ML active-learning loop",
-    "hpc-provenance": "HPC execution and provenance",
-    "multiscale-kinetics": "DFT to kinetics and multiscale models",
+PLACEHOLDER_MARKERS = (
+    "offline placeholder",
+    "replace this compact",
+    "re-run the repository renderer",
+    "todo",
+    "tbd",
+)
+DEMO_SPECS: dict[str, tuple[str, int, int]] = {
+    "workflow-architecture.svg": ("TsaoDFT auditable research loop", 1180, 430),
+    "wavefunction-esp-gallery.svg": ("Wavefunction and surface figure contract", 1120, 470),
+    "free-energy-profile.svg": ("Free-energy profile with explicit validation gates", 1080, 500),
+    "dft-ml-dashboard.svg": ("DFT + ML: provenance-aware evaluation", 1120, 500),
+    "periodic-dft-materials.svg": ("Periodic DFT and materials evidence chain", 1120, 460),
+    "active-learning-loop.svg": ("DFT + ML active-learning loop", 1080, 480),
+    "hpc-provenance.svg": ("HPC execution and provenance", 1120, 450),
+    "multiscale-kinetics.svg": ("DFT to kinetics and multiscale models", 1120, 470),
 }
+DIMENSION_RE = re.compile(r"^(\d+)(?:px)?$")
 
 
-def placeholder(title: str) -> str:
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="420" viewBox="0 0 1120 420" role="img">
-<rect width="1120" height="420" rx="18" fill="#f8fafc"/>
-<text x="36" y="48" font-family="Arial,sans-serif" font-size="24" font-weight="700" fill="#0f172a">{escape(title)}</text>
-<rect x="80" y="110" width="960" height="210" rx="22" fill="#ffffff" stroke="#cbd5e1"/>
-<text x="560" y="205" text-anchor="middle" font-family="Arial,sans-serif" font-size="18" font-weight="700" fill="#334155">TsaoDFT deterministic README demonstration</text>
-<text x="560" y="242" text-anchor="middle" font-family="Arial,sans-serif" font-size="13" fill="#64748b">Re-run the repository renderer to replace this compact offline placeholder.</text>
-<text x="1090" y="398" text-anchor="end" font-family="Arial,sans-serif" font-size="10" font-weight="700" fill="#9f1239">{NOTICE}</text>
-</svg>'''
+def svg_dimension(root: ET.Element, name: str) -> int:
+    value = root.attrib.get(name, "")
+    match = DIMENSION_RE.fullmatch(value)
+    if not match:
+        raise ValueError(f"SVG {name} must be an integer pixel value, got {value!r}")
+    return int(match.group(1))
+
+
+def child_text(root: ET.Element, local_name: str) -> str:
+    for element in root.iter():
+        if element.tag.rsplit("}", 1)[-1] == local_name:
+            return "".join(element.itertext()).strip()
+    return ""
+
+
+def validate() -> tuple[list[str], list[dict[str, Any]]]:
+    failures: list[str] = []
+    checked: list[dict[str, Any]] = []
+    readmes: dict[str, str] = {}
+    for readme in README_FILES:
+        if not readme.is_file():
+            failures.append(f"missing README file: {readme.relative_to(ROOT)}")
+            continue
+        readmes[readme.name] = readme.read_text(encoding="utf-8")
+
+    if not OUT.is_dir():
+        failures.append(f"missing demo asset directory: {OUT.relative_to(ROOT)}")
+        return failures, checked
+
+    for filename, (expected_title, expected_width, expected_height) in DEMO_SPECS.items():
+        path = OUT / filename
+        rel = path.relative_to(ROOT)
+        if not path.is_file():
+            failures.append(f"missing demo asset: {rel}")
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError as exc:
+            failures.append(f"non-UTF8 demo asset {rel}: {exc}")
+            continue
+        try:
+            root = ET.fromstring(text)
+        except ET.ParseError as exc:
+            failures.append(f"invalid SVG XML {rel}: {exc}")
+            continue
+        if root.tag.rsplit("}", 1)[-1] != "svg":
+            failures.append(f"demo root is not SVG: {rel}")
+            continue
+        try:
+            width = svg_dimension(root, "width")
+            height = svg_dimension(root, "height")
+        except ValueError as exc:
+            failures.append(f"{rel}: {exc}")
+            continue
+        if (width, height) != (expected_width, expected_height):
+            failures.append(
+                f"demo dimensions changed for {rel}: {(width, height)} != "
+                f"{(expected_width, expected_height)}"
+            )
+        if root.attrib.get("role") != "img":
+            failures.append(f"demo lacks role=img: {rel}")
+        title = child_text(root, "title")
+        description = child_text(root, "desc")
+        if title != expected_title:
+            failures.append(f"demo title mismatch for {rel}: {title!r}")
+        if not description:
+            failures.append(f"demo lacks accessible description: {rel}")
+        elif "synthetic" not in description.lower() or "scientific data" not in description.lower():
+            failures.append(f"demo description does not disclose synthetic status: {rel}")
+        if NOTICE not in text:
+            failures.append(f"demo lacks visible synthetic-data notice: {rel}")
+        lower = text.lower()
+        for marker in PLACEHOLDER_MARKERS:
+            if marker in lower:
+                failures.append(f"demo contains placeholder marker {marker!r}: {rel}")
+        for readme_name, readme_text in readmes.items():
+            reference = rel.as_posix()
+            if reference not in readme_text:
+                failures.append(f"{readme_name} does not embed demo asset: {reference}")
+        checked.append({"path": rel.as_posix(), "width": width, "height": height, "title": title})
+
+    return failures, checked
 
 
 def main() -> int:
-    OUT.mkdir(parents=True, exist_ok=True)
-    for stem, title in DEMOS.items():
-        path = OUT / f"{stem}.svg"
-        if not path.exists():
-            path.write_text(placeholder(title), encoding="utf-8", newline="\n")
-        text = path.read_text(encoding="utf-8")
-        if NOTICE not in text:
-            raise SystemExit(f"Demo lacks synthetic-data notice: {path}")
-    print(f"Validated {len(DEMOS)} deterministic README SVG demos in {OUT}")
-    return 0
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--json", action="store_true", dest="json_output")
+    args = parser.parse_args()
+    failures, checked = validate()
+    payload = {"ok": not failures, "checked": checked, "failures": failures}
+    if args.json_output:
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+    else:
+        for failure in failures:
+            print(f"FAIL: {failure}")
+        print(
+            f"README demo asset validation: {'PASS' if not failures else 'FAIL'} "
+            f"({len(checked)}/{len(DEMO_SPECS)} checked)"
+        )
+    return 0 if not failures else 1
 
 
 if __name__ == "__main__":

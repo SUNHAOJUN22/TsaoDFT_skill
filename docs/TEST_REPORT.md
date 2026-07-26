@@ -1,15 +1,15 @@
 # Test Report
 
-Date: 2026-07-25  
+Date: 2026-07-26  
 Version: `0.4.0-alpha.1`
 
 ## Result
 
-**PASS — 66 unit tests across 9 isolated suites, 0 failed suites.**
+**PASS — 68 unit tests across 9 isolated suites, 0 failed suites.**
 
 | Suite | Tests | Result |
 |---|---:|---|
-| Repository, catalog, installer, plugin, AI-image governance, README visual completeness and strict validator | 13 | PASS |
+| Repository, catalog, installer, plugin, AI-image governance, demo-asset integrity, README visual completeness and strict validator | 15 | PASS |
 | `tsao-dft-suite` | 4 | PASS |
 | `tsao-dft-researcher` | 16 | PASS |
 | `tsao-structure-prep` | 4 | PASS |
@@ -22,7 +22,9 @@ Version: `0.4.0-alpha.1`
 ## Deterministic coverage
 
 - AI-generated README asset manifest, SHA-256 integrity, dimensions, generation provenance, visible disclosure and non-quantitative policy;
-- README embedding completeness for all governed AI assets and required deterministic demonstrations;
+- README embedding completeness for all governed AI assets and all eight deterministic demonstrations in both languages;
+- strict, read-only demo-asset validation of SVG XML, exact dimensions, titles, accessible descriptions and visible synthetic-data notices;
+- explicit failure for missing, degraded or placeholder demo assets, with no automatic fallback writes;
 - explicit rejection of wording that presents AI illustrations as calculated orbitals, surfaces or scientific results;
 - DFT-first routing, cross-Skill handoff and method fingerprint validation;
 - Gaussian input preflight and rich synthetic log parsing;
@@ -37,12 +39,18 @@ Version: `0.4.0-alpha.1`
 - engine-aware Slurm/PBS/local script generation, site profile, resource estimate and restart lineage;
 - reaction-network element/charge/site balance, Eyring rates, thermodynamic closure, barrier uncertainty and Cantera-oriented handoff;
 - scoped catalyst coordination campaign and claim-strength validation;
-- research/figure manifests, VMD Tcl generation, energy-profile figures and synthetic README figure determinism.
+- research/figure manifests, VMD Tcl generation, energy-profile figures and synthetic README figure integrity.
 
 ## Commands
 
 ```bash
 python -m pip install -r requirements.txt
+python scripts/quality_gate.py
+```
+
+Focused diagnostics:
+
+```bash
 python scripts/generate_readme_demos.py
 python scripts/validate_catalog.py
 python scripts/validate_ai_assets.py

@@ -115,7 +115,7 @@ python scripts/install.py --agent codex --scope user --skill all
 ## 一键质量门
 
 ```bash
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt
 python scripts/quality_gate.py
 ```
 
@@ -126,8 +126,10 @@ validate versioned demo assets
 → catalog validation
 → AI asset integrity and provenance
 → README visual completeness
+→ Ruff lint
+→ Ruff formatting check
 → strict repository audit
-→ all unittest suites
+→ all non-empty unittest suites
 ```
 
 需要单独定位问题时，可运行：
@@ -137,6 +139,8 @@ python scripts/generate_readme_demos.py
 python scripts/validate_catalog.py
 python scripts/validate_ai_assets.py
 python scripts/validate_readme_visuals.py --strict
+python -m ruff check .
+python -m ruff format --check .
 python scripts/validate_repo.py --strict
 python scripts/run_all_tests.py
 ```

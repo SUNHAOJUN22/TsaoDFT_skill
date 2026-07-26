@@ -185,11 +185,24 @@ jobs:
           python -m pip install -r requirements-dev.txt
 
       - name: Apply exact self-deleting repairs
+        shell: bash
         run: |
-          python scripts/apply_ruff_fixes_once.py
-          ruff format .
-          ruff check .
-          python scripts/quality_gate.py
+          set -o pipefail
+          {
+            python scripts/apply_ruff_fixes_once.py
+            ruff format .
+            ruff check .
+            python scripts/quality_gate.py
+          } 2>&1 | tee ruff-fix.log
+
+      - name: Upload exact-repair log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: exact-ruff-repair-log
+          path: ruff-fix.log
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Commit verified repairs to main
         shell: bash

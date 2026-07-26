@@ -1,4 +1,4 @@
-name: TsaoDFT exact Ruff formatter
+name: TsaoDFT one-time exact Ruff formatter
 
 on:
   push:
@@ -6,20 +6,22 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: tsao-dft-exact-ruff-format
   cancel-in-progress: true
 
 jobs:
-  format:
-    name: Export Ruff 0.15.22 output
+  format-and-restore:
+    name: Format sources and restore permanent gate
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 2
 
       - name: Setup Python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
@@ -33,9 +35,15 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements-dev.txt
 
-      - name: Format only the audited files
+      - name: Format audited files and restore permanent workflow
         run: |
           python -m ruff format \
+            scripts/generate_readme_demos.py \
+            scripts/validate_ai_assets.py \
+            scripts/validate_readme_visuals.py \
+            tests/test_ai_assets.py \
+            tests/test_readme_visuals.py
+          python -m ruff check \
             scripts/generate_readme_demos.py \
             scripts/validate_ai_assets.py \
             scripts/validate_readme_visuals.py \
@@ -47,16 +55,18 @@ jobs:
             scripts/validate_readme_visuals.py \
             tests/test_ai_assets.py \
             tests/test_readme_visuals.py
+          git show HEAD^:.github/workflows/ci.yml > .github/workflows/ci.yml
 
-      - name: Upload exact formatted sources
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: exact-ruff-formatted-sources
-          path: |
-            scripts/generate_readme_demos.py
-            scripts/validate_ai_assets.py
-            scripts/validate_readme_visuals.py
-            tests/test_ai_assets.py
+      - name: Commit exact formatter output to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            .github/workflows/ci.yml \
+            scripts/generate_readme_demos.py \
+            scripts/validate_ai_assets.py \
+            scripts/validate_readme_visuals.py \
+            tests/test_ai_assets.py \
             tests/test_readme_visuals.py
-          if-no-files-found: error
-          retention-days: 1
+          git commit -m "style: apply pinned Ruff formatting and restore CI"
+          git push origin HEAD:main

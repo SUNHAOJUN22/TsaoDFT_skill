@@ -27,6 +27,8 @@ def stages(include_tests: bool = True) -> list[Stage]:
         Stage("catalog", (sys.executable, "scripts/validate_catalog.py")),
         Stage("AI assets", (sys.executable, "scripts/validate_ai_assets.py")),
         Stage("README visuals", (sys.executable, "scripts/validate_readme_visuals.py", "--strict")),
+        Stage("Ruff lint", (sys.executable, "-m", "ruff", "check", ".")),
+        Stage("Ruff format", (sys.executable, "-m", "ruff", "format", "--check", ".")),
         Stage("repository", (sys.executable, "scripts/validate_repo.py", "--strict")),
     ]
     if include_tests:

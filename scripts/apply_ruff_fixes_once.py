@@ -25,6 +25,22 @@ REPLACEMENTS: dict[str, list[tuple[str, str]]] = {
                         errors.append(f"{pwhere}: ESP comparison scale must be symmetric")''',
         ),
         (
+            '''                if panel_type in {"spin_density", "difference_density"}:
+                    if not isinstance(params.get("positive_isovalue"), (int, float)) or not isinstance(
+                        params.get("negative_isovalue"), (int, float)
+                    ):
+                        errors.append(
+                            f"{pwhere}: signed density panel requires positive_isovalue and negative_isovalue"
+                        )''',
+            '''                if panel_type in {"spin_density", "difference_density"} and (
+                    not isinstance(params.get("positive_isovalue"), (int, float))
+                    or not isinstance(params.get("negative_isovalue"), (int, float))
+                ):
+                    errors.append(
+                        f"{pwhere}: signed density panel requires positive_isovalue and negative_isovalue"
+                    )''',
+        ),
+        (
             '''                if field in base_params or field in params:
                     if params.get(field) != base_params.get(field):
                         message = (

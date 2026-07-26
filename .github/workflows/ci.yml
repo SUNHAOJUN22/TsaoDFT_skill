@@ -47,19 +47,25 @@ jobs:
         if: matrix.python-version == '3.12'
         shell: bash
         run: |
+          report="$RUNNER_TEMP/ruff-report.json"
           set +e
-          ruff check . --output-format json > ruff-report.json
+          ruff check . --output-format json > "$report"
           code=$?
           echo "Ruff diagnostic exit code: $code"
-          python - <<'PY'
+          python - "$report" <<'PY'
           import json
           from pathlib import Path
-          path = Path("ruff-report.json")
+          import sys
+
+          path = Path(sys.argv[1])
           findings = json.loads(path.read_text(encoding="utf-8")) if path.stat().st_size else []
           print(f"Ruff findings: {len(findings)}")
           for item in findings[:50]:
               location = item.get("location", {})
-              print(f"{item.get('filename')}:{location.get('row')}:{location.get('column')} {item.get('code')} {item.get('message')}")
+              print(
+                  f"{item.get('filename')}:{location.get('row')}:{location.get('column')} "
+                  f"{item.get('code')} {item.get('message')}"
+              )
           PY
           exit 0
 
@@ -68,7 +74,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ruff-diagnostic
-          path: ruff-report.json
+          path: ${{ runner.temp }}/ruff-report.json
           if-no-files-found: error
           retention-days: 7
 
@@ -113,16 +119,23 @@ jobs:
           fi
           export state summary
           python - <<'PY'
-          import json, os, urllib.request
+          import json
+          import os
+          import urllib.request
+
           repository = os.environ["GITHUB_REPOSITORY"]
           sha = os.environ["GITHUB_SHA"]
           version = os.environ["PYTHON_VERSION"]
-          payload = json.dumps({
-              "state": os.environ["state"],
-              "context": f"tsao-dft/python-{version}",
-              "description": os.environ["summary"],
-              "target_url": f"https://github.com/{repository}/actions/runs/{os.environ['GITHUB_RUN_ID']}",
-          }).encode()
+          payload = json.dumps(
+              {
+                  "state": os.environ["state"],
+                  "context": f"tsao-dft/python-{version}",
+                  "description": os.environ["summary"],
+                  "target_url": (
+                      f"https://github.com/{repository}/actions/runs/{os.environ['GITHUB_RUN_ID']}"
+                  ),
+              }
+          ).encode()
           request = urllib.request.Request(
               f"https://api.github.com/repos/{repository}/statuses/{sha}",
               data=payload,
@@ -141,3 +154,55 @@ jobs:
       - name: Fail job when quality gate fails
         if: always() && steps.gate.outputs.exit_code != '0'
         run: exit 1
+
+  one-time-ruff-normalize:
+    if: >-
+      github.event_name == 'push' &&
+      contains(github.event.head_commit.message, '[ruff-normalize]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: Normalize Python sources
+        run: |
+          ruff check . --fix --unsafe-fixes || true
+          ruff format .
+
+      - name: Verify normalized repository
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python scripts/quality_gate.py
+
+      - name: Commit normalized sources to main
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- '*.py'
+          if git diff --cached --quiet; then
+            echo 'Ruff made no source changes.'
+          else
+            git commit -m 'style: normalize Python sources with Ruff'
+            git push origin HEAD:main
+          fi

@@ -1,36 +1,37 @@
 # README AI Concept Overview Record
 
 - Generation date: 2026-07-27
-- Generator: AI-assisted deterministic SVG composition informed by user-approved prior TsaoDFT dark-dashboard references and local raster review
-- Generation ID: `tsao-dft-uiux-pro-v7-dark-scientific-os`
+- Generator: OpenAI image generation for visual direction plus deterministic SVG composition
+- Source generation ID: `45b15bf7-1d43-448d-ae9e-88eaf9309240`
+- Visual-system ID: `tsao-dft-uiux-pro-v8-hero-evidence-bento`
 - Intended use: one full-width conceptual overview for a DFT-first computational-chemistry and materials-research repository
 - Scientific status: `illustrative_only`
 - Quantitative use: prohibited
 
 ## UI/UX Pro Max workflow
 
-1. Product classification: scientific developer tool / research operating system.
-2. Pattern selection: hero-centric overview + evidence dashboard + bento capability grid.
-3. Style synthesis: dark OLED scientific UI, restrained glass surfaces, data-dense hierarchy.
-4. Color synthesis: navy/blue/cyan/violet with success, warning and error tokens.
-5. Typography: large readable identity, system sans body and monospace technical labels.
-6. Anti-pattern filtering: no pale generic SaaS banner, no unbounded AI gradient, no unreadable feature wall, no unsupported scientific result.
-7. Pre-delivery review: full-width and half-width readability, explicit non-data label, bilingual embedding and validator compatibility.
+1. Product classification: scientific developer tool / computational-research operating system.
+2. Pattern: Hero-Centric Research OS + Evidence Bento + Trust & Authority.
+3. Style: Dark OLED Scientific UI + Swiss Modernism 2.0 + restrained HUD motifs.
+4. Colors: navy / cyan / blue / violet with labelled teal, orange and coral domains.
+5. Typography: large system-sans identity, readable body labels and monospace technical rails.
+6. Density: `6/10`; enough context for a research OS without recreating a full dashboard screenshot.
+7. Anti-pattern filtering: no fake badges, no generated scientific labels, no unsupported numbers, no AI module-card gallery, no result-like conceptual plots.
+8. Pre-delivery: exact dimensions, self-contained SVG, visible non-data notice, bilingual embedding, full-width and half-width raster review.
 
-## Visual direction
+## Generation and composition method
 
-The overview should feel like a premium computational-research operating system:
+A fresh AI-generated dark scientific scene was created from the user-approved visual direction. It was used as a composition reference, while the repository asset reconstructs the molecule, orbital loop, periodic lattice, server racks, typography, capability cards and evidence gates as deterministic SVG vector geometry. No generated-image wording or fake metric becomes repository truth.
 
-- a strong dark scientific hero;
-- molecular, periodic-materials, ML, kinetics and HPC motifs;
-- eight composable skills in a compact bento grid;
-- a separate deterministic-demo strip;
-- quick-start, quality-gate, health and scientific-boundary panels;
-- visible evidence-first language;
-- high contrast and no external font or image dependency.
+The cover contains:
 
-The asset translates user-approved earlier TsaoDFT dark-dashboard concepts into a self-contained vector composition. No external image, font or script dependency is embedded.
+- a strong DFT-first hero;
+- molecular, periodic-materials and HPC motifs;
+- seven research-domain capability cards;
+- a six-stage evidence workflow;
+- an audit-trail rail;
+- molecular, periodic and scale/provenance evidence bento cards.
 
 ## Mandatory boundary
 
-The overview is an AI-assisted conceptual illustration. It must never be represented as a Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD, molecular-orbital, ESP, band-structure, free-energy, experimental or other computational result. Quantitative figures must come from validated source data and deterministic scripts.
+The overview is an AI-assisted conceptual illustration. It must never be represented as a Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD, molecular-orbital, ESP, band-structure, free-energy, transition-state, mechanistic, experimental or other computational result. Quantitative figures must come from validated source data and deterministic scripts.

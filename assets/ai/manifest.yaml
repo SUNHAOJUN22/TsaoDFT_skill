@@ -1,21 +1,28 @@
-schema_version: '1.6'
+schema_version: '1.7'
 release: 0.4.0-alpha.1
-policy: AI-assisted visuals are limited to one conceptual cover; deterministic or accepted real data owns quantitative claims.
-visual_system: uiux_pro_v6_swiss_bento
-render_validation: local_svg_raster_preview_checked
+policy: AI-assisted visuals are limited to one conceptual overview; deterministic
+  or accepted real data owns quantitative claims.
+visual_system: uiux_pro_v7_dark_scientific_os
+render_validation: local_svg_raster_preview_checked_full_and_half_width
 assets:
 - path: assets/ai/hero/tsao-dft-hero.svg
   role: hero
-  topic: tsao_dft_cover
+  topic: tsao_dft_dark_research_operating_system
   ai_generated: true
   ai_assisted_derivative: true
   illustrative_only: true
   quantitative: false
   computed_surface: false
-  source_generation_id: tsao-dft-uiux-pro-v6-swiss-bento
+  source_generation_id: tsao-dft-uiux-pro-v7-dark-scientific-os
   source_prompt: assets/ai/prompts/README-ai-concept-montage.md
-  width_px: 1400
-  height_px: 520
-  sha256: 25f968ec99c19b5ae4756ae4a5545a6b3f3367f6bf2b2e20061b95440832ead3
-  allowed_uses: [README conceptual cover]
-  forbidden_uses: [quantitative evidence, computed surface, mechanistic proof, experimental result]
+  width_px: 1600
+  height_px: 1050
+  sha256: 904a00199fe23442572461f52bac77da32964a72d8d8dc97015eb922f74c746a
+  allowed_uses:
+  - README conceptual overview
+  forbidden_uses:
+  - quantitative evidence
+  - computed surface
+  - mechanistic proof
+  - experimental result
+  - engine benchmark

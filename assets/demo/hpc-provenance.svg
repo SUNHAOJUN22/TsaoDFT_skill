@@ -1,16 +1,47 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="450" viewBox="0 0 1120 450" role="img" aria-labelledby="title desc" >
-<title id="title">HPC execution and provenance</title><desc id="desc">Synthetic HPC batch and provenance dashboard; not scientific data.</desc>
-<defs><pattern id="dotgrid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#E9EEF5"/></pattern><filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="8" stdDeviation="14" flood-color="#0B1220" flood-opacity=".08"/></filter></defs><style>
-.text{font-family:Inter,Segoe UI,Arial,sans-serif;fill:#0B1220}
-.mono{font-family:JetBrains Mono,SFMono-Regular,Consolas,monospace;fill:#0B1220}
-.eyebrow{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:12px;font-weight:800;letter-spacing:1.8px;fill:#2563EB}
-.title{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:32px;font-weight:780;letter-spacing:-.7px;fill:#0B1220}
-.h2{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:20px;font-weight:760;fill:#0B1220}
-.body{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:14px;font-weight:450;fill:#526175}
-.small{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:12px;font-weight:500;fill:#526175}
-.tiny{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:10px;font-weight:650;letter-spacing:.5px;fill:#7A889B}
-.label{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:11px;font-weight:800;letter-spacing:.9px;fill:#526175}
-.mono12{font-family:JetBrains Mono,SFMono-Regular,Consolas,monospace;font-size:12px;font-weight:600;fill:#0B1220}
-</style>
-<rect x="0" y="0" width="1120" height="450" rx="0" fill="#F6F8FC"/><text x="30" y="40" class="eyebrow">HPC EXECUTION</text><text x="30" y="76" class="title">Throughput, failure state and provenance stay separate.</text><rect x="30" y="110" width="480" height="278" rx="18" fill="#FFFFFF" stroke="#D9E2EE" stroke-width="1"/><text x="52" y="144" class="label">SLURM ARRAY / BATCH DAG</text><rect x="52" y="156" width="430" height="28" rx="8" fill="#F6F8FC" stroke="#E9EEF5" stroke-width="1"/><text x="66" y="176" class="mono12">task 1</text><rect x="365" y="158" width="96" height="28" rx="14" fill="#DCFCE7"/><text x="413.0" y="177" class="label" text-anchor="middle" style="fill:#16A34A">DONE</text><rect x="52" y="194" width="430" height="28" rx="8" fill="#F6F8FC" stroke="#E9EEF5" stroke-width="1"/><text x="66" y="214" class="mono12">task 2</text><rect x="365" y="196" width="96" height="28" rx="14" fill="#DCFCE7"/><text x="413.0" y="215" class="label" text-anchor="middle" style="fill:#16A34A">DONE</text><rect x="52" y="232" width="430" height="28" rx="8" fill="#F6F8FC" stroke="#E9EEF5" stroke-width="1"/><text x="66" y="252" class="mono12">task 3</text><rect x="365" y="234" width="96" height="28" rx="14" fill="#FEF3C7"/><text x="413.0" y="253" class="label" text-anchor="middle" style="fill:#D97706">RUNNING</text><rect x="52" y="270" width="430" height="28" rx="8" fill="#F6F8FC" stroke="#E9EEF5" stroke-width="1"/><text x="66" y="290" class="mono12">task 4</text><rect x="365" y="272" width="96" height="28" rx="14" fill="#DBEAFE"/><text x="413.0" y="291" class="label" text-anchor="middle" style="fill:#2563EB">PENDING</text><rect x="52" y="308" width="430" height="28" rx="8" fill="#F6F8FC" stroke="#E9EEF5" stroke-width="1"/><text x="66" y="328" class="mono12">task 5</text><rect x="365" y="310" width="96" height="28" rx="14" fill="#FEE2E2"/><text x="413.0" y="329" class="label" text-anchor="middle" style="fill:#DC2626">FAILED</text><text x="52" y="370" class="tiny">% concurrency cap · no automatic submission</text><rect x="536" y="110" width="554" height="278" rx="18" fill="#101A2D"/><text x="560" y="144" class="eyebrow" style="fill:#93C5FD">IMMUTABLE RUN RECORD</text><circle cx="562" cy="178" r="5" fill="#2563EB"/><text x="578" y="182" class="label" style="fill:#FFFFFF">INPUT HASH</text><text x="880" y="182" class="mono12" text-anchor="end" style="fill:#C9D7E8">sha256: …e91c</text><circle cx="562" cy="216" r="5" fill="#0891B2"/><text x="578" y="220" class="label" style="fill:#FFFFFF">METHOD</text><text x="880" y="220" class="mono12" text-anchor="end" style="fill:#C9D7E8">MF-2026-014</text><circle cx="562" cy="254" r="5" fill="#6D5DFB"/><text x="578" y="258" class="label" style="fill:#FFFFFF">ENVIRONMENT</text><text x="880" y="258" class="mono12" text-anchor="end" style="fill:#C9D7E8">mpi · blas · modules</text><circle cx="562" cy="292" r="5" fill="#D97706"/><text x="578" y="296" class="label" style="fill:#FFFFFF">RESTART</text><text x="880" y="296" class="mono12" text-anchor="end" style="fill:#C9D7E8">parent attempt + checkpoint</text><circle cx="562" cy="330" r="5" fill="#16A34A"/><text x="578" y="334" class="label" style="fill:#FFFFFF">RESULT</text><text x="880" y="334" class="mono12" text-anchor="end" style="fill:#C9D7E8">parser status + output hash</text><text x="1092" y="432" class="tiny" text-anchor="end">SYNTHETIC DEMO · NOT SCIENTIFIC DATA</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="450" viewBox="0 0 1120 450" role="img" aria-label="HPC execution and provenance">
+<title>HPC execution and provenance</title>
+<desc>A synthetic HPC execution lineage with resource and provenance controls. Synthetic demonstration only and not scientific data.</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#030816"/>
+    <stop offset="0.55" stop-color="#071529"/>
+    <stop offset="1" stop-color="#061020"/>
+  </linearGradient>
+  <linearGradient id="blue" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#2E8CFF"/><stop offset="1" stop-color="#62D4FF"/>
+  </linearGradient>
+  <linearGradient id="violet" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#6D5DFB"/><stop offset="1" stop-color="#D06BFF"/>
+  </linearGradient>
+  <linearGradient id="warm" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#F59E0B"/><stop offset="1" stop-color="#FB4B5A"/>
+  </linearGradient>
+  <pattern id="grid" width="34" height="34" patternUnits="userSpaceOnUse">
+    <path d="M 34 0 L 0 0 0 34" fill="none" stroke="#173052" stroke-width="1" opacity=".55"/>
+  </pattern>
+  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+    <feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <style>
+    .h1 {font:700 30px Inter,Segoe UI,sans-serif;fill:#F4F8FF}
+    .ey {font:700 12px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:1.4px;fill:#66C8FF}
+    .t {font:600 16px Inter,Segoe UI,sans-serif;fill:#CFE3FF}
+    .s {font:400 13px Inter,Segoe UI,sans-serif;fill:#9FB5D2}
+    .mono {font:600 11px ui-monospace,SFMono-Regular,Consolas,monospace;fill:#76D9FF}
+    .chip {font:700 10px ui-monospace,SFMono-Regular,Consolas,monospace}
+  </style>
+</defs>
+<rect width="1120" height="450" rx="24" fill="url(#bg)"/>
+<rect x="1" y="1" width="1118" height="448" rx="23" fill="none" stroke="#23528C" stroke-width="2"/>
+<rect width="1120" height="450" rx="24" fill="url(#grid)" opacity=".42"/>
+<text x="34" y="34" class="ey">SCHEDULER · CHECKPOINT · RESTART · HASH</text><text x="34" y="72" class="h1">Scheduler completion is not scientific acceptance.</text><rect x="34" y="100" width="720" height="280" rx="16" fill="#07152A" stroke="#27598F" stroke-width="1.5"/>
+<text x="52" y="128" class="t">Immutable execution lineage</text>
+<text x="52" y="149" class="s">submitted → running → checkpoint → parser → archive</text><circle cx="92" cy="235" r="28" fill="#07162B" stroke="#2E8CFF" stroke-width="3"/><text x="92" y="240" text-anchor="middle" class="chip" fill="#E8F4FF">SUBMIT</text><path d="M 120 235 C 156 235, 156 295, 192 295" fill="none" stroke="#6E8DB4" stroke-width="3"/><circle cx="220" cy="295" r="28" fill="#07162B" stroke="#18B7D4" stroke-width="3"/><text x="220" y="300" text-anchor="middle" class="chip" fill="#E8F4FF">RUN</text><path d="M 248 295 C 285 295, 285 235, 322 235" fill="none" stroke="#6E8DB4" stroke-width="3"/><circle cx="350" cy="235" r="28" fill="#07162B" stroke="#765BFF" stroke-width="3"/><text x="350" y="240" text-anchor="middle" class="chip" fill="#E8F4FF">CHECKPOINT</text><path d="M 378 235 C 415 235, 415 295, 452 295" fill="none" stroke="#6E8DB4" stroke-width="3"/><circle cx="480" cy="295" r="28" fill="#07162B" stroke="#F59E0B" stroke-width="3"/><text x="480" y="300" text-anchor="middle" class="chip" fill="#E8F4FF">PARSE</text><path d="M 508 295 C 545 295, 545 235, 582 235" fill="none" stroke="#6E8DB4" stroke-width="3"/><circle cx="610" cy="235" r="28" fill="#07162B" stroke="#22C55E" stroke-width="3"/><text x="610" y="240" text-anchor="middle" class="chip" fill="#E8F4FF">ARCHIVE</text><path d="M 638 235 C 655 235, 655 295, 672 295" fill="none" stroke="#6E8DB4" stroke-width="3"/><circle cx="700" cy="295" r="28" fill="#07162B" stroke="#C96BFF" stroke-width="3"/><text x="700" y="300" text-anchor="middle" class="chip" fill="#E8F4FF">CLAIM</text><rect x="780" y="100" width="306" height="116" rx="16" fill="#07152A" stroke="#2E8CFF" stroke-width="1.5"/>
+<text x="798" y="128" class="t">Resource guard</text>
+<text x="798" y="149" class="s">MPI × OpenMP × BLAS ≤ allocation</text><rect x="780" y="232" width="306" height="148" rx="16" fill="#07152A" stroke="#22C55E" stroke-width="1.5"/>
+<text x="798" y="260" class="t">Provenance record</text>
+<text x="798" y="281" class="s">script hash · environment · outputs · restart lineage</text><text x="808" y="322" class="mono">SHA256  3a5c…9f2b</text>
+<text x="808" y="350" class="mono">ATTEMPT  03 / compatible</text>
+<rect x="760" y="416" width="332" height="22" rx="7" fill="#07192F" stroke="#2E7CC8"/>
+<text x="926" y="431" text-anchor="middle" class="mono">SYNTHETIC DEMO · NOT SCIENTIFIC DATA</text>
 </svg>

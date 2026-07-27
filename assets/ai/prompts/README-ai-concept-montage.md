@@ -1,26 +1,36 @@
-# README AI Concept Cover Record
+# README AI Concept Overview Record
 
 - Generation date: 2026-07-27
-- Generator: AI-assisted deterministic SVG composition with local raster validation
-- Generation ID: `tsao-dft-uiux-pro-v6-swiss-bento`
-- Intended use: one conceptual README cover for a scientific developer-tool repository.
+- Generator: AI-assisted deterministic SVG composition informed by user-approved prior TsaoDFT dark-dashboard references and local raster review
+- Generation ID: `tsao-dft-uiux-pro-v7-dark-scientific-os`
+- Intended use: one full-width conceptual overview for a DFT-first computational-chemistry and materials-research repository
 - Scientific status: `illustrative_only`
 - Quantitative use: prohibited
 
 ## UI/UX Pro Max workflow
 
-The redesign follows the UI/UX Pro Max workflow: classify the product, generate a design system, apply style/color/typography rules, filter anti-patterns, then run accessibility and consistency checks.
+1. Product classification: scientific developer tool / research operating system.
+2. Pattern selection: hero-centric overview + evidence dashboard + bento capability grid.
+3. Style synthesis: dark OLED scientific UI, restrained glass surfaces, data-dense hierarchy.
+4. Color synthesis: navy/blue/cyan/violet with success, warning and error tokens.
+5. Typography: large readable identity, system sans body and monospace technical labels.
+6. Anti-pattern filtering: no pale generic SaaS banner, no unbounded AI gradient, no unreadable feature wall, no unsupported scientific result.
+7. Pre-delivery review: full-width and half-width readability, explicit non-data label, bilingual embedding and validator compatibility.
 
-Resolved system:
+## Visual direction
 
-1. Product: scientific developer tool / research infrastructure.
-2. Pattern: hero-centric identity + evidence-first bento grid.
-3. Style: Swiss Modernism 2.0 + Minimalism + Accessible & Ethical.
-4. Palette: light neutral surfaces, navy ink, trust blue, cyan, success green and amber; no decorative purple-pink AI gradient.
-5. Typography: large system sans identity with monospace technical labels.
-6. Density: medium, with readable GitHub-scale labels and generous hierarchy.
-7. Anti-patterns removed: feature-card wall, tiny copy, mixed illustration styles, ambiguous color-only status and ornamental scientific imagery.
+The overview should feel like a premium computational-research operating system:
+
+- a strong dark scientific hero;
+- molecular, periodic-materials, ML, kinetics and HPC motifs;
+- eight composable skills in a compact bento grid;
+- a separate deterministic-demo strip;
+- quick-start, quality-gate, health and scientific-boundary panels;
+- visible evidence-first language;
+- high contrast and no external font or image dependency.
+
+The asset translates user-approved earlier TsaoDFT dark-dashboard concepts into a self-contained vector composition. No external image, font or script dependency is embedded.
 
 ## Mandatory boundary
 
-The cover is an AI-assisted conceptual illustration. It must never be represented as a Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD, orbital, ESP, band-structure, free-energy, experimental or other computational result. Quantitative figures must come from validated source data and reproducible scripts.
+The overview is an AI-assisted conceptual illustration. It must never be represented as a Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD, molecular-orbital, ESP, band-structure, free-energy, experimental or other computational result. Quantitative figures must come from validated source data and deterministic scripts.

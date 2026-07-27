@@ -53,8 +53,9 @@ Every discovered suite must execute at least one test. A missing, unparseable or
 - explicit failure for missing, unsafe or unsupported local link targets;
 - explicit failure for missing, degraded or placeholder demo assets, with no automatic fallback writes;
 - explicit rejection of wording that presents conceptual illustrations as calculated orbitals, surfaces or scientific results;
-- local raster review of the `uiux_pro_v6_swiss_bento` cover and all eight matching deterministic demo assets before publication;
-- one documented README design system with consistent palette, typography, density, accessible status labels and anti-pattern controls.
+- local full-width and half-width raster review of the `uiux_pro_v7_dark_scientific_os` overview and all eight dark deterministic demo assets before publication;
+- one documented dark scientific README design system with consistent palette, typography, density, accessible status labels and anti-pattern controls;
+- complete bilingual README rewrite with the same governed overview, required deterministic figures, documentation map and scientific-boundary language.
 
 ## Scientific and workflow coverage
 

@@ -2,9 +2,10 @@
 
 ## Unreleased — compute efficiency, README visual, CI and repository hardening
 
-- Rebuilt the README visual system with the UI/UX Pro Max workflow: product classification, Hero-Centric + Evidence Bento pattern, Swiss Modernism 2.0, accessible light tokens and explicit anti-pattern filtering.
-- Regenerated the single governed conceptual cover and all eight deterministic SVG demonstrations with one consistent palette, typography, spacing, status language and non-data labeling.
-- Added `docs/README_VISUAL_DESIGN_SYSTEM.md` and upgraded AI visual governance to schema 1.6 / `uiux_pro_v6_swiss_bento`.
+- Rewrote both README files around a dark scientific research-operating-system narrative, with clearer evidence, support-level, performance, installation and scientific-boundary sections.
+- Rebuilt the single governed conceptual overview as `uiux_pro_v7_dark_scientific_os`, restoring the user-approved dark molecular/materials/HPC visual energy while keeping an explicit non-computational-data boundary.
+- Regenerated all eight deterministic SVG demonstrations as high-contrast dark evidence dashboards with fixed dimensions, accessible titles/descriptions and visible synthetic-data labels.
+- Updated `docs/README_VISUAL_DESIGN_SYSTEM.md`, AI image governance and the generation record with the Hero-Centric Research OS + Evidence Dashboard + Bento Capability Grid design system.
 - Added a second performance-audit pass with chunked file hashes, bounded canonical dataset hashing, Slurm-array compaction and reproducible baseline microbenchmarks.
 - Added approval-gated Slurm array generation, streamed JSONL task tables, unique per-task Gaussian scratch paths and OpenMP/BLAS/per-node oversubscription validation.
 - Added finite-value, data-shape and constant-feature provenance to the adaptive NumPy ridge baseline without introducing SciPy.

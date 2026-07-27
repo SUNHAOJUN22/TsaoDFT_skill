@@ -1,16 +1,50 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="500" viewBox="0 0 1120 500" role="img" aria-labelledby="title desc" >
-<title id="title">DFT + ML: provenance-aware evaluation</title><desc id="desc">Synthetic DFT and machine-learning evaluation dashboard; not scientific data.</desc>
-<defs><pattern id="dotgrid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="#E9EEF5"/></pattern><filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="8" stdDeviation="14" flood-color="#0B1220" flood-opacity=".08"/></filter></defs><style>
-.text{font-family:Inter,Segoe UI,Arial,sans-serif;fill:#0B1220}
-.mono{font-family:JetBrains Mono,SFMono-Regular,Consolas,monospace;fill:#0B1220}
-.eyebrow{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:12px;font-weight:800;letter-spacing:1.8px;fill:#2563EB}
-.title{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:32px;font-weight:780;letter-spacing:-.7px;fill:#0B1220}
-.h2{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:20px;font-weight:760;fill:#0B1220}
-.body{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:14px;font-weight:450;fill:#526175}
-.small{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:12px;font-weight:500;fill:#526175}
-.tiny{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:10px;font-weight:650;letter-spacing:.5px;fill:#7A889B}
-.label{font-family:Inter,Segoe UI,Arial,sans-serif;font-size:11px;font-weight:800;letter-spacing:.9px;fill:#526175}
-.mono12{font-family:JetBrains Mono,SFMono-Regular,Consolas,monospace;font-size:12px;font-weight:600;fill:#0B1220}
-</style>
-<rect x="0" y="0" width="1120" height="500" rx="0" fill="#F6F8FC"/><text x="30" y="40" class="eyebrow">DFT + ML EVIDENCE</text><text x="30" y="76" class="title">Model score is one panel—not the scientific conclusion.</text><rect x="30" y="110" width="250" height="104" rx="16" fill="#FFFFFF" stroke="#D9E2EE" stroke-width="1"/><circle cx="50" cy="133" r="6" fill="#2563EB"/><text x="66" y="138" class="label">DATA IDENTITY</text><text x="48" y="171" class="body">parent groups</text><text x="48" y="194" class="small">method fingerprints</text><rect x="294" y="110" width="250" height="104" rx="16" fill="#FFFFFF" stroke="#D9E2EE" stroke-width="1"/><circle cx="314" cy="133" r="6" fill="#0891B2"/><text x="330" y="138" class="label">SPLIT POLICY</text><text x="312" y="171" class="body">group / scaffold</text><text x="312" y="194" class="small">no leakage</text><rect x="558" y="110" width="250" height="104" rx="16" fill="#FFFFFF" stroke="#D9E2EE" stroke-width="1"/><circle cx="578" cy="133" r="6" fill="#D97706"/><text x="594" y="138" class="label">UNCERTAINTY</text><text x="576" y="171" class="body">calibration</text><text x="576" y="194" class="small">applicability domain</text><rect x="822" y="110" width="268" height="104" rx="16" fill="#FFFFFF" stroke="#D9E2EE" stroke-width="1"/><circle cx="842" cy="133" r="6" fill="#16A34A"/><text x="858" y="138" class="label">CLAIM STATUS</text><text x="840" y="171" class="body">baseline only</text><text x="840" y="194" class="small">bounded evidence</text><rect x="30" y="234" width="660" height="218" rx="16" fill="#FFFFFF" stroke="#D9E2EE" stroke-width="1"/><text x="52" y="264" class="label">PREDICTION VS TARGET</text><line x1="78" y1="410" x2="642" y2="410" stroke="#0B1220" stroke-width="2"/><line x1="78" y1="294" x2="78" y2="410" stroke="#0B1220" stroke-width="2"/><line x1="98" y1="394" x2="612" y2="302" stroke="#E9EEF5" stroke-width="2" stroke-dasharray="6 5"/><circle cx="120" cy="388" r="7" fill="#2563EB" stroke="#FFFFFF" stroke-width="2"/><circle cx="180" cy="365" r="7" fill="#0891B2" stroke="#FFFFFF" stroke-width="2"/><circle cx="250" cy="354" r="7" fill="#16A34A" stroke="#FFFFFF" stroke-width="2"/><circle cx="315" cy="332" r="7" fill="#D97706" stroke="#FFFFFF" stroke-width="2"/><circle cx="380" cy="320" r="7" fill="#2563EB" stroke="#FFFFFF" stroke-width="2"/><circle cx="445" cy="310" r="7" fill="#0891B2" stroke="#FFFFFF" stroke-width="2"/><circle cx="520" cy="290" r="7" fill="#16A34A" stroke="#FFFFFF" stroke-width="2"/><circle cx="590" cy="284" r="7" fill="#D97706" stroke="#FFFFFF" stroke-width="2"/><text x="90" y="432" class="tiny">target</text><text x="58" y="302" class="tiny">prediction</text><rect x="710" y="234" width="380" height="218" rx="16" fill="#101A2D"/><text x="734" y="264" class="eyebrow" style="fill:#93C5FD">RELEASE CHECK</text><text x="734" y="302" class="small" style="fill:#D7E4F5">group leakage</text><rect x="938" y="283" width="126" height="28" rx="14" fill="#173C35"/><text x="1001.0" y="302" class="label" text-anchor="middle" style="fill:#BBF7D0">PASS</text><text x="734" y="338" class="small" style="fill:#D7E4F5">test-set isolation</text><rect x="938" y="319" width="126" height="28" rx="14" fill="#173C35"/><text x="1001.0" y="338" class="label" text-anchor="middle" style="fill:#BBF7D0">PASS</text><text x="734" y="374" class="small" style="fill:#D7E4F5">uncertainty record</text><rect x="938" y="355" width="126" height="28" rx="14" fill="#4A3514"/><text x="1001.0" y="374" class="label" text-anchor="middle" style="fill:#FDE68A">REVIEW</text><text x="734" y="410" class="small" style="fill:#D7E4F5">external validation</text><rect x="938" y="391" width="126" height="28" rx="14" fill="#1E3A5F"/><text x="1001.0" y="410" class="label" text-anchor="middle" style="fill:#BFDBFE">NOT CLAIMED</text><text x="1092" y="482" class="tiny" text-anchor="end">SYNTHETIC DEMO · NOT SCIENTIFIC DATA</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="500" viewBox="0 0 1120 500" role="img" aria-label="DFT + ML: provenance-aware evaluation">
+<title>DFT + ML: provenance-aware evaluation</title>
+<desc>A provenance-aware synthetic machine-learning dashboard for DFT labels. Synthetic demonstration only and not scientific data.</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#030816"/>
+    <stop offset="0.55" stop-color="#071529"/>
+    <stop offset="1" stop-color="#061020"/>
+  </linearGradient>
+  <linearGradient id="blue" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#2E8CFF"/><stop offset="1" stop-color="#62D4FF"/>
+  </linearGradient>
+  <linearGradient id="violet" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#6D5DFB"/><stop offset="1" stop-color="#D06BFF"/>
+  </linearGradient>
+  <linearGradient id="warm" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#F59E0B"/><stop offset="1" stop-color="#FB4B5A"/>
+  </linearGradient>
+  <pattern id="grid" width="34" height="34" patternUnits="userSpaceOnUse">
+    <path d="M 34 0 L 0 0 0 34" fill="none" stroke="#173052" stroke-width="1" opacity=".55"/>
+  </pattern>
+  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+    <feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <style>
+    .h1 {font:700 30px Inter,Segoe UI,sans-serif;fill:#F4F8FF}
+    .ey {font:700 12px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:1.4px;fill:#66C8FF}
+    .t {font:600 16px Inter,Segoe UI,sans-serif;fill:#CFE3FF}
+    .s {font:400 13px Inter,Segoe UI,sans-serif;fill:#9FB5D2}
+    .mono {font:600 11px ui-monospace,SFMono-Regular,Consolas,monospace;fill:#76D9FF}
+    .chip {font:700 10px ui-monospace,SFMono-Regular,Consolas,monospace}
+  </style>
+</defs>
+<rect width="1120" height="500" rx="24" fill="url(#bg)"/>
+<rect x="1" y="1" width="1118" height="498" rx="23" fill="none" stroke="#23528C" stroke-width="2"/>
+<rect width="1120" height="500" rx="24" fill="url(#grid)" opacity=".42"/>
+<text x="34" y="34" class="ey">DFT LABELS · LEAKAGE · UNCERTAINTY</text><text x="34" y="72" class="h1">A model score is not a scientific mechanism.</text><rect x="34" y="105" width="520" height="325" rx="16" fill="#07152A" stroke="#27598F" stroke-width="1.5"/>
+<text x="52" y="133" class="t">Parity and residual view</text>
+<text x="52" y="154" class="s">group-aware split · synthetic points</text><path d="M 88 390 V 160 H 510" fill="none" stroke="#8AA4C4" stroke-width="2"/><path d="M 95 380 L 495 175" stroke="#62D4FF" stroke-width="3"/><circle cx="105.0" cy="382.3" r="4" fill="#31C8FF" opacity=".85"/><circle cx="113.5" cy="384.3" r="4" fill="#31C8FF" opacity=".85"/><circle cx="122.0" cy="362.0" r="4" fill="#31C8FF" opacity=".85"/><circle cx="130.5" cy="378.5" r="4" fill="#31C8FF" opacity=".85"/><circle cx="139.0" cy="357.5" r="4" fill="#31C8FF" opacity=".85"/><circle cx="147.5" cy="359.3" r="4" fill="#31C8FF" opacity=".85"/><circle cx="156.0" cy="366.1" r="4" fill="#31C8FF" opacity=".85"/><circle cx="164.5" cy="345.6" r="4" fill="#31C8FF" opacity=".85"/><circle cx="173.0" cy="358.3" r="4" fill="#31C8FF" opacity=".85"/><circle cx="181.5" cy="339.7" r="4" fill="#31C8FF" opacity=".85"/><circle cx="190.0" cy="348.5" r="4" fill="#31C8FF" opacity=".85"/><circle cx="198.5" cy="343.4" r="4" fill="#31C8FF" opacity=".85"/><circle cx="207.0" cy="327.1" r="4" fill="#31C8FF" opacity=".85"/><circle cx="215.5" cy="308.3" r="4" fill="#31C8FF" opacity=".85"/><circle cx="224.0" cy="329.3" r="4" fill="#31C8FF" opacity=".85"/><circle cx="232.5" cy="321.5" r="4" fill="#31C8FF" opacity=".85"/><circle cx="241.0" cy="302.6" r="4" fill="#31C8FF" opacity=".85"/><circle cx="249.5" cy="286.8" r="4" fill="#31C8FF" opacity=".85"/><circle cx="258.0" cy="295.8" r="4" fill="#31C8FF" opacity=".85"/><circle cx="266.5" cy="298.0" r="4" fill="#31C8FF" opacity=".85"/><circle cx="275.0" cy="272.9" r="4" fill="#31C8FF" opacity=".85"/><circle cx="283.5" cy="302.0" r="4" fill="#31C8FF" opacity=".85"/><circle cx="292.0" cy="268.5" r="4" fill="#31C8FF" opacity=".85"/><circle cx="300.5" cy="284.7" r="4" fill="#31C8FF" opacity=".85"/><circle cx="309.0" cy="285.6" r="4" fill="#31C8FF" opacity=".85"/><circle cx="317.5" cy="282.3" r="4" fill="#31C8FF" opacity=".85"/><circle cx="326.0" cy="271.1" r="4" fill="#31C8FF" opacity=".85"/><circle cx="334.5" cy="248.5" r="4" fill="#31C8FF" opacity=".85"/><circle cx="343.0" cy="267.1" r="4" fill="#31C8FF" opacity=".85"/><circle cx="351.5" cy="248.4" r="4" fill="#31C8FF" opacity=".85"/><circle cx="360.0" cy="242.0" r="4" fill="#31C8FF" opacity=".85"/><circle cx="368.5" cy="247.3" r="4" fill="#31C8FF" opacity=".85"/><circle cx="377.0" cy="236.7" r="4" fill="#B66CFF" opacity=".85"/><circle cx="385.5" cy="249.8" r="4" fill="#B66CFF" opacity=".85"/><circle cx="394.0" cy="245.7" r="4" fill="#B66CFF" opacity=".85"/><circle cx="402.5" cy="236.1" r="4" fill="#B66CFF" opacity=".85"/><circle cx="411.0" cy="214.7" r="4" fill="#B66CFF" opacity=".85"/><circle cx="419.5" cy="219.5" r="4" fill="#B66CFF" opacity=".85"/><circle cx="428.0" cy="219.3" r="4" fill="#B66CFF" opacity=".85"/><circle cx="436.5" cy="205.2" r="4" fill="#B66CFF" opacity=".85"/><circle cx="445.0" cy="205.7" r="4" fill="#B66CFF" opacity=".85"/><circle cx="453.5" cy="206.9" r="4" fill="#B66CFF" opacity=".85"/><circle cx="462.0" cy="184.8" r="4" fill="#B66CFF" opacity=".85"/><circle cx="470.5" cy="183.9" r="4" fill="#B66CFF" opacity=".85"/><text x="294" y="425" text-anchor="middle" class="s">DFT reference</text>
+<text x="57" y="278" transform="rotate(-90 57 278)" class="s">ML prediction</text>
+<text x="370" y="185" class="t">R² = 0.94</text><text x="370" y="208" class="s">MAE = 0.12 · synthetic</text><rect x="580" y="105" width="506" height="98" rx="16" fill="#07152A" stroke="#2E8CFF" stroke-width="1.5"/>
+<text x="598" y="133" class="t">Leakage gate</text>
+<text x="598" y="154" class="s">parent identity cannot cross splits</text><rect x="580" y="217" width="506" height="98" rx="16" fill="#07152A" stroke="#765BFF" stroke-width="1.5"/>
+<text x="598" y="245" class="t">Applicability domain</text>
+<text x="598" y="266" class="s">distance and extrapolation stay visible</text><rect x="580" y="329" width="506" height="98" rx="16" fill="#07152A" stroke="#22C55E" stroke-width="1.5"/>
+<text x="598" y="357" class="t">Uncertainty gate</text>
+<text x="598" y="378" class="s">calibration before acquisition</text><circle cx="1030" cy="156" r="12" fill="#2E8CFF" opacity=".25" filter="url(#glow)"/><circle cx="1030" cy="156" r="6" fill="#2E8CFF"/><circle cx="1030" cy="268" r="12" fill="#765BFF" opacity=".25" filter="url(#glow)"/><circle cx="1030" cy="268" r="6" fill="#765BFF"/><circle cx="1030" cy="380" r="12" fill="#22C55E" opacity=".25" filter="url(#glow)"/><circle cx="1030" cy="380" r="6" fill="#22C55E"/>
+<rect x="760" y="466" width="332" height="22" rx="7" fill="#07192F" stroke="#2E7CC8"/>
+<text x="926" y="481" text-anchor="middle" class="mono">SYNTHETIC DEMO · NOT SCIENTIFIC DATA</text>
 </svg>

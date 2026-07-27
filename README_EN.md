@@ -192,4 +192,23 @@ python scripts/run_all_tests.py
 
 This repository:
 
-- does not distribute Gaussian, VASP, Quantum ES
+- does not distribute Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD, POTCAR, pseudopotentials or restricted basis/potential libraries;
+- does not bypass licences, site policy or software access controls;
+- never describes conceptual AI imagery as an orbital, ESP, band structure, free-energy profile, transition state, mechanism or experiment;
+- never equates normal termination, scheduler completion, model score or attractive graphics with scientific acceptance;
+- never claims `L3_EXECUTION_TESTED` without immutable real-engine evidence.
+
+## Documentation map
+
+| Document | Purpose |
+|---|---|
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Architecture and state flow |
+| [`docs/ENGINE_SUPPORT_MATRIX.md`](docs/ENGINE_SUPPORT_MATRIX.md) | Engine coverage and support levels |
+| [`docs/CAPABILITY_STATUS.yaml`](docs/CAPABILITY_STATUS.yaml) | Machine-readable capability status |
+| [`docs/SCIENTIFIC_BOUNDARIES.md`](docs/SCIENTIFIC_BOUNDARIES.md) | Scientific boundaries and non-claims |
+| [`docs/CROSS_SKILL_HANDOFF.md`](docs/CROSS_SKILL_HANDOFF.md) | Cross-Skill handoff contract |
+| [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md) | AI-image governance |
+| [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md) | Dark scientific README design system |
+| [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) | Test, visual and engineering gates |
+
+Repository policy: work directly on `main`; use Tags/Releases for publication snapshots rather than long-lived feature, fix or temporary branches.

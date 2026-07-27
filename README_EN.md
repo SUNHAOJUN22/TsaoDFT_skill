@@ -2,7 +2,7 @@
 
 <p align="center">
   <strong>A DFT-first, evidence-locked and auditable research operating system for molecular and periodic science</strong><br>
-  From structure preparation, execution and technical validation to wavefunction analysis, machine learning, kinetics, multiscale handoff and publication-claim audit
+  From structure preparation and real-engine execution to wavefunctions, materials properties, machine learning, kinetics, HPC provenance and publication-claim audit
 </p>
 
 <p align="center">
@@ -17,15 +17,24 @@
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
 
-> **AI image declaration | AI-GENERATED CONCEPTUAL ILLUSTRATION:** the dark overview below is an AI-assisted concept used only to communicate project identity, capability boundaries and workflow structure. Its molecules, lattices, servers, orbitals and charts are not results from Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD or experiment. Quantitative claims require accepted source files, calculation artifacts and reproducible scripts.
+> **AI image declaration | AI-GENERATED CONCEPTUAL ILLUSTRATION:** the overview below was generated with the UI/UX Pro Max Hero-Centric + Evidence Bento workflow. Its molecules, lattice, orbital-like forms, servers and data interfaces communicate research context only; they are not outputs from Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD or experiment. Quantitative claims still require accepted source files, calculation artifacts and reproducible scripts.
 
 <p align="center">
-  <img src="assets/ai/hero/tsao-dft-hero.svg" width="100%" alt="TsaoDFT dark scientific research operating system conceptual overview">
+  <img src="assets/ai/hero/tsao-dft-hero.svg" width="100%" alt="TsaoDFT evidence-first DFT research operating system conceptual overview">
 </p>
 
-## Why TsaoDFT
+## TsaoDFT in 30 seconds
 
-`TsaoDFT_skill` is not a loose collection of prompts. It never silently promotes normal termination, an attractive plot or a high model score into a scientific conclusion. Work moves through an explicit evidence chain:
+<table>
+<tr>
+<td width="25%" valign="top"><strong>DFT-first</strong><br><sub>A question is grounded in structure, method fingerprint, reference state and acceptance criteria before execution.</sub></td>
+<td width="25%" valign="top"><strong>Evidence graph</strong><br><sub>Calculations, artifacts, figures and manuscript claims receive explicit support edges; failed attempts remain visible.</sub></td>
+<td width="25%" valign="top"><strong>Multi-engine</strong><br><sub>Molecular work covers Gaussian / Multiwfn / VMD; periodic work covers VASP / QE / CP2K.</sub></td>
+<td width="25%" valign="top"><strong>Scale with provenance</strong><br><sub>DFT labels, ML, kinetics and HPC may consume accepted evidence but never bypass scientific boundaries.</sub></td>
+</tr>
+</table>
+
+`TsaoDFT_skill` is not a loose prompt collection. It never promotes normal termination, an attractive plot or a high model score directly into a scientific conclusion. Work moves through an explicit state chain:
 
 ```text
 planned
@@ -36,54 +45,35 @@ planned
 → claim accepted
 ```
 
-| Principle | TsaoDFT treatment |
-|---|---|
-| **Model identity stays explicit** | Structure, charge, spin, atom order, method fingerprint and reference state are recorded |
-| **Results remain auditable** | Inputs, actual scripts, versions, outputs, hashes, restart lineage and failed attempts stay traceable |
-| **Technical and scientific acceptance are separate** | Normal termination alone does not accept geometry, energy, frequency, electronic state or mechanism |
-| **Claim strength follows evidence strength** | Figures, tables, explanations and manuscript claims retain source, scope and uncertainty |
-| **Automation does not bypass approval** | Expensive execution, scheduler submission, method changes and destructive actions remain gated |
-
-## Research operating system
+## From scientific question to defensible claim
 
 <p align="center">
   <img src="assets/demo/workflow-architecture.svg" width="100%" alt="TsaoDFT auditable research loop synthetic demonstration">
 </p>
 
-Every state transition should answer four questions:
+Every state transition must answer:
 
 1. **Who owns acceptance?**
 2. **Which artifact supports the decision?**
-3. **Which method fingerprint and software environment were used?**
-4. **Which assumptions and claim boundaries remain unresolved?**
+3. **Which method fingerprint, software version and execution environment were used?**
+4. **Which assumptions, uncertainties and claim boundaries remain open?**
 
-## Eight composable Skills
+## Eight Skills, one evidence chain
 
-| Skill | Purpose | Scientific boundary |
+| Skill | Best used for | Boundary that must not be crossed |
 |---|---|---|
-| [`tsao-dft-suite`](skills/tsao-dft-suite/) | DFT-first entry point, task DAG, cross-Skill routing, cost and approval gates | Coordinates work; it does not replace engine-level scientific judgement |
+| [`tsao-dft-suite`](skills/tsao-dft-suite/) | DFT-first entry point, task DAG, cross-Skill routing, cost and approval gates | Coordinates work; does not replace engine-level scientific judgement |
 | [`tsao-structure-prep`](skills/tsao-structure-prep/) | Molecules, conformers, crystals, surfaces, defects, adsorption candidates and atom mapping | Never silently chooses charge, spin, oxidation state, termination or protonation |
-| [`tsao-dft-researcher`](skills/tsao-dft-researcher/) | Gaussian molecular DFT/TDDFT, Opt/Freq, TS/IRC, thermochemistry, NMR, Multiwfn and VMD | Real executables and licences remain external; adapters do not fabricate execution |
-| [`tsao-periodic-dft-materials`](skills/tsao-periodic-dft-materials/) | VASP, Quantum ESPRESSO and CP2K, including surfaces, defects, bands/DOS, NEB and convergence | Does not distribute POTCAR, pseudopotentials or restricted databases; incompatible energies cannot be mixed |
-| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | Local/Slurm/PBS execution, estimates, arrays, checkpoints, restart lineage and hashes | Scheduler success only means the process ended |
+| [`tsao-dft-researcher`](skills/tsao-dft-researcher/) | Gaussian molecular DFT/TDDFT, Opt/Freq, TS/IRC, thermochemistry, NMR, Multiwfn and VMD | Real executables, licences and environments remain external; adapters never fabricate execution |
+| [`tsao-periodic-dft-materials`](skills/tsao-periodic-dft-materials/) | VASP, Quantum ESPRESSO and CP2K, including surfaces/defects, bands/DOS, NEB and convergence | Does not distribute POTCAR, pseudopotentials or restricted databases; incompatible energies cannot be mixed |
 | [`tsao-dft-ml-active-learning`](skills/tsao-dft-ml-active-learning/) | DFT-label audit, leakage prevention, applicability domain, uncertainty, active learning and inverse design | High R², SHAP or acquisition score does not prove mechanism, causality or synthesizability |
-| [`tsao-dft-kinetics-multiscale`](skills/tsao-dft-kinetics-multiscale/) | Eyring/TST, networks, detailed balance, uncertainty, microkinetics and reactor handoff | Consumes only thermochemistry with explicit standard and reference states |
-| [`tsao-dft-catalysis-profile`](skills/tsao-dft-catalysis-profile/) | DCS/MCSOMe/DMOS, Si–O/Si–C, Ti/TEA, Ziegler–Natta and polyolefin catalysis | A scoped profile that is never auto-applied to unrelated catalysis |
+| [`tsao-dft-kinetics-multiscale`](skills/tsao-dft-kinetics-multiscale/) | Eyring/TST, reaction networks, detailed balance, uncertainty, microkinetics and reactor handoff | Consumes only data with explicit and accepted standard/reference states |
+| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | Local/Slurm/PBS execution, estimates, arrays, checkpoints, restart lineage and hashes | Scheduler success only means that the process ended |
+| [`tsao-dft-catalysis-profile`](skills/tsao-dft-catalysis-profile/) | DCS/MCSOMe/DMOS, Si–O/Si–C, Ti/TEA, Ziegler–Natta and polyolefin catalysis | Scoped profile; never auto-applied to unrelated catalysis |
 
-## Support levels
+## Scientific figures: conceptual identity and deterministic evidence stay separate
 
-| Level | Meaning |
-|---|---|
-| `L0_REFERENCE` | Scientific documentation and boundaries only |
-| `L1_HANDOFF` | Structured manifest or downstream handoff |
-| `L2_VALIDATED_ADAPTER` | Deterministic preflight/parser/validator plus repository tests |
-| `L3_EXECUTION_TESTED` | L2 plus immutable regression evidence from the real engine, version and site |
-
-Gaussian, VASP, Quantum ESPRESSO and CP2K currently expose selected-field **L2 adapters**. TsaoDFT does not claim L3 without legal real-engine regression evidence.
-
-## Selected scientific demonstrations
-
-The following figures are generated from fixed synthetic data and repository scripts. Every asset is labelled `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`. They demonstrate figure contracts, evidence gates and result organisation, not production results.
+The four figures below are generated from fixed synthetic data and repository scripts. Every asset is labelled `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`. They demonstrate figure contracts, acceptance gates and evidence organisation—not production results.
 
 <table>
 <tr>
@@ -96,31 +86,18 @@ The following figures are generated from fixed synthetic data and repository scr
 </tr>
 </table>
 
-Additional deterministic assets:
+The visual system follows UI/UX Pro Max product classification, Pattern, Style, Colors, Typography, Density, Anti-pattern and Accessibility stages. See [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md). AI governance is recorded in [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md).
 
-- [`free-energy-profile.svg`](assets/demo/free-energy-profile.svg): free energy, TS, IRC and standard-state acceptance;
-- [`active-learning-loop.svg`](assets/demo/active-learning-loop.svg): objectives, constraints, batch selection and stop criteria;
-- [`hpc-provenance.svg`](assets/demo/hpc-provenance.svg): HPC execution, checkpoints, parsing and immutable lineage;
-- [`workflow-architecture.svg`](assets/demo/workflow-architecture.svg): the cross-stage evidence ledger.
+## Support levels
 
-The full visual system, palette, typography, density, anti-patterns and accessibility checklist are documented in [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md).
-
-## Compute-efficiency architecture
-
-Implemented and tested optimisations include:
-
-| Hotspot | Current implementation | Boundary |
+| Level | Meaning | Reporting boundary |
 |---|---|---|
-| Large VASP / QE / CP2K outputs | Read-only `mmap`, byte regexes and last-value aggregation instead of repeated full decoding | Scientific fields and acceptance rules remain unchanged |
-| DFT-ML Ridge | Automatic primal/dual selection by training shape; stable least squares for `alpha = 0` | A baseline model is not presented as mechanistic evidence |
-| File and dataset hashing | Chunked SHA-256 and bounded canonical encoding | Cache identity cannot survive content or method-fingerprint changes |
-| Homogeneous HPC campaigns | Slurm Job Array, JSONL task table and concurrency cap | The generator never submits real jobs |
-| Thread and resource layout | Explicit OpenMP, BLAS, MPI and node-capacity checks | Resources and walltime are never increased silently |
+| `L0_REFERENCE` | Method, boundary and reference material only | Method reference only |
+| `L1_HANDOFF` | Structured manifest or downstream handoff | Requires downstream validation |
+| `L2_VALIDATED_ADAPTER` | Deterministic preflight/parser/validator plus repository tests | May report adapter validation, not real-engine regression |
+| `L3_EXECUTION_TESTED` | L2 plus immutable evidence from the real engine, version and site | May report real execution only within the documented scope |
 
-Read next:
-
-- [`docs/PERFORMANCE_AUDIT.md`](docs/PERFORMANCE_AUDIT.md)
-- [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md)
+Gaussian, VASP, Quantum ESPRESSO and CP2K currently expose selected-field **L2 adapters**. TsaoDFT does not claim L3 without legal real-engine regression evidence.
 
 ## Quick start
 
@@ -130,7 +107,7 @@ List installable Skills:
 python scripts/install.py --list
 ```
 
-Validate a user-scoped Codex installation without writing:
+Validate without writing:
 
 ```bash
 python scripts/install.py \
@@ -152,41 +129,32 @@ python scripts/install.py \
 
 Production execution still requires legally configured engines, licences, pseudopotentials or basis libraries, a site guide and user authorisation.
 
-## One-command quality gate
+## Engineering quality and one-command acceptance
 
 ```bash
 python -m pip install -r requirements-dev.txt
 python scripts/quality_gate.py
 ```
 
-Gate order:
+Current baseline: **92 unit tests, 9 isolated suites, 0 failed suites**. Gate order:
 
 ```text
-validate all versioned demo assets
-→ catalog validation
-→ governed AI-cover integrity and provenance
-→ bilingual README visual completeness
-→ offline README local-link validation
+versioned demo assets
+→ DFT catalog
+→ governed AI cover
+→ bilingual README visuals
+→ offline local links
 → Ruff lint
-→ Ruff formatting check
+→ Ruff formatting
 → strict repository audit
-→ all non-empty unittest suites
+→ all non-empty test suites
 ```
 
-Focused diagnostics:
+Performance implementation and boundaries:
 
-```bash
-python scripts/generate_readme_demos.py
-python scripts/validate_catalog.py
-python scripts/validate_ai_assets.py
-python scripts/validate_readme_visuals.py --strict
-python scripts/validate_readme_links.py
-python scripts/benchmark_performance.py --quick
-python -m ruff check .
-python -m ruff format --check .
-python scripts/validate_repo.py --strict
-python scripts/run_all_tests.py
-```
+- [`docs/PERFORMANCE_AUDIT.md`](docs/PERFORMANCE_AUDIT.md)
+- [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md)
+- [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md)
 
 ## Scientific boundaries
 
@@ -194,7 +162,7 @@ This repository:
 
 - does not distribute Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD, POTCAR, pseudopotentials or restricted basis/potential libraries;
 - does not bypass licences, site policy or software access controls;
-- never describes conceptual AI imagery as an orbital, ESP, band structure, free-energy profile, transition state, mechanism or experiment;
+- never presents conceptual AI imagery as an orbital, ESP, band structure, free-energy profile, transition state, mechanism or experiment;
 - never equates normal termination, scheduler completion, model score or attractive graphics with scientific acceptance;
 - never claims `L3_EXECUTION_TESTED` without immutable real-engine evidence.
 
@@ -208,7 +176,7 @@ This repository:
 | [`docs/SCIENTIFIC_BOUNDARIES.md`](docs/SCIENTIFIC_BOUNDARIES.md) | Scientific boundaries and non-claims |
 | [`docs/CROSS_SKILL_HANDOFF.md`](docs/CROSS_SKILL_HANDOFF.md) | Cross-Skill handoff contract |
 | [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md) | AI-image governance |
-| [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md) | Dark scientific README design system |
+| [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md) | README visual design system |
 | [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) | Test, visual and engineering gates |
 
-Repository policy: work directly on `main`; use Tags/Releases for publication snapshots rather than long-lived feature, fix or temporary branches.
+Repository policy: **work directly on `main`; do not create feature, fix or temporary branches. Use Tags / Releases for publication snapshots.**

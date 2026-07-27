@@ -2,6 +2,9 @@
 
 ## Unreleased — compute efficiency, README visual, CI and repository hardening
 
+- Rebuilt the governed cover as `uiux_pro_v8_hero_evidence_bento`, using fresh AI-generated visual direction beneath deterministic vector typography, capability cards, workflow gates and evidence bento.
+- Rewrote both README files from first principles around a Hero-Centric + Trust & Authority structure: 30-second positioning, evidence workflow, eight-Skill map, curated deterministic figures, support levels, quick start, quality gate and scientific boundaries.
+- Updated the UI/UX Pro Max design-system record, generation provenance and AI manifest; verified the 1600×900 cover at full and half README widths.
 - Rewrote both README files around a dark scientific research-operating-system narrative, with clearer evidence, support-level, performance, installation and scientific-boundary sections.
 - Rebuilt the single governed conceptual overview as `uiux_pro_v7_dark_scientific_os`, restoring the user-approved dark molecular/materials/HPC visual energy while keeping an explicit non-computational-data boundary.
 - Regenerated all eight deterministic SVG demonstrations as high-contrast dark evidence dashboards with fixed dimensions, accessible titles/descriptions and visible synthetic-data labels.
@@ -34,7 +37,7 @@
 - Introduced explicit engine support levels (`L0_REFERENCE` through `L3_EXECUTION_TESTED`) and machine-readable capability status.
 - Added cross-Skill handoff and method-fingerprint validators.
 - Deepened Gaussian parsing with method/solvent/grid/dispersion inference, orbital energies, dipole, NMR, TD transition contributions, final coordinates, spin diagnostics, IRC direction records, and structured error taxonomy.
-- Deepened structure preparation with XYZ geometry inspection and atom-order/mapping validation.
+- Deepened structure preparation with XYZ geometry inspection and atom-order mapping validation.
 - Added deterministic VASP, Quantum ESPRESSO, and CP2K input preflight/output parsers plus convergence analysis. These are validation adapters; no licensed POTCAR or pseudopotentials are distributed.
 - Added DFT-specific dataset validation, a NumPy ridge baseline, model-card validation, and active-learning provenance checks.
 - Added HPC site-profile, resource-estimate, and restart-lineage validation.

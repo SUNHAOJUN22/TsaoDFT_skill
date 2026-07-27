@@ -1,95 +1,151 @@
 # TsaoDFT README Visual Design System
 
-This document records the design system used for the TsaoDFT README and versioned SVG assets. The workflow follows the same sequence promoted by UI/UX Pro Max: classify the product, choose an information pattern, synthesise style/color/typography, filter anti-patterns, and complete an accessibility-oriented pre-delivery check.
+This document is the source of truth for the TsaoDFT README visual system. The workflow follows UI/UX Pro Max in the required order: product classification → pattern → style → color → typography → density/effects → anti-pattern filtering → accessibility and pre-delivery review.
 
-## Product classification
+Reference methods:
+
+- [`nextlevelbuilder/ui-ux-pro-max-skill`](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)
+- [`bbylw/ui-ux-pro-max-skill-cn`](https://github.com/bbylw/ui-ux-pro-max-skill-cn)
+
+## 1. Product classification
 
 - Product type: scientific developer tool / computational-research infrastructure / documentation-led research operating system.
-- Primary audience: computational chemists, materials researchers, scientific-software developers and reviewers.
-- Reading context: GitHub desktop and tablet views, with figures frequently rendered at 50–100% README width.
-- Information priority: scientific boundary → evidence chain → capability map → validated demonstrations → installation.
+- Primary users: computational chemists, materials scientists, scientific-software developers, research supervisors and reviewers.
+- Primary context: GitHub README on desktop, tablet and narrow mobile view; figures are commonly rendered at 50–100% content width.
+- Decision order: scientific boundary → evidence chain → capability map → deterministic demonstrations → installation and quality gate.
+- Trust requirement: high. Any visual ambiguity that could be interpreted as a real scientific result is unacceptable.
 
-## Design pattern
+## 2. Recommended pattern
 
-- Primary pattern: **Hero-Centric Research OS**.
-- Secondary pattern: **Evidence Dashboard + Bento Capability Grid**.
-- Visual style: **Dark OLED Scientific UI**, **Data-Dense Dashboard**, **restrained Glassmorphism**, and **Swiss information hierarchy**.
-- Design dials:
-  - variance: `6/10`;
-  - motion: `1/10` because all repository assets are static SVG;
-  - density: `7/10`.
+### Primary pattern
 
-The v7 system deliberately restores the visual energy of the earlier dark TsaoDFT concepts while retaining the stricter evidence and accessibility rules introduced later.
+**Hero-Centric Research Operating System**
 
-## Core tokens
+The first viewport must establish:
+
+1. DFT-first identity;
+2. molecular + periodic + HPC scope;
+3. evidence-before-claims positioning;
+4. explicit AI-concept boundary.
+
+### Secondary pattern
+
+**Evidence Bento + Trust & Authority**
+
+- a compact capability strip;
+- one six-stage evidence workflow;
+- three evidence bento cards;
+- a curated deterministic figure gallery below the cover;
+- support levels and quality-gate proof in the README body.
+
+### Design dials
+
+- variance: `6/10` — recognisable identity without visual chaos;
+- motion: `1/10` — static GitHub SVG, no decorative animation;
+- density: `6/10` — information-rich but readable at 50% width.
+
+## 3. Style synthesis
+
+The v8 visual system combines:
+
+- **Dark OLED Scientific UI** for computational identity;
+- **Swiss Modernism 2.0** for hierarchy, alignment and typography;
+- **Bento Grid** for capability grouping;
+- **Accessible Minimalism** for contrast and readable labels;
+- **restrained HUD/FUI motifs** only where they communicate provenance, workflow or engine context.
+
+It deliberately avoids a generic SaaS landing page, uncontrolled neon, crypto/cyberpunk clichés and endless module-card walls.
+
+## 4. Core tokens
 
 ### Color
 
-- Canvas: `#030816`
-- Deep surface: `#061020`
-- Card surface: `#07152A`
-- Raised surface: `#0B2444`
-- Primary text: `#F4F8FF`
-- Secondary text: `#9FB5D2`
-- Primary blue: `#2E8CFF`
-- Cyan: `#18B7D4`
-- Violet: `#765BFF`
-- Magenta: `#C96BFF`
-- Success: `#22C55E`
-- Warning: `#F59E0B`
-- Error: `#F24C5A`
-- Border: `#23528C`
-- Grid: `#173052`
+| Token | Value | Use |
+|---|---|---|
+| Canvas | `#020712` | global background |
+| Deep surface | `#07111F` | evidence cards |
+| Raised surface | `#0B1930` | capability cards |
+| Border | `#294767` | card separation |
+| Grid | `#173052` | low-contrast technical grid |
+| Primary text | `#F3F8FF` | headings and critical labels |
+| Secondary text | `#A9BDD4` | descriptions |
+| Cyan | `#62D8FF` | molecular evidence |
+| Blue | `#4EA4FF` | HPC and engine context |
+| Violet | `#8A7CFF` | periodic evidence |
+| Magenta | `#C277FF` | ML and analysis |
+| Teal | `#5BE3C5` | wavefunction and validation |
+| Orange | `#FF9A4D` | kinetics and scale |
+| Coral | `#FF725E` | catalysis / warning emphasis |
+
+Color is never the only state signal. Every color-coded region also carries a textual label.
 
 ### Typography
 
 - Display and body: Inter-compatible system sans stack.
 - Technical labels and identifiers: JetBrains Mono-compatible system monospace stack.
-- Minimum body size in standalone SVGs: `13 px`.
-- Minimum technical label size: `10 px`.
-- Titles remain readable when a figure is embedded at half README width.
+- Cover title: 70 px at 1600 px canvas width.
+- Section labels: 24 px.
+- Card labels: 16 px.
+- Minimum text in the cover: 11 px at source resolution.
+- README prose remains native Markdown/HTML rather than baked into raster images.
 
-### Spacing and shape
+### Spacing and geometry
 
-- Spacing scale: `8 / 12 / 16 / 24 / 32 / 48 px`.
-- Card radius: `14–18 px`.
-- Hero radius: `22–24 px`.
-- Border width: `1–2 px`.
-- Glow is reserved for identity, active evidence nodes and major scientific motifs; it is not used as generic decoration.
+- spacing scale: `8 / 12 / 16 / 24 / 32 / 48 px`;
+- card radius: `14–15 px`;
+- hero radius: `22 px`;
+- border width: `1–1.5 px`;
+- shadow: low-opacity vertical depth only;
+- glow: reserved for scientific identity and active evidence motifs.
 
-## Composition rules
+## 5. Composition rules
 
-1. The conceptual overview is one full-width dark research-operating-system panel rather than a pale marketing banner.
-2. The overview may communicate molecular, periodic, ML, kinetics and HPC domains, but the entire asset remains explicitly conceptual.
-3. Deterministic figures use the same dark palette but contain no raster AI imagery.
-4. Each deterministic figure has one dominant message, a compact evidence panel and a visible synthetic-data notice.
-5. Color is never the only state signal; labels accompany every status.
-6. Scientific-looking plots expose units, source type, acceptance stage or claim boundary where relevant.
-7. The README uses four representative deterministic figures at a time and links the remaining assets instead of building an endless image wall.
-8. Chinese and English README files use the same asset set and document order.
+1. The governed AI asset is exactly one self-contained SVG cover.
+2. A fresh AI-generated molecular / lattice / HPC composition was used as visual direction; the repository cover reconstructs those motifs as deterministic vector geometry so it remains self-contained, crisp and reviewable.
+3. All project names, skill names, capability labels, states and disclaimers are vector text controlled by repository code—not generated-image text.
+4. The cover contains three layers:
+   - hero identity;
+   - capability strip;
+   - evidence workflow and bento.
+5. Quantitative scientific plots remain in deterministic demo SVGs, never in the AI cover.
+6. Both README languages embed the same governed cover and the same five required deterministic demos.
+7. The README body uses one 2×2 scientific gallery rather than an image wall.
+8. Detailed engineering and scientific content is linked to docs instead of overloading the first viewport.
 
-## Anti-patterns
+## 6. Anti-patterns
 
 The visual system rejects:
 
-- pale generic SaaS cards that erase the computational-science identity;
-- uncontrolled purple/pink AI gradients;
+- fake CI, coverage, version, support-level or benchmark claims inside generated imagery;
+- AI-generated text for engine names, scientific labels or workflow states;
+- screenshots that mimic real Gaussian/VASP/QE/CP2K results;
+- pale generic SaaS cards that erase scientific identity;
+- uncontrolled purple/pink gradients;
 - decorative neon without information meaning;
-- a gallery of unrelated visual styles;
-- text embedded below readable GitHub size;
+- repeating the same module list in the cover and README prose without added evidence;
+- body text below readable GitHub scale;
 - colour-only success/failure encoding;
-- screenshots that imply real engine output when none was executed;
-- module-card repetition without an evidence hierarchy;
-- fake badges, fake coverage numbers or unsupported L3 claims.
+- unsupported L3 or “production-ready” claims;
+- external font, JavaScript or runtime image dependencies inside the SVG.
 
-## Accessibility and delivery checklist
+## 7. Accessibility and pre-delivery checklist
 
-- [x] High-contrast dark surfaces and light text.
-- [x] SVG `role="img"`, exact `<title>` and descriptive `<desc>`.
-- [x] Visible AI / synthetic-data labels.
-- [x] No external font, image or JavaScript dependency.
-- [x] Fixed dimensions required by repository validators.
-- [x] Labels accompany coloured states.
-- [x] Bilingual README parity.
-- [x] Raster preview review at full width and half width.
-- [x] No conceptual image presented as scientific evidence.
+- [x] Dark surfaces and primary text exceed the intended contrast threshold.
+- [x] `role="img"`, `<title>` and `<desc>` are present.
+- [x] The non-computational-data notice is visible inside the cover.
+- [x] The AI declaration appears immediately before the cover in both README files.
+- [x] No generated-image text is used as project truth.
+- [x] All capability colors also have labels.
+- [x] Cover dimensions and SHA-256 are recorded in the AI manifest.
+- [x] Full-width raster preview reviewed at 1600×900.
+- [x] Half-width readability reviewed by raster down-scaling.
+- [x] Both README files embed the same asset set.
+- [x] All local links are intended to pass the offline link validator.
+- [x] The cover cannot be mistaken for a scientific result.
+
+## 8. Version
+
+- visual system: `uiux_pro_v8_hero_evidence_bento`;
+- cover size: `1600 × 900`;
+- generation record: [`assets/ai/prompts/README-ai-concept-montage.md`](../assets/ai/prompts/README-ai-concept-montage.md);
+- governance: [`AI_IMAGE_GOVERNANCE.md`](AI_IMAGE_GOVERNANCE.md).

@@ -2,7 +2,7 @@
 
 <p align="center">
   <strong>面向分子与周期体系的 DFT-first、证据锁定、可审计科研操作系统</strong><br>
-  从结构准备、计算执行与技术验收，到波函数分析、机器学习、动力学、多尺度交接与论文主张审计
+  从结构准备与真实引擎执行，到波函数、材料性质、机器学习、动力学、HPC 溯源与论文主张审计
 </p>
 
 <p align="center">
@@ -17,15 +17,24 @@
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
 
-> **AI图像声明｜AI-GENERATED CONCEPTUAL ILLUSTRATION：** 下方深色总览图是 AI 辅助的概念性视觉，只用于呈现项目定位、能力边界和工作流结构；图中的分子、晶格、服务器、轨道与图表不是 Gaussian、VASP、Quantum ESPRESSO、CP2K、Multiwfn、VMD 或实验产生的结果。所有定量结论必须来自经过验收的源文件、计算产物和可复现脚本。
+> **AI图像声明｜AI-GENERATED CONCEPTUAL ILLUSTRATION：** 下方总览图按照 UI/UX Pro Max 的 Hero-Centric + Evidence Bento 设计流程生成。其中的分子、晶格、轨道形态、服务器和数据界面只用于表达研究场景，不是 Gaussian、VASP、Quantum ESPRESSO、CP2K、Multiwfn、VMD 或实验产生的结果；任何定量结论仍必须来自经过验收的源文件、计算产物和可复现脚本。
 
 <p align="center">
-  <img src="assets/ai/hero/tsao-dft-hero.svg" width="100%" alt="TsaoDFT dark scientific research operating system conceptual overview">
+  <img src="assets/ai/hero/tsao-dft-hero.svg" width="100%" alt="TsaoDFT evidence-first DFT research operating system conceptual overview">
 </p>
 
-## 为什么是 TsaoDFT
+## 30 秒看懂 TsaoDFT
 
-`TsaoDFT_skill` 不是一组彼此孤立的提示词，也不把“程序运行结束”“图像看起来合理”或“模型分数较高”直接升级为科学结论。它把计算研究组织为一条可追踪的证据链：
+<table>
+<tr>
+<td width="25%" valign="top"><strong>DFT-first</strong><br><sub>研究问题先落到结构、方法指纹、参考态与验收条件，再进入执行。</sub></td>
+<td width="25%" valign="top"><strong>Evidence graph</strong><br><sub>计算、产物、图件和论文主张之间建立显式 support edge，失败尝试也保留。</sub></td>
+<td width="25%" valign="top"><strong>Multi-engine</strong><br><sub>分子侧覆盖 Gaussian / Multiwfn / VMD；周期侧覆盖 VASP / QE / CP2K。</sub></td>
+<td width="25%" valign="top"><strong>Scale with provenance</strong><br><sub>DFT 标签、ML、动力学和 HPC 只能消费已验收证据，不能绕过科学边界。</sub></td>
+</tr>
+</table>
+
+`TsaoDFT_skill` 不是一组松散提示词。它拒绝把“程序正常结束”“图像漂亮”或“模型分数高”直接升级为科学结论，而是把研究组织为可检查的状态链：
 
 ```text
 planned
@@ -36,54 +45,35 @@ planned
 → claim accepted
 ```
 
-| 核心原则 | TsaoDFT 的处理方式 |
-|---|---|
-| **模型身份清楚** | 结构、电荷、自旋、原子顺序、方法指纹和参考态显式记录 |
-| **计算结果可审计** | 输入、实际执行脚本、软件版本、输出、哈希、重启谱系与失败尝试均可追溯 |
-| **技术验收与科学验收分开** | 正常终止不等于结构、能量、频率、电子态或机理已被科学接受 |
-| **主张强度受证据约束** | 图、表、模型解释和论文语句必须有对应源产物、适用范围与不确定度 |
-| **自动化不绕过审批** | 高成本计算、HPC 提交、方法变更和破坏性操作仍需要明确授权 |
-
-## 研究操作系统
+## 从科研问题到可发表主张
 
 <p align="center">
   <img src="assets/demo/workflow-architecture.svg" width="100%" alt="TsaoDFT auditable research loop synthetic demonstration">
 </p>
 
-每一次状态跃迁都应同时回答四个问题：
+每一次状态跃迁都必须回答：
 
 1. **谁负责验收？**
-2. **验收依据是什么产物？**
-3. **使用了哪个方法指纹与软件环境？**
-4. **尚未解决的假设和主张边界是什么？**
+2. **哪一个产物支持该决定？**
+3. **使用了什么方法指纹、软件版本和运行环境？**
+4. **还有哪些假设、不确定度与主张边界没有关闭？**
 
-## 八个可组合 Skills
+## 八个 Skills，一条证据链
 
-| Skill | 主要用途 | 关键科学边界 |
+| Skill | 适用于什么工作 | 不可越过的边界 |
 |---|---|---|
 | [`tsao-dft-suite`](skills/tsao-dft-suite/) | DFT-first 总入口、任务 DAG、跨 Skill 路由、成本与审批门 | 负责协调，不替代引擎级科学判断 |
-| [`tsao-structure-prep`](skills/tsao-structure-prep/) | 分子、构象、晶体、表面、缺陷、吸附结构与原子映射 | 不静默决定电荷、自旋、氧化态、终止面或质子化状态 |
-| [`tsao-dft-researcher`](skills/tsao-dft-researcher/) | Gaussian 分子 DFT/TDDFT、Opt/Freq、TS/IRC、热化学、NMR、Multiwfn、VMD | 真实程序与许可证由用户环境提供；适配器不伪造运行结果 |
-| [`tsao-periodic-dft-materials`](skills/tsao-periodic-dft-materials/) | VASP、Quantum ESPRESSO、CP2K，表面、缺陷、能带/DOS、NEB 与收敛 | 不分发 POTCAR、赝势或受限数据库；不可混用不兼容能量 |
-| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | 本地/Slurm/PBS、资源估算、数组任务、检查点、重启谱系与哈希 | 调度器成功只表示进程结束，不代表科学验收 |
-| [`tsao-dft-ml-active-learning`](skills/tsao-dft-ml-active-learning/) | DFT 标签审计、泄漏防护、适用域、不确定度、主动学习与反向设计 | 高 R²、SHAP 或 acquisition score 不能自动证明机理、因果或可合成性 |
+| [`tsao-structure-prep`](skills/tsao-structure-prep/) | 分子、构象、晶体、表面、缺陷、吸附结构和原子映射 | 不静默决定电荷、自旋、氧化态、终止面或质子化状态 |
+| [`tsao-dft-researcher`](skills/tsao-dft-researcher/) | Gaussian 分子 DFT/TDDFT、Opt/Freq、TS/IRC、热化学、NMR、Multiwfn、VMD | 真实程序、许可证和执行环境由用户提供；适配器不伪造运行结果 |
+| [`tsao-periodic-dft-materials`](skills/tsao-periodic-dft-materials/) | VASP、Quantum ESPRESSO、CP2K，表面/缺陷、能带/DOS、NEB 与收敛 | 不分发 POTCAR、赝势或受限数据库；不混用不兼容能量 |
+| [`tsao-dft-ml-active-learning`](skills/tsao-dft-ml-active-learning/) | DFT 标签审计、数据泄漏防护、适用域、不确定度、主动学习与反向设计 | 高 R²、SHAP 或 acquisition score 不是机理、因果或可合成性证据 |
 | [`tsao-dft-kinetics-multiscale`](skills/tsao-dft-kinetics-multiscale/) | Eyring/TST、反应网络、详细平衡、误差传播、微观动力学与反应器交接 | 只消费标准态、参考态和热化学校验通过的数据 |
-| [`tsao-dft-catalysis-profile`](skills/tsao-dft-catalysis-profile/) | DCS/MCSOMe/DMOS、Si–O/Si–C、Ti/TEA、Ziegler–Natta 与聚烯烃催化 | 专用 Profile，不自动外推到无关催化体系 |
+| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | 本地/Slurm/PBS、资源估算、数组任务、检查点、重启谱系与哈希 | 调度器成功只说明进程结束，不等于科学验收 |
+| [`tsao-dft-catalysis-profile`](skills/tsao-dft-catalysis-profile/) | DCS/MCSOMe/DMOS、Si–O/Si–C、Ti/TEA、Ziegler–Natta 与聚烯烃催化 | 专用 Profile，不自动外推到无关体系 |
 
-## 支持等级
+## 科研图件：概念视觉与确定性证据分轨
 
-| 等级 | 含义 |
-|---|---|
-| `L0_REFERENCE` | 只有方法说明、科学边界和参考资料 |
-| `L1_HANDOFF` | 能生成结构化 Manifest 或下游交接文件 |
-| `L2_VALIDATED_ADAPTER` | 有确定性预检、解析、验证脚本和仓库测试 |
-| `L3_EXECUTION_TESTED` | 在 L2 基础上，有真实引擎、版本、场站和不可变回归证据 |
-
-Gaussian、VASP、Quantum ESPRESSO 和 CP2K 当前提供选定字段的 **L2 适配器**。仓库不会在缺少合法真实引擎回归材料时宣称 L3。
-
-## 精选科研演示
-
-以下图件由仓库脚本和固定合成数据生成，全部标注 `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`。它们用于展示图件合同、证据门和结果组织方式，不是生产计算数据。
+下面四张图由仓库脚本和固定合成数据生成，全部标注 `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`。它们用于展示图件合同、验收门与证据组织方式，不是生产计算结果。
 
 <table>
 <tr>
@@ -96,31 +86,18 @@ Gaussian、VASP、Quantum ESPRESSO 和 CP2K 当前提供选定字段的 **L2 适
 </tr>
 </table>
 
-其他确定性演示还包括：
+视觉体系遵循 UI/UX Pro Max 的产品分类、Pattern、Style、Colors、Typography、Density、Anti-pattern 和 Accessibility 流程，完整记录见 [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md)。AI 图治理见 [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md)。
 
-- [`free-energy-profile.svg`](assets/demo/free-energy-profile.svg)：自由能、TS、IRC 与标准态验收；
-- [`active-learning-loop.svg`](assets/demo/active-learning-loop.svg)：主动学习目标、约束、批次与停止准则；
-- [`hpc-provenance.svg`](assets/demo/hpc-provenance.svg)：HPC 执行、检查点、解析与不可变谱系；
-- [`workflow-architecture.svg`](assets/demo/workflow-architecture.svg)：跨阶段证据账本。
+## 支持等级
 
-完整视觉系统、配色、排版、密度、反模式与可访问性清单见 [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md)。
-
-## 计算效率架构
-
-本仓库已经实现并测试的效率优化包括：
-
-| 热点 | 当前实现 | 边界 |
+| 等级 | 含义 | 可以写进论文或报告吗 |
 |---|---|---|
-| VASP / QE / CP2K 大型输出 | 只读 `mmap`、bytes 正则、末值聚合，避免整文件反复解码 | 不改变字段与验收判据 |
-| DFT-ML Ridge | 按训练矩阵形状自动选择 primal / dual；`alpha = 0` 使用稳定最小二乘 | 不把基线模型包装成机理证据 |
-| 文件与数据集哈希 | 分块 SHA-256 与有界规范编码 | 缓存不能跨越文件内容或方法指纹变化 |
-| HPC 同构任务 | Slurm Job Array + JSONL 任务表 + 并发上限 | 生成器不自动提交真实作业 |
-| 线程与资源 | OpenMP、BLAS、MPI 与节点容量显式检查 | 不自动增加资源或延长 walltime |
+| `L0_REFERENCE` | 方法、边界和参考说明 | 只能作为方法参考 |
+| `L1_HANDOFF` | 能生成结构化 Manifest 或下游交接文件 | 需下游验证 |
+| `L2_VALIDATED_ADAPTER` | 有确定性预检、解析、验证脚本和仓库测试 | 可报告“适配器已验证”，不能声称真实引擎已回归 |
+| `L3_EXECUTION_TESTED` | L2 + 真实引擎、版本、场站和不可变回归证据 | 可在明确范围内报告真实执行覆盖 |
 
-进一步阅读：
-
-- [`docs/PERFORMANCE_AUDIT.md`](docs/PERFORMANCE_AUDIT.md)
-- [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md)
+Gaussian、VASP、Quantum ESPRESSO 和 CP2K 当前提供选定字段的 **L2 适配器**。缺少合法真实引擎回归材料时，仓库不会宣称 L3。
 
 ## 快速开始
 
@@ -130,7 +107,7 @@ Gaussian、VASP、Quantum ESPRESSO 和 CP2K 当前提供选定字段的 **L2 适
 python scripts/install.py --list
 ```
 
-在用户级 Codex 环境进行无写入验证：
+先做无写入验证：
 
 ```bash
 python scripts/install.py \
@@ -141,7 +118,7 @@ python scripts/install.py \
   --validate
 ```
 
-正式安装全部 Skills：
+正式安装：
 
 ```bash
 python scripts/install.py \
@@ -150,43 +127,34 @@ python scripts/install.py \
   --skill all
 ```
 
-真实计算开始前，仍需由用户提供合法的引擎、许可证、赝势/基组、场站指南和执行权限。
+真实生产计算仍需用户合法配置引擎、许可证、赝势/基组、场站指南和执行权限。
 
-## 一键质量门
+## 工程质量与一键验收
 
 ```bash
 python -m pip install -r requirements-dev.txt
 python scripts/quality_gate.py
 ```
 
-质量门顺序：
+当前基线：**92 项单元测试、9 个隔离套件、0 个失败套件**。质量门依次检查：
 
 ```text
-validate all versioned demo assets
-→ catalog validation
-→ governed AI-cover integrity and provenance
-→ bilingual README visual completeness
-→ offline README local-link validation
+versioned demo assets
+→ DFT catalog
+→ governed AI cover
+→ bilingual README visuals
+→ offline local links
 → Ruff lint
-→ Ruff formatting check
+→ Ruff formatting
 → strict repository audit
-→ all non-empty unittest suites
+→ all non-empty test suites
 ```
 
-单独定位问题：
+性能实现与边界见：
 
-```bash
-python scripts/generate_readme_demos.py
-python scripts/validate_catalog.py
-python scripts/validate_ai_assets.py
-python scripts/validate_readme_visuals.py --strict
-python scripts/validate_readme_links.py
-python scripts/benchmark_performance.py --quick
-python -m ruff check .
-python -m ruff format --check .
-python scripts/validate_repo.py --strict
-python scripts/run_all_tests.py
-```
+- [`docs/PERFORMANCE_AUDIT.md`](docs/PERFORMANCE_AUDIT.md)
+- [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md)
+- [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md)
 
 ## 科学边界
 
@@ -203,12 +171,12 @@ python scripts/run_all_tests.py
 | 文档 | 内容 |
 |---|---|
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | 总体架构和状态流 |
-| [`docs/ENGINE_SUPPORT_MATRIX.md`](docs/ENGINE_SUPPORT_MATRIX.md) | 引擎支持范围与等级 |
+| [`docs/ENGINE_SUPPORT_MATRIX.md`](docs/ENGINE_SUPPORT_MATRIX.md) | 引擎覆盖与支持等级 |
 | [`docs/CAPABILITY_STATUS.yaml`](docs/CAPABILITY_STATUS.yaml) | 机器可读能力状态 |
 | [`docs/SCIENTIFIC_BOUNDARIES.md`](docs/SCIENTIFIC_BOUNDARIES.md) | 科学边界与非主张 |
 | [`docs/CROSS_SKILL_HANDOFF.md`](docs/CROSS_SKILL_HANDOFF.md) | 跨 Skill 交接合同 |
 | [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md) | AI 图像治理 |
-| [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md) | README 深色科研视觉系统 |
-| [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) | 测试、视觉与工程门禁报告 |
+| [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md) | README 视觉设计系统 |
+| [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) | 测试、图件与工程验收 |
 
-仓库维护策略：直接在 `main` 上工作；发布快照使用 Tags / Releases，不创建长期功能、修复或临时分支。
+仓库策略：**只在 `main` 工作，不创建功能、修复或临时分支；发布快照使用 Tag / Release。**

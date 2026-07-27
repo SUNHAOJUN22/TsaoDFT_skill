@@ -1,0 +1,55 @@
+name: Apply README v8 hero
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - _readme_rebuild/READY
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Decode and verify governed cover
+        shell: bash
+        run: |
+          python - <<'PY'
+          import base64
+          import gzip
+          import hashlib
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          encoded = Path('_readme_rebuild/hero.svg.gz.b64').read_text(encoding='utf-8').strip()
+          data = gzip.decompress(base64.b64decode(encoded, validate=True))
+          expected = 'd0e7738d990504e216724ec3c2ad6701b964d9531ec1bb02478e0ca7adf568ce'
+          actual = hashlib.sha256(data).hexdigest()
+          if actual != expected:
+              raise SystemExit(f'hero hash mismatch: {actual}')
+          ET.fromstring(data.decode('utf-8'))
+          target = Path('assets/ai/hero/tsao-dft-hero.svg')
+          target.parent.mkdir(parents=True, exist_ok=True)
+          target.write_bytes(data)
+          print(f'wrote {target} ({len(data)} bytes, sha256={actual})')
+          PY
+      - name: Validate visual contracts
+        run: |
+          python -m pip install -r requirements.txt
+          python scripts/validate_ai_assets.py
+          python scripts/validate_readme_visuals.py --strict
+      - name: Publish hero to main
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/ai/hero/tsao-dft-hero.svg
+          git commit -m 'docs: publish UIUX Pro v8 evidence-first cover'
+          git push origin HEAD:main

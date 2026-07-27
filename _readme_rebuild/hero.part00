@@ -1,0 +1,85 @@
+PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjkwMCIgdmlld0JveD0iMCAwIDE2MDAgOTAwIiByb2xlPSJpbWciIGFyaWEtbGFiZWw9IkFJLWFzc2lzdGVkIGNvbmNlcHR1YWwgaWxsdXN0cmF0aW9uIG9mIHRoZSBUc2FvREZUIGV2aWRlbmNlLWZpcnN0IERGVCByZXNlYXJjaCBvcGVyYXRpbmcgc3lzdGVtIj4KPHRpdGxlPlRzYW9ERlQgZXZpZGVuY2UtZmlyc3QgREZUIHJlc2VhcmNoIG9wZXJhdGluZyBzeXN0ZW08L3RpdGxlPgo8ZGVzYz5IZXJvLWNlbnRyaWMgZGFyayBzY2llbnRpZmljIGludGVyZmFjZSB3aXRoIGFuIEFJLWFzc2lzdGVkIG1vbGVjdWxhciwgcGVyaW9kaWMgYW5kIEhQQyBtb250YWdlLCBjb21wYWN0IGNhcGFiaWxpdHkgbW9kdWxlcywgd29ya2Zsb3cgZ2F0ZXMgYW5kIGV2aWRlbmNlIGNhcmRzLiBJbGx1c3RyYXRpdmUgb25seSwgbm90IGNvbXB1dGF0aW9uYWwgb3Igc2NpZW50aWZpYyBkYXRhLjwvZGVzYz4KPGRlZnM+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJiZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzAyMDcxMiIvPjxzdG9wIG9mZnNldD0iLjU1IiBzdG9wLWNvbG9yPSIjMDcxMzI2Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMDMwOTE0Ii8+PC9saW5lYXJHcmFkaWVudD4KICA8bGluZWFyR3JhZGllbnQgaWQ9InRpdGxlIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMCI+PHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjNjZEN0ZGIi8+PHN0b3Agb2Zmc2V0PSIuNTIiIHN0b3AtY29sb3I9IiM3RThDRkYiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNDNDc3RkYiLz48L2xpbmVhckdyYWRpZW50PgogIDxsaW5lYXJHcmFkaWVudCBpZD0iaGVyb0ZhZGUiIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIwIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMwMjA3MTIiIHN0b3Atb3BhY2l0eT0iMSIvPjxzdG9wIG9mZnNldD0iLjM4IiBzdG9wLWNvbG9yPSIjMDIwNzEyIiBzdG9wLW9wYWNpdHk9Ii44MyIvPjxzdG9wIG9mZnNldD0iLjYzIiBzdG9wLWNvbG9yPSIjMDIwNzEyIiBzdG9wLW9wYWNpdHk9Ii4xOCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzAyMDcxMiIgc3RvcC1vcGFjaXR5PSIuMDgiLz48L2xpbmVhckdyYWRpZW50PgogIDxsaW5lYXJHcmFkaWVudCBpZD0iY2FyZCIgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzBCMTkzMCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzA3MTExRiIvPjwvbGluZWFyR3JhZGllbnQ+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJmbG93IiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMCI+PHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjMTQzRjc3Ii8+PHN0b3Agb2Zmc2V0PSIuNDUiIHN0b3AtY29sb3I9IiMxNzQ4NkEiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiM0MzIzNUQiLz48L2xpbmVhckdyYWRpZW50PgogIDxwYXR0ZXJuIGlkPSJncmlkIiB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxwYXRoIGQ9Ik00MCAwSDBWNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzE3MzA1MiIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIuMjgiLz48L3BhdHRlcm4+CiAgPGZpbHRlciBpZD0ic2hhZG93IiB4PSItMzAlIiB5PSItMzAlIiB3aWR0aD0iMTYwJSIgaGVpZ2h0PSIxNjAlIj48ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iMTAiIHN0ZERldmlhdGlvbj0iMTQiIGZsb29kLWNvbG9yPSIjMDAwIiBmbG9vZC1vcGFjaXR5PSIuNDIiLz48L2ZpbHRlcj4KICA8ZmlsdGVyIGlkPSJnbG93IiB4PSItNzAlIiB5PSItNzAlIiB3aWR0aD0iMjQwJSIgaGVpZ2h0PSIyNDAlIj48ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSI2IiByZXN1bHQ9ImIiLz48ZmVNZXJnZT48ZmVNZXJnZU5vZGUgaW49ImIiLz48ZmVNZXJnZU5vZGUgaW49IlNvdXJjZUdyYXBoaWMiLz48L2ZlTWVyZ2U+PC9maWx0ZXI+CiAgPGNsaXBQYXRoIGlkPSJoZXJvQ2xpcCI+PHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjE2MDAiIGhlaWdodD0iMzMwIiByeD0iMjQiLz48L2NsaXBQYXRoPgogIDxzdHlsZT4KICAgLnNhbnN7Zm9udC1mYW1pbHk6SW50ZXIsU2Vnb2UgVUksQXJpYWwsc2Fucy1zZXJpZn0KICAgLm1vbm97Zm9udC1mYW1pbHk6IkpldEJyYWlucyBNb25vIixDb25zb2xhcyxtb25vc3BhY2V9CiAgIC50MXtmb250OjgwMCA3MHB4IEludGVyLFNlZ29lIFVJLEFyaWFsLHNhbnMtc2VyaWY7ZmlsbDp1cmwoI3RpdGxlKTtsZXR0ZXItc3BhY2luZzotMnB4fQogICAudDJ7Zm9udDo2MDAgMjVweCBJbnRlcixTZWdvZSBVSSxBcmlhbCxzYW5zLXNlcmlmO2ZpbGw6I0VBRjNGRn0KICAgLmxlYWR7Zm9udDo0MDAgMThweCBJbnRlcixTZWdvZSBVSSxBcmlhbCxzYW5zLXNlcmlmO2ZpbGw6I0I1QzZEQX0KICAgLnNlY3Rpb257Zm9udDo3MDAgMjRweCBJbnRlcixTZWdvZSBVSSxBcmlhbCxzYW5zLXNlcmlmO2ZpbGw6I0YzRjhGRn0KICAgLmxhYmVse2ZvbnQ6NzAwIDE2cHggSW50ZXIsU2Vnb2UgVUksQXJpYWwsc2Fucy1zZXJpZjtmaWxsOiNGMkY3RkZ9CiAgIC5zbWFsbHtmb250OjUwMCAxM3B4IEludGVyLFNlZ29lIFVJLEFyaWFsLHNhbnMtc2VyaWY7ZmlsbDojQTlCREQ0fQogICAudGlueXtmb250OjYwMCAxMXB4ICJKZXRCcmFpbnMgTW9ubyIsQ29uc29sYXMsbW9ub3NwYWNlO2ZpbGw6IzdGOTVBRX0KICA8L3N0eWxlPgo8L2RlZnM+CjxyZWN0IHdpZHRoPSIxNjAwIiBoZWlnaHQ9IjkwMCIgZmlsbD0idXJsKCNiZykiLz4KPHJlY3Qgd2lkdGg9IjE2MDAiIGhlaWdodD0iOTAwIiBmaWxsPSJ1cmwoI2dyaWQpIi8+CgoKPGcgY2xpcC1wYXRoPSJ1cmwoI2hlcm9DbGlwKSI+CiA8cmVjdCB4PSIxOCIgeT0iMTgiIHdpZHRoPSIxNTY0IiBoZWlnaHQ9IjMwMCIgcng9IjIyIiBmaWxsPSIjMDMxMDI0IiBzdHJva2U9IiMxRDNCNjIiIHN0cm9rZS13aWR0aD0iMS41Ii8+CiAKPGcgb3BhY2l0eT0iLjk2Ij4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg3OTAgMTUxKSIgZmlsdGVyPSJ1cmwoI2dsb3cpIj4KICAgIDxwYXRoIGQ9Ik0tMTIyIDEyIEMtODItNTQtMjgtNTQgOCAxMCBDNDQgNzQgMTAwIDcyIDE0MiA0IEMxMDItNTQgNDktNTQgMTAgOSBDLTI4IDcyLTg0IDczLTEyMiAxMloiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVEOUNGRiIgc3Ryb2tlLXdpZHRoPSI5IiBvcGFjaXR5PSIuNjgiLz4KICAgIDxwYXRoIGQ9Ik0tMTIyIDEyIEMtODItNTQtMjgtNTQgOCAxMCBDNDQgNzQgMTAwIDcyIDE0MiA0IEMxMDItNTQgNDktNTQgMTAgOSBDLTI4IDcyLTg0IDczLTEyMiAxMloiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI0IzNzBGRiIgc3Ryb2tlLXdpZHRoPSIzIiBvcGFjaXR5PSIuOTIiLz4KICA8L2c+CiAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNjg2IDE0MikiIHN0cm9rZT0iI0I2RDlGRiIgc3Ryb2tlLXdpZHRoPSI0IiBmaWxsPSJub25lIj4KICAgIDxwYXRoIGQ9Ik0tOTIgMThMLTQyLTEyTDYgMTJMNTItMThMOTYgOE0tNDItMTJMLTE4LTYwTDI1LTQ2TDUyLTE4TTYgMTJMMjUtNDZNNiAxMkwxOCA1OCIvPgogICAgPGcgZmlsbD0iI0Q2RTdGRiIgc3Ryb2tlPSIjNDM2OThGIiBzdHJva2Utd2lkdGg9IjIiPgogICAgICA8Y2lyY2xlIGN4PSItOTIiIGN5PSIxOCIgcj0iMTEiLz48Y2lyY2xlIGN4PSItNDIiIGN5PSItMTIiIHI9IjEzIi8+PGNpcmNsZSBjeD0iNiIgY3k9IjEyIiByPSIxNCIvPgogICAgICA8Y2lyY2xlIGN4PSI1MiIgY3k9Ii0xOCIgcj0iMTIiLz48Y2lyY2xlIGN4PSI5NiIgY3k9IjgiIHI9IjEwIi8+PGNpcmNsZSBjeD0iLTE4IiBjeT0iLTYwIiByPSIxMCIvPgogICAgICA8Y2lyY2xlIGN4PSIyNSIgY3k9Ii00NiIgcj0iMTIiLz48Y2lyY2xlIGN4PSIxOCIgY3k9IjU4IiByPSIxMCIvPgogICAgPC9nPgogICAgPGNpcmNsZSBjeD0iLTQyIiBjeT0iLTEyIiByPSI0MiIgZmlsbD0iIzJFODNGRiIgZmlsbC1vcGFjaXR5PSIuMTgiIHN0cm9rZT0ibm9uZSIvPgogICAgPGNpcmNsZSBjeD0iMjUiIGN5PSItNDYiIHI9IjQ1IiBmaWxsPSIjQjM3MEZGIiBmaWxsLW9wYWNpdHk9Ii4xNSIgc3Ryb2tlPSJub25lIi8+CiAgPC9nPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDExMDUgMTU1KSIgc3Ryb2tlPSIjNjhCOEZGIiBzdHJva2Utd2lkdGg9IjEuNiI+CiAgICA8cGF0aCBkPSJN0 0L250 38L160 116L-88 78Z" fill="#091F40" fill-opacity=".8"/>
+    <g fill="#133B68">
+      <path d="M-60 68L190 106M-28 56L222 94M4 44L254 82M36 32L286 70"/>
+      <path d="M-60 68L28-10M-20 74L68-4M20 80L108 2M60 86L148 8M100 92L188 14M140 98L228 20M180 104L268 26"/>
+    </g>
+    <g fill="#F1774B" stroke="#FFD4A3">
+      <circle cx="-28" cy="56" r="7"/><circle cx="18" cy="50" r="7"/><circle cx="64" cy="44" r="7"/>
+      <circle cx="110" cy="38" r="7"/><circle cx="156" cy="32" r="7"/><circle cx="202" cy="26" r="7"/>
+      <circle cx="16" cy="80" r="7"/><circle cx="62" cy="74" r="7"/><circle cx="108" cy="68" r="7"/>
+      <circle cx="154" cy="62" r="7"/><circle cx="200" cy="56" r="7"/><circle cx="246" cy="50" r="7"/>
+    </g>
+    <g fill="#5BB5FF" stroke="#D7EDFF">
+      <circle cx="-5" cy="62" r="6"/><circle cx="41" cy="56" r="6"/><circle cx="87" cy="50" r="6"/>
+      <circle cx="133" cy="44" r="6"/><circle cx="179" cy="38" r="6"/><circle cx="225" cy="32" r="6"/>
+    </g>
+  </g>
+  <g transform="translate(1450 82)">
+    <g fill="#071833" stroke="#3D8BFF" stroke-width="2">
+      <rect x="0" y="0" width="48" height="154" rx="5"/><rect x="58" y="-12" width="48" height="166" rx="5"/>
+      <rect x="116" y="-24" width="48" height="178" rx="5"/>
+    </g>
+    <g fill="#58BFFF">
+      <circle cx="37" cy="16" r="2"/><circle cx="37" cy="36" r="2"/><circle cx="37" cy="56" r="2"/><circle cx="37" cy="76" r="2"/>
+      <circle cx="95" cy="8" r="2"/><circle cx="95" cy="28" r="2"/><circle cx="95" cy="48" r="2"/><circle cx="95" cy="68" r="2"/>
+      <circle cx="153" cy="0" r="2"/><circle cx="153" cy="20" r="2"/><circle cx="153" cy="40" r="2"/><circle cx="153" cy="60" r="2"/>
+    </g>
+    <g stroke="#285C9E" stroke-width="2" opacity=".75">
+      <path d="M10 25H30M10 45H30M10 65H30M10 85H30M10 105H30M10 125H30"/>
+      <path d="M68 17H88M68 37H88M68 57H88M68 77H88M68 97H88M68 117H88"/>
+      <path d="M126 9H146M126 29H146M126 49H146M126 69H146M126 89H146M126 109H146"/>
+    </g>
+  </g>
+  <g opacity=".55" fill="none" stroke="#58A6FF" stroke-width="2">
+    <path d="M860 78C910 24 970 36 1016 76S1110 120 1174 66"/>
+    <path d="M868 92C924 54 972 66 1024 96S1116 130 1194 88"/>
+    <path d="M892 45H1060M892 58H1010" stroke-dasharray="4 7"/>
+  </g>
+</g>
+ <rect x="18" y="18" width="1564" height="300" rx="22" fill="url(#heroFade)"/>
+ <rect x="1230" y="38" width="320" height="92" rx="14" fill="#061126" fill-opacity=".88" stroke="#5C3E86"/>
+ <text x="1256" y="68" class="sans" font-size="16" font-weight="750" fill="#EADFFF">DFT FIRST · EVIDENCE ALWAYS</text>
+ <text x="1256" y="95" class="small">Every result has provenance.</text>
+ <text x="1256" y="116" class="small">Every claim has a support edge.</text>
+</g>
+
+
+<text x="52" y="91" class="t1">TsaoDFT_skill</text>
+<text x="54" y="132" class="t2">AI-Assisted DFT Research Operating System</text>
+<text x="54" y="171" class="lead">From molecular states to periodic materials · from electrons to kinetics</text>
+<text x="54" y="199" class="lead">From calculation to accepted evidence · from data to defensible claims</text>
+
+<rect x="54" y="228" width="107" height="34" rx="9" fill="#0A2A45" stroke="#68D6FF" stroke-opacity=".55"/>
+<text x="107.5" y="250" text-anchor="middle" class="sans" font-size="13" font-weight="750" fill="#68D6FF">DFT-FIRST</text>
+<rect x="173" y="228" width="134" height="34" rx="9" fill="#241A4A" stroke="#B6A4FF" stroke-opacity=".55"/>
+<text x="240.0" y="250" text-anchor="middle" class="sans" font-size="13" font-weight="750" fill="#B6A4FF">REPRODUCIBLE</text>
+<rect x="319" y="228" width="107" height="34" rx="9" fill="#123E42" stroke="#65E5D0" stroke-opacity=".55"/>
+<text x="372.5" y="250" text-anchor="middle" class="sans" font-size="13" font-weight="750" fill="#65E5D0">AUDITABLE</text>
+<rect x="438" y="228" width="104" height="34" rx="9" fill="#331947" stroke="#D79AFF" stroke-opacity=".55"/>
+<text x="490.0" y="250" text-anchor="middle" class="sans" font-size="13" font-weight="750" fill="#D79AFF">MODULAR</text>
+<rect x="554" y="228" width="107" height="34" rx="9" fill="#0B315D" stroke="#75B9FF" stroke-opacity=".55"/>
+<text x="607.5" y="250" text-anchor="middle" class="sans" font-size="13" font-weight="750" fill="#75B9FF">HPC-READY</text>
+<rect x="673" y="228" width="125" height="34" rx="9" fill="#4B2714" stroke="#FFB46B" stroke-opacity=".55"/>
+<text x="735.5" y="250" text-anchor="middle" class="sans" font-size="13" font-weight="750" fill="#FFB46B">OPEN SOURCE</text>
+
+<rect x="1170" y="275" width="380" height="29" rx="8" fill="#020712" fill-opacity=".9" stroke="#375073"/>
+<text x="1360" y="294" text-anchor="middle" class="tiny" fill="#AFC6DF">AI-ASSISTED CONCEPT · NOT COMPUTATIONAL DATA</text>
+
+
+<text x="40" y="362" class="section">At a glance</text>
+<path d="M40 375H1560" stroke="#264464" stroke-width="1"/>
+
+<rect x="40.0" y="390" width="208.6" height="104" rx="14" fill="url(#card)" stroke="#294767" filter="url(#shadow)"/>
+<g transform="translate(74.0 435)">
+<g stroke="#62D8FF" stroke-width="3" fill="none" stroke-linecap="round">
+  <circle cx="0" cy="0" r="9" fill="#62D8FF" fill-opacity=".22"/>
+  <circle cx="-18" cy="-10" r="6" fill="#62D8FF" fill-opacity=".7"/>
+  <circle cx="19" cy="-11" r="6" fill="#62D8FF" fill-opacity=".7"/>
+  <circle cx="1" cy="19" r="6" fill="#62D8FF" fill-opacity=".7"/>
+  <path d="M-12-7 L-5-3 M12-7 L5-3 M1 10 L1 7"/>
+  <ellipse rx="30" ry="14" opacity=".6"/>
+  <ellipse rx="14" ry="30" transform="rotate(35)" opacity=".45"/>
+</g></g>
+<text x="112.0" y="428" class="label">Molecular DFT</text>
+<text x="112.0" y="452" class="small">Gaussian · TS/IRC · TDDFT</text>
+<rect x="112.0" y="466" width="108.0" height="3" rx="2" fill="#62D8FF" opacity=".8"/>

@@ -13,8 +13,9 @@ import sys
 import tempfile
 import time
 import tracemalloc
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import yaml
 
@@ -61,9 +62,7 @@ def module_from_commit(commit: str, relative_path: str, temporary: Path, name: s
             stderr=subprocess.PIPE,
         )
     except subprocess.CalledProcessError as exc:
-        raise RuntimeError(
-            f"baseline {commit} is unavailable; fetch repository history before benchmarking"
-        ) from exc
+        raise RuntimeError(f"baseline {commit} is unavailable; fetch repository history before benchmarking") from exc
     path = temporary / Path(relative_path).name
     path.write_bytes(content)
     return load_module(path, name)

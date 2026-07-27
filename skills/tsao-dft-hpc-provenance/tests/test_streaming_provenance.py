@@ -18,7 +18,7 @@ class StreamingProvenanceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             payload = root / "large-output.bin"
-            payload.write_bytes((b"TsaoDFT-streaming-hash\n" * 250_000))
+            payload.write_bytes(b"TsaoDFT-streaming-hash\n" * 250_000)
             output = root / "provenance.json"
             result = subprocess.run(
                 [sys.executable, str(source), str(payload), "--out", str(output)],

@@ -121,7 +121,7 @@ def build_array_script(campaign: dict, base: dict, task_table_name: str) -> str:
         'SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)',
         f'TASK_TABLE="${{SCRIPT_DIR}}/{task_table_name}"',
         'TASK_INDEX="${SLURM_ARRAY_TASK_ID:?SLURM_ARRAY_TASK_ID is required}"',
-        "python - \"${TASK_TABLE}\" \"${TASK_INDEX}\" <<'PY'",
+        'python - "${TASK_TABLE}" "${TASK_INDEX}" <<\'PY\'',
         "import json",
         "import os",
         "import subprocess",

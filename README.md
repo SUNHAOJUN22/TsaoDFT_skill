@@ -52,7 +52,7 @@ planned → prepared → completed → technically validated → scientifically 
 
 ## 精选科研演示
 
-README 只展示最能代表核心能力的图件，避免形成重复的“功能海报墙”。仓库中的 8 张确定性演示 SVG 仍全部接受 XML、尺寸、标题、可访问性描述和非数据标签校验；这里只精选 4 张，加上前面的工作流总览。
+README 采用 **UI/UX Pro Max** 的设计系统流程重构：产品分类、Pattern、Style、Colors、Typography、Anti-patterns 与可访问性检查统一约束全部图件。当前选择 Hero-Centric + Evidence Bento、Swiss Modernism 2.0 与 Accessible Minimalism；仓库中的 8 张确定性演示 SVG 仍全部接受 XML、尺寸、标题、可访问性描述和非数据标签校验，这里精选 4 张，加上前面的工作流总览。
 
 <table>
 <tr>
@@ -65,7 +65,7 @@ README 只展示最能代表核心能力的图件，避免形成重复的“功�
 </tr>
 </table>
 
-所有演示图均标注 `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`，用于展示图件规范与证据门，不是生产计算结果。兼容命令 [`scripts/generate_readme_demos.py`](scripts/generate_readme_demos.py) 是严格只读校验器，不会自动写入占位图。
+所有演示图均标注 `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`，用于展示图件规范与证据门，不是生产计算结果。完整视觉 tokens、反模式和交付检查表见 [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md)。兼容命令 [`scripts/generate_readme_demos.py`](scripts/generate_readme_demos.py) 是严格只读校验器，不会自动写入占位图。
 
 ## 支持等级
 

@@ -1,7 +1,7 @@
-schema_version: '1.5'
+schema_version: '1.6'
 release: 0.4.0-alpha.1
 policy: AI-assisted visuals are limited to one conceptual cover; deterministic or accepted real data owns quantitative claims.
-visual_system: premium_scientific_v5_editorial
+visual_system: uiux_pro_v6_swiss_bento
 render_validation: local_svg_raster_preview_checked
 assets:
 - path: assets/ai/hero/tsao-dft-hero.svg
@@ -12,10 +12,10 @@ assets:
   illustrative_only: true
   quantitative: false
   computed_surface: false
-  source_generation_id: tsao-dft-premium-v5-editorial
+  source_generation_id: tsao-dft-uiux-pro-v6-swiss-bento
   source_prompt: assets/ai/prompts/README-ai-concept-montage.md
   width_px: 1400
   height_px: 520
-  sha256: 0e83b73722802c863430f92c57d7e0ced978c117dd47add2e5f81e02a16b477d
+  sha256: 25f968ec99c19b5ae4756ae4a5545a6b3f3367f6bf2b2e20061b95440832ead3
   allowed_uses: [README conceptual cover]
   forbidden_uses: [quantitative evidence, computed surface, mechanistic proof, experimental result]

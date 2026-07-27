@@ -9,7 +9,6 @@ import re
 from pathlib import Path
 
 import yaml
-
 from utils import sha256_file
 
 ALLOWED = {"molecule", "complex", "crystal", "slab", "interface", "defect", "adsorbate", "ensemble"}

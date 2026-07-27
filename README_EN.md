@@ -52,7 +52,7 @@ The governing rule is simple: **calculations, artifacts and publication claims m
 
 ## Selected scientific demonstrations
 
-The landing page deliberately avoids a repetitive wall of module cards. All eight deterministic demo SVGs remain versioned and are validated for XML, dimensions, titles, accessible descriptions and visible non-data labels; the README shows only four representative figures plus the workflow overview above.
+The landing page now follows the **UI/UX Pro Max** design-system workflow: product classification, pattern, style, colors, typography, anti-pattern filtering and accessibility checks govern every asset. The resolved system is Hero-Centric + Evidence Bento, Swiss Modernism 2.0 and Accessible Minimalism. All eight deterministic demo SVGs remain versioned and validated; the README shows four representative figures plus the workflow overview above.
 
 <table>
 <tr>
@@ -65,7 +65,7 @@ The landing page deliberately avoids a repetitive wall of module cards. All eigh
 </tr>
 </table>
 
-Every demonstration is labelled `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`. The compatibility command [`scripts/generate_readme_demos.py`](scripts/generate_readme_demos.py) is a strict read-only validator and never creates placeholder artwork.
+Every demonstration is labelled `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`. Visual tokens, anti-patterns and the pre-delivery checklist are recorded in [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md). The compatibility command [`scripts/generate_readme_demos.py`](scripts/generate_readme_demos.py) is a strict read-only validator and never creates placeholder artwork.
 
 ## Support levels
 

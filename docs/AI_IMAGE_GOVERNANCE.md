@@ -11,7 +11,7 @@ assets/ai/
 └── manifest.yaml
 ```
 
-A module-card gallery is deliberately not maintained. Module identity is communicated through text and deterministic figures rather than repeated conceptual artwork.
+A module-card gallery is deliberately not maintained. Module identity is communicated through text and deterministic figures rather than repeated conceptual artwork. The current cover uses the repository-wide `uiux_pro_v6_swiss_bento` visual system documented in `docs/README_VISUAL_DESIGN_SYSTEM.md`.
 
 ## Mandatory metadata
 
@@ -19,7 +19,7 @@ The governed cover records its repository path, role/topic, source generation ID
 
 ## Visual labeling
 
-The cover contains a visible footer stating that it is an AI-assisted conceptual illustration and not computational data. The README repeats the disclosure beside the image.
+The cover contains a visible footer stating that it is an AI-assisted conceptual illustration and not computational data. The README repeats the disclosure beside the image. The design avoids decorative AI purple/pink gradients, tiny labels, mixed illustration metaphors and color-only status communication.
 
 ## Prohibited representations
 

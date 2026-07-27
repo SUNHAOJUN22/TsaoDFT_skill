@@ -110,9 +110,7 @@ class DftMlDepthTests(unittest.TestCase):
             dataset = root / "constant.csv"
             dataset.write_text(
                 "sample_id,parent_id,descriptor_1,descriptor_2,target\n"
-                + "".join(
-                    f"S{index},P{index},{index},5.0,{index * 0.5}\n" for index in range(8)
-                ),
+                + "".join(f"S{index},P{index},{index},5.0,{index * 0.5}\n" for index in range(8)),
                 encoding="utf-8",
             )
             output = root / "model"

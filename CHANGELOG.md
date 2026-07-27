@@ -2,6 +2,9 @@
 
 ## Unreleased — compute efficiency, README visual, CI and repository hardening
 
+- Rebuilt the README visual system with the UI/UX Pro Max workflow: product classification, Hero-Centric + Evidence Bento pattern, Swiss Modernism 2.0, accessible light tokens and explicit anti-pattern filtering.
+- Regenerated the single governed conceptual cover and all eight deterministic SVG demonstrations with one consistent palette, typography, spacing, status language and non-data labeling.
+- Added `docs/README_VISUAL_DESIGN_SYSTEM.md` and upgraded AI visual governance to schema 1.6 / `uiux_pro_v6_swiss_bento`.
 - Added a second performance-audit pass with chunked file hashes, bounded canonical dataset hashing, Slurm-array compaction and reproducible baseline microbenchmarks.
 - Added approval-gated Slurm array generation, streamed JSONL task tables, unique per-task Gaussian scratch paths and OpenMP/BLAS/per-node oversubscription validation.
 - Added finite-value, data-shape and constant-feature provenance to the adaptive NumPy ridge baseline without introducing SciPy.

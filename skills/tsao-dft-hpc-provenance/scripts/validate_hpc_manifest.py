@@ -90,7 +90,7 @@ def validate(d):
         except (TypeError, ValueError):
             e.append("cpus_per_node must be integer")
 
-    variables = ((d.get("environment") or {}).get("variables") or {})
+    variables = (d.get("environment") or {}).get("variables") or {}
     for name in sorted(THREAD_VARIABLES & set(variables)):
         try:
             threads = int(variables[name])

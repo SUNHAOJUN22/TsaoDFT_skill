@@ -53,7 +53,8 @@ Every discovered suite must execute at least one test. A missing, unparseable or
 - explicit failure for missing, unsafe or unsupported local link targets;
 - explicit failure for missing, degraded or placeholder demo assets, with no automatic fallback writes;
 - explicit rejection of wording that presents conceptual illustrations as calculated orbitals, surfaces or scientific results;
-- local raster review of the editorial `premium_scientific_v5` cover before publication.
+- local raster review of the `uiux_pro_v6_swiss_bento` cover and all eight matching deterministic demo assets before publication;
+- one documented README design system with consistent palette, typography, density, accessible status labels and anti-pattern controls.
 
 ## Scientific and workflow coverage
 

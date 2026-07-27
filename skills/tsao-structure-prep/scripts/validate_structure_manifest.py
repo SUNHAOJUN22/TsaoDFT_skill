@@ -4,12 +4,13 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import re
 from pathlib import Path
 
 import yaml
+
+from utils import sha256_file
 
 ALLOWED = {"molecule", "complex", "crystal", "slab", "interface", "defect", "adsorbate", "ensemble"}
 REVIEW = {"draft", "reviewed", "accepted", "rejected"}
@@ -33,7 +34,7 @@ def validate(data, base):
         if not p.exists():
             w.append(f"source file not found: {p}")
         else:
-            h = hashlib.sha256(p.read_bytes()).hexdigest()
+            h = sha256_file(p)
             if src.get("sha256") in (None, "unknown"):
                 w.append("source sha256 not recorded")
             elif not SHA.match(str(src["sha256"])):

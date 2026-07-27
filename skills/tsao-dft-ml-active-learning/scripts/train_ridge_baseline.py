@@ -56,6 +56,8 @@ def fit_ridge(
     y_train = np.asarray(y_train, dtype=float)
     if x_train.ndim != 2 or y_train.ndim != 1 or len(x_train) != len(y_train):
         raise ValueError("x_train must be 2-D and aligned with one-dimensional y_train")
+    if not np.isfinite(x_train).all() or not np.isfinite(y_train).all():
+        raise ValueError("training matrix and target must contain only finite values")
     if alpha < 0:
         raise ValueError("alpha must be non-negative")
     if solver not in SOLVERS:
@@ -126,10 +128,16 @@ def main() -> int:
         print(json.dumps({"ok": False, "errors": ["insufficient grouped train/test samples"]}, indent=2))
         return 1
 
+    if not np.isfinite(feature_matrix).all() or not np.isfinite(target).all():
+        print(json.dumps({"ok": False, "errors": ["features and target must contain only finite values"]}, indent=2))
+        return 1
+
     train_index = indices["train"]
     mean = feature_matrix[train_index].mean(axis=0)
     std = feature_matrix[train_index].std(axis=0)
-    std[std == 0] = 1.0
+    constant_mask = std == 0
+    constant_features = [feature for feature, constant in zip(features, constant_mask, strict=True) if constant]
+    std[constant_mask] = 1.0
     standardized = (feature_matrix - mean) / std
 
     try:
@@ -174,6 +182,8 @@ def main() -> int:
         "solver_requested": args.solver,
         "solver_used": solver_used,
         "solve_dimension": solve_dimension,
+        "data_shape": {"samples": len(rows), "features": len(features), "training_samples": len(train_index)},
+        "constant_features": constant_features,
         "preprocessing_fit_scope": "train_only",
         "standardization": {"mean": mean.tolist(), "std": std.tolist()},
         "coefficients": beta.tolist(),

@@ -2,6 +2,11 @@
 
 ## Unreleased — compute efficiency, README visual, CI and repository hardening
 
+- Added a second performance-audit pass with chunked file hashes, bounded canonical dataset hashing, Slurm-array compaction and reproducible baseline microbenchmarks.
+- Added approval-gated Slurm array generation, streamed JSONL task tables, unique per-task Gaussian scratch paths and OpenMP/BLAS/per-node oversubscription validation.
+- Added finite-value, data-shape and constant-feature provenance to the adaptive NumPy ridge baseline without introducing SciPy.
+- Added `docs/PERFORMANCE_AUDIT.md` with measured tradeoffs, primary sources, deferred candidates and real-node validation boundaries.
+- Expanded the test baseline from 78 to 92 while preserving all nine isolated suites.
 - Replaced repeated full-file VASP, Quantum ESPRESSO and CP2K output decoding with read-only memory-mapped evidence scans; selected fields and acceptance boundaries remain unchanged.
 - Added automatic primal/dual ridge selection so wide DFT descriptor matrices solve the smaller sample-space system, with stable least squares for `alpha = 0` and solver provenance in the model card.
 - Removed repeated duplicate-signature field sorting from the DFT dataset validator.

@@ -4,14 +4,32 @@
 from __future__ import annotations
 
 import argparse
+import json
 import shlex
+import sys
 from pathlib import Path
 
 import yaml
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from validate_hpc_manifest import validate as validate_manifest  # noqa: E402
+
 
 def q(x):
     return shlex.quote(str(x))
+
+
+def approval_guard(d: dict) -> list[str]:
+    approval = str(d.get("approval", "pending"))
+    if approval in {"approved", "not_required"}:
+        return []
+    return [
+        f'echo "TsaoDFT execution blocked: manifest approval is {approval}" >&2',
+        "exit 64",
+    ]
 
 
 def engine_command(d: dict) -> str:
@@ -80,7 +98,9 @@ def build(d: dict) -> str:
         lines.append(f"mkdir -p {q(scratch['path'])}")
         if d["engine"] == "gaussian":
             lines.append(f"export GAUSS_SCRDIR={q(scratch['path'])}")
-    lines += ["", f"cd {q(d['workdir'])}", 'echo "TsaoDFT job start: $(date -Is)"', 'echo "Host: $(hostname)"']
+    lines += ["", f"cd {q(d['workdir'])}"]
+    lines.extend(approval_guard(d))
+    lines += ['echo "TsaoDFT job start: $(date -Is)"', 'echo "Host: $(hostname)"']
     lines.append(f"# preflight: {(d.get('preflight') or {}).get('command', 'not recorded')}")
     if (d.get("preflight") or {}).get("run_in_job", False):
         lines.append(str(d["preflight"]["command"]))
@@ -97,7 +117,11 @@ def main() -> int:
     ap.add_argument("manifest", type=Path)
     ap.add_argument("--out", type=Path, required=True)
     a = ap.parse_args()
-    d = yaml.safe_load(a.manifest.read_text())
+    d = yaml.safe_load(a.manifest.read_text()) or {}
+    errors, warnings = validate_manifest(d)
+    if errors:
+        print(json.dumps({"ok": False, "errors": errors, "warnings": warnings}, indent=2))
+        return 1
     a.out.parent.mkdir(parents=True, exist_ok=True)
     a.out.write_text(build(d), encoding="utf-8")
     a.out.chmod(0o755)

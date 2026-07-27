@@ -1,81 +1,100 @@
 # Compute Efficiency Guide
 
-This guide separates **software overhead**, **scheduler throughput** and **electronic-structure cost**. A faster parser cannot make an unconverged DFT method scientifically acceptable, and more MPI ranks do not guarantee a faster calculation.
+This guide separates **repository software overhead**, **scheduler throughput** and **electronic-structure kernel cost**. A faster parser cannot make an unconverged calculation acceptable, and more ranks or threads do not guarantee lower wall time.
 
 ## Implemented repository optimizations
 
-### Memory-mapped periodic-output parsing
+### Large-output parsing
 
-`parse_vasp.py`, `parse_qe.py` and `parse_cp2k.py` scan output files through read-only memory maps. They retain only the last accepted values and small terminal blocks instead of decoding the entire output into one Python string.
+VASP, Quantum ESPRESSO and CP2K output adapters use read-only memory maps and bytes patterns. They retain selected last values and bounded terminal blocks rather than decoding entire outputs and building complete match lists.
 
-| Property | Previous approach | Current approach |
-|---|---|---|
-| File traversal | full decode plus repeated whole-file regular expressions | one mapped file with marker and compiled-pattern scans |
-| Python heap | proportional to output-file size and match lists | near-constant, except the final VASP force block |
-| Scientific fields | selected evidence fields | unchanged |
+The Gaussian adapter remains on its established decoded-text implementation. A lower-retention prototype reduced Python allocation on a synthetic rich log, but the wall-time gain was modest and the shared-context compatibility risk was not justified for this release.
 
-A local synthetic 12.75 MB VASP-output benchmark used during this revision measured approximately `0.694 s / 41.9 MB` peak Python allocation for the previous parser and `0.555 s / 0.012 MB` for the mapped parser. This is an implementation benchmark, not an engine-runtime claim; performance depends on filesystem, operating system and output structure.
+### Content hashing
 
-### Adaptive ridge solver
+Provenance and structure files are hashed in 1 MiB chunks. The digest remains ordinary SHA-256 and is byte-identical to the former `read_bytes()` implementation.
 
-The NumPy ridge baseline now chooses the smaller regularized linear system:
+Large DFT-labelled datasets preserve the exact historical digest of `json.dumps(rows, sort_keys=True)`, but serialize the canonical list in bounded 256-row batches. Small datasets retain the faster one-shot path.
 
-- **primal** when features are not wider than the training set;
-- **dual** when the feature count exceeds the training-sample count;
-- stable `numpy.linalg.lstsq` when `alpha = 0`.
+### Linear algebra
 
-For `n` training samples and `p` features, this avoids always forming and solving a `(p + 1) × (p + 1)` system. The dual path instead solves an `n × n` system and maps the coefficients back to feature space. The model card records the requested solver, selected solver and solve dimension.
+The NumPy ridge baseline selects the smaller regularized system:
 
-A local synthetic `100 × 800` benchmark measured about `47.5×` lower solver time for the automatic dual path, with a maximum prediction difference of `2.2 × 10⁻¹⁵` relative to the previous formulation. Real gains depend on BLAS, matrix shape and hardware.
+- **primal** for matrices that are not wider than the training set;
+- **dual** for wide feature matrices;
+- `numpy.linalg.lstsq` when `alpha = 0`.
 
-## High-impact execution guidance
+It rejects NaN/Inf, records requested/selected solver, solve dimension, data shape and constant features. A condition-number SVD is not performed automatically because it can duplicate the dominant solve cost.
 
-### Use true array operations
+### Homogeneous Slurm campaigns
 
-`numpy.vectorize` is a convenience wrapper whose implementation is essentially a Python loop; it is not a performance primitive. Prefer broadcasting, ufuncs, matrix operations and reductions when the operation can be expressed on arrays.
+`generate_job_array.py` produces:
 
-Official reference: <https://numpy.org/doc/stable/reference/generated/numpy.vectorize>
+1. one approval-gated Slurm array script;
+2. one JSONL task table with task ID, work directory and shell-quoted engine command.
 
-### Batch independent Python work deliberately
+`max_concurrent` becomes the Slurm `%` array throttle. The task table is written incrementally. This reduces file and scheduler-record scale; it does not promise faster local YAML/script generation or faster DFT kernels.
 
-For CPU-bound, picklable tasks, `ProcessPoolExecutor` can bypass the GIL. For long iterables, a non-trivial `chunksize` can substantially reduce scheduling overhead. Do not wrap external MPI engines in uncontrolled nested process pools.
+Example:
 
-Official reference: <https://docs.python.org/3.13/library/concurrent.futures.html>
+```bash
+python skills/tsao-dft-hpc-provenance/scripts/generate_job_array.py \
+  skills/tsao-dft-hpc-provenance/templates/slurm-array-campaign.yaml \
+  --script campaign.sh \
+  --tasks campaign.tasks.jsonl
+```
 
-### Avoid duplicate atomistic work
+The generator never submits the result. Pending or rejected approval inserts a runtime `exit 64` guard.
 
-ASE database reservations can prevent multiple workers from performing the same calculation. ASE also provides MPI-aware I/O so large structures are read once by the master and broadcast rather than independently parsed by every rank.
+### Oversubscription guard
 
-Official references:
+`validate_hpc_manifest.py` checks common thread variables against `resources.cpus_per_task`:
 
-- <https://wiki.fysik.dtu.dk/ase/ase/db/db.html>
-- <https://wiki.fysik.dtu.dk/ase/ase/parallel.html>
+- `OMP_NUM_THREADS`
+- `OPENBLAS_NUM_THREADS`
+- `MKL_NUM_THREADS`
+- `BLIS_NUM_THREADS`
+- `VECLIB_MAXIMUM_THREADS`
+- `NUMEXPR_NUM_THREADS`
+- `NUMEXPR_MAX_THREADS`
 
-### Reuse persistent engine processes when valid
+When `cpus_per_node` is provided, `tasks_per_node × cpus_per_task` may not exceed it. This is a conservative manifest check, not a replacement for site topology documentation.
 
-For repeated geometry steps, file-based calculators may repeatedly launch an external engine and perform heavy I/O. ASE socket communication can keep a supported engine alive and exchange coordinates, energies, forces and stress without restarting at every step. This must be supported and validated for the selected engine and site.
+## Reproducible microbenchmark
 
-Official reference: <https://wiki.fysik.dtu.dk/ase/ase/calculators/socketio/socketio.html>
+```bash
+python scripts/benchmark_performance.py \
+  --baseline-commit 27745b74c4bc1521a47e6d74c4795cce477460bb \
+  --out performance-results.json
+```
 
-### Use scheduler arrays for homogeneous campaigns
+Use `--quick` for a smaller smoke run. The script uses synthetic fixtures, medians after warm-up and `tracemalloc`; it never launches a DFT engine. See [`PERFORMANCE_AUDIT.md`](PERFORMANCE_AUDIT.md) for the measured revision results and rejected candidates.
 
-Large collections of independent, similarly resourced calculations are normally better represented as scheduler arrays than as thousands of individually generated submission scripts. Keep per-task manifests, immutable inputs, output directories and failure states separate.
+## Target-environment guidance
 
-Official reference: <https://slurm.schedmd.com/job_array.html>
+### Avoid nested parallelism
 
-## Engine-runtime checklist
+Treat the product of scheduler tasks, OpenMP threads and BLAS/FFT internal threads as an allocation contract. Do not add a Python process pool around an already MPI/BLAS-parallel engine unless the site configuration explicitly supports that nesting.
 
-Before increasing CPU count, test the actual engine and model:
+### Use arrays for independent homogeneous calculations
 
-1. converge basis, cutoff, k-mesh, supercell and vacuum before production campaigns;
-2. reuse compatible checkpoints or wavefunctions without crossing method-fingerprint boundaries;
-3. avoid oversubscribing MPI ranks and OpenMP threads;
-4. stage scratch-heavy work on the site-approved fast filesystem;
-5. measure wall time, CPU efficiency, memory high-water mark and I/O volume;
-6. use job arrays or workflow engines for independent tasks, and engine-native MPI for one parallel calculation;
-7. stop or quarantine repeated failures instead of automatically consuming more resources;
-8. record all performance changes in the run provenance.
+Use a Slurm array when tasks share resources, software environment and method policy but differ by input/workdir/output. Use a workflow DAG when tasks have dependencies or materially different resources.
+
+### Reuse only compatible state
+
+Checkpoint, charge-density and wavefunction reuse can save major work, but compatibility must include engine/version, method fingerprint, geometry policy, basis/pseudopotential and relevant parallel/restart semantics. A changed scientific model creates a new lineage.
+
+### Prevent duplicate calculations
+
+ASE database `reserve()` and AiiDA content-based caching illustrate safe coordination patterns. Any future TsaoDFT cache must include full content and method/environment provenance; no implicit cache is currently enabled.
+
+### Tune engines empirically
+
+- VASP: benchmark `KPAR`, `NCORE`, ranks and OpenMP threads for the actual model.
+- Quantum ESPRESSO: benchmark pools, images, task groups, diagonalization and restart layout with the actual build.
+- CP2K: benchmark MPI/OpenMP balance, libraries and wavefunction restart behavior on the target site.
+- Stage I/O-heavy work on approved scratch and record high-water memory, wall time, CPU efficiency and output volume.
 
 ## Non-claims
 
-The repository does not claim universal speedups for Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, Cantera or any HPC site. Engine-level tuning depends on executable version, compilation, BLAS/FFT/MPI libraries, pseudopotentials or basis sets, model size, network topology and filesystem. Only measurements from the legal target environment can establish an L3 performance result.
+The repository does not claim universal speedups for Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, Cantera or any HPC installation. Only measurements from the legal target environment can establish an L3 performance result.

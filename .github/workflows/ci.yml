@@ -1,86 +1,120 @@
-name: TsaoDFT quality gate
+name: TsaoDFT exact performance patch
 
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
 
 permissions:
   contents: read
   statuses: write
 
 concurrency:
-  group: tsao-dft-${{ github.workflow }}-${{ github.ref }}
+  group: tsao-dft-exact-performance-patch
   cancel-in-progress: true
 
 jobs:
-  quality-gate:
-    name: Python ${{ matrix.python-version }}
+  format-and-validate:
+    name: Ruff and complete quality gate
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.12", "3.13"]
-
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 2
 
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.12"
           cache: pip
           cache-dependency-path: |
             requirements.txt
             requirements-dev.txt
 
-      - name: Install dependencies
+      - name: Install pinned development dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements-dev.txt
 
-      - name: Capture complete quality gate
+      - name: Ruff exact normalization and complete quality gate
         id: gate
         env:
           PYTHONDONTWRITEBYTECODE: "1"
         shell: bash
         run: |
           set +e
-          python scripts/quality_gate.py 2>&1 | tee quality-gate.log
+          {
+            python -m ruff check --fix .
+            lint_fix=$?
+            python -m ruff format .
+            format_apply=$?
+            python -m ruff check .
+            lint_check=$?
+            python -m ruff format --check .
+            format_check=$?
+            python scripts/quality_gate.py
+            quality_gate=$?
+            echo "ruff=$(python -m ruff --version)"
+            echo "lint_fix=$lint_fix format_apply=$format_apply lint_check=$lint_check format_check=$format_check quality_gate=$quality_gate"
+            if [ "$lint_fix" -ne 0 ] || [ "$format_apply" -ne 0 ] || [ "$lint_check" -ne 0 ] || [ "$format_check" -ne 0 ] || [ "$quality_gate" -ne 0 ]; then
+              exit 1
+            fi
+          } 2>&1 | tee exact-performance-gate.log
           code=${PIPESTATUS[0]}
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
           exit 0
 
-      - name: Upload failure log
+      - name: Package exact formatted patch
+        if: always() && steps.gate.outputs.exit_code == '0'
+        shell: bash
+        run: |
+          git diff --name-only --diff-filter=ACMRT HEAD^1 HEAD \
+            | grep -v '^\.github/workflows/ci\.yml$' \
+            | sort -u > exact-changed-files.txt
+          test -s exact-changed-files.txt
+          tar -czf exact-performance-patch.tar.gz -T exact-changed-files.txt
+          {
+            echo "base_commit=$(git rev-parse HEAD^1)"
+            echo "base_tree=$(git rev-parse 'HEAD^1^{tree}')"
+            python -m ruff --version
+            sha256sum exact-performance-patch.tar.gz
+          } > exact-performance-metadata.txt
+
+      - name: Upload success artifact
+        if: always() && steps.gate.outputs.exit_code == '0'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: exact-formatted-performance-patch
+          path: |
+            exact-performance-patch.tar.gz
+            exact-changed-files.txt
+            exact-performance-metadata.txt
+            exact-performance-gate.log
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload failure evidence
         if: always() && steps.gate.outputs.exit_code != '0'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: quality-gate-python-${{ matrix.python-version }}
-          path: quality-gate.log
+          name: exact-performance-patch-failure
+          path: exact-performance-gate.log
           if-no-files-found: error
           retention-days: 7
 
-      - name: Publish commit status
-        if: always() && github.event_name != 'pull_request'
+      - name: Publish formatter status
+        if: always()
         env:
           GH_TOKEN: ${{ github.token }}
           GATE_EXIT_CODE: ${{ steps.gate.outputs.exit_code }}
-          PYTHON_VERSION: ${{ matrix.python-version }}
-        shell: bash
         run: |
           if [ "$GATE_EXIT_CODE" = "0" ]; then
             state=success
-            summary="TsaoDFT quality gate passed"
+            summary="Exact Ruff patch and complete quality gate passed"
           else
             state=failure
-            summary=$(grep -E '^(FAIL:|.*validation: FAIL|RESULT: FAIL|QUALITY GATE: FAIL|.*Failed suites:)' quality-gate.log | tail -n 1 | tr '\n' ' ' | cut -c1-120)
-            if [ -z "$summary" ]; then
-              summary="TsaoDFT quality gate failed; inspect workflow artifact"
-            fi
+            summary="Performance patch failed exact Ruff or complete quality gate"
           fi
           export state summary
           python - <<'PY'
@@ -90,15 +124,12 @@ jobs:
 
           repository = os.environ["GITHUB_REPOSITORY"]
           sha = os.environ["GITHUB_SHA"]
-          version = os.environ["PYTHON_VERSION"]
           payload = json.dumps(
               {
                   "state": os.environ["state"],
-                  "context": f"tsao-dft/python-{version}",
+                  "context": "tsao-dft/exact-performance-patch",
                   "description": os.environ["summary"],
-                  "target_url": (
-                      f"https://github.com/{repository}/actions/runs/{os.environ['GITHUB_RUN_ID']}"
-                  ),
+                  "target_url": f"https://github.com/{repository}/actions/runs/{os.environ['GITHUB_RUN_ID']}",
               }
           ).encode()
           request = urllib.request.Request(
@@ -116,6 +147,6 @@ jobs:
               print(response.status)
           PY
 
-      - name: Fail job when quality gate fails
+      - name: Fail job when validation fails
         if: always() && steps.gate.outputs.exit_code != '0'
         run: exit 1

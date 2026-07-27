@@ -14,6 +14,15 @@ ENGINES = {"gaussian", "vasp", "quantum-espresso", "cp2k", "generic"}
 SCHED = {"local", "slurm", "pbs"}
 APPROVAL = {"pending", "approved", "rejected", "not_required"}
 LEVELS = {"L0_REFERENCE", "L1_HANDOFF", "L2_VALIDATED_ADAPTER", "L3_EXECUTION_TESTED"}
+THREAD_VARIABLES = {
+    "OMP_NUM_THREADS",
+    "OPENBLAS_NUM_THREADS",
+    "MKL_NUM_THREADS",
+    "BLIS_NUM_THREADS",
+    "VECLIB_MAXIMUM_THREADS",
+    "NUMEXPR_NUM_THREADS",
+    "NUMEXPR_MAX_THREADS",
+}
 
 
 def validate(d):
@@ -65,6 +74,33 @@ def validate(d):
         e.append("memory_gb must be numeric")
     if not re.match(r"^(?:\d+-)?\d{1,3}:\d{2}:\d{2}$", str(r.get("walltime", ""))):
         e.append("walltime must be HH:MM:SS or D-HH:MM:SS")
+
+    try:
+        tasks_per_node = int(r.get("tasks_per_node", 0))
+        cpus_per_task = int(r.get("cpus_per_task", 0))
+    except (TypeError, ValueError):
+        tasks_per_node = cpus_per_task = 0
+    if r.get("cpus_per_node") is not None:
+        try:
+            cpus_per_node = int(r["cpus_per_node"])
+            if cpus_per_node < 1:
+                e.append("cpus_per_node must be >=1")
+            elif tasks_per_node * cpus_per_task > cpus_per_node:
+                e.append("tasks_per_node * cpus_per_task exceeds cpus_per_node")
+        except (TypeError, ValueError):
+            e.append("cpus_per_node must be integer")
+
+    variables = ((d.get("environment") or {}).get("variables") or {})
+    for name in sorted(THREAD_VARIABLES & set(variables)):
+        try:
+            threads = int(variables[name])
+        except (TypeError, ValueError):
+            e.append(f"{name} must be a positive integer")
+            continue
+        if threads < 1:
+            e.append(f"{name} must be a positive integer")
+        elif cpus_per_task and threads > cpus_per_task:
+            e.append(f"{name} exceeds resources.cpus_per_task")
     if not d.get("expected_outputs"):
         e.append("expected_outputs must not be empty")
     if not (d.get("preflight") or {}).get("command"):

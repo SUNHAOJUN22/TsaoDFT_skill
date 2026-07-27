@@ -57,6 +57,18 @@ class RidgeSolverTests(unittest.TestCase):
         self.assertEqual(solver, "lstsq")
         self.assertEqual(dimension, 3)
 
+    def test_negative_alpha_is_rejected(self):
+        matrix = np.eye(3)
+        target = np.arange(3.0)
+        with self.assertRaisesRegex(ValueError, "non-negative"):
+            self.module.fit_ridge(matrix, target, -0.1, "auto")
+
+    def test_non_finite_values_are_rejected(self):
+        matrix = np.array([[1.0, np.nan], [2.0, 3.0]])
+        target = np.array([1.0, 2.0])
+        with self.assertRaisesRegex(ValueError, "finite values"):
+            self.module.fit_ridge(matrix, target, 1.0, "auto")
+
 
 if __name__ == "__main__":
     unittest.main()

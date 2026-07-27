@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-78%20passing-16A34A" alt="78 tests passing">
+  <img src="https://img.shields.io/badge/tests-92%20passing-16A34A" alt="92 tests passing">
   <img src="https://img.shields.io/badge/support-L0%E2%80%93L3-6D5DFB" alt="Support levels L0 to L3">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
@@ -80,12 +80,14 @@ Gaussian、VASP、Quantum ESPRESSO 和 CP2K 当前提供选定字段的 **L2 适
 
 ## 计算效率架构
 
-- VASP、Quantum ESPRESSO 与 CP2K 输出解析器使用只读内存映射与单次证据扫描，不再把大型输出完整解码并重复扫描；Python 峰值内存近似与文件大小解耦。
-- DFT-ML ridge 基线按训练样本数与特征数自动选择 primal/dual 线性系统；宽特征矩阵不再无条件求解大型特征协方差矩阵。
-- 数据集重复记录签名字段只排序一次，避免按样本重复构建相同元数据顺序。
-- HPC、NumPy、ASE socket、MPI-safe I/O、作业数组和检查点复用的边界与使用建议见 [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md)。
+- VASP、Quantum ESPRESSO 与 CP2K 输出适配器继续使用只读内存映射；Gaussian 全流式重写因收益有限且上下文兼容风险较高，本轮保持稳定实现。
+- provenance 与结构文件使用分块 SHA-256；大型 DFT 数据集以 256 行有界批次生成与历史完全一致的规范哈希，小数据集仍走单次快速路径。
+- DFT-ML ridge 基线按训练形状选择 primal/dual，并新增有限值、数据形状和常数特征记录；不会为每次拟合额外执行昂贵的条件数 SVD。
+- HPC manifest 会拦截明显的 OpenMP/BLAS 线程过度订阅和可选节点 CPU 超额；pending/rejected 脚本在引擎命令前以 `exit 64` 阻断。
+- 同构 Slurm campaign 可生成一份数组脚本与一份 JSONL 任务表，使用 `%` 并发上限；生成器不提交作业。
+- 可复现微基准、权威资料、未实施候选和真实节点调优边界见 [`docs/PERFORMANCE_AUDIT.md`](docs/PERFORMANCE_AUDIT.md) 与 [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md)。
 
-这些优化减少的是 Python、I/O 和调度开销，不改变 DFT 方法、收敛阈值或科学验收条件。真实引擎加速仍必须在合法目标环境中实测。
+本轮测量中，64 MiB 文件哈希的 Python 峰值分配约由 64 MiB 降至 2 MiB；50,000 行规范数据哈希约由 49.6 MiB 降至 0.51 MiB，并保持完全相同 SHA-256。这些结果只表示仓库端 Python/I/O 开销，不代表真实 DFT 求解器普遍加速。
 
 ## 安装
 
@@ -122,6 +124,7 @@ python scripts/validate_catalog.py
 python scripts/validate_ai_assets.py
 python scripts/validate_readme_visuals.py --strict
 python scripts/validate_readme_links.py
+python scripts/benchmark_performance.py --quick
 python -m ruff check .
 python -m ruff format --check .
 python scripts/validate_repo.py --strict
@@ -139,6 +142,7 @@ python scripts/run_all_tests.py
 - [`docs/CAPABILITY_STATUS.yaml`](docs/CAPABILITY_STATUS.yaml)
 - [`docs/SCIENTIFIC_BOUNDARIES.md`](docs/SCIENTIFIC_BOUNDARIES.md)
 - [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md)
+- [`docs/PERFORMANCE_AUDIT.md`](docs/PERFORMANCE_AUDIT.md)
 - [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md)
 - [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md)
 

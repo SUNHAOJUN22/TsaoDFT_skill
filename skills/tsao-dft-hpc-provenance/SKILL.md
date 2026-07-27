@@ -32,7 +32,7 @@ This Skill owns execution mechanics, not scientific method selection. It consume
 
 ## Hard Guardrails
 
-- Never submit merely because an input file exists.
+- Never submit merely because an input file exists. Pending or rejected generated scripts terminate before the engine command.
 - Never auto-increase cost or wall time without logging the reason and obtaining approval when material.
 - Restart only from compatible checkpoints; changing method or geometry policy creates a new run lineage.
 - Do not hide failed attempts. Keep every attempt, error signature and fix.
@@ -45,6 +45,8 @@ This Skill owns execution mechanics, not scientific method selection. It consume
 - site-profile validation without credentials;
 - CPU/GPU allocation estimates;
 - checkpoint/restart lineage compatibility;
-- immutable provenance collection and failure classification.
+- immutable provenance collection and failure classification;
+- Slurm array generation for homogeneous, independently reviewed tasks;
+- OpenMP/BLAS thread and optional per-node CPU-capacity validation.
 
 Submission remains approval-gated.

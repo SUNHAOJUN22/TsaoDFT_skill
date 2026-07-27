@@ -12,10 +12,40 @@ from pathlib import Path
 
 import yaml
 
+STREAM_HASH_ROW_THRESHOLD = 25_000
+HASH_BATCH_ROWS = 256
+
 
 def load_rows(path: Path):
     with path.open(encoding="utf-8", newline="") as handle:
         return list(csv.DictReader(handle))
+
+
+def canonical_rows_sha256(rows: list[dict], stream_threshold: int = STREAM_HASH_ROW_THRESHOLD) -> str:
+    """Hash the existing canonical JSON representation without a large temporary string.
+
+    Small datasets keep the faster one-shot path. Large CSV-derived row lists are
+    serialized in bounded row batches while preserving the exact bytes produced by
+    ``json.dumps(rows, sort_keys=True)``.
+    """
+
+    if len(rows) < stream_threshold:
+        return hashlib.sha256(json.dumps(rows, sort_keys=True).encode()).hexdigest()
+
+    digest = hashlib.sha256()
+    digest.update(b"[")
+    first = True
+    for start in range(0, len(rows), HASH_BATCH_ROWS):
+        encoded = json.dumps(rows[start : start + HASH_BATCH_ROWS], sort_keys=True).encode()
+        body = encoded[1:-1]
+        if not body:
+            continue
+        if not first:
+            digest.update(b", ")
+        digest.update(body)
+        first = False
+    digest.update(b"]")
+    return digest.hexdigest()
 
 
 def validate(rows: list[dict], cfg: dict) -> tuple[list[str], list[str], dict]:
@@ -94,7 +124,7 @@ def validate(rows: list[dict], cfg: dict) -> tuple[list[str], list[str], dict]:
         "parent_count": len({row.get(parent) for row in rows}),
         "method_fingerprints": sorted(fingerprints),
         "fidelities": sorted(fidelities),
-        "dataset_sha256": hashlib.sha256(json.dumps(rows, sort_keys=True).encode()).hexdigest(),
+        "dataset_sha256": canonical_rows_sha256(rows),
         "leakage_groups": leakage,
     }
     return errors, warnings, summary

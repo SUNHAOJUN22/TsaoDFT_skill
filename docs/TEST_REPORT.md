@@ -5,17 +5,17 @@ Version: `0.4.0-alpha.1`
 
 ## Result
 
-**PASS — 78 unit tests across 9 isolated suites, 0 failed suites.**
+**PASS — 92 unit tests across 9 isolated suites, 0 failed suites.**
 
 | Suite | Tests | Result |
 |---|---:|---|
 | Repository, catalog, installer, plugin, minimal AI-cover governance, demo-asset integrity, curated README visual completeness, offline link integrity and strict validator | 17 | PASS |
 | `tsao-dft-suite` | 4 | PASS |
 | `tsao-dft-researcher` | 16 | PASS |
-| `tsao-structure-prep` | 4 | PASS |
+| `tsao-structure-prep` | 5 | PASS |
 | `tsao-periodic-dft-materials` | 11 | PASS |
-| `tsao-dft-ml-active-learning` | 9 | PASS |
-| `tsao-dft-hpc-provenance` | 7 | PASS |
+| `tsao-dft-ml-active-learning` | 16 | PASS |
+| `tsao-dft-hpc-provenance` | 13 | PASS |
 | `tsao-dft-kinetics-multiscale` | 5 | PASS |
 | `tsao-dft-catalysis-profile` | 5 | PASS |
 
@@ -35,12 +35,13 @@ Every discovered suite must execute at least one test. A missing, unparseable or
 
 ## Efficiency coverage
 
-- VASP, Quantum ESPRESSO and CP2K output parsers are verified to operate without `Path.read_text`, preserving selected evidence through read-only memory-mapped scans;
-- VASP regression coverage checks last energy, Fermi level, NIONS, force norm, elapsed time and validation status;
-- QE and CP2K regression coverage checks last values, count semantics and relaxation/static status;
-- the NumPy ridge baseline verifies primal/dual numerical equivalence, automatic solver selection and stable `alpha = 0` least squares;
-- the DFT dataset validator precomputes the duplicate-signature field order instead of sorting it for every row;
-- the implementation benchmark and engine-level boundaries are documented in `docs/PERFORMANCE_GUIDE.md`.
+- VASP, Quantum ESPRESSO and CP2K parsers remain memory-mapped and are protected against regression to `Path.read_text`;
+- provenance and structure hashes stream file bytes and preserve exact SHA-256 values;
+- the DFT dataset hash preserves historical canonical bytes with a one-shot/small and bounded-batch/large hybrid;
+- ridge tests cover primal/dual equivalence, automatic selection, `alpha = 0`, non-finite rejection, data shape and constant-feature metadata;
+- Slurm array tests cover 1,000-task compaction, concurrency limits, non-Slurm rejection, thread oversubscription, per-node capacity and runtime approval guards;
+- `scripts/benchmark_performance.py` reproduces implementation-only comparisons against the frozen baseline;
+- measured results, sources and rejected candidates are recorded in `docs/PERFORMANCE_AUDIT.md` and `docs/PERFORMANCE_GUIDE.md`.
 
 ## Visual, link and deterministic coverage
 
@@ -86,6 +87,7 @@ python scripts/validate_catalog.py
 python scripts/validate_ai_assets.py
 python scripts/validate_readme_visuals.py --strict
 python scripts/validate_readme_links.py
+python scripts/benchmark_performance.py --quick
 python -m ruff check .
 python -m ruff format --check .
 python scripts/validate_repo.py --strict

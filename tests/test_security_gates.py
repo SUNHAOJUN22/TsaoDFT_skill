@@ -6,6 +6,22 @@ from pathlib import Path
 from types import ModuleType
 
 ROOT = Path(__file__).resolve().parents[1]
+EXPECTED_BANDIT_ALLOWANCES = {
+    ("scripts/benchmark_performance.py", "B404"),
+    ("scripts/benchmark_performance.py", "B607"),
+    ("scripts/benchmark_performance.py", "B603"),
+    ("scripts/install.py", "B404"),
+    ("scripts/install.py", "B603"),
+    ("scripts/quality_gate.py", "B404"),
+    ("scripts/quality_gate.py", "B603"),
+    ("scripts/run_all_tests.py", "B404"),
+    ("scripts/run_all_tests.py", "B603"),
+    ("scripts/run_bandit.py", "B404"),
+    ("scripts/run_bandit.py", "B603"),
+    ("scripts/run_type_checks.py", "B404"),
+    ("scripts/run_type_checks.py", "B603"),
+    ("skills/tsao-dft-ml-active-learning/scripts/train_ridge_baseline.py", "B311"),
+}
 
 
 def load_script(name: str) -> ModuleType:
@@ -49,11 +65,11 @@ class SecurityGateTests(unittest.TestCase):
         self.assertEqual(failures, [])
         self.assertGreater(len(markers), 0)
 
-    def test_bandit_allowlist_has_no_duplicate_contracts(self):
+    def test_bandit_allowlist_has_only_reviewed_contracts(self):
         runner = load_script("run_bandit")
         allowlist = runner.load_allowlist()
-        self.assertEqual(len(allowlist), 10)
-        self.assertTrue(all(reason.strip() for reason in allowlist.values()))
+        self.assertEqual(set(allowlist), EXPECTED_BANDIT_ALLOWANCES)
+        self.assertTrue(all(len(reason.strip()) >= 40 for reason in allowlist.values()))
 
 
 if __name__ == "__main__":

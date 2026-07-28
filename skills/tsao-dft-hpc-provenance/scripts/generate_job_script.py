@@ -8,6 +8,7 @@ import json
 import shlex
 import sys
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -20,12 +21,12 @@ from validate_hpc_manifest import (  # noqa: E402 -- local validator import foll
 )
 
 
-def q(x):
-    return shlex.quote(str(x))
+def q(value: Any) -> str:
+    return shlex.quote(str(value))
 
 
-def approval_guard(d: dict) -> list[str]:
-    approval = str(d.get("approval", "pending"))
+def approval_guard(manifest: dict[str, Any]) -> list[str]:
+    approval = str(manifest.get("approval", "pending"))
     if approval in {"approved", "not_required"}:
         return []
     return [
@@ -34,100 +35,213 @@ def approval_guard(d: dict) -> list[str]:
     ]
 
 
-def engine_command(d: dict) -> str:
-    eng = d["engine"]
-    exe = q(d["executable"])
-    inp = q(d["input"])
-    out = q(d.get("stdout") or (Path(str(d["input"])).stem + ".stdout"))
-    err = q(d.get("stderr") or (Path(str(d["input"])).stem + ".stderr"))
-    launcher = d.get("launcher", "")
-    prefix = (launcher.strip() + " ") if launcher else ""
-    if eng == "gaussian":
-        return f"{prefix}{exe} < {inp} > {out} 2> {err}"
-    if eng == "vasp":
-        return f"{prefix}{exe} > {out} 2> {err}"
-    if eng == "quantum-espresso":
-        return f"{prefix}{exe} -in {inp} > {out} 2> {err}"
-    if eng == "cp2k":
-        return f"{prefix}{exe} -i {inp} -o {out} 2> {err}"
-    return f"{prefix}{exe} {inp} > {out} 2> {err}"
+def launcher_prefix(manifest: dict[str, Any]) -> str:
+    launcher = str(manifest.get("launcher", "")).strip()
+    if launcher and launcher != "auto":
+        return f"{launcher} "
+    if launcher != "auto":
+        return ""
+
+    resources = manifest["resources"]
+    scheduler = manifest["scheduler"]
+    if scheduler != "slurm":
+        raise ValueError("launcher=auto is currently supported only for Slurm")
+
+    nodes = int(resources["nodes"])
+    tasks_per_node = int(resources["tasks_per_node"])
+    options = [
+        "srun",
+        f"--ntasks={nodes * tasks_per_node}",
+        f"--ntasks-per-node={tasks_per_node}",
+        f"--cpus-per-task={int(resources['cpus_per_task'])}",
+        "--kill-on-bad-exit=1",
+    ]
+    acceleration = manifest.get("acceleration") or {}
+    if acceleration.get("enabled", False):
+        ranks_per_gpu = int(acceleration.get("ranks_per_gpu", 1))
+        if ranks_per_gpu == 1:
+            options.append("--gpus-per-task=1")
+        cpu_bind = str(acceleration.get("cpu_bind", "none"))
+        gpu_bind = str(acceleration.get("gpu_bind", "none"))
+        if cpu_bind != "none":
+            options.append(f"--cpu-bind={cpu_bind}")
+        if gpu_bind != "none":
+            options.append(f"--gpu-bind={gpu_bind}")
+    return " ".join(options) + " "
 
 
-def build(d: dict) -> str:
-    r = d["resources"]
-    s = d["scheduler"]
-    lines = ["#!/usr/bin/env bash", "set -euo pipefail"]
-    headers = []
-    if s == "slurm":
-        headers = [
-            f"#SBATCH --job-name={d['job_id']}",
-            f"#SBATCH --nodes={r['nodes']}",
-            f"#SBATCH --ntasks-per-node={r['tasks_per_node']}",
-            f"#SBATCH --cpus-per-task={r['cpus_per_task']}",
-            f"#SBATCH --mem={r['memory_gb']}G",
-            f"#SBATCH --time={r['walltime']}",
-        ]
-        if r.get("partition"):
-            headers.append(f"#SBATCH --partition={r['partition']}")
-        if int(r.get("gpus_per_node", r.get("gpus", 0))) > 0:
-            headers.append(f"#SBATCH --gpus-per-node={int(r.get('gpus_per_node', r.get('gpus', 0)))}")
-    elif s == "pbs":
-        select = (
-            f"select={r['nodes']}:ncpus={int(r['tasks_per_node']) * int(r['cpus_per_task'])}:mem={r['memory_gb']}gb"
+def engine_command(manifest: dict[str, Any]) -> str:
+    engine = manifest["engine"]
+    executable = q(manifest["executable"])
+    input_path = q(manifest["input"])
+    stdout = q(manifest.get("stdout") or (Path(str(manifest["input"])).stem + ".stdout"))
+    stderr = q(manifest.get("stderr") or (Path(str(manifest["input"])).stem + ".stderr"))
+    prefix = launcher_prefix(manifest)
+    if engine == "gaussian":
+        return f"{prefix}{executable} < {input_path} > {stdout} 2> {stderr}"
+    if engine == "vasp":
+        return f"{prefix}{executable} > {stdout} 2> {stderr}"
+    if engine == "quantum-espresso":
+        return f"{prefix}{executable} -in {input_path} > {stdout} 2> {stderr}"
+    if engine == "cp2k":
+        return f"{prefix}{executable} -i {input_path} -o {stdout} 2> {stderr}"
+    return f"{prefix}{executable} {input_path} > {stdout} 2> {stderr}"
+
+
+def acceleration_environment(manifest: dict[str, Any], existing: dict[str, Any]) -> list[str]:
+    acceleration = manifest.get("acceleration") or {}
+    if not acceleration.get("enabled", False):
+        return []
+    lines: list[str] = []
+    if (
+        acceleration.get("gpu_vendor") == "nvidia"
+        and acceleration.get("device_order") == "pci_bus_id"
+        and "CUDA_DEVICE_ORDER" not in existing
+    ):
+        lines.append("export CUDA_DEVICE_ORDER=PCI_BUS_ID")
+    return lines
+
+
+def runtime_provenance(manifest: dict[str, Any]) -> list[str]:
+    acceleration = manifest.get("acceleration") or {}
+    if not acceleration.get("enabled", False) or not acceleration.get("record_runtime", True):
+        return []
+
+    record = q(acceleration.get("runtime_record", "tsao-acceleration-runtime.txt"))
+    lines = [
+        f'printf "profile_id=%s\\n" {q(acceleration.get("profile_id", "unknown"))} > {record}',
+        f'printf "build_fingerprint_id=%s\\n" {q(acceleration.get("build_fingerprint_id", "unknown"))} >> {record}',
+        f'printf "benchmark_plan_id=%s\\n" {q(acceleration.get("benchmark_plan_id", "unknown"))} >> {record}',
+        f'printf "backend=%s\\n" {q(acceleration.get("backend", "none"))} >> {record}',
+        f'printf "precision=%s\\n" {q(acceleration.get("precision", "fp64"))} >> {record}',
+        f'printf "SLURM_JOB_ID=%s\\n" "${{SLURM_JOB_ID:-}}" >> {record}',
+        f'printf "SLURM_NODEID=%s\\n" "${{SLURM_NODEID:-}}" >> {record}',
+        f'printf "SLURM_LOCALID=%s\\n" "${{SLURM_LOCALID:-}}" >> {record}',
+        f'printf "CUDA_VISIBLE_DEVICES=%s\\n" "${{CUDA_VISIBLE_DEVICES:-}}" >> {record}',
+        f'printf "ROCR_VISIBLE_DEVICES=%s\\n" "${{ROCR_VISIBLE_DEVICES:-}}" >> {record}',
+        f'printf "ZE_AFFINITY_MASK=%s\\n" "${{ZE_AFFINITY_MASK:-}}" >> {record}',
+    ]
+    vendor = str(acceleration.get("gpu_vendor", "none"))
+    if vendor == "nvidia":
+        inventory = q(acceleration.get("device_inventory", "tsao-nvidia-gpu-inventory.csv"))
+        lines.extend(
+            [
+                "if command -v nvidia-smi >/dev/null 2>&1; then",
+                "  nvidia-smi --query-gpu=name,uuid,pci.bus_id,driver_version,memory.total "
+                f"--format=csv,noheader > {inventory}",
+                "else",
+                f'  echo "nvidia-smi unavailable" > {inventory}',
+                "fi",
+            ]
         )
-        if int(r.get("gpus_per_node", r.get("gpus", 0))) > 0:
-            select += f":ngpus={int(r.get('gpus_per_node', r.get('gpus', 0)))}"
-        headers = [f"#PBS -N {d['job_id']}", f"#PBS -l {select}", f"#PBS -l walltime={r['walltime']}"]
-        if r.get("queue"):
-            headers.append(f"#PBS -q {r['queue']}")
+    return lines
+
+
+def build(manifest: dict[str, Any]) -> str:
+    resources = manifest["resources"]
+    scheduler = manifest["scheduler"]
+    lines = ["#!/usr/bin/env bash", "set -euo pipefail"]
+    headers: list[str] = []
+    if scheduler == "slurm":
+        headers = [
+            f"#SBATCH --job-name={manifest['job_id']}",
+            f"#SBATCH --nodes={resources['nodes']}",
+            f"#SBATCH --ntasks-per-node={resources['tasks_per_node']}",
+            f"#SBATCH --cpus-per-task={resources['cpus_per_task']}",
+            f"#SBATCH --mem={resources['memory_gb']}G",
+            f"#SBATCH --time={resources['walltime']}",
+        ]
+        if resources.get("partition"):
+            headers.append(f"#SBATCH --partition={resources['partition']}")
+        gpus_per_node = int(resources.get("gpus_per_node", resources.get("gpus", 0)))
+        if gpus_per_node > 0:
+            headers.append(f"#SBATCH --gpus-per-node={gpus_per_node}")
+    elif scheduler == "pbs":
+        select = (
+            f"select={resources['nodes']}:"
+            f"ncpus={int(resources['tasks_per_node']) * int(resources['cpus_per_task'])}:"
+            f"mem={resources['memory_gb']}gb"
+        )
+        gpus_per_node = int(resources.get("gpus_per_node", resources.get("gpus", 0)))
+        if gpus_per_node > 0:
+            select += f":ngpus={gpus_per_node}"
+        headers = [
+            f"#PBS -N {manifest['job_id']}",
+            f"#PBS -l {select}",
+            f"#PBS -l walltime={resources['walltime']}",
+        ]
+        if resources.get("queue"):
+            headers.append(f"#PBS -q {resources['queue']}")
     lines[1:1] = headers
+
+    acceleration = manifest.get("acceleration") or {}
     lines += [
         "",
-        f"# engine: {d['engine']} {d.get('engine_version', 'unknown')}",
-        f"# method_fingerprint_id: {d.get('method_fingerprint_id', 'unknown')}",
-        f"# support_level: {d.get('support_level', 'unknown')}",
-        f"# approval: {d.get('approval', 'pending')}",
+        f"# engine: {manifest['engine']} {manifest.get('engine_version', 'unknown')}",
+        f"# method_fingerprint_id: {manifest.get('method_fingerprint_id', 'unknown')}",
+        f"# support_level: {manifest.get('support_level', 'unknown')}",
+        f"# approval: {manifest.get('approval', 'pending')}",
     ]
-    env = d.get("environment") or {}
-    for m in env.get("modules", []):
-        lines.append(f"module load {q(m)}")
-    for src in env.get("source", []):
-        lines.append(f"source {q(src)}")
-    for key, val in (env.get("variables") or {}).items():
-        lines.append(f"export {key}={q(val)}")
-    scratch = d.get("scratch") or {}
+    if acceleration.get("enabled", False):
+        lines.extend(
+            [
+                f"# acceleration_profile_id: {acceleration.get('profile_id', 'unknown')}",
+                f"# acceleration_backend: {acceleration.get('backend', 'none')}",
+                f"# acceleration_mode: {acceleration.get('mode', 'none')}",
+                f"# acceleration_precision: {acceleration.get('precision', 'fp64')}",
+                f"# build_fingerprint_id: {acceleration.get('build_fingerprint_id', 'unknown')}",
+                f"# benchmark_plan_id: {acceleration.get('benchmark_plan_id', 'unknown')}",
+            ]
+        )
+
+    environment = manifest.get("environment") or {}
+    for module in environment.get("modules", []):
+        lines.append(f"module load {q(module)}")
+    for source in environment.get("source", []):
+        lines.append(f"source {q(source)}")
+    variables = environment.get("variables") or {}
+    for key, value in variables.items():
+        lines.append(f"export {key}={q(value)}")
+    lines.extend(acceleration_environment(manifest, variables))
+
+    scratch = manifest.get("scratch") or {}
     if scratch.get("path"):
         lines.append(f"mkdir -p {q(scratch['path'])}")
-        if d["engine"] == "gaussian":
+        if manifest["engine"] == "gaussian":
             lines.append(f"export GAUSS_SCRDIR={q(scratch['path'])}")
-    lines += ["", f"cd {q(d['workdir'])}"]
-    lines.extend(approval_guard(d))
+
+    lines += ["", f"cd {q(manifest['workdir'])}"]
+    lines.extend(approval_guard(manifest))
     lines += ['echo "TsaoDFT job start: $(date -Is)"', 'echo "Host: $(hostname)"']
-    lines.append(f"# preflight: {(d.get('preflight') or {}).get('command', 'not recorded')}")
-    if (d.get("preflight") or {}).get("run_in_job", False):
-        lines.append(str(d["preflight"]["command"]))
-    lines.append(engine_command(d))
+    lines.extend(runtime_provenance(manifest))
+    lines.append(f"# preflight: {(manifest.get('preflight') or {}).get('command', 'not recorded')}")
+    if (manifest.get("preflight") or {}).get("run_in_job", False):
+        lines.append(str(manifest["preflight"]["command"]))
+    lines.append(engine_command(manifest))
     lines += ["rc=$?", 'echo "TsaoDFT job end: $(date -Is) rc=${rc}"']
-    if (d.get("parser") or {}).get("run_in_job", False):
-        lines.append(str(d["parser"]["command"]))
+    if (manifest.get("parser") or {}).get("run_in_job", False):
+        lines.append(str(manifest["parser"]["command"]))
     lines.append("exit ${rc}")
     return "\n".join(lines) + "\n"
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("manifest", type=Path)
-    ap.add_argument("--out", type=Path, required=True)
-    a = ap.parse_args()
-    d = yaml.safe_load(a.manifest.read_text()) or {}
-    errors, warnings = validate_manifest(d)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("manifest", type=Path)
+    parser.add_argument("--out", type=Path, required=True)
+    args = parser.parse_args()
+    loaded = yaml.safe_load(args.manifest.read_text(encoding="utf-8")) or {}
+    if not isinstance(loaded, dict):
+        print(json.dumps({"ok": False, "errors": ["manifest root must be a mapping"], "warnings": []}, indent=2))
+        return 1
+    errors, warnings = validate_manifest(loaded)
     if errors:
         print(json.dumps({"ok": False, "errors": errors, "warnings": warnings}, indent=2))
         return 1
-    a.out.parent.mkdir(parents=True, exist_ok=True)
-    a.out.write_text(build(d), encoding="utf-8")
-    a.out.chmod(0o755)
-    print(a.out)
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(build(loaded), encoding="utf-8")
+    args.out.chmod(0o755)
+    print(args.out)
     return 0
 
 

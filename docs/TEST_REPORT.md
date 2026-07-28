@@ -1,15 +1,17 @@
 # Test Report
 
 Date: 2026-07-28  
-Version: `0.4.0-alpha.1`
+Version: `0.4.0-alpha.1`  
+Validated commit before documentation sync: `e61146cec6dfc842e80c8415fa0bd95453ab8551`  
+GitHub Actions run: `30332229705`
 
 ## Result
 
-**PASS — 100 unit tests across 9 isolated suites, 0 failed suites.**
+**PASS — 118 unit tests across 9 isolated suites, 0 failed suites.**
 
 | Suite | Tests | Result |
 |---|---:|---|
-| Repository, dependency contract, quality-gate semantics, catalog, installer, plugin, minimal AI-cover governance, demo-asset integrity, curated README visual completeness, offline link integrity and strict validator | 25 | PASS |
+| Root repository, installer safety, Agent evals, dependency/packaging/governance/security contracts, visual and link validation | 43 | PASS |
 | `tsao-dft-suite` | 4 | PASS |
 | `tsao-dft-researcher` | 16 | PASS |
 | `tsao-structure-prep` | 5 | PASS |
@@ -21,71 +23,79 @@ Version: `0.4.0-alpha.1`
 
 Every discovered suite must execute at least one test. A missing, unparseable or zero-test suite fails the repository quality gate instead of producing a false green result.
 
+## Permanent deterministic quality gate
+
+The one-command gate executes, in order:
+
+1. all eight versioned deterministic demo assets;
+2. dependency, Python-version and release contracts;
+3. repository-only packaging model;
+4. DFT catalog validation;
+5. Agent eval contracts;
+6. governance and workflow policy;
+7. explained ignore-marker audit;
+8. governed AI cover integrity;
+9. bilingual README visual completeness;
+10. offline local-link validation;
+11. Ruff lint;
+12. Ruff formatting;
+13. isolated mypy checks across 18 targets;
+14. Bandit production audit with exact reviewed allowances;
+15. strict repository audit;
+16. all nine non-empty unittest suites.
+
+Each stage has an explicit timeout. JSON mode captures child output and remains machine-readable.
+
+## Hosted CI evidence
+
+Run `30332229705` completed successfully with:
+
+- Python 3.10 quality gate: PASS;
+- Python 3.12 quality gate: PASS;
+- Python 3.13 quality gate: PASS;
+- CodeQL Python `security-extended`: PASS;
+- runtime dependency `pip-audit`: PASS;
+- development dependency `pip-audit`: PASS;
+- CycloneDX JSON SBOM generation and upload: PASS;
+- no failure-log artifact, because every blocking gate passed.
+
+The GitHub Actions workflow is the only permanent workflow and all reusable Actions are pinned to full commit SHAs.
+
+## Security and Agent coverage
+
+The root suite now includes deterministic checks for:
+
+- installer ownership records, atomic copy, safe replacement, backup and uninstall behavior;
+- refusal to overwrite or uninstall foreign directories;
+- refusal to use the home directory or repository root as an installation target;
+- exact symlink ownership and modified-copy handling;
+- prompt-injection and untrusted-content boundaries in all eight Skills;
+- Agent eval categories, unique identifiers and evidence requirements;
+- `defusedxml` use in SVG/XML validators;
+- governance files, main-only exception, workflow trigger and action-pin policy;
+- exact Bandit allowance contracts and non-empty justifications;
+- dependency drift, Python floor, Ruff target and PEP 440 version consistency;
+- quality-stage timeout and `--skip-tests` behavior;
+- deterministic AI/demo asset integrity and offline README links.
+
 ## Static quality and repository hygiene
 
-- Ruff is pinned in `requirements-dev.txt` and enforced for both lint and formatting;
-- the initial full-repository Ruff audit identified 1,173 findings across 94 Python files;
-- automated normalization was followed by exact review and repair of the remaining semantic and robustness findings;
-- the final enforced Ruff result is zero findings;
-- runtime dependencies have explicit compatible upper bounds;
-- runtime and development dependency declarations are compared offline across requirements files and `pyproject.toml`;
-- `VERSION`, the PEP 440 project version, the Python floor and the Ruff target are contract-checked;
-- obsolete bootstrap, patch-bundle and workflow-probe files were removed;
-- strict validation rejects private root bundles, workflow probes, backup/editor files, empty files and large encoded bootstrap payloads;
-- `.github/workflows/ci.yml` is the only permitted workflow file;
-- GitHub Actions dependencies are pinned to immutable Node 24-compatible commit SHAs;
-- native Actions matrix jobs are the blocking authority; retried compatibility status summaries are best-effort and cannot fail a passing job;
-- `pip check` verifies the installed dependency environment before the quality gate starts.
+- Ruff is pinned and enforced for lint and formatting;
+- mypy runs in isolated repository and per-Skill module spaces;
+- Bandit scans production code and rejects unreviewed findings;
+- unsafe `xml.etree.ElementTree` entry points were replaced by `defusedxml`;
+- unsafe YAML workflow parsing was replaced by `yaml.safe_load` with explicit handling of YAML 1.1's `on` key behavior;
+- production installer assertions were replaced by runtime safety errors;
+- runtime and development dependencies have compatible upper bounds and synchronized declarations;
+- obsolete bootstrap, patch-bundle, repair and workflow-probe files are forbidden;
+- `.github/workflows/ci.yml` is the only permanent workflow;
+- `pip check` validates each installed CI environment.
 
-## Quality-gate robustness
+## Scientific and performance coverage
 
-- every stage has a deterministic timeout and reports return code 124 on expiry;
-- the unit-test stage has a larger explicit timeout than static validation stages;
-- `--timeout` accepts only positive values;
-- `--json` captures child output so the emitted document remains valid machine-readable JSON;
-- stage ordering is regression-tested, including dependency validation before Ruff and repository checks;
-- `--skip-tests` removes only the final unit-test stage.
+The 118 tests cover DFT-first routing, method fingerprints, cross-Skill handoffs, Gaussian preflight and synthetic parsing, minimum/TS/IRC acceptance, Multiwfn recipes, uncertainty budgets, structure mapping, VASP/QE/CP2K adapters, convergence and compatibility gates, provenance-safe DFT datasets, leakage controls, adaptive ridge solvers, HPC scripts and arrays, restart lineage, thermodynamic closure, uncertainty propagation, Cantera-oriented handoff, catalyst scope, figure manifests and deterministic scientific demonstrations.
 
-## Efficiency coverage
-
-- VASP, Quantum ESPRESSO and CP2K parsers remain memory-mapped and are protected against regression to `Path.read_text`;
-- provenance and structure hashes stream file bytes and preserve exact SHA-256 values;
-- the DFT dataset hash preserves historical canonical bytes with a one-shot/small and bounded-batch/large hybrid;
-- ridge tests cover primal/dual equivalence, automatic selection, `alpha = 0`, non-finite rejection, data shape and constant-feature metadata;
-- Slurm array tests cover 1,000-task compaction, concurrency limits, non-Slurm rejection, thread oversubscription, per-node capacity and runtime approval guards;
-- `scripts/benchmark_performance.py` reproduces implementation-only comparisons against the frozen baseline;
-- measured results, sources and rejected candidates are recorded in `docs/PERFORMANCE_AUDIT.md` and `docs/PERFORMANCE_GUIDE.md`.
-
-## Visual, link and deterministic coverage
-
-- exactly one governed AI-assisted README cover, with SHA-256 integrity, dimensions, provenance, visible disclosure and non-quantitative policy;
-- no AI module-card gallery or deprecated `assets/ai/modules/` references;
-- curated bilingual README embedding of the cover and five representative deterministic demonstrations;
-- strict read-only validation of all eight versioned demo SVGs, including XML, exact dimensions, titles, accessible descriptions and visible synthetic-data notices;
-- offline validation of every bilingual README local file, directory and Markdown-anchor link, while external URLs are never requested;
-- explicit failure for missing, unsafe or unsupported local link targets;
-- explicit failure for missing, degraded or placeholder demo assets, with no automatic fallback writes;
-- explicit rejection of wording that presents conceptual illustrations as calculated orbitals, surfaces or scientific results;
-- local full-width and half-width raster review of the `uiux_pro_v8_hero_evidence_bento` overview and all eight dark deterministic demo assets before publication;
-- one documented dark scientific README design system with consistent palette, typography, density, accessible status labels and anti-pattern controls;
-- complete bilingual README rewrite with the same governed overview, required deterministic figures, documentation map and scientific-boundary language.
-
-## Scientific and workflow coverage
-
-- DFT-first routing, cross-Skill handoff and method fingerprint validation;
-- Gaussian input preflight and rich synthetic log parsing;
-- minimum/TS evidence, TS/IRC manifest rules, thermochemistry, S², orbital, dipole, NMR and TD fields;
-- Multiwfn semantic recipe and DFT uncertainty-budget validation;
-- XYZ geometry audit and atom-order mapping;
-- VASP INCAR/POSCAR/KPOINTS preflight and OUTCAR parsing;
-- QE `pw.x` input/output parsing;
-- CP2K Quickstep input/output parsing;
-- periodic project and energy-compatibility gates plus convergence analysis;
-- DFT-labelled dataset provenance/leakage checks, grouped NumPy ridge baseline and model card;
-- engine-aware Slurm/PBS/local script generation, site profile, resource estimate and restart lineage;
-- reaction-network element/charge/site balance, Eyring rates, thermodynamic closure, barrier uncertainty and Cantera-oriented handoff;
-- scoped catalyst coordination campaign and claim-strength validation;
-- research/figure manifests, VMD Tcl generation, energy-profile figures and synthetic README figure integrity.
+Performance regression coverage protects memory-mapped periodic parsers, streaming SHA-256, bounded canonical dataset hashing, primal/dual ridge equivalence and Slurm-array compaction.
 
 ## Commands
 
@@ -100,19 +110,22 @@ Focused diagnostics:
 ```bash
 python scripts/generate_readme_demos.py
 python scripts/validate_dependencies.py
+python scripts/validate_packaging_model.py
 python scripts/validate_catalog.py
+python scripts/validate_agent_evals.py
+python scripts/validate_governance.py
+python scripts/validate_ignore_markers.py
 python scripts/validate_ai_assets.py
 python scripts/validate_readme_visuals.py --strict
 python scripts/validate_readme_links.py
-python scripts/benchmark_performance.py --quick
 python -m ruff check .
 python -m ruff format --check .
+python scripts/run_type_checks.py
+python scripts/run_bandit.py
 python scripts/validate_repo.py --strict
 python scripts/run_all_tests.py
 ```
 
 ## Important non-claims
 
-The tests use deterministic source fixtures and synthetic output excerpts. The current environment did not execute licensed Gaussian or VASP calculations, a real Quantum ESPRESSO/CP2K campaign, Multiwfn menu jobs, VMD/Tachyon ray tracing, Slurm/PBS submissions, DeepChem/GNN training, or Cantera reactor simulations.
-
-Therefore the release records selected capabilities as **L2 validated adapters**, not L3 execution-tested engines. L3 requires immutable real-engine/version/site regression evidence supplied legally by the user or laboratory.
+The tests use deterministic fixtures and synthetic output excerpts. They do not establish licensed real-engine execution for Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD, Slurm/PBS, DeepChem/GNN or Cantera. Selected capabilities therefore remain **L2 validated adapters**, not L3 execution-tested engines. L3 requires immutable evidence from the legal engine, version and site.

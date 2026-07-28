@@ -2,12 +2,12 @@
 
 Date: 2026-07-28  
 Branch: `main`  
-Validated source commit before documentation sync: `bcdfca6e81ae977287702fd6f4aba9f8cfa93e46`  
-GitHub Actions run: `30344814556`
+Validated source commit before documentation sync: `22b0ffbf8ad29966f9f1419b64bc1c7cd776f0bd`  
+GitHub Actions run: `30371686253`
 
 ## Evidence rule
 
-A passing parser, fixture, static analysis, scheduler test or acceleration planner is engineering evidence, not proof of scientific correctness, legal real-engine execution or measured speedup. Unsupported or account-level facts remain `UNKNOWN` / `NOT VERIFIED`.
+A passing parser, fixture, static analysis, scheduler test or acceleration campaign materializer is engineering evidence, not proof of scientific correctness, legal real-engine execution or measured speedup. Unsupported or account-level facts remain `UNKNOWN` / `NOT VERIFIED`.
 
 ## Scope reviewed
 
@@ -19,7 +19,8 @@ A passing parser, fixture, static analysis, scheduler test or acceleration plann
 - runtime/development ranges and Python 3.10/3.12/3.13 exact constraints;
 - capability, support-level, Agent-eval, prompt-injection and scientific-claim contracts;
 - README, visual, asset, link, governance, packaging and supply-chain evidence;
-- GPU/CUDA-X/native-code/edge planning decisions, deterministic output and invalid-profile handling.
+- GPU/CUDA-X/native-code/edge planning decisions, deterministic output and invalid-profile handling;
+- acceleration Manifest topology, Slurm binding, runtime GPU identity and benchmark-candidate materialization.
 
 ## Closed findings
 
@@ -53,21 +54,25 @@ The installer proves ownership through records and content hashes before replace
 
 Deterministic policy evals cover routing, ambiguity, multi-Skill conflicts, profile isolation, prompt injection, unauthorized tools, destructive actions, support escalation, fabrication, provenance loss, recovery, idempotency and version stability. Live-model execution remains `NOT_VERIFIED`.
 
-The capability validator prevents public unsupported claims and requires immutable engine/version/site/run/artifact evidence for any L3 declaration. GPU allocation, CUDA-X selection and generated plans remain below L3 until real engine/build/hardware benchmarks exist.
+The capability validator prevents public unsupported claims and requires immutable engine/version/site/run/artifact evidence for any L3 declaration. GPU allocation, CUDA-X selection, generated plans, bound job scripts and pending benchmark candidates remain below L3 until real engine/build/hardware measurements exist.
 
-### Acceleration planner quality
+### Acceleration planner and execution-chain quality
 
-The new planner:
+The acceleration layer now:
 
 - validates engine, execution stage, target class, GPU vendor/topology, precision policy and requested acceleration libraries;
 - distinguishes engine-native GPU builds, CPU MPI/OpenMP, atomistic-ML surrogate and edge-orchestrated routes;
 - records explicit `recommended`, `benchmark`, `engine-build`, `not-drop-in` and `not-applicable` decisions;
+- validates backend/vendor compatibility, `ranks_per_gpu`, GPU-oversubscription approval and `tasks_per_node` consistency;
+- requires acceleration profile, native build-fingerprint and benchmark-plan identifiers;
+- generates Slurm `srun` CPU/GPU binding while leaving visible-device assignment to the scheduler;
+- captures rank identity, visible-device mapping, GPU UUID, PCI bus, driver and device memory when NVIDIA tooling is available;
+- materializes an FP64 CPU reference and declared GPU scaling candidates;
+- resets every generated candidate to `approval: pending` and never submits a job;
 - keeps Python on the control plane and native code behind tested, narrow interfaces with a CPU fallback;
-- rejects an NVIDIA engine build without an NVIDIA GPU;
-- produces deterministic reports from the same profile;
-- never launches an engine or promotes a plan into a measured performance claim.
+- produces deterministic reports and files from the same reviewed inputs.
 
-Ten new unit tests cover the VASP, Quantum ESPRESSO, CP2K, equivariant-ML, cuTENSOR, edge, CPU fallback, invalid GPU-build and determinism branches.
+Twenty-one acceleration-specific tests cover planning and bound execution. The full repository baseline is 148 tests across nine non-empty suites.
 
 ## Final quality gate
 
@@ -98,10 +103,14 @@ versioned demo assets
 - Python 3.10 hosted gate: PASS;
 - Python 3.12 hosted gate: PASS;
 - Python 3.13 hosted gate: PASS;
+- Ruff lint and formatting: PASS;
+- isolated mypy checks across 18 targets: PASS;
+- Bandit production audit: PASS;
+- strict repository audit: PASS;
 - CodeQL `security-extended`: PASS;
 - runtime/development/locked `pip-audit`: PASS;
 - locked CycloneDX SBOM: PASS;
-- tests: 137 across nine non-empty suites, zero failed suites;
+- tests: 148 across nine non-empty suites, zero failed suites;
 - one permanent workflow: `.github/workflows/ci.yml`;
 - no branch or pull request created.
 

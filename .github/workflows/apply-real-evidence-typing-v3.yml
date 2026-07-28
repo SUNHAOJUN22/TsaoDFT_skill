@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/apply-real-evidence-typing-v3.yml
+  workflow_dispatch:
 
 permissions:
   contents: write

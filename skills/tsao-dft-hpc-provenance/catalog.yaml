@@ -29,6 +29,11 @@ applies_to:
 - CPU/GPU and CUDA-X acceleration planning
 - C++/native-extension and portability boundaries
 - edge orchestration and surrogate inference
+- benchmark candidate materialization
+- real benchmark evidence import and validation
+- numerical-equivalence-first performance comparison
+- immutable performance evidence bundles
+- scoped L3 performance qualification
 - batch campaigns
 - provenance and restart
 - scientific CI
@@ -37,9 +42,11 @@ not_for:
 - scientific method selection
 - redistribution or patching of licensed software
 - unmeasured universal speedup claims
+- automatic public L3 capability promotion
 version: 0.4.0-alpha.1
 implementation_status: implemented_generation_validation
 support_level: L2_VALIDATED_ADAPTER
 external_requirements:
 - real accelerator, engine build and site required for L3
+- immutable real-engine artifacts and independent review required for scoped L3 performance evidence
 orchestrated_by: tsao-dft-suite

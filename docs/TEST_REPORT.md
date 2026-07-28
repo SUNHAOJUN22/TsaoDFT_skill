@@ -2,16 +2,16 @@
 
 Date: 2026-07-28  
 Version: `0.4.0-alpha.1`  
-Validated commit before documentation sync: `e61146cec6dfc842e80c8415fa0bd95453ab8551`  
-GitHub Actions run: `30332229705`
+Validated source commit before documentation sync: `360046f4edc680dd4f50421ad9dd4c7576eaa763`  
+GitHub Actions run: `30338083011`
 
 ## Result
 
-**PASS — 118 unit tests across 9 isolated suites, 0 failed suites.**
+**PASS — 127 unit tests across 9 isolated suites, 0 failed suites.**
 
 | Suite | Tests | Result |
 |---|---:|---|
-| Root repository, installer safety, Agent evals, dependency/packaging/governance/security contracts, visual and link validation | 43 | PASS |
+| Root repository, installer safety, Agent evals, constraints, capability claims, secret scanning, dependency/packaging/governance/security contracts, visual and link validation | 52 | PASS |
 | `tsao-dft-suite` | 4 | PASS |
 | `tsao-dft-researcher` | 16 | PASS |
 | `tsao-structure-prep` | 5 | PASS |
@@ -29,41 +29,45 @@ The one-command gate executes, in order:
 
 1. all eight versioned deterministic demo assets;
 2. dependency, Python-version and release contracts;
-3. repository-only packaging model;
-4. DFT catalog validation;
-5. Agent eval contracts;
-6. governance and workflow policy;
-7. explained ignore-marker audit;
-8. governed AI cover integrity;
-9. bilingual README visual completeness;
-10. offline local-link validation;
-11. Ruff lint;
-12. Ruff formatting;
-13. isolated mypy checks across 18 targets;
-14. Bandit production audit with exact reviewed allowances;
-15. strict repository audit;
-16. all nine non-empty unittest suites.
+3. exact Python 3.10, 3.12 and 3.13 CI constraint contracts;
+4. repository-only packaging model;
+5. DFT catalog validation;
+6. Agent eval contracts;
+7. governance and workflow policy;
+8. capability and scientific-claim boundaries;
+9. high-confidence secret patterns and secret-bearing filenames;
+10. explained ignore-marker audit;
+11. governed AI cover integrity;
+12. bilingual README visual completeness;
+13. offline local-link validation;
+14. Ruff lint;
+15. Ruff formatting;
+16. isolated mypy checks across 18 targets;
+17. Bandit production audit with exact reviewed allowances;
+18. strict repository audit;
+19. all nine non-empty unittest suites.
 
 Each stage has an explicit timeout. JSON mode captures child output and remains machine-readable.
 
 ## Hosted CI evidence
 
-Run `30332229705` completed successfully with:
+Run `30338083011` completed successfully with:
 
-- Python 3.10 quality gate: PASS;
-- Python 3.12 quality gate: PASS;
-- Python 3.13 quality gate: PASS;
+- locked Python 3.10 quality gate: PASS;
+- locked Python 3.12 quality gate: PASS;
+- locked Python 3.13 quality gate: PASS;
 - CodeQL Python `security-extended`: PASS;
-- runtime dependency `pip-audit`: PASS;
-- development dependency `pip-audit`: PASS;
-- CycloneDX JSON SBOM generation and upload: PASS;
+- runtime dependency-range `pip-audit`: PASS;
+- development dependency-range `pip-audit`: PASS;
+- exact locked-environment `pip-audit`: PASS;
+- locked CycloneDX JSON SBOM generation and upload: PASS;
 - no failure-log artifact, because every blocking gate passed.
 
-The GitHub Actions workflow is the only permanent workflow and all reusable Actions are pinned to full commit SHAs.
+The GitHub Actions workflow is the only permanent workflow, runs weekly as well as on `main`, PR and manual triggers, and pins every reusable Action to a full commit SHA.
 
 ## Security and Agent coverage
 
-The root suite now includes deterministic checks for:
+The root suite includes deterministic checks for:
 
 - installer ownership records, atomic copy, safe replacement, backup and uninstall behavior;
 - refusal to overwrite or uninstall foreign directories;
@@ -71,8 +75,11 @@ The root suite now includes deterministic checks for:
 - exact symlink ownership and modified-copy handling;
 - prompt-injection and untrusted-content boundaries in all eight Skills;
 - Agent eval categories, unique identifiers and evidence requirements;
+- capability scripts, support levels, forbidden public claims and immutable L3 evidence fields;
+- exact constraints, provenance headers, direct dependency inclusion and forbidden bootstrap pins;
+- high-confidence private-key/token patterns and secret-bearing filenames;
 - `defusedxml` use in SVG/XML validators;
-- governance files, main-only exception, workflow trigger and action-pin policy;
+- governance files, main-only exception, scheduled workflow, trigger and action-pin policy;
 - exact Bandit allowance contracts and non-empty justifications;
 - dependency drift, Python floor, Ruff target and PEP 440 version consistency;
 - quality-stage timeout and `--skip-tests` behavior;
@@ -86,21 +93,22 @@ The root suite now includes deterministic checks for:
 - unsafe `xml.etree.ElementTree` entry points were replaced by `defusedxml`;
 - unsafe YAML workflow parsing was replaced by `yaml.safe_load` with explicit handling of YAML 1.1's `on` key behavior;
 - production installer assertions were replaced by runtime safety errors;
-- runtime and development dependencies have compatible upper bounds and synchronized declarations;
+- runtime and development dependencies retain compatible ranges in project metadata;
+- exact Python-version constraints make CI resolution reproducible;
 - obsolete bootstrap, patch-bundle, repair and workflow-probe files are forbidden;
 - `.github/workflows/ci.yml` is the only permanent workflow;
 - `pip check` validates each installed CI environment.
 
 ## Scientific and performance coverage
 
-The 118 tests cover DFT-first routing, method fingerprints, cross-Skill handoffs, Gaussian preflight and synthetic parsing, minimum/TS/IRC acceptance, Multiwfn recipes, uncertainty budgets, structure mapping, VASP/QE/CP2K adapters, convergence and compatibility gates, provenance-safe DFT datasets, leakage controls, adaptive ridge solvers, HPC scripts and arrays, restart lineage, thermodynamic closure, uncertainty propagation, Cantera-oriented handoff, catalyst scope, figure manifests and deterministic scientific demonstrations.
+The 127 tests cover DFT-first routing, method fingerprints, cross-Skill handoffs, Gaussian preflight and synthetic parsing, minimum/TS/IRC acceptance, Multiwfn recipes, uncertainty budgets, structure mapping, VASP/QE/CP2K adapters, convergence and compatibility gates, provenance-safe DFT datasets, leakage controls, adaptive ridge solvers, HPC scripts and arrays, restart lineage, thermodynamic closure, uncertainty propagation, Cantera-oriented handoff, catalyst scope, figure manifests and deterministic scientific demonstrations.
 
 Performance regression coverage protects memory-mapped periodic parsers, streaming SHA-256, bounded canonical dataset hashing, primal/dual ridge equivalence and Slurm-array compaction.
 
 ## Commands
 
 ```bash
-python -m pip install -r requirements-dev.txt
+python -m pip install -c constraints/py312.txt -r requirements-dev.txt
 python -m pip check
 python scripts/quality_gate.py
 ```
@@ -110,10 +118,13 @@ Focused diagnostics:
 ```bash
 python scripts/generate_readme_demos.py
 python scripts/validate_dependencies.py
+python scripts/validate_constraints.py
 python scripts/validate_packaging_model.py
 python scripts/validate_catalog.py
 python scripts/validate_agent_evals.py
 python scripts/validate_governance.py
+python scripts/validate_capability_claims.py
+python scripts/validate_secrets.py
 python scripts/validate_ignore_markers.py
 python scripts/validate_ai_assets.py
 python scripts/validate_readme_visuals.py --strict

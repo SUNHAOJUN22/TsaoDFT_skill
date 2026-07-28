@@ -1,13 +1,51 @@
-name: TsaoDFT security remediation maintenance
+name: Apply audited TsaoDFT security remediation
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  maintenance:
+  apply-security-remediation:
+    if: contains(github.event.head_commit.message, '[apply-security]')
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
-      - run: echo "Atomic repository security remediation in progress; permanent gates return in the final validated commit."
+      - name: Checkout main
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install audit toolchain
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+          python -m pip check
+
+      - name: Apply and format exact remediation
+        shell: bash
+        run: |
+          python .github/apply-security-remediation-once.py
+          python -m ruff format scripts tests skills
+          python -m ruff check scripts tests skills
+
+      - name: Commit deterministic remediation
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts tests skills requirements.txt requirements-dev.txt pyproject.toml
+          git commit -m 'security: apply audited installer, XML, typing and Skill trust boundaries [skip ci]'
+          git push origin HEAD:main

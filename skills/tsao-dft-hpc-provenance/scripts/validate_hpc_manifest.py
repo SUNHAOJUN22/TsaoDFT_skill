@@ -52,7 +52,15 @@ def validate_acceleration(
 ) -> None:
     acceleration = manifest.get("acceleration")
     if acceleration is None:
-        if integer(resources.get("gpus_per_node", resources.get("gpus", 0)), "gpus_per_node", errors, 0) > 0:
+        if (
+            integer(
+                resources.get("gpus_per_node", resources.get("gpus", 0)),
+                "gpus_per_node",
+                errors,
+                0,
+            )
+            > 0
+        ):
             warnings.append("GPU resources are requested without an acceleration provenance contract")
         return
     if not isinstance(acceleration, dict):
@@ -67,7 +75,12 @@ def validate_acceleration(
     gpu_bind = str(acceleration.get("gpu_bind", "none")).lower()
     device_order = str(acceleration.get("device_order", "scheduler")).lower()
     precision = str(acceleration.get("precision", "fp64")).lower()
-    ranks_per_gpu = integer(acceleration.get("ranks_per_gpu", 1), "acceleration.ranks_per_gpu", errors, 1)
+    ranks_per_gpu = integer(
+        acceleration.get("ranks_per_gpu", 1),
+        "acceleration.ranks_per_gpu",
+        errors,
+        1,
+    )
     gpus_per_node = integer(
         resources.get("gpus_per_node", resources.get("gpus", 0)),
         "gpus_per_node",
@@ -128,7 +141,9 @@ def validate_acceleration(
     if launcher == "auto" and scheduler != "slurm":
         errors.append("launcher=auto is currently supported only for Slurm")
     if scheduler != "slurm" and gpu_bind != "none":
-        warnings.append("GPU binding is site-specific outside Slurm and must be verified in the explicit launcher")
+        warnings.append(
+            "GPU binding is site-specific outside Slurm and must be verified in the explicit launcher"
+        )
     if precision != "fp64":
         warnings.append("mixed precision requires property-specific comparison with an FP64 reference")
 
@@ -199,7 +214,7 @@ def validate(d: dict[str, Any]) -> tuple[list[str], list[str]]:
             errors.append("tasks_per_node * cpus_per_task exceeds cpus_per_node")
 
     environment = d.get("environment") or {}
-    variables = environment.get("variables") or {} if isinstance(environment, dict) else {}
+    variables = (environment.get("variables") or {}) if isinstance(environment, dict) else {}
     for name in sorted(THREAD_VARIABLES & set(variables)):
         threads = integer(variables[name], name, errors, 1)
         if cpus_per_task and threads > cpus_per_task:

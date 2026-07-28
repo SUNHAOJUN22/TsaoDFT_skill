@@ -1,0 +1,33 @@
+schema_version: "1.0"
+engine: vasp
+stage: engine
+workload:
+  model: periodic-plane-wave
+  atoms: 256
+hardware:
+  target: hpc
+  cpu_arch: x86_64
+  nodes: 1
+  tasks_per_node: 4
+  cpus_per_task: 8
+  gpu_vendor: nvidia
+  gpu_model: H100
+  gpus_per_node: 4
+  gpu_memory_gb: 80
+  cpus_per_gpu: 8
+  interconnect: nvlink
+software:
+  engine_gpu_build: true
+  custom_engine_integration: false
+  model_family: none
+  libraries:
+    - cuBLAS
+    - cuSOLVER
+    - cuFFT
+    - NCCL
+    - cuTENSOR
+    - cuEquivariance
+policy:
+  precision: fp64
+  require_cpu_fallback: true
+  require_real_benchmark: true

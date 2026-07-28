@@ -1,1 +1,1 @@
-Commit the exact Bandit closure; permanent CI will perform the independent final validation.
+Publish only the formal Bandit source and allowlist fixes; cleanup follows through the GitHub contents API.

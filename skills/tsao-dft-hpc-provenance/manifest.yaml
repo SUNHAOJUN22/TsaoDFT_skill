@@ -14,6 +14,25 @@ routes:
     - software version
     load:
     - references/environment.md
+  acceleration:
+    triggers:
+    - GPU acceleration
+    - CUDA-X
+    - cuTENSOR
+    - cuEquivariance
+    - cuSOLVERMp
+    - cuFFTMp
+    - NCCL
+    - NVSHMEM
+    - OpenACC
+    - edge computing
+    - C++
+    - native extension
+    - parallel performance
+    load:
+    - references/gpu-acceleration.md
+    - references/environment.md
+    - references/site-profiles-and-lineage.md
   job_script:
     triggers:
     - Slurm

@@ -68,9 +68,7 @@ def validate(root: Path = ROOT) -> list[str]:
             failures.append(f"workflow root must be a mapping: {path.name}")
             continue
         triggers = data.get("on", {})
-        if isinstance(triggers, dict):
-            trigger_names = set(triggers)
-        elif isinstance(triggers, list):
+        if isinstance(triggers, (dict, list)):
             trigger_names = set(triggers)
         else:
             trigger_names = {triggers}

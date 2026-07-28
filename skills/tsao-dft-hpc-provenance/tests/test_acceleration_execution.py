@@ -27,12 +27,8 @@ class AccelerationExecutionTests(unittest.TestCase):
         cls.validator = load_script("validate_hpc_manifest.py")
         cls.generator = load_script("generate_job_script.py")
         cls.materializer = load_script("materialize_acceleration_campaign.py")
-        cls.base = yaml.safe_load(
-            (ROOT / "templates/vasp-gpu-hpc-manifest.yaml").read_text(encoding="utf-8")
-        )
-        cls.profile = yaml.safe_load(
-            (ROOT / "templates/acceleration-profile.yaml").read_text(encoding="utf-8")
-        )
+        cls.base = yaml.safe_load((ROOT / "templates/vasp-gpu-hpc-manifest.yaml").read_text(encoding="utf-8"))
+        cls.profile = yaml.safe_load((ROOT / "templates/acceleration-profile.yaml").read_text(encoding="utf-8"))
 
     def materialized(self):
         return self.materializer.materialize_manifest(
@@ -41,9 +37,7 @@ class AccelerationExecutionTests(unittest.TestCase):
         )[0]
 
     def test_cpu_template_remains_backward_compatible(self):
-        manifest = yaml.safe_load(
-            (ROOT / "templates/hpc-manifest.yaml").read_text(encoding="utf-8")
-        )
+        manifest = yaml.safe_load((ROOT / "templates/hpc-manifest.yaml").read_text(encoding="utf-8"))
         errors, warnings = self.validator.validate(manifest)
         self.assertEqual(errors, [])
         self.assertEqual(warnings, [])
@@ -91,9 +85,7 @@ class AccelerationExecutionTests(unittest.TestCase):
         manifest["environment"]["variables"]["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
         errors, warnings = self.validator.validate(manifest)
         self.assertEqual(errors, [])
-        self.assertTrue(
-            any("hard-coded CUDA_VISIBLE_DEVICES" in warning for warning in warnings)
-        )
+        self.assertTrue(any("hard-coded CUDA_VISIBLE_DEVICES" in warning for warning in warnings))
 
     def test_generator_emits_slurm_cpu_and_gpu_binding(self):
         script = self.generator.build(self.materialized())

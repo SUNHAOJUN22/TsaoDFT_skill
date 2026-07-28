@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import shutil
 import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-BEGIN_MARKER = "  # BEGIN ONE-TIME BANDIT CLOSURE"
-END_MARKER = "  # END ONE-TIME BANDIT CLOSURE"
 
 
 def replace_once(relative: str, old: str, new: str) -> None:
@@ -68,31 +65,27 @@ for marker in (
         raise RuntimeError(f"Bandit allowance already present: {marker}")
 allowlist.write_text(text + entries, encoding="utf-8")
 
-ci_path = ROOT / ".github" / "workflows" / "ci.yml"
-ci_text = ci_path.read_text(encoding="utf-8")
-if ci_text.count(BEGIN_MARKER) != 1 or ci_text.count(END_MARKER) != 1:
-    raise RuntimeError("one-time Bandit closure markers are missing or duplicated")
-start = ci_text.index(BEGIN_MARKER)
-end = ci_text.index(END_MARKER, start) + len(END_MARKER)
-restored = ci_text[:start].rstrip() + "\n" + ci_text[end:].lstrip("\n")
-ci_path.write_text(restored, encoding="utf-8")
-
-legacy_workflow = ROOT / ".github" / "workflows" / "bandit-fix.yml"
-if legacy_workflow.exists():
-    legacy_workflow.unlink()
-shutil.rmtree(ROOT / "_bandit_fix")
-
 subprocess.run(["git", "config", "user.name", "github-actions[bot]"], cwd=ROOT, check=True)
 subprocess.run(
     ["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"],
     cwd=ROOT,
     check=True,
 )
-subprocess.run(["git", "add", "-A"], cwd=ROOT, check=True)
+subprocess.run(
+    [
+        "git",
+        "add",
+        "scripts/install.py",
+        "scripts/validate_governance.py",
+        "config/bandit_allowlist.yaml",
+    ],
+    cwd=ROOT,
+    check=True,
+)
 subprocess.run(
     ["git", "commit", "-m", "fix: close Bandit and governance findings [skip ci]"],
     cwd=ROOT,
     check=True,
 )
 subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, check=True)
-print("Applied and published the cleaned Bandit closure on main.")
+print("Applied and published the formal Bandit closure on main.")

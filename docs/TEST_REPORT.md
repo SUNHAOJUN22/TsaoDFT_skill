@@ -2,12 +2,12 @@
 
 Date: 2026-07-28  
 Version: `0.4.0-alpha.1`  
-Validated source commit before documentation sync: `bcdfca6e81ae977287702fd6f4aba9f8cfa93e46`  
-GitHub Actions run: `30344814556`
+Validated source commit before documentation sync: `22b0ffbf8ad29966f9f1419b64bc1c7cd776f0bd`  
+GitHub Actions run: `30371686253`
 
 ## Result
 
-**PASS — 137 unit tests across 9 isolated suites, 0 failed suites.**
+**PASS — 148 unit tests across 9 isolated suites, 0 failed suites.**
 
 | Suite | Tests | Result |
 |---|---:|---|
@@ -17,7 +17,7 @@ GitHub Actions run: `30344814556`
 | `tsao-structure-prep` | 5 | PASS |
 | `tsao-periodic-dft-materials` | 11 | PASS |
 | `tsao-dft-ml-active-learning` | 16 | PASS |
-| `tsao-dft-hpc-provenance` | 23 | PASS |
+| `tsao-dft-hpc-provenance` | 34 | PASS |
 | `tsao-dft-kinetics-multiscale` | 5 | PASS |
 | `tsao-dft-catalysis-profile` | 5 | PASS |
 
@@ -51,11 +51,16 @@ Each stage has an explicit timeout. JSON mode captures child output and remains 
 
 ## Hosted CI evidence
 
-Run `30344814556` completed successfully with:
+Run `30371686253` completed successfully with:
 
 - locked Python 3.10 quality gate: PASS;
 - locked Python 3.12 quality gate: PASS;
 - locked Python 3.13 quality gate: PASS;
+- Ruff lint and formatter: PASS;
+- isolated mypy checks across 18 targets: PASS;
+- Bandit production audit: PASS;
+- strict repository audit: PASS;
+- all 148 tests across nine suites: PASS;
 - CodeQL Python `security-extended`: PASS;
 - runtime dependency-range `pip-audit`: PASS;
 - development dependency-range `pip-audit`: PASS;
@@ -63,7 +68,7 @@ Run `30344814556` completed successfully with:
 - locked CycloneDX JSON SBOM generation and upload: PASS;
 - no failure-log artifact, because every blocking gate passed.
 
-The GitHub Actions workflow is the only permanent workflow, runs weekly as well as on `main`, PR and manual triggers, and pins every reusable Action to a full commit SHA. The one-shot formatter workflow used during remediation was deleted after its exact output was committed.
+The GitHub Actions workflow is the only permanent workflow, runs weekly as well as on `main`, PR and manual triggers, and pins every reusable Action to a full commit SHA. Temporary formatter-export workflow content was removed and the permanent workflow was restored byte-for-byte before final acceptance.
 
 ## Security and Agent coverage
 
@@ -101,11 +106,11 @@ The root suite includes deterministic checks for:
 
 ## Scientific and performance coverage
 
-The 137 tests cover DFT-first routing, method fingerprints, cross-Skill handoffs, Gaussian preflight and synthetic parsing, minimum/TS/IRC acceptance, Multiwfn recipes, uncertainty budgets, structure mapping, VASP/QE/CP2K adapters, convergence and compatibility gates, provenance-safe DFT datasets, leakage controls, adaptive ridge solvers, HPC scripts and arrays, restart lineage, thermodynamic closure, uncertainty propagation, Cantera-oriented handoff, catalyst scope, figure manifests and deterministic scientific demonstrations.
+The 148 tests cover DFT-first routing, method fingerprints, cross-Skill handoffs, Gaussian preflight and synthetic parsing, minimum/TS/IRC acceptance, Multiwfn recipes, uncertainty budgets, structure mapping, VASP/QE/CP2K adapters, convergence and compatibility gates, provenance-safe DFT datasets, leakage controls, adaptive ridge solvers, HPC scripts and arrays, restart lineage, thermodynamic closure, uncertainty propagation, Cantera-oriented handoff, catalyst scope, figure manifests and deterministic scientific demonstrations.
 
-The ten new acceleration tests cover:
+The acceleration planner tests cover:
 
-- engine-native VASP GPU planning with the OpenACC, one-rank-per-GPU, `NCORE=1`, `KPAR` and NCCL starting points;
+- engine-native VASP GPU planning with OpenACC, one-rank-per-GPU, `NCORE=1`, `KPAR` and NCCL starting points;
 - Quantum ESPRESSO pools, task groups, diagonalization and empirical decomposition;
 - CP2K CUDA, DBCSR/GRID/DBM/PW and ELPA planning;
 - cuEquivariance only for equivariant atomistic ML;
@@ -114,6 +119,20 @@ The ten new acceleration tests cover:
 - CPU fallback and CUDA-X non-applicability;
 - rejection of a GPU engine build without a GPU;
 - deterministic repeatability.
+
+The eleven bound-execution tests additionally cover:
+
+- backward compatibility of the CPU-only Manifest;
+- materialization of a valid VASP GPU Manifest;
+- base/profile engine identity enforcement;
+- rank-per-GPU and tasks-per-node consistency;
+- explicit approval for GPU oversubscription;
+- warnings for hard-coded scheduler GPU ordinals;
+- Slurm `srun` CPU/GPU binding and one-GPU-per-task generation;
+- runtime GPU UUID, PCI bus, driver and scheduler-rank provenance;
+- FP64 CPU reference plus 1/2/4-GPU scaling candidates;
+- forced `approval: pending` for every candidate;
+- deterministic file generation with no submission.
 
 Performance regression coverage also protects memory-mapped periodic parsers, streaming SHA-256, bounded canonical dataset hashing, primal/dual ridge equivalence and Slurm-array compaction.
 
@@ -125,30 +144,20 @@ python -m pip check
 python scripts/quality_gate.py
 ```
 
-Focused diagnostics:
+Focused acceleration workflow:
 
 ```bash
-python scripts/generate_readme_demos.py
-python scripts/validate_dependencies.py
-python scripts/validate_constraints.py
-python scripts/validate_packaging_model.py
-python scripts/validate_catalog.py
-python scripts/validate_agent_evals.py
-python scripts/validate_governance.py
-python scripts/validate_capability_claims.py
-python scripts/validate_secrets.py
-python scripts/validate_ignore_markers.py
-python scripts/validate_ai_assets.py
-python scripts/validate_readme_visuals.py --strict
-python scripts/validate_readme_links.py
-python -m ruff check .
-python -m ruff format --check .
-python scripts/run_type_checks.py
-python scripts/run_bandit.py
-python scripts/validate_repo.py --strict
-python scripts/run_all_tests.py
 python skills/tsao-dft-hpc-provenance/scripts/plan_acceleration.py \
-  skills/tsao-dft-hpc-provenance/templates/acceleration-profile.yaml
+  skills/tsao-dft-hpc-provenance/templates/acceleration-profile.yaml \
+  --out acceleration-plan.json
+
+python skills/tsao-dft-hpc-provenance/scripts/materialize_acceleration_campaign.py \
+  skills/tsao-dft-hpc-provenance/templates/vasp-gpu-hpc-manifest.yaml \
+  skills/tsao-dft-hpc-provenance/templates/acceleration-profile.yaml \
+  --manifest-out build/vasp-h100.yaml \
+  --matrix-out build/benchmark-matrix.csv \
+  --candidate-dir build/candidates \
+  --plan-out build/acceleration-plan.json
 ```
 
 ## Important non-claims

@@ -1,36 +1,188 @@
-name: TsaoDFT one-shot real-evidence documentation sync
+name: TsaoDFT quality and security gates
 
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * 1"
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: tsao-dft-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  docs:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 8
+  quality-gate:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      statuses: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: "3.10"
+            constraint: constraints/py310.txt
+          - python-version: "3.12"
+            constraint: constraints/py312.txt
+          - python-version: "3.13"
+            constraint: constraints/py313.txt
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONHASHSEED: "0"
+
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
       - name: Setup Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
-          python-version: "3.12"
-      - name: Apply asserted documentation patch
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+            ${{ matrix.constraint }}
+
+      - name: Install and verify locked dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -c "${{ matrix.constraint }}" -r requirements-dev.txt
+          python -m pip check
+
+      - name: Capture complete quality gate
+        id: gate
+        shell: bash
+        run: |
+          set +e
+          python scripts/quality_gate.py 2>&1 | tee quality-gate.log
+          code=${PIPESTATUS[0]}
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload failure log
+        if: always() && steps.gate.outputs.exit_code != '0'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: quality-gate-python-${{ matrix.python-version }}
+          path: quality-gate.log
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish best-effort compatibility summary
+        if: always() && github.event_name != 'pull_request'
+        continue-on-error: true
         env:
-          PATCH_GZ_B64: "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"
+          GH_TOKEN: ${{ github.token }}
+          GATE_EXIT_CODE: ${{ steps.gate.outputs.exit_code }}
+          PYTHON_VERSION: ${{ matrix.python-version }}
+        shell: bash
         run: |
-          printf '%s' "$PATCH_GZ_B64" | base64 -d | gzip -d > /tmp/sync_real_evidence_docs.py
-          python /tmp/sync_real_evidence_docs.py
-      - name: Commit documentation only
+          state=failure
+          description='TsaoDFT quality gate failed'
+          if [ "$GATE_EXIT_CODE" = '0' ]; then
+            state=success
+            description='TsaoDFT quality gate passed'
+          fi
+          for attempt in 1 2 3; do
+            if gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
+              -f state="$state" \
+              -f context="tsao-dft/python-$PYTHON_VERSION" \
+              -f description="$description" \
+              -f target_url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"; then
+              exit 0
+            fi
+            sleep $((attempt * 2))
+          done
+          exit 1
+
+      - name: Fail job when quality gate fails
+        if: always() && steps.gate.outputs.exit_code != '0'
+        run: exit 1
+
+  supply-chain:
+    name: Dependency audit and SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+            constraints/py312.txt
+
+      - name: Install audited locked dependency set
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            README.md README_EN.md CHANGELOG.md \
-            docs/PERFORMANCE_GUIDE.md docs/ENGINE_SUPPORT_MATRIX.md \
-            docs/TEST_REPORT.md docs/CODE_QUALITY_AUDIT.md docs/REPOSITORY_FULL_AUDIT.md
-          git commit -m "docs: publish real benchmark evidence qualification"
-          git push origin HEAD:main
+          python -m pip install --upgrade pip
+          python -m pip install -c constraints/py312.txt -r requirements-dev.txt
+          python -m pip check
+
+      - name: Audit runtime dependency range
+        run: python -m pip_audit -r requirements.txt --format json --output pip-audit-runtime.json
+
+      - name: Audit development dependency range
+        run: python -m pip_audit -r requirements-dev.txt --format json --output pip-audit-development.json
+
+      - name: Audit exact locked environment
+        run: python -m pip_audit --no-deps -r constraints/py312.txt --format json --output pip-audit-locked.json
+
+      - name: Generate locked CycloneDX SBOM
+        run: python -m pip_audit --no-deps -r constraints/py312.txt --format cyclonedx-json --output sbom.cdx.json
+
+      - name: Upload supply-chain evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: supply-chain-${{ github.sha }}
+          path: |
+            pip-audit-runtime.json
+            pip-audit-development.json
+            pip-audit-locked.json
+            sbom.cdx.json
+          if-no-files-found: error
+          retention-days: 30
+
+  codeql:
+    name: CodeQL Python analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@7211b7c8077ea37d8641b6271f6a365a22a5fbfa # v4.36.0
+        with:
+          languages: python
+          queries: security-extended
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@7211b7c8077ea37d8641b6271f6a365a22a5fbfa # v4.36.0
+        with:
+          category: "/language:python"

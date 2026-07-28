@@ -5,7 +5,7 @@
 - Added an offline dependency contract across `requirements.txt`, `requirements-dev.txt`, `pyproject.toml`, `VERSION`, the Python floor and the Ruff target.
 - Hardened `quality_gate.py` with per-stage timeouts, deterministic timeout records and machine-clean JSON output.
 - Added eight regression tests for dependency drift and quality-gate semantics, expanding the baseline from 92 to 100 tests across nine suites.
-- Simplified CI to native GitHub Actions checks, added `pip check`, and removed the custom commit-status API call that could fail independently of code quality.
+- Kept native GitHub Actions matrix jobs as the only blocking CI authority, added `pip check`, and changed compatibility status summaries to retried best-effort observability that cannot fail a passing job.
 - Added `docs/CODE_QUALITY_AUDIT.md` with the repository-wide analysis, findings, remediation and acceptance criteria.
 - Rebuilt the governed cover as `uiux_pro_v8_hero_evidence_bento`, using fresh AI-generated visual direction beneath deterministic vector typography, capability cards, workflow gates and evidence bento.
 - Rewrote both README files from first principles around a Hero-Centric + Trust & Authority structure: 30-second positioning, evidence workflow, eight-Skill map, curated deterministic figures, support levels, quick start, quality gate and scientific boundaries.

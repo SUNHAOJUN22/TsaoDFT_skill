@@ -38,7 +38,7 @@ Use a versioned GPU-enabled build and its upstream test suite. Benchmark pools, 
 
 ### CP2K
 
-Use a target-specific CUDA build and benchmark the enabled DBCSR, GRID, DBM and PW paths together with ELPA, SPLA and COSMA choices. Measure host/device memory, MPI/OpenMP balance, communication, I/O and restart compatibility.
+Use a target-specific CUDA or HIP build and benchmark the enabled DBCSR, GRID, DBM and PW paths together with ELPA, SPLA and COSMA choices. Measure host/device memory, MPI/OpenMP balance, communication, I/O and restart compatibility.
 
 ### Gaussian and other licensed binaries
 
@@ -57,16 +57,38 @@ Move only measured kernels to compiled code:
 
 - C++/Fortran for CPU-native kernels and established engine integrations;
 - CUDA or OpenACC for NVIDIA targets;
+- HIP for supported AMD or cross-vendor builds;
 - OpenMP target offload, Kokkos or SYCL when portability is a primary requirement;
 - pybind11/nanobind, a narrow C ABI, or a versioned file/JSON subprocess contract at the Python boundary.
 
 Every native path must have deterministic error propagation, an explicit architecture/build fingerprint, tests, and a CPU reference or fallback. Do not wrap an MPI/OpenMP/BLAS/GPU engine in a blind Python process pool.
 
-## Edge-computing route
+## Scheduler binding contract
 
-Production DFT normally remains on a workstation, cluster or cloud/HPC target. Edge devices should preferentially perform structure validation, feature generation, provenance capture, queue control, visualization or validated surrogate inference. Route uncertain or out-of-domain candidates back to the accepted DFT execution path.
+A GPU allocation count is incomplete without the rank and binding contract. An enabled acceleration Manifest records:
 
-## Planner
+- backend and GPU vendor;
+- `ranks_per_gpu` and explicit oversubscription approval;
+- CPU binding (`cores`, `threads` or `none`);
+- GPU binding (`closest`, `map:<IDs>` or `none`);
+- precision policy;
+- acceleration profile, build fingerprint and benchmark-plan IDs;
+- whether runtime hardware identity must be captured.
+
+For Slurm, `launcher: auto` generates an `srun` step with total ranks, ranks per node, CPUs per task, bad-exit propagation and the declared CPU/GPU binding. One rank per GPU also requests one GPU per task. The script does not export a fixed `CUDA_VISIBLE_DEVICES`; the scheduler owns visibility and binding.
+
+When NVIDIA acceleration is enabled, the generated script can record:
+
+- scheduler job, node and local-rank identifiers;
+- the scheduler-provided visible-device map;
+- GPU name, UUID, PCI bus ID, driver version and memory through `nvidia-smi`;
+- profile, build-fingerprint, benchmark-plan, backend and precision identifiers.
+
+These records contain execution metadata, not credentials, and remain subordinate to site policy.
+
+## Benchmark materialization
+
+First create the compatibility plan:
 
 ```bash
 python skills/tsao-dft-hpc-provenance/scripts/plan_acceleration.py \
@@ -74,4 +96,33 @@ python skills/tsao-dft-hpc-provenance/scripts/plan_acceleration.py \
   --out acceleration-plan.json
 ```
 
-The generated report is planning evidence only. Promote a scoped performance claim to L3 only after immutable real-engine measurements record time to solution, numerical agreement, utilization, peak host/device memory, I/O, scaling and the complete environment fingerprint.
+Then combine an engine-compatible base Manifest with the acceleration profile:
+
+```bash
+python skills/tsao-dft-hpc-provenance/scripts/materialize_acceleration_campaign.py \
+  skills/tsao-dft-hpc-provenance/templates/vasp-gpu-hpc-manifest.yaml \
+  skills/tsao-dft-hpc-provenance/templates/acceleration-profile.yaml \
+  --manifest-out build/vasp-h100.yaml \
+  --matrix-out build/benchmark-matrix.csv \
+  --candidate-dir build/candidates \
+  --plan-out build/acceleration-plan.json
+```
+
+The materializer:
+
+1. rejects a base Manifest for a different engine;
+2. transfers node, GPU, rank and CPU layout into a validated acceleration contract;
+3. creates a mandatory FP64 CPU scientific reference;
+4. creates the declared GPU scaling candidates;
+5. resets every candidate to `approval: pending`;
+6. writes only files and never submits a job.
+
+The default VASP profile creates CPU, 1-GPU, 2-GPU and 4-GPU candidates. The scientific input, method fingerprint and convergence thresholds must remain identical across the matrix.
+
+## Edge-computing route
+
+Production DFT normally remains on a workstation, cluster or cloud/HPC target. Edge devices should preferentially perform structure validation, feature generation, provenance capture, queue control, visualization or validated surrogate inference. Route uncertain or out-of-domain candidates back to the accepted DFT execution path.
+
+## Evidence boundary
+
+The generated reports, Manifests and benchmark matrix are planning evidence only. Promote a scoped performance claim to L3 only after immutable real-engine measurements record time to solution, numerical agreement, utilization, peak host/device memory, I/O, scaling and the complete environment fingerprint.

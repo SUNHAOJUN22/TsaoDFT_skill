@@ -40,6 +40,7 @@ jobs:
           set +e
           {
             python .github/fix-dynamic-imports-once.py
+            python -m ruff format scripts tests skills
             python -m ruff check .
             python -m ruff format --check .
           } 2>&1 | tee dynamic-import-fix.log
@@ -83,7 +84,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          git commit -m 'style: annotate intentional dynamic imports [skip ci]'
+          git commit -m 'style: annotate intentional dynamic imports and format security gates [skip ci]'
           git push origin HEAD:main
 
       - name: Fail when annotations failed

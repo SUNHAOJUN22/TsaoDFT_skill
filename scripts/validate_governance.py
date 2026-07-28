@@ -21,10 +21,17 @@ REQUIRED = {
     ".github/ISSUE_TEMPLATE/config.yml",
     ".github/ISSUE_TEMPLATE/bug_report.yml",
     ".github/pull_request_template.md",
+    "constraints/py310.txt",
+    "constraints/py312.txt",
+    "constraints/py313.txt",
     "docs/AGENT_SECURITY_MODEL.md",
     "docs/PACKAGING_MODEL.md",
+    "docs/SCIENTIFIC_CLAIM_POLICY.yaml",
     "docs/SUPPLY_CHAIN_POLICY.md",
     "docs/REPOSITORY_FULL_AUDIT.md",
+    "scripts/validate_capability_claims.py",
+    "scripts/validate_constraints.py",
+    "scripts/validate_secrets.py",
 }
 FORBIDDEN_TEMPORARY = {
     ".github/full-audit-once.sh",
@@ -32,6 +39,8 @@ FORBIDDEN_TEMPORARY = {
     ".github/apply-security-remediation-once.py",
 }
 SENSITIVE_TRIGGERS = {"pull_request_target", "workflow_run", "issues", "issue_comment"}
+REQUIRED_TRIGGERS = {"push", "pull_request", "workflow_dispatch", "schedule"}
+REQUIRED_JOBS = {"quality-gate", "supply-chain", "codeql"}
 
 
 def walk(value: Any):
@@ -59,8 +68,9 @@ def validate(root: Path = ROOT) -> list[str]:
     if [path.name for path in workflow_paths] != ["ci.yml"]:
         failures.append(f"expected only .github/workflows/ci.yml, found {[path.name for path in workflow_paths]}")
     for path in workflow_paths:
+        workflow_text = path.read_text(encoding="utf-8")
         try:
-            data = yaml.safe_load(path.read_text(encoding="utf-8"))
+            data = yaml.safe_load(workflow_text)
         except Exception as exc:
             failures.append(f"workflow parse failed {path.name}: {exc}")
             continue
@@ -71,6 +81,18 @@ def validate(root: Path = ROOT) -> list[str]:
         trigger_names = set(triggers) if isinstance(triggers, (dict, list)) else {triggers}
         for trigger in sorted(SENSITIVE_TRIGGERS & trigger_names):
             failures.append(f"sensitive write-capable trigger is forbidden: {trigger}")
+        missing_triggers = REQUIRED_TRIGGERS - trigger_names
+        if missing_triggers:
+            failures.append(f"permanent CI missing required triggers: {sorted(missing_triggers)}")
+        if isinstance(triggers, dict):
+            schedule = triggers.get("schedule")
+            if not isinstance(schedule, list) or not any(isinstance(item, dict) and item.get("cron") for item in schedule):
+                failures.append("permanent CI schedule must contain a cron expression")
+        jobs = data.get("jobs")
+        job_names = set(jobs) if isinstance(jobs, dict) else set()
+        missing_jobs = REQUIRED_JOBS - job_names
+        if missing_jobs:
+            failures.append(f"permanent CI missing required jobs: {sorted(missing_jobs)}")
         for key, value in walk(data):
             if key != "uses" or not isinstance(value, str):
                 continue
@@ -80,8 +102,16 @@ def validate(root: Path = ROOT) -> list[str]:
             action, ref = value.rsplit("@", 1)
             if len(ref) != 40 or any(character not in "0123456789abcdef" for character in ref.lower()):
                 failures.append(f"action is not pinned to a full commit SHA: {action}@{ref}")
-        if "contents: write" in path.read_text(encoding="utf-8"):
+        if "contents: write" in workflow_text:
             failures.append("permanent CI must not grant contents: write")
+        for token in (
+            "constraints/py310.txt",
+            "constraints/py312.txt",
+            "constraints/py313.txt",
+            "pip_audit --no-deps -r constraints/py312.txt",
+        ):
+            if token not in workflow_text:
+                failures.append(f"permanent CI missing locked supply-chain token: {token}")
 
     dependabot_path = root / ".github" / "dependabot.yml"
     if dependabot_path.is_file():

@@ -2,12 +2,12 @@
 
 Date: 2026-07-28  
 Branch: `main`  
-Final validated source commit before documentation sync: `360046f4edc680dd4f50421ad9dd4c7576eaa763`  
-Final validation run: `30338083011`
+Final validated source commit before documentation sync: `bcdfca6e81ae977287702fd6f4aba9f8cfa93e46`  
+Final validation run: `30344814556`
 
 ## Audit rule
 
-A passing command is not treated as scientific correctness, real-engine execution evidence or proof that every GitHub account setting is enabled. Capabilities that could not be inspected through the available GitHub App remain `NOT VERIFIED` rather than inferred.
+A passing command is not treated as scientific correctness, real-engine execution evidence, measured acceleration or proof that every GitHub account setting is enabled. Capabilities that could not be inspected through the available GitHub App remain `NOT VERIFIED` rather than inferred.
 
 No branch or pull request was created. The user-mandated `main`-only policy was preserved throughout the remediation.
 
@@ -18,7 +18,7 @@ The final hosted run passed:
 - locked Python 3.10 quality and security gate;
 - locked Python 3.12 quality and security gate;
 - locked Python 3.13 quality and security gate;
-- 127 unit tests across nine non-empty suites;
+- 137 unit tests across nine non-empty suites;
 - Ruff lint and formatting;
 - isolated mypy checks across 18 targets;
 - Bandit production audit with exact reviewed allowances;
@@ -31,7 +31,9 @@ No failure artifact was generated for the final run because all blocking gates p
 
 ## Repository inventory and architecture
 
-The repository is intentionally a **repository-style Agent Skill collection**, not a wheel-ready Python library. It contains eight independently installable Skills, shared root tooling, deterministic tests, scientific demo assets, governance files, three Python-version constraint snapshots and one permanent GitHub Actions workflow.
+The repository is intentionally a **repository-style Agent Skill collection**, not a wheel-ready Python library or an electronic-structure solver. It contains eight independently installable Skills, shared root tooling, deterministic tests, scientific demo assets, governance files, three Python-version constraint snapshots and one permanent GitHub Actions workflow.
+
+Python owns the control plane: manifests, validation, provenance, scheduling, parsing and experiment control. Gaussian, VASP, Quantum ESPRESSO and CP2K remain external compiled engines. The acceleration planner may recommend engine-native GPU builds or measured native extensions, but it does not replace, patch or redistribute those engines.
 
 The duplicated `audit_skill.py` and `utils.py` files under different Skills are recorded maintenance debt, not accidental cache files: each installed Skill must remain self-contained. Consolidation may only occur through a packaging model that preserves independent installation.
 
@@ -80,7 +82,7 @@ Added and validated:
 
 ### High — dependency reproducibility and security evidence
 
-The library-facing dependency declarations keep compatible version ranges, while CI now consumes exact reviewed snapshots for Python 3.10, 3.12 and 3.13. Every constraint file:
+The library-facing dependency declarations keep compatible version ranges, while CI consumes exact reviewed snapshots for Python 3.10, 3.12 and 3.13. Every constraint file:
 
 - uses exact `name==version` pins;
 - records the CPython version and source GitHub Actions run;
@@ -91,7 +93,7 @@ Hosted CI installs against the matching constraint, runs `pip check`, audits run
 
 ### Medium — scientific and capability claim escalation
 
-A machine-readable claim policy now defines the exact L0–L3 levels, forbidden public claim phrases and immutable L3 evidence fields. `scripts/validate_capability_claims.py` cross-checks:
+A machine-readable claim policy defines the exact L0–L3 levels, forbidden public claim phrases and immutable L3 evidence fields. `scripts/validate_capability_claims.py` cross-checks:
 
 - every capability ID, Skill and implementation script;
 - the declared support level;
@@ -99,7 +101,23 @@ A machine-readable claim policy now defines the exact L0–L3 levels, forbidden 
 - required engine, version, site, run ID and artifact SHA-256 for L3;
 - public README and Skill wording against forbidden unsupported claims.
 
-Parser tests, scheduler completion and synthetic fixtures cannot promote a capability to `L3_EXECUTION_TESTED`.
+Parser tests, scheduler completion, GPU allocation, synthetic fixtures and generated acceleration plans cannot promote a capability to `L3_EXECUTION_TESTED`.
+
+### Medium — acceleration planning and Python/native boundary
+
+**Original gap:** the HPC Skill could request GPUs but did not express GPU topology, CUDA-X applicability, engine-build ownership, Python/native boundaries, edge routing or a benchmark evidence contract.
+
+**Remediation:**
+
+- added `plan_acceleration.py` and a versioned acceleration profile;
+- added deterministic VASP, Quantum ESPRESSO, CP2K, Gaussian, generic-native, atomistic-ML and edge routes;
+- classified cuBLAS, cuSOLVER, cuSOLVERMp, cuFFT, cuFFTMp, cuSPARSE, NCCL, NVSHMEM, cuTENSOR, cuEquivariance and CUTLASS by workload and integration boundary;
+- rejected the false assumption that a library name can be injected into an arbitrary engine binary;
+- kept Python on the control plane and moved only profiled numerical hotspots toward C++/Fortran/CUDA/OpenACC or portability backends;
+- required CPU fallback, build fingerprints, FP64 or validated mixed precision and immutable real-engine benchmark evidence;
+- added ten deterministic tests covering engine routes, edge routing, equivariant ML, invalid GPU builds, non-applicability and repeatability.
+
+The planner is an `L2_VALIDATED_ADAPTER`. Its output is planning evidence, not a speedup measurement.
 
 ### Medium — deterministic secret detection
 
@@ -162,7 +180,7 @@ Each stage has a deterministic timeout. Test discovery must report at least one 
 
 `.github/workflows/ci.yml` is the only permanent workflow. It runs on `main` pushes, pull requests, manual dispatch and a weekly schedule. The blocking authority is the native GitHub Actions job result. Compatibility status publication is best-effort and cannot turn passing code into a false failure.
 
-The permanent workflow does not use `pull_request_target`, `workflow_run`, issue-triggered writes, `contents: write` or unpinned third-party Actions.
+The one-shot Ruff formatter used during remediation was deleted after committing the exact formatter output. The permanent workflow does not use `pull_request_target`, `workflow_run`, issue-triggered writes, `contents: write` or unpinned third-party Actions.
 
 ## Final test distribution
 
@@ -174,10 +192,10 @@ The permanent workflow does not use `pull_request_target`, `workflow_run`, issue
 | `tsao-structure-prep` | 5 |
 | `tsao-periodic-dft-materials` | 11 |
 | `tsao-dft-ml-active-learning` | 16 |
-| `tsao-dft-hpc-provenance` | 13 |
+| `tsao-dft-hpc-provenance` | 23 |
 | `tsao-dft-kinetics-multiscale` | 5 |
 | `tsao-dft-catalysis-profile` | 5 |
-| **Total** | **127** |
+| **Total** | **137** |
 
 ## GitHub settings not verified
 
@@ -194,14 +212,14 @@ These settings remain **NOT VERIFIED**. The repository files and hosted workflow
 
 ## Scientific non-claims
 
-The audit validates repository engineering and deterministic adapters. It does not establish real licensed execution of Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD, Slurm/PBS, DeepChem/GNN or Cantera. Selected capabilities remain `L2_VALIDATED_ADAPTER` until immutable engine/version/site evidence supports a scoped `L3_EXECUTION_TESTED` claim.
+The audit validates repository engineering and deterministic adapters. It does not establish real licensed execution or measured GPU acceleration of Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD, Slurm/PBS, DeepChem/GNN or Cantera. Selected capabilities remain `L2_VALIDATED_ADAPTER` until immutable engine/version/site/build/hardware evidence supports a scoped `L3_EXECUTION_TESTED` claim.
 
 ## Residual risks and future work
 
 - Main-only direct writes reduce review separation; this is a deliberate user governance exception.
-- Real-engine and real-HPC regressions remain external.
+- Real-engine, real-GPU and real-HPC regressions remain external.
 - Live-model Agent eval execution and cross-model stability remain `NOT_VERIFIED`; current evals are deterministic policy contracts.
 - GitHub account-level branch protection, signed commits, Dependabot alerts, secret scanning, push protection and private reporting remain `NOT VERIFIED`.
 - Self-contained utility duplication requires disciplined synchronized maintenance.
 - External-link availability is not tested by deterministic CI; local links are fully validated offline.
-- Security and dependency data can change after the recorded run and are re-audited weekly and before release.
+- Security, dependencies, drivers, CUDA toolkits and engine builds can change after the recorded run and require repeated site-specific audit before performance claims.

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import os
 import subprocess
 import sys
@@ -7,9 +8,20 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
 
-import quality_gate  # noqa: E402
+
+def load_quality_gate():
+    path = ROOT / "scripts" / "quality_gate.py"
+    spec = importlib.util.spec_from_file_location("tsao_quality_gate", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot import {path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+quality_gate = load_quality_gate()
 
 
 class QualityGateTests(unittest.TestCase):

@@ -34,7 +34,7 @@ Every discovered suite must execute at least one test. A missing, unparseable or
 - strict validation rejects private root bundles, workflow probes, backup/editor files, empty files and large encoded bootstrap payloads;
 - `.github/workflows/ci.yml` is the only permitted workflow file;
 - GitHub Actions dependencies are pinned to immutable Node 24-compatible commit SHAs;
-- native Actions checks replace the former custom commit-status API call, eliminating a non-essential network failure point;
+- native Actions matrix jobs are the blocking authority; retried compatibility status summaries are best-effort and cannot fail a passing job;
 - `pip check` verifies the installed dependency environment before the quality gate starts.
 
 ## Quality-gate robustness

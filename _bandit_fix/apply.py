@@ -5,6 +5,8 @@ import shutil
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+BEGIN_MARKER = "  # BEGIN ONE-TIME BANDIT CLOSURE"
+END_MARKER = "  # END ONE-TIME BANDIT CLOSURE"
 
 
 def replace_once(relative: str, old: str, new: str) -> None:
@@ -65,8 +67,17 @@ for marker in (
         raise RuntimeError(f"Bandit allowance already present: {marker}")
 allowlist.write_text(text + entries, encoding="utf-8")
 
-workflow = ROOT / ".github" / "workflows" / "bandit-fix.yml"
-if workflow.exists():
-    workflow.unlink()
+ci_path = ROOT / ".github" / "workflows" / "ci.yml"
+ci_text = ci_path.read_text(encoding="utf-8")
+if ci_text.count(BEGIN_MARKER) != 1 or ci_text.count(END_MARKER) != 1:
+    raise RuntimeError("one-time Bandit closure markers are missing or duplicated")
+start = ci_text.index(BEGIN_MARKER)
+end = ci_text.index(END_MARKER, start) + len(END_MARKER)
+restored = ci_text[:start].rstrip() + "\n" + ci_text[end:].lstrip("\n")
+ci_path.write_text(restored, encoding="utf-8")
+
+legacy_workflow = ROOT / ".github" / "workflows" / "bandit-fix.yml"
+if legacy_workflow.exists():
+    legacy_workflow.unlink()
 shutil.rmtree(ROOT / "_bandit_fix")
-print("Applied Bandit closure and removed one-time files.")
+print("Applied Bandit closure and restored the permanent repository layout.")

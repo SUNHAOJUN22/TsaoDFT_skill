@@ -2,8 +2,8 @@
 
 Date: 2026-07-28  
 Branch: `main`  
-Validated source commit before documentation sync: `22b0ffbf8ad29966f9f1419b64bc1c7cd776f0bd`  
-GitHub Actions run: `30371686253`
+Validated source commit before documentation sync: `8cfcb7f965d591d9340805977e4fb49703811d96`  
+GitHub Actions run: `30384282686`
 
 ## Evidence rule
 
@@ -72,7 +72,11 @@ The acceleration layer now:
 - keeps Python on the control plane and native code behind tested, narrow interfaces with a CPU fallback;
 - produces deterministic reports and files from the same reviewed inputs.
 
-Twenty-one acceleration-specific tests cover planning and bound execution. The full repository baseline is 148 tests across nine non-empty suites.
+Twenty-one acceleration-planning/bound-execution tests and 29 real-evidence tests cover the full planning-to-qualification chain. The repository baseline is 177 tests across nine non-empty suites.
+
+### Real benchmark evidence and qualification quality
+
+The evidence layer validates multi-format imports, real artifact hashes, run identity, parser acceptance, build/hardware consistency and numerical equivalence before speedup. Formal summaries use robust repeated-run statistics, preserve failures and ignore user-supplied L3 labels. Qualification output is scoped evidence eligibility only; public capability state remains unchanged until separate review and registration.
 
 ## Final quality gate
 
@@ -110,7 +114,7 @@ versioned demo assets
 - CodeQL `security-extended`: PASS;
 - runtime/development/locked `pip-audit`: PASS;
 - locked CycloneDX SBOM: PASS;
-- tests: 148 across nine non-empty suites, zero failed suites;
+- tests: 177 across nine non-empty suites, zero failed suites;
 - one permanent workflow: `.github/workflows/ci.yml`;
 - no branch or pull request created.
 

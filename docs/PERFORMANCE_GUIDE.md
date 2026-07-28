@@ -101,6 +101,14 @@ For Slurm, `launcher: auto` generates a reviewed `srun` step with total ranks, r
 
 When runtime capture is enabled, the generated script records profile/build/benchmark IDs, scheduler job/node/local-rank fields, visible-device variables and NVIDIA GPU name, UUID, PCI bus, driver and memory where `nvidia-smi` is available. These fields are provenance, not a performance result.
 
+## Real benchmark evidence and scoped qualification
+
+The acceleration campaign is only a plan until real outputs are supplied. `validate_benchmark_result.py`, `import_benchmark_evidence.py`, `compare_acceleration_results.py` and `qualify_performance_evidence.py` implement a deterministic evidence pipeline without launching an engine.
+
+The pipeline verifies engine/build/site/hardware identity, input and method hashes, parser acceptance and artifact SHA-256. It requires numerical equivalence before speedup, uses medians across the policy repeat count, retains failed runs and writes a five-file immutable evidence bundle. Optional metric adapters parse supplied scheduler/device/profiler summaries and return `NOT_AVAILABLE` when absent.
+
+Qualification states include `REFERENCE_MISSING`, `INSUFFICIENT_REPEATS`, `PARSER_NOT_ACCEPTED`, `NUMERICAL_MISMATCH`, `ARTIFACT_HASH_MISMATCH`, `PERFORMANCE_NOT_IMPROVED`, `L2_ONLY` and `QUALIFIED_FOR_SCOPED_L3_PERFORMANCE_EVIDENCE`. The final state is eligibility for an explicit scoped review, not automatic public L3 promotion.
+
 ## Reproducible microbenchmark
 
 ```bash

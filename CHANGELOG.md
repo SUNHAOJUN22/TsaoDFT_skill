@@ -2,6 +2,12 @@
 
 ## Unreleased — compute efficiency, README visual, CI and repository hardening
 
+- Added a versioned real-benchmark result Schema, example record and performance-qualification policy covering engine/build/runtime, CPU/GPU identity, scheduler/site, method fingerprints, artifacts, scientific observables and performance metrics.
+- Added deterministic JSON/YAML/JSONL/CSV evidence import, artifact SHA-256 verification, duplicate-run rejection, parser/build/hardware identity checks and optional non-invoking `sacct`, GNU `time -v`, NVIDIA, ROCm, Intel, Nsight and engine-parser adapters.
+- Added numerical-equivalence-first comparison for input, method, model, convergence, energy, forces, stress and declared properties before any effective speedup is calculated.
+- Added median/min/max/quartile/IQR/MAD/outlier statistics, CPU-to-GPU and single-to-multi-GPU speedups, strong-scaling efficiency, GPU-hours, CPU-core-hours, memory, SCF, I/O and optional energy-to-solution summaries.
+- Added immutable benchmark evidence bundles and scoped L3 qualification states while ignoring self-reported support levels and prohibiting automatic public capability promotion.
+- Expanded the deterministic baseline to 177 tests across nine suites; the HPC suite now contains 63 tests, including 29 real-evidence, negative-status, import, metric-adapter and immutable-bundle tests.
 - Added an evidence-bounded DFT acceleration planner for workstation, HPC and edge targets, with deterministic routes for VASP, Quantum ESPRESSO, CP2K, Gaussian, atomistic ML surrogates and custom native kernels.
 - Added explicit applicability decisions for cuBLAS, cuSOLVER, cuSOLVERMp, cuFFT, cuFFTMp, cuSPARSE, NCCL, NVSHMEM, cuTENSOR, cuEquivariance and CUTLASS instead of treating CUDA-X names as universal drop-in acceleration switches.
 - Defined the Python control-plane and C++/Fortran/CUDA/OpenACC native-kernel boundary, CPU fallback, mixed-precision validation, MPI-rank/GPU mapping, edge orchestration and immutable real-engine benchmark requirements.
@@ -9,7 +15,7 @@
 - Added Slurm `srun` generation with explicit CPU/GPU binding, one-GPU-per-task allocation for one-rank-per-GPU layouts, bad-exit propagation and scheduler-owned device visibility.
 - Added runtime acceleration provenance for scheduler rank identity, visible-device mapping, NVIDIA GPU UUID, PCI bus ID, driver version, memory, acceleration profile, build fingerprint and benchmark-plan identity.
 - Added deterministic acceleration campaign materialization that combines a matching engine Manifest and profile into an accelerated Manifest, an FP64 CPU reference, GPU scaling candidates and a CSV matrix; every candidate remains `pending` and no submission is performed.
-- Expanded the deterministic baseline to 148 tests across nine non-empty suites: the original ten planner tests plus eleven execution-chain tests for Manifest validation, rank/GPU consistency, binding, runtime identity, CPU/GPU candidate materialization and deterministic output.
+- Preserved the earlier 148-test acceleration-planning and bound-execution baseline before adding the real-evidence qualification layer.
 - Closed the extended hardening pass with exact Python 3.10/3.12/3.13 constraints, weekly hosted security runs, locked-environment `pip-audit`, locked CycloneDX SBOM, capability-claim enforcement and deterministic secret-pattern checks.
 - Closed the full repository audit with hosted green runs on Python 3.10, 3.12 and 3.13, CodeQL `security-extended`, runtime/development/locked `pip-audit`, CycloneDX SBOM generation, isolated mypy and Bandit.
 - Replaced unsafe workflow YAML loading with `yaml.safe_load` while handling YAML 1.1's Boolean interpretation of `on`, and replaced the production installer assertion with an explicit safety error.

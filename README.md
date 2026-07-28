@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-148%20passing-16A34A" alt="148 tests passing">
+  <img src="https://img.shields.io/badge/tests-177%20passing-16A34A" alt="177 tests passing">
   <img src="https://img.shields.io/badge/support-L0%E2%80%93L3-6D5DFB" alt="Support levels L0 to L3">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
@@ -68,7 +68,7 @@ planned
 | [`tsao-periodic-dft-materials`](skills/tsao-periodic-dft-materials/) | VASP、Quantum ESPRESSO、CP2K，表面/缺陷、能带/DOS、NEB 与收敛 | 不分发 POTCAR、赝势或受限数据库；不混用不兼容能量 |
 | [`tsao-dft-ml-active-learning`](skills/tsao-dft-ml-active-learning/) | DFT 标签审计、数据泄漏防护、适用域、不确定度、主动学习与反向设计 | 高 R²、SHAP 或 acquisition score 不是机理、因果或可合成性证据 |
 | [`tsao-dft-kinetics-multiscale`](skills/tsao-dft-kinetics-multiscale/) | Eyring/TST、反应网络、详细平衡、误差传播、微观动力学与反应器交接 | 只消费标准态、参考态和热化学校验通过的数据 |
-| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | 本地/Slurm/PBS、GPU/CUDA-X/原生代码/边缘加速规划、绑定、基准候选、数组任务、检查点与重启谱系 | GPU 分配、候选生成或调度成功都不等于真实加速和科学验收 |
+| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | 本地/Slurm/PBS、GPU/CUDA-X规划、绑定、候选生成、真实基准导入、数值等价性、证据包与 scoped L3 资格判定 | GPU 分配、最快单次运行、自报 L3 或调度成功都不等于真实加速和科学验收 |
 | [`tsao-dft-catalysis-profile`](skills/tsao-dft-catalysis-profile/) | DCS/MCSOMe/DMOS、Si–O/Si–C、Ti/TEA、Ziegler–Natta 与聚烯烃催化 | 专用 Profile，不自动外推到无关体系 |
 
 ## 科研图件：概念视觉与确定性证据分轨
@@ -153,6 +153,21 @@ python skills/tsao-dft-hpc-provenance/scripts/materialize_acceleration_campaign.
 
 物化器会生成 FP64 CPU 科学参考、1/2/4 GPU 候选、CSV 基准矩阵和逐候选 YAML。每个候选都强制为 `approval: pending`；工具只写文件，不提交作业。Slurm 脚本可生成显式 `srun` CPU/GPU 绑定，记录 rank、可见设备、GPU UUID、PCI 总线、驱动、构建指纹和基准计划标识，但这些记录仍不是实测加速结论。
 
+真实运行完成后，再导入并资格化证据：
+
+```bash
+python skills/tsao-dft-hpc-provenance/scripts/import_benchmark_evidence.py \
+  results/* --artifact-root run-artifacts --out build/evidence.jsonl
+
+python skills/tsao-dft-hpc-provenance/scripts/qualify_performance_evidence.py \
+  build/evidence.jsonl \
+  --policy skills/tsao-dft-hpc-provenance/templates/performance-qualification-policy.yaml \
+  --artifact-root run-artifacts --review approved-review.yaml \
+  --out-dir build/performance-evidence
+```
+
+结果导入支持 JSON、YAML、JSONL 和带点号字段的 CSV；在计算有效加速比之前，必须通过输入哈希、方法指纹、模型、收敛、parser、能量、力、应力和属性容差。正式统计使用至少 3 次成功重复的中位数，并保留失败尝试。`QUALIFIED_FOR_SCOPED_L3_PERFORMANCE_EVIDENCE` 只表示该证据包具备 scoped L3 审查资格，不会自动修改公开能力等级。
+
 核心原则：**Python 保留在清单、验证、调度、溯源和实验控制层；只有经过 profiling 证明的数值热点才迁移到 C++/Fortran/CUDA/OpenACC 或可移植后端。** 边缘设备优先执行结构检查、预处理、队列控制和已验证代理模型推理，生产 DFT 默认回传工作站或 HPC。
 
 ## 工程质量与一键验收
@@ -163,7 +178,7 @@ python -m pip check
 python scripts/quality_gate.py
 ```
 
-当前基线：**148 项单元测试、9 个隔离套件、0 个失败套件**。每个质量阶段都有明确超时，`--json` 输出可直接供机器解析。质量门依次检查：
+当前基线：**177 项单元测试、9 个隔离套件、0 个失败套件**。每个质量阶段都有明确超时，`--json` 输出可直接供机器解析。质量门依次检查：
 
 ```text
 versioned demo assets

@@ -2,12 +2,12 @@
 
 Date: 2026-07-28  
 Version: `0.4.0-alpha.1`  
-Validated source commit before documentation sync: `22b0ffbf8ad29966f9f1419b64bc1c7cd776f0bd`  
-GitHub Actions run: `30371686253`
+Validated source commit before documentation sync: `8cfcb7f965d591d9340805977e4fb49703811d96`  
+GitHub Actions run: `30384282686`
 
 ## Result
 
-**PASS — 148 unit tests across 9 isolated suites, 0 failed suites.**
+**PASS — 177 unit tests across 9 isolated suites, 0 failed suites.**
 
 | Suite | Tests | Result |
 |---|---:|---|
@@ -17,7 +17,7 @@ GitHub Actions run: `30371686253`
 | `tsao-structure-prep` | 5 | PASS |
 | `tsao-periodic-dft-materials` | 11 | PASS |
 | `tsao-dft-ml-active-learning` | 16 | PASS |
-| `tsao-dft-hpc-provenance` | 34 | PASS |
+| `tsao-dft-hpc-provenance` | 63 | PASS |
 | `tsao-dft-kinetics-multiscale` | 5 | PASS |
 | `tsao-dft-catalysis-profile` | 5 | PASS |
 
@@ -51,7 +51,7 @@ Each stage has an explicit timeout. JSON mode captures child output and remains 
 
 ## Hosted CI evidence
 
-Run `30371686253` completed successfully with:
+Run `30384282686` completed successfully with:
 
 - locked Python 3.10 quality gate: PASS;
 - locked Python 3.12 quality gate: PASS;
@@ -60,7 +60,7 @@ Run `30371686253` completed successfully with:
 - isolated mypy checks across 18 targets: PASS;
 - Bandit production audit: PASS;
 - strict repository audit: PASS;
-- all 148 tests across nine suites: PASS;
+- all 177 tests across nine suites: PASS;
 - CodeQL Python `security-extended`: PASS;
 - runtime dependency-range `pip-audit`: PASS;
 - development dependency-range `pip-audit`: PASS;
@@ -106,7 +106,7 @@ The root suite includes deterministic checks for:
 
 ## Scientific and performance coverage
 
-The 148 tests cover DFT-first routing, method fingerprints, cross-Skill handoffs, Gaussian preflight and synthetic parsing, minimum/TS/IRC acceptance, Multiwfn recipes, uncertainty budgets, structure mapping, VASP/QE/CP2K adapters, convergence and compatibility gates, provenance-safe DFT datasets, leakage controls, adaptive ridge solvers, HPC scripts and arrays, restart lineage, thermodynamic closure, uncertainty propagation, Cantera-oriented handoff, catalyst scope, figure manifests and deterministic scientific demonstrations.
+The 177 tests cover DFT-first routing, method fingerprints, cross-Skill handoffs, Gaussian preflight and synthetic parsing, minimum/TS/IRC acceptance, Multiwfn recipes, uncertainty budgets, structure mapping, VASP/QE/CP2K adapters, convergence and compatibility gates, provenance-safe DFT datasets, leakage controls, adaptive ridge solvers, HPC scripts and arrays, restart lineage, thermodynamic closure, uncertainty propagation, Cantera-oriented handoff, catalyst scope, figure manifests and deterministic scientific demonstrations.
 
 The acceleration planner tests cover:
 
@@ -133,6 +133,8 @@ The eleven bound-execution tests additionally cover:
 - FP64 CPU reference plus 1/2/4-GPU scaling candidates;
 - forced `approval: pending` for every candidate;
 - deterministic file generation with no submission.
+
+The 29 real-benchmark evidence tests cover CPU/single-/multi-GPU records, three-repeat median statistics, insufficient repeats, method/input/build/hardware conflicts, energy/force mismatch, parser rejection, artifact mismatch, non-improving speedup, multi-GPU efficiency, failed-run retention, optional energy, unavailable tooling, deterministic ordering, fabricated L3 rejection, approved scoped qualification, pending review, missing reference, JSON/YAML/JSONL/CSV import, duplicate identity, immutable bundles and optional metric adapters.
 
 Performance regression coverage also protects memory-mapped periodic parsers, streaming SHA-256, bounded canonical dataset hashing, primal/dual ridge equivalence and Slurm-array compaction.
 

@@ -2,8 +2,8 @@
 
 Date: 2026-07-28  
 Branch: `main`  
-Final validated source commit before documentation sync: `22b0ffbf8ad29966f9f1419b64bc1c7cd776f0bd`  
-Final validation run: `30371686253`
+Final validated source commit before documentation sync: `8cfcb7f965d591d9340805977e4fb49703811d96`  
+Final validation run: `30384282686`
 
 ## Audit rule
 
@@ -18,7 +18,7 @@ The final hosted run passed:
 - locked Python 3.10 quality and security gate;
 - locked Python 3.12 quality and security gate;
 - locked Python 3.13 quality and security gate;
-- 148 unit tests across nine non-empty suites;
+- 177 unit tests across nine non-empty suites;
 - Ruff lint and formatting;
 - isolated mypy checks across 18 targets;
 - Bandit production audit with exact reviewed allowances;
@@ -125,6 +125,24 @@ Parser tests, scheduler completion, GPU allocation, synthetic fixtures, generate
 
 The planner and materializer are `L2_VALIDATED_ADAPTER` capabilities. Their output is planning and execution-contract evidence, not a speedup measurement.
 
+### Medium — real benchmark evidence and scoped performance qualification
+
+**Original gap:** the repository could generate reviewed benchmark candidates but could not ingest real results, enforce numerical equivalence, aggregate repeats, package immutable evidence or derive explicit scoped qualification states.
+
+**Remediation:**
+
+- added a machine-readable real-result Schema, example and qualification policy;
+- added JSON/YAML/JSONL/CSV import with duplicate-run rejection and artifact SHA-256 verification;
+- added engine/build/site/hardware/parser and scientific-identity gates;
+- required energy/force/stress/property numerical equivalence before effective speedup;
+- added median, quartile, IQR, MAD, outlier, scaling-efficiency and resource-cost statistics;
+- retained successful and failed attempts in immutable five-file evidence bundles;
+- added non-invoking optional scheduler/device/profiler metric adapters;
+- ignored self-reported L3 labels and required real-engine sources plus independent review;
+- added 29 deterministic tests and retained the public capability at `L2_VALIDATED_ADAPTER`.
+
+`QUALIFIED_FOR_SCOPED_L3_PERFORMANCE_EVIDENCE` is an eligibility result for a bounded evidence package. It does not automatically change the public engine or Skill support level.
+
 ### Medium — deterministic secret detection
 
 A high-confidence offline scanner rejects private-key headers, GitHub/OpenAI/AWS/Google/Slack credential patterns, secret-bearing filenames and oversized unreviewed text inputs. Tests construct synthetic patterns at runtime so the repository never embeds literal credential-like fixtures. GitHub secret scanning and push protection remain account-level settings and are still `NOT VERIFIED`.
@@ -198,10 +216,10 @@ Temporary formatting/export workflow content used to obtain the exact locked Ruf
 | `tsao-structure-prep` | 5 |
 | `tsao-periodic-dft-materials` | 11 |
 | `tsao-dft-ml-active-learning` | 16 |
-| `tsao-dft-hpc-provenance` | 34 |
+| `tsao-dft-hpc-provenance` | 63 |
 | `tsao-dft-kinetics-multiscale` | 5 |
 | `tsao-dft-catalysis-profile` | 5 |
-| **Total** | **148** |
+| **Total** | **177** |
 
 ## GitHub settings not verified
 
@@ -218,7 +236,7 @@ These settings remain **NOT VERIFIED**. The repository files and hosted workflow
 
 ## Scientific non-claims
 
-The audit validates repository engineering and deterministic adapters. It does not establish real licensed execution or measured GPU acceleration of Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD, Slurm/PBS, DeepChem/GNN or Cantera. Selected capabilities remain `L2_VALIDATED_ADAPTER` until immutable engine/version/site/build/hardware evidence supports a scoped `L3_EXECUTION_TESTED` claim.
+The audit validates repository engineering and deterministic adapters. It does not establish real licensed execution or measured GPU acceleration of Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD, Slurm/PBS, DeepChem/GNN or Cantera; the new tools only qualify evidence supplied from a real site. Selected capabilities remain `L2_VALIDATED_ADAPTER` until immutable engine/version/site/build/hardware evidence supports a scoped `L3_EXECUTION_TESTED` claim.
 
 ## Residual risks and future work
 

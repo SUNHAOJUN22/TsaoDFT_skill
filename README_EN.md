@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-148%20passing-16A34A" alt="148 tests passing">
+  <img src="https://img.shields.io/badge/tests-177%20passing-16A34A" alt="177 tests passing">
   <img src="https://img.shields.io/badge/support-L0%E2%80%93L3-6D5DFB" alt="Support levels L0 to L3">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
@@ -68,7 +68,7 @@ Every state transition must answer:
 | [`tsao-periodic-dft-materials`](skills/tsao-periodic-dft-materials/) | VASP, Quantum ESPRESSO and CP2K, including surfaces/defects, bands/DOS, NEB and convergence | Does not distribute POTCAR, pseudopotentials or restricted databases; incompatible energies cannot be mixed |
 | [`tsao-dft-ml-active-learning`](skills/tsao-dft-ml-active-learning/) | DFT-label audit, leakage prevention, applicability domain, uncertainty, active learning and inverse design | High R², SHAP or acquisition score does not prove mechanism, causality or synthesizability |
 | [`tsao-dft-kinetics-multiscale`](skills/tsao-dft-kinetics-multiscale/) | Eyring/TST, reaction networks, detailed balance, uncertainty, microkinetics and reactor handoff | Consumes only data with explicit and accepted standard/reference states |
-| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | Local/Slurm/PBS execution, GPU/CUDA-X/native-code/edge planning, binding, benchmark candidates, arrays, checkpoints and restart lineage | GPU allocation, candidate generation or scheduler completion proves neither speedup nor scientific acceptance |
+| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | Local/Slurm/PBS execution, GPU planning/binding, candidate generation, real-result import, numerical equivalence, evidence bundles and scoped L3 qualification | GPU allocation, a fastest single run, a self-reported L3 label or scheduler completion proves neither speedup nor scientific acceptance |
 | [`tsao-dft-catalysis-profile`](skills/tsao-dft-catalysis-profile/) | DCS/MCSOMe/DMOS, Si–O/Si–C, Ti/TEA, Ziegler–Natta and polyolefin catalysis | Scoped profile; never auto-applied to unrelated catalysis |
 
 ## Scientific figures: conceptual identity and deterministic evidence stay separate
@@ -153,6 +153,21 @@ python skills/tsao-dft-hpc-provenance/scripts/materialize_acceleration_campaign.
 
 The materializer creates an FP64 CPU scientific reference, 1/2/4-GPU candidates, a CSV benchmark matrix and one YAML Manifest per candidate. Every candidate is forced to `approval: pending`; the tool writes files and never submits a job. Generated Slurm steps may use explicit `srun` CPU/GPU binding and record rank, visible devices, GPU UUID, PCI bus, driver, build fingerprint and benchmark-plan identity, but those records are still not measured speedup evidence.
 
+After real runs finish, import and qualify the evidence:
+
+```bash
+python skills/tsao-dft-hpc-provenance/scripts/import_benchmark_evidence.py \
+  results/* --artifact-root run-artifacts --out build/evidence.jsonl
+
+python skills/tsao-dft-hpc-provenance/scripts/qualify_performance_evidence.py \
+  build/evidence.jsonl \
+  --policy skills/tsao-dft-hpc-provenance/templates/performance-qualification-policy.yaml \
+  --artifact-root run-artifacts --review approved-review.yaml \
+  --out-dir build/performance-evidence
+```
+
+Import supports JSON, YAML, JSONL and dotted-field CSV. Effective speedup is calculated only after input hash, method fingerprint, model, convergence, parser, energy, force, stress and property tolerances pass. Formal statistics use the median of at least three successful repeats and retain failed attempts. `QUALIFIED_FOR_SCOPED_L3_PERFORMANCE_EVIDENCE` means that a bundle is eligible for scoped L3 review; it never changes the public capability level automatically.
+
 Core rule: **keep Python on the manifest, validation, scheduling, provenance and experiment-control plane; migrate only profiled numerical hotspots to C++/Fortran/CUDA/OpenACC or a portability backend.** Edge devices should preferentially run structure checks, preprocessing, queue control and validated surrogate inference, while production DFT normally returns to a workstation or HPC system.
 
 ## Engineering quality and one-command acceptance
@@ -163,7 +178,7 @@ python -m pip check
 python scripts/quality_gate.py
 ```
 
-Current baseline: **148 unit tests, 9 isolated suites, 0 failed suites**. Every quality stage has an explicit timeout, and `--json` is safe for machine parsing. Gate order:
+Current baseline: **177 unit tests, 9 isolated suites, 0 failed suites**. Every quality stage has an explicit timeout, and `--json` is safe for machine parsing. Gate order:
 
 ```text
 versioned demo assets

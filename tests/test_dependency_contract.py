@@ -64,7 +64,7 @@ class DependencyContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             pyproject = BASE_PYPROJECT.replace(
-                '  "tomli>=2,<3; python_version < \'3.11\'",\n',
+                "  \"tomli>=2,<3; python_version < '3.11'\",\n",
                 "",
             )
             self.write_fixture(root, pyproject=pyproject)

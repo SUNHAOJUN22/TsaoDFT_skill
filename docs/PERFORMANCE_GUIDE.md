@@ -60,6 +60,27 @@ The generator never submits the result. Pending or rejected approval inserts a r
 
 When `cpus_per_node` is provided, `tasks_per_node × cpus_per_task` may not exceed it. This is a conservative manifest check, not a replacement for site topology documentation.
 
+### GPU, native-code and edge acceleration planner
+
+`plan_acceleration.py` converts an explicit YAML profile into a deterministic compatibility and benchmark plan. It covers Gaussian, VASP, Quantum ESPRESSO, CP2K and generic native integrations across workstation, HPC and edge targets.
+
+```bash
+python skills/tsao-dft-hpc-provenance/scripts/plan_acceleration.py \
+  skills/tsao-dft-hpc-provenance/templates/acceleration-profile.yaml \
+  --out acceleration-plan.json
+```
+
+The report separates four routes:
+
+1. engine-native GPU builds;
+2. CPU MPI/OpenMP execution;
+3. CUDA-accelerated atomistic ML surrogates;
+4. edge orchestration or validated edge inference with remote production DFT.
+
+It evaluates cuBLAS, cuSOLVER, cuSOLVERMp, cuFFT, cuFFTMp, cuSPARSE, NCCL, NVSHMEM, cuTENSOR, cuEquivariance and CUTLASS without treating any library as a universal drop-in switch. It records initial MPI-rank/GPU mapping, build fingerprint requirements, CPU/native boundaries, benchmark metrics, mixed-precision warnings and explicit non-claims.
+
+The planner is an L2 validated adapter. It does not modify or launch licensed engines, and its output is L1 planning evidence until real target-environment measurements are attached.
+
 ## Reproducible microbenchmark
 
 ```bash
@@ -71,6 +92,12 @@ python scripts/benchmark_performance.py \
 Use `--quick` for a smaller smoke run. The script uses synthetic fixtures, medians after warm-up and `tracemalloc`; it never launches a DFT engine. See [`PERFORMANCE_AUDIT.md`](PERFORMANCE_AUDIT.md) for the measured revision results and rejected candidates.
 
 ## Target-environment guidance
+
+### Keep Python on the control plane
+
+Python remains appropriate for schemas, validation, provenance, scheduling, campaign logic, result parsing and experiment control. Rewriting these paths in C++ usually shifts maintenance cost without accelerating an external SCF kernel.
+
+Move code only after profiling identifies a numerical hotspot. Use vectorized NumPy first, then a measured GPU array/framework backend or a compiled C++/Fortran/CUDA/OpenACC kernel. Bind native code through a narrow C ABI, pybind11/nanobind interface or versioned file/JSON subprocess contract, and retain a deterministic CPU fallback.
 
 ### Avoid nested parallelism
 
@@ -90,10 +117,19 @@ ASE database `reserve()` and AiiDA content-based caching illustrate safe coordin
 
 ### Tune engines empirically
 
-- VASP: benchmark `KPAR`, `NCORE`, ranks and OpenMP threads for the actual model.
-- Quantum ESPRESSO: benchmark pools, images, task groups, diagonalization and restart layout with the actual build.
-- CP2K: benchmark MPI/OpenMP balance, libraries and wavefunction restart behavior on the target site.
-- Stage I/O-heavy work on approved scratch and record high-water memory, wall time, CPU efficiency and output volume.
+- VASP: use the supported OpenACC GPU build where applicable; start from one MPI rank per GPU and `NCORE=1`, then benchmark `KPAR`, `NSIM`, ranks and OpenMP threads for the actual model.
+- Quantum ESPRESSO: use a versioned GPU-enabled build and benchmark pools, images, task groups, diagonalization, MPI ranks, OpenMP threads and restart layout.
+- CP2K: use the target-specific accelerator build and benchmark MPI/OpenMP balance, DBCSR/GRID/DBM/PW paths, ELPA/SPLA/COSMA choices and wavefunction restart behavior.
+- Gaussian: use only vendor-supported accelerator features; never inject or redistribute CUDA libraries into a licensed binary.
+- Stage I/O-heavy work on approved scratch and record high-water memory, wall time, CPU/GPU efficiency, host/device memory and output volume.
+
+### Treat CUDA-X by workload, not by brand name
+
+- cuEquivariance belongs to equivariant atomistic ML training or inference, not a Kohn-Sham SCF loop.
+- cuTENSOR belongs to measured tensor contractions or explicit native integrations, not an arbitrary packaged DFT executable.
+- cuSOLVERMp and cuFFTMp require explicit distributed designs and one-process-per-GPU style mappings appropriate to their APIs.
+- NCCL and NVSHMEM help only when the selected engine, MPI stack and communication path support them.
+- CUTLASS is a bespoke-kernel tool and should follow profiling, not precede it.
 
 ## Non-claims
 

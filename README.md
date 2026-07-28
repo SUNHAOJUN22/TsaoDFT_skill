@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-100%20passing-16A34A" alt="100 tests passing">
+  <img src="https://img.shields.io/badge/tests-118%20passing-16A34A" alt="118 tests passing">
   <img src="https://img.shields.io/badge/support-L0%E2%80%93L3-6D5DFB" alt="Support levels L0 to L3">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
@@ -137,24 +137,34 @@ python -m pip check
 python scripts/quality_gate.py
 ```
 
-当前基线：**100 项单元测试、9 个隔离套件、0 个失败套件**。每个质量阶段都有明确超时，`--json` 输出可直接供机器解析。质量门依次检查：
+当前基线：**118 项单元测试、9 个隔离套件、0 个失败套件**。每个质量阶段都有明确超时，`--json` 输出可直接供机器解析。质量门依次检查：
 
 ```text
 versioned demo assets
 → dependency and version contract
+→ repository-only packaging model
 → DFT catalog
+→ Agent eval contracts
+→ governance and workflow policy
+→ explained ignore markers
 → governed AI cover
 → bilingual README visuals
 → offline local links
 → Ruff lint
 → Ruff formatting
+→ isolated mypy type checks
+→ Bandit production audit
 → strict repository audit
 → all non-empty test suites
 ```
 
+GitHub Actions 还独立执行 Python 3.10 / 3.12 / 3.13、CodeQL `security-extended`、运行时与开发依赖 `pip-audit`，并生成 CycloneDX JSON SBOM。
+
 工程审计、性能实现与边界见：
 
+- [`docs/REPOSITORY_FULL_AUDIT.md`](docs/REPOSITORY_FULL_AUDIT.md)
 - [`docs/CODE_QUALITY_AUDIT.md`](docs/CODE_QUALITY_AUDIT.md)
+- [`docs/AGENT_SECURITY_MODEL.md`](docs/AGENT_SECURITY_MODEL.md)
 - [`docs/PERFORMANCE_AUDIT.md`](docs/PERFORMANCE_AUDIT.md)
 - [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md)
 - [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md)
@@ -178,6 +188,7 @@ versioned demo assets
 | [`docs/CAPABILITY_STATUS.yaml`](docs/CAPABILITY_STATUS.yaml) | 机器可读能力状态 |
 | [`docs/SCIENTIFIC_BOUNDARIES.md`](docs/SCIENTIFIC_BOUNDARIES.md) | 科学边界与非主张 |
 | [`docs/CROSS_SKILL_HANDOFF.md`](docs/CROSS_SKILL_HANDOFF.md) | 跨 Skill 交接合同 |
+| [`docs/REPOSITORY_FULL_AUDIT.md`](docs/REPOSITORY_FULL_AUDIT.md) | 全仓库安全、供应链与 Agent Skill 审计 |
 | [`docs/CODE_QUALITY_AUDIT.md`](docs/CODE_QUALITY_AUDIT.md) | 全仓库代码、测试与 CI 审计 |
 | [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md) | AI 图像治理 |
 | [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md) | README 视觉设计系统 |

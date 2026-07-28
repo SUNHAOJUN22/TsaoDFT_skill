@@ -19,7 +19,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from plan_acceleration import build_plan  # noqa: E402 -- local imports follow SCRIPT_DIR path setup
-from validate_hpc_manifest import validate as validate_manifest  # noqa: E402
+from validate_hpc_manifest import validate as validate_manifest  # noqa: E402 -- local imports follow SCRIPT_DIR path setup
 
 BACKEND_BY_VENDOR = {
     "none": "none",

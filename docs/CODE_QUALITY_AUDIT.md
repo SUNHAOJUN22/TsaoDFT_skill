@@ -1,65 +1,96 @@
 # Code Quality and Test Audit
 
 Date: 2026-07-28  
-Baseline branch: `main`  
-Baseline commit: `6cf55b62eb2d063f6282703f70eb2ab220f36daf`
+Branch: `main`  
+Validated source commit before documentation sync: `360046f4edc680dd4f50421ad9dd4c7576eaa763`  
+GitHub Actions run: `30338083011`
 
-## Baseline evidence
+## Evidence rule
 
-Before this remediation, the permanent GitHub quality gate passed on Python 3.10, 3.12 and 3.13. The repository reported 92 unit tests across nine isolated suites with zero failed suites, and Ruff lint/format checks were clean.
-
-This audit does not promote adapter tests into real-engine evidence. Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD, scheduler and reactor claims remain bounded by the support-level documents.
+A passing parser, fixture, static analysis or scheduler test is engineering evidence, not proof of scientific correctness or legal real-engine execution. Unsupported or account-level facts remain `UNKNOWN` / `NOT VERIFIED`.
 
 ## Scope reviewed
 
-- permanent GitHub Actions workflow and failure-log handling;
-- `scripts/quality_gate.py` and `scripts/run_all_tests.py`;
-- repository, catalog, AI-cover, README-visual and README-link validators;
-- runtime and development dependency declarations;
-- root tests and all eight per-Skill test suites;
-- release/version consistency, temporary-file rejection and workflow hygiene;
-- prior parser, hashing, ridge-solver and Slurm-array regression coverage.
+- every permanent GitHub Actions job, permission, trigger and failure-log path;
+- `scripts/quality_gate.py`, `scripts/run_all_tests.py` and all root validators;
+- all root tests and all eight per-Skill test suites;
+- installer copy, symlink, force, backup and uninstall paths;
+- subprocess, deletion, path, XML/YAML, random seed, timeout and serialization behavior;
+- runtime/development ranges and Python 3.10/3.12/3.13 exact constraints;
+- capability, support-level, Agent-eval, prompt-injection and scientific-claim contracts;
+- README, visual, asset, link, governance, packaging and supply-chain evidence.
 
-## Findings
+## Closed findings
 
-### 1. Dependency declarations could drift silently
+### Dependency and resolver drift
 
-Runtime dependencies were duplicated in `requirements.txt` and `pyproject.toml`; development dependencies were duplicated in `requirements-dev.txt` and `project.optional-dependencies.dev`. No offline gate proved that the declarations remained equivalent. A future edit could therefore pass unit tests in one installation path but fail in another.
+`requirements.txt`, `requirements-dev.txt`, `pyproject.toml`, `VERSION`, Python floor and Ruff target are cross-checked offline. Exact reviewed constraints now lock every CI environment and are validated for provenance, direct dependency coverage, uniqueness and exact pins.
 
-**Remediation:** add `scripts/validate_dependencies.py`, validate normalized runtime/dev requirements, the requirements include chain, `VERSION` versus PEP 440 project version, and the Python floor versus Ruff target.
+### Quality-stage hangs and false JSON
 
-### 2. Quality stages had no local timeout
+Every quality stage has an explicit timeout; the test stage has a larger bound. Timeout returns code 124 with a deterministic record. `--json` captures child output and emits one machine-readable document.
 
-The workflow had a global job timeout, while individual validation stages could hang until the whole runner timed out. This obscured which stage stalled and delayed failure feedback.
+### CI false failures
 
-**Remediation:** give every stage an explicit timeout, give the full test stage a larger bound, expose an optional positive `--timeout` override, and return code 124 with a deterministic timeout record.
+Native GitHub Actions jobs remain the blocking authority. Compatibility statuses retry and use `continue-on-error`. Failure logs upload only for a real gate failure. Each matrix job installs against its matching constraint and runs `pip check`.
 
-### 3. JSON mode was not machine-clean
+### Static quality and security
 
-`quality_gate.py --json` inherited child-process output, so logs could appear before the JSON document.
+- Ruff lint and formatter are blocking;
+- mypy covers 18 isolated module spaces;
+- Bandit scans production sources against exact reviewed allowances;
+- all Python files compile during strict repository audit;
+- `defusedxml` replaces unsafe SVG/XML parsers;
+- high-confidence secret patterns and secret-bearing filenames are rejected;
+- all reusable Actions are pinned to complete commit SHAs.
 
-**Remediation:** capture child output in JSON mode and include it only for failed stages.
+### Installer safety
 
-### 4. CI status publishing could become a false failure source
+The installer proves ownership through records and content hashes before replacement or uninstall. It refuses foreign directories, root/home targets, changed symlinks and modified copies without an explicit backup/removal decision. Copy installation is staged and atomically replaced.
 
-The workflow manually posted commit statuses through the GitHub REST API even though GitHub Actions already creates native matrix checks. The former posting step was blocking, so a transient status-API error could fail an otherwise successful quality run.
+### Agent and scientific integrity
 
-**Remediation:** keep native GitHub Actions matrix jobs as the only blocking authority, add `pip check`, remove unnecessary write permission from the core gate, and make the three compatibility status summaries explicitly best-effort with retries and `continue-on-error`. A summary-posting outage can reduce observability but cannot turn passing code into a failed job.
+Deterministic policy evals cover routing, ambiguity, multi-Skill conflicts, profile isolation, prompt injection, unauthorized tools, destructive actions, support escalation, fabrication, provenance loss, recovery, idempotency and version stability. Live-model execution remains `NOT_VERIFIED`.
 
-### 5. New quality contracts needed direct regression tests
+The capability validator prevents public unsupported claims and requires immutable engine/version/site/run/artifact evidence for any L3 declaration.
 
-The existing 92 tests covered repository shape, visual governance, links, parsers, ML, HPC and scientific contracts, but not dependency drift or quality-gate timeout semantics.
+## Final quality gate
 
-**Remediation:** add focused root tests for valid and invalid dependency contracts, stage ordering, skip-tests behavior, timeout handling and invalid CLI timeout values.
+```text
+versioned demo assets
+→ dependency and version contract
+→ cross-version exact CI constraints
+→ repository-only packaging model
+→ DFT catalog
+→ Agent eval contracts
+→ governance and workflow policy
+→ capability and scientific-claim boundaries
+→ high-confidence secret patterns
+→ explained ignore markers
+→ governed AI cover
+→ bilingual README visuals
+→ offline local links
+→ Ruff lint
+→ Ruff formatting
+→ isolated mypy type checks
+→ Bandit production audit
+→ strict repository audit
+→ all non-empty test suites
+```
 
-## Acceptance criteria
+## Acceptance result
 
-The remediation is accepted only when the final `main` commit satisfies all of the following:
+- Python 3.10 hosted gate: PASS;
+- Python 3.12 hosted gate: PASS;
+- Python 3.13 hosted gate: PASS;
+- CodeQL `security-extended`: PASS;
+- runtime/development/locked `pip-audit`: PASS;
+- locked CycloneDX SBOM: PASS;
+- tests: 127 across nine non-empty suites, zero failed suites;
+- no branch or pull request created.
 
-- Python 3.10, 3.12 and 3.13 GitHub Actions jobs pass;
-- dependency contract validation passes offline;
-- Ruff lint and formatting pass;
-- repository, catalog, README, AI-cover and deterministic-asset gates pass;
-- every discovered unittest suite runs at least one test;
-- the expanded 100-test baseline reports zero failed suites;
-- no branch or pull request is created.
+## Remaining limits
+
+- GitHub account-level branch protection, signed commits, secret scanning, push protection, Dependabot alerts and private reporting are `NOT VERIFIED` through the available App.
+- Real-engine/site execution and live-model Agent eval traces remain external and must not be inferred from repository tests.
+- The main-only policy is a deliberate review-separation exception.

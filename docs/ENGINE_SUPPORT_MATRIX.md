@@ -18,8 +18,9 @@ Support levels are evidence labels, not marketing labels:
 | ORCA / Psi4 | L0–L1 | method-routing references and handoff only | no deterministic engine adapter yet |
 | Structure preparation | L2 for XYZ/manifests | geometry red flags, hashing, atom-order mapping, campaign expansion | no silent bond-order, charge, spin, oxidation-state or surface choice |
 | DFT-labelled ML | L2 core validation/baseline | leakage/fidelity validation, grouped splitting, NumPy ridge baseline, model card, active-learning batch | DeepChem/GNN execution remains optional external backend |
-| Slurm/PBS/local execution | L2 script/manifest; L1 site execution | engine-aware scripts, resource estimate, site/restart/provenance validators | no site is L3 until real scheduler regression is recorded |
+| Slurm/PBS/local execution | L2 script/manifest; L1 site execution | engine-aware scripts, job arrays, resource estimate, site/restart/provenance validators | no site is L3 until real scheduler regression is recorded |
+| GPU/native/edge acceleration planning | L2 planner; L1 performance plan | engine/stage/topology validation, CUDA-X applicability, Python/native boundary, CPU fallback and benchmark matrix | no speedup is claimed until a legal real-engine build and target hardware produce immutable measurements |
 | TST/Eyring and network validation | L2 | rates, balance, detailed-balance closure, uncertainty propagation | microkinetic/reactor results require downstream model validation |
 | Cantera/RMG/Pyomo/CatMAP | L1 | provenance-rich handoff | export is not automatically a runnable validated mechanism |
 
-A user or lab may promote a capability to L3 only by adding immutable regression artifacts, engine/version records, expected-value tolerances, and site information without credentials or licensed files.
+A user or lab may promote a capability to L3 only by adding immutable regression artifacts, engine/version/build/hardware records, expected-value tolerances and site information without credentials or licensed files.

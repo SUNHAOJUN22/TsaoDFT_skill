@@ -42,8 +42,10 @@ jobs:
           set +e
           {
             python .github/apply-security-remediation-once.py
+            python -m ruff check --fix scripts tests skills
             python -m ruff format scripts tests skills
             python -m ruff check scripts tests skills
+            python -m ruff format --check scripts tests skills
           } 2>&1 | tee remediation.log
           code=${PIPESTATUS[0]}
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"

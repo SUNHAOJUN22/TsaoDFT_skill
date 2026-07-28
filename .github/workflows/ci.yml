@@ -17,6 +17,9 @@ jobs:
     name: Export exact Ruff files
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      statuses: write
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -60,3 +63,13 @@ jobs:
             skills/tsao-dft-hpc-provenance/tests/test_acceleration_execution.py
           if-no-files-found: error
           retention-days: 3
+
+      - name: Publish export status
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
+            -f state=success \
+            -f context=tsao-dft/format-export \
+            -f description='Exact Ruff formatter artifact exported' \
+            -f target_url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"

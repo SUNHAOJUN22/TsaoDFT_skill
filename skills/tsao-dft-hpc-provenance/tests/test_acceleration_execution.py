@@ -27,14 +27,23 @@ class AccelerationExecutionTests(unittest.TestCase):
         cls.validator = load_script("validate_hpc_manifest.py")
         cls.generator = load_script("generate_job_script.py")
         cls.materializer = load_script("materialize_acceleration_campaign.py")
-        cls.base = yaml.safe_load((ROOT / "templates/vasp-gpu-hpc-manifest.yaml").read_text(encoding="utf-8"))
-        cls.profile = yaml.safe_load((ROOT / "templates/acceleration-profile.yaml").read_text(encoding="utf-8"))
+        cls.base = yaml.safe_load(
+            (ROOT / "templates/vasp-gpu-hpc-manifest.yaml").read_text(encoding="utf-8")
+        )
+        cls.profile = yaml.safe_load(
+            (ROOT / "templates/acceleration-profile.yaml").read_text(encoding="utf-8")
+        )
 
     def materialized(self):
-        return self.materializer.materialize_manifest(copy.deepcopy(self.base), copy.deepcopy(self.profile))[0]
+        return self.materializer.materialize_manifest(
+            copy.deepcopy(self.base),
+            copy.deepcopy(self.profile),
+        )[0]
 
     def test_cpu_template_remains_backward_compatible(self):
-        manifest = yaml.safe_load((ROOT / "templates/hpc-manifest.yaml").read_text(encoding="utf-8"))
+        manifest = yaml.safe_load(
+            (ROOT / "templates/hpc-manifest.yaml").read_text(encoding="utf-8")
+        )
         errors, warnings = self.validator.validate(manifest)
         self.assertEqual(errors, [])
         self.assertEqual(warnings, [])
@@ -47,7 +56,10 @@ class AccelerationExecutionTests(unittest.TestCase):
         self.assertEqual(manifest["resources"]["tasks_per_node"], 4)
         self.assertEqual(manifest["resources"]["gpus_per_node"], 4)
         self.assertEqual(manifest["launcher"], "auto")
-        self.assertEqual(manifest["environment"]["variables"]["CUDA_DEVICE_ORDER"], "PCI_BUS_ID")
+        self.assertEqual(
+            manifest["environment"]["variables"]["CUDA_DEVICE_ORDER"],
+            "PCI_BUS_ID",
+        )
 
     def test_materializer_rejects_engine_mismatch(self):
         base = copy.deepcopy(self.base)
@@ -59,26 +71,37 @@ class AccelerationExecutionTests(unittest.TestCase):
         manifest = self.materialized()
         manifest["resources"]["tasks_per_node"] = 3
         errors, _ = self.validator.validate(manifest)
-        self.assertIn("tasks_per_node must equal gpus_per_node * acceleration.ranks_per_gpu", errors)
+        self.assertIn(
+            "tasks_per_node must equal gpus_per_node * acceleration.ranks_per_gpu",
+            errors,
+        )
 
     def test_validator_rejects_unapproved_gpu_oversubscription(self):
         manifest = self.materialized()
         manifest["acceleration"]["ranks_per_gpu"] = 2
         manifest["resources"]["tasks_per_node"] = 8
         errors, _ = self.validator.validate(manifest)
-        self.assertIn("ranks_per_gpu >1 requires acceleration.allow_gpu_oversubscription=true", errors)
+        self.assertIn(
+            "ranks_per_gpu >1 requires acceleration.allow_gpu_oversubscription=true",
+            errors,
+        )
 
     def test_validator_warns_on_hard_coded_cuda_visibility(self):
         manifest = self.materialized()
         manifest["environment"]["variables"]["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
         errors, warnings = self.validator.validate(manifest)
         self.assertEqual(errors, [])
-        self.assertTrue(any("hard-coded CUDA_VISIBLE_DEVICES" in warning for warning in warnings))
+        self.assertTrue(
+            any("hard-coded CUDA_VISIBLE_DEVICES" in warning for warning in warnings)
+        )
 
     def test_generator_emits_slurm_cpu_and_gpu_binding(self):
         script = self.generator.build(self.materialized())
         self.assertIn("#SBATCH --gpus-per-node=4", script)
-        self.assertIn("srun --ntasks=4 --ntasks-per-node=4 --cpus-per-task=8", script)
+        self.assertIn(
+            "srun --ntasks=4 --ntasks-per-node=4 --cpus-per-task=8",
+            script,
+        )
         self.assertIn("--gpus-per-task=1", script)
         self.assertIn("--cpu-bind=cores", script)
         self.assertIn("--gpu-bind=closest", script)
@@ -89,23 +112,33 @@ class AccelerationExecutionTests(unittest.TestCase):
         self.assertIn("build_fingerprint_id=", script)
         self.assertIn("benchmark_plan_id=", script)
         self.assertIn("SLURM_LOCALID", script)
-        self.assertIn("nvidia-smi --query-gpu=name,uuid,pci.bus_id,driver_version,memory.total", script)
+        self.assertIn(
+            "nvidia-smi --query-gpu=name,uuid,pci.bus_id,driver_version,memory.total",
+            script,
+        )
 
     def test_benchmark_matrix_includes_cpu_and_gpu_scaling(self):
         manifest = self.materialized()
         rows = self.materializer.benchmark_rows(copy.deepcopy(self.profile), manifest)
-        self.assertEqual([row["candidate_id"] for row in rows], [
-            "cpu-reference",
-            "gpu-n1-g1-r1",
-            "gpu-n1-g2-r1",
-            "gpu-n1-g4-r1",
-        ])
+        self.assertEqual(
+            [row["candidate_id"] for row in rows],
+            [
+                "cpu-reference",
+                "gpu-n1-g1-r1",
+                "gpu-n1-g2-r1",
+                "gpu-n1-g4-r1",
+            ],
+        )
 
     def test_candidates_are_pending_and_individually_valid(self):
         accelerated = self.materialized()
         rows = self.materializer.benchmark_rows(copy.deepcopy(self.profile), accelerated)
         for row in rows:
-            candidate = self.materializer.candidate_manifest(copy.deepcopy(self.base), accelerated, row)
+            candidate = self.materializer.candidate_manifest(
+                copy.deepcopy(self.base),
+                accelerated,
+                row,
+            )
             errors, _ = self.validator.validate(candidate)
             self.assertEqual(errors, [], row["candidate_id"])
             self.assertEqual(candidate["approval"], "pending")
@@ -140,7 +173,10 @@ class AccelerationExecutionTests(unittest.TestCase):
                 root / "plan.json",
             )
             self.assertEqual(first, second)
-            self.assertEqual(first_manifest, (root / "manifest.yaml").read_text(encoding="utf-8"))
+            self.assertEqual(
+                first_manifest,
+                (root / "manifest.yaml").read_text(encoding="utf-8"),
+            )
             self.assertEqual(len(first), 4)
 
 

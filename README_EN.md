@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-137%20passing-16A34A" alt="137 tests passing">
+  <img src="https://img.shields.io/badge/tests-148%20passing-16A34A" alt="148 tests passing">
   <img src="https://img.shields.io/badge/support-L0%E2%80%93L3-6D5DFB" alt="Support levels L0 to L3">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
@@ -68,7 +68,7 @@ Every state transition must answer:
 | [`tsao-periodic-dft-materials`](skills/tsao-periodic-dft-materials/) | VASP, Quantum ESPRESSO and CP2K, including surfaces/defects, bands/DOS, NEB and convergence | Does not distribute POTCAR, pseudopotentials or restricted databases; incompatible energies cannot be mixed |
 | [`tsao-dft-ml-active-learning`](skills/tsao-dft-ml-active-learning/) | DFT-label audit, leakage prevention, applicability domain, uncertainty, active learning and inverse design | High R², SHAP or acquisition score does not prove mechanism, causality or synthesizability |
 | [`tsao-dft-kinetics-multiscale`](skills/tsao-dft-kinetics-multiscale/) | Eyring/TST, reaction networks, detailed balance, uncertainty, microkinetics and reactor handoff | Consumes only data with explicit and accepted standard/reference states |
-| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | Local/Slurm/PBS execution, GPU/CUDA-X/native-code/edge acceleration planning, estimates, arrays, checkpoints, restart lineage and hashes | GPU allocation or scheduler completion proves neither speedup nor scientific acceptance |
+| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | Local/Slurm/PBS execution, GPU/CUDA-X/native-code/edge planning, binding, benchmark candidates, arrays, checkpoints and restart lineage | GPU allocation, candidate generation or scheduler completion proves neither speedup nor scientific acceptance |
 | [`tsao-dft-catalysis-profile`](skills/tsao-dft-catalysis-profile/) | DCS/MCSOMe/DMOS, Si–O/Si–C, Ti/TEA, Ziegler–Natta and polyolefin catalysis | Scoped profile; never auto-applied to unrelated catalysis |
 
 ## Scientific figures: conceptual identity and deterministic evidence stay separate
@@ -131,7 +131,7 @@ Production execution still requires legally configured engines, licences, pseudo
 
 ## GPU, parallel and edge acceleration entry point
 
-Copy and edit the profile with the real engine, hardware topology, GPU build, CUDA-X libraries and precision policy:
+First generate the compatibility and library-applicability plan:
 
 ```bash
 python skills/tsao-dft-hpc-provenance/scripts/plan_acceleration.py \
@@ -139,7 +139,19 @@ python skills/tsao-dft-hpc-provenance/scripts/plan_acceleration.py \
   --out acceleration-plan.json
 ```
 
-The planner emits routes for VASP, Quantum ESPRESSO, CP2K, Gaussian or a custom native kernel; an initial MPI-rank/GPU mapping; CPU fallback; the Python/C++ boundary; applicability decisions for cuBLAS, cuSOLVER, cuFFT, NCCL, cuTENSOR, cuEquivariance and related libraries; and a benchmark matrix. It never injects a CUDA-X name into an arbitrary executable or presents a plan as measured acceleration evidence.
+Then materialize a matching VASP base Manifest and acceleration Profile into approval-gated benchmark candidates:
+
+```bash
+python skills/tsao-dft-hpc-provenance/scripts/materialize_acceleration_campaign.py \
+  skills/tsao-dft-hpc-provenance/templates/vasp-gpu-hpc-manifest.yaml \
+  skills/tsao-dft-hpc-provenance/templates/acceleration-profile.yaml \
+  --manifest-out build/vasp-h100.yaml \
+  --matrix-out build/benchmark-matrix.csv \
+  --candidate-dir build/candidates \
+  --plan-out build/acceleration-plan.json
+```
+
+The materializer creates an FP64 CPU scientific reference, 1/2/4-GPU candidates, a CSV benchmark matrix and one YAML Manifest per candidate. Every candidate is forced to `approval: pending`; the tool writes files and never submits a job. Generated Slurm steps may use explicit `srun` CPU/GPU binding and record rank, visible devices, GPU UUID, PCI bus, driver, build fingerprint and benchmark-plan identity, but those records are still not measured speedup evidence.
 
 Core rule: **keep Python on the manifest, validation, scheduling, provenance and experiment-control plane; migrate only profiled numerical hotspots to C++/Fortran/CUDA/OpenACC or a portability backend.** Edge devices should preferentially run structure checks, preprocessing, queue control and validated surrogate inference, while production DFT normally returns to a workstation or HPC system.
 
@@ -151,7 +163,7 @@ python -m pip check
 python scripts/quality_gate.py
 ```
 
-Current baseline: **137 unit tests, 9 isolated suites, 0 failed suites**. Every quality stage has an explicit timeout, and `--json` is safe for machine parsing. Gate order:
+Current baseline: **148 unit tests, 9 isolated suites, 0 failed suites**. Every quality stage has an explicit timeout, and `--json` is safe for machine parsing. Gate order:
 
 ```text
 versioned demo assets
@@ -196,7 +208,7 @@ This repository:
 - does not bypass licences, site policy or software access controls;
 - never presents conceptual AI imagery as an orbital, ESP, band structure, free-energy profile, transition state, mechanism or experiment;
 - never equates normal termination, scheduler completion, model score or attractive graphics with scientific acceptance;
-- never equates GPU allocation, a CUDA-X dependency or planner output with measured acceleration;
+- never equates GPU allocation, a CUDA-X dependency, planner output or candidate benchmark files with measured acceleration;
 - never claims `L3_EXECUTION_TESTED` without immutable real-engine evidence.
 
 ## Documentation map

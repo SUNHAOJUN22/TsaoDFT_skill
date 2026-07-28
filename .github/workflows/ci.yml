@@ -121,3 +121,423 @@ jobs:
       - name: Fail job when quality gate fails
         if: always() && steps.gate.outputs.exit_code != '0'
         run: exit 1
+
+  full-audit:
+    name: One-time full repository audit
+    if: >-
+      github.event_name == 'push' &&
+      contains(github.event.head_commit.message, '[full-audit]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONHASHSEED: "0"
+
+    steps:
+      - name: Checkout complete history
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install audit toolchain
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+          python -m pip install \
+            mypy==2.3.0 \
+            bandit==1.9.4 \
+            pip-audit==2.10.1 \
+            build==1.5.0
+          python -m pip check
+
+      - name: Run evidence-producing audit
+        shell: bash
+        run: |
+          set +e
+          mkdir -p audit-evidence
+          git rev-parse HEAD > audit-evidence/head.txt
+          git branch --show-current > audit-evidence/branch.txt
+          git tag --list > audit-evidence/tags.txt
+          git ls-files -z > audit-evidence/tracked-files.zlist
+          git status --porcelain=v1 > audit-evidence/git-status-before.txt
+
+          python - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          import os
+          import re
+          import stat
+          from collections import Counter, defaultdict
+          from pathlib import Path
+
+          root = Path.cwd()
+          out = root / "audit-evidence"
+          tracked = [Path(item) for item in (out / "tracked-files.zlist").read_bytes().split(b"\0") if item]
+          categories = Counter()
+          suffixes = Counter()
+          hashes: dict[str, list[str]] = defaultdict(list)
+          large: list[dict[str, object]] = []
+          empty: list[str] = []
+          binary: list[str] = []
+          generated: list[str] = []
+          suspicious: list[dict[str, object]] = []
+          ignored_markers: list[dict[str, object]] = []
+          patterns = {
+              "shell_true": re.compile(r"shell\s*=\s*True"),
+              "os_system": re.compile(r"\bos\.system\s*\("),
+              "eval_exec": re.compile(r"\b(?:eval|exec)\s*\("),
+              "destructive": re.compile(r"\b(?:rmtree|unlink|remove)\s*\("),
+              "network": re.compile(r"\b(?:urllib\.request|requests\.|httpx\.|socket\.)"),
+              "secrets": re.compile(r"(?i)(api[_-]?key|secret|password|token)\s*=\s*['\"][^'\"]+['\"]"),
+          }
+          ignore_re = re.compile(r"(#\s*noqa(?::\s*[^\n]+)?|#\s*nosec|#\s*type:\s*ignore(?:\[[^\]]+\])?|@unittest\.skip|pytest\.mark\.(?:skip|xfail))")
+
+          def category(path: Path) -> str:
+              parts = path.parts
+              if parts[0] == "skills":
+                  return "skill"
+              if parts[0] == "tests" or "tests" in parts:
+                  return "test"
+              if parts[0] == "scripts":
+                  return "script"
+              if parts[0] == "docs":
+                  return "documentation"
+              if parts[0] == "assets":
+                  return "asset"
+              if parts[:2] == (".github", "workflows"):
+                  return "workflow"
+              if path.suffix in {".yaml", ".yml", ".json", ".toml", ".cff"} or path.name in {"VERSION", "LICENSE"}:
+                  return "configuration"
+              return "root/other"
+
+          for rel in tracked:
+              path = root / rel
+              if not path.is_file():
+                  continue
+              size = path.stat().st_size
+              categories[category(rel)] += 1
+              suffixes[path.suffix.lower() or "<none>"] += 1
+              digest = hashlib.sha256(path.read_bytes()).hexdigest()
+              hashes[digest].append(rel.as_posix())
+              if size == 0:
+                  empty.append(rel.as_posix())
+              if size > 1_000_000:
+                  large.append({"path": rel.as_posix(), "bytes": size})
+              if any(part in {"dist", "build", "__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache"} for part in rel.parts):
+                  generated.append(rel.as_posix())
+              data = path.read_bytes()
+              if b"\0" in data[:8192]:
+                  binary.append(rel.as_posix())
+                  continue
+              try:
+                  text = data.decode("utf-8")
+              except UnicodeDecodeError:
+                  binary.append(rel.as_posix())
+                  continue
+              for line_no, line in enumerate(text.splitlines(), start=1):
+                  for name, pattern in patterns.items():
+                      if pattern.search(line):
+                          suspicious.append({"path": rel.as_posix(), "line": line_no, "kind": name, "text": line.strip()[:240]})
+                  for match in ignore_re.finditer(line):
+                      ignored_markers.append({"path": rel.as_posix(), "line": line_no, "marker": match.group(0), "text": line.strip()[:240]})
+
+          duplicates = [paths for paths in hashes.values() if len(paths) > 1]
+          payload = {
+              "tracked_file_count": len(tracked),
+              "categories": dict(sorted(categories.items())),
+              "suffixes": dict(sorted(suffixes.items())),
+              "empty_files": sorted(empty),
+              "large_files": sorted(large, key=lambda item: int(item["bytes"]), reverse=True),
+              "binary_files": sorted(binary),
+              "generated_or_cache_files": sorted(generated),
+              "duplicate_content_groups": sorted(duplicates, key=lambda group: (-len(group), group)),
+              "suspicious_code_patterns": suspicious,
+              "ignore_markers": ignored_markers,
+          }
+          (out / "inventory.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+          lines = [
+              "# Tracked-file inventory",
+              "",
+              f"- HEAD: `{os.environ.get('GITHUB_SHA', 'unknown')}`",
+              f"- Tracked files: **{len(tracked)}**",
+              f"- Empty files: **{len(empty)}**",
+              f"- Binary files: **{len(binary)}**",
+              f"- Files over 1 MB: **{len(large)}**",
+              f"- Duplicate-content groups: **{len(duplicates)}**",
+              f"- Ignore/noqa/nosec/skip markers: **{len(ignored_markers)}**",
+              "",
+              "## Categories",
+              "",
+          ]
+          lines.extend(f"- {key}: {value}" for key, value in sorted(categories.items()))
+          (out / "inventory.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+
+          python scripts/quality_gate.py --json > audit-evidence/quality-gate.json 2>&1
+          echo $? > audit-evidence/quality-gate.exit
+
+          python -m compileall -q -f scripts tests skills > audit-evidence/compileall.log 2>&1
+          echo $? > audit-evidence/compileall.exit
+
+          python -m mypy scripts tests skills \
+            --ignore-missing-imports \
+            --show-error-codes \
+            --no-error-summary \
+            --pretty > audit-evidence/mypy.log 2>&1
+          echo $? > audit-evidence/mypy.exit
+
+          python -m bandit -r scripts skills \
+            -f json \
+            -o audit-evidence/bandit.json > audit-evidence/bandit-console.log 2>&1
+          echo $? > audit-evidence/bandit.exit
+
+          python -m pip_audit -r requirements.txt \
+            --format json \
+            --output audit-evidence/pip-audit-runtime.json > audit-evidence/pip-audit-runtime.log 2>&1
+          echo $? > audit-evidence/pip-audit-runtime.exit
+
+          python -m pip_audit -r requirements-dev.txt \
+            --format json \
+            --output audit-evidence/pip-audit-dev.json > audit-evidence/pip-audit-dev.log 2>&1
+          echo $? > audit-evidence/pip-audit-dev.exit
+
+          python -m pip_audit -r requirements-dev.txt \
+            --format cyclonedx-json \
+            --output audit-evidence/sbom.cdx.json > audit-evidence/sbom.log 2>&1
+          echo $? > audit-evidence/sbom.exit
+
+          rm -rf dist build *.egg-info
+          python -m build --sdist --wheel > audit-evidence/build.log 2>&1
+          echo $? > audit-evidence/build.exit
+          find dist -maxdepth 2 -type f -printf '%p\t%s bytes\n' 2>/dev/null > audit-evidence/build-artifacts.txt
+
+          python - <<'PY'
+          from __future__ import annotations
+
+          import json
+          import re
+          from collections import defaultdict
+          from pathlib import Path
+
+          import yaml
+
+          root = Path.cwd()
+          out = root / "audit-evidence"
+          skills_root = root / "skills"
+          findings: list[dict[str, object]] = []
+          trigger_map: dict[str, list[str]] = defaultdict(list)
+          skill_rows: list[dict[str, object]] = []
+          injection_terms = (
+              "untrusted",
+              "prompt injection",
+              "external content",
+              "do not follow instructions",
+              "treat as data",
+          )
+
+          def frontmatter(path: Path) -> dict[str, object]:
+              text = path.read_text(encoding="utf-8")
+              if not text.startswith("---\n"):
+                  return {}
+              _, raw, _ = text.split("---", 2)
+              value = yaml.safe_load(raw)
+              return value if isinstance(value, dict) else {}
+
+          for skill_dir in sorted(path for path in skills_root.iterdir() if path.is_dir()):
+              skill_md = skill_dir / "SKILL.md"
+              manifest_path = skill_dir / "manifest.yaml"
+              agent_path = skill_dir / "agents" / "openai.yaml"
+              fm = frontmatter(skill_md) if skill_md.is_file() else {}
+              manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8")) if manifest_path.is_file() else {}
+              agent = yaml.safe_load(agent_path.read_text(encoding="utf-8")) if agent_path.is_file() else {}
+              body = skill_md.read_text(encoding="utf-8") if skill_md.is_file() else ""
+              has_injection_boundary = any(term in body.lower() for term in injection_terms)
+              routes = manifest.get("routes", {}) if isinstance(manifest, dict) else {}
+              triggers: list[str] = []
+              if isinstance(routes, dict):
+                  for route_name, route in routes.items():
+                      if not isinstance(route, dict):
+                          findings.append({"severity": "high", "skill": skill_dir.name, "issue": f"route {route_name} is not mapping"})
+                          continue
+                      for trigger in route.get("triggers", []) or []:
+                          normalized = str(trigger).strip().lower()
+                          triggers.append(normalized)
+                          trigger_map[normalized].append(skill_dir.name)
+                      for rel in route.get("load", []) or []:
+                          if not (skill_dir / str(rel)).exists():
+                              findings.append({"severity": "high", "skill": skill_dir.name, "issue": f"missing route load: {rel}"})
+              for rel in manifest.get("always_load", []) or [] if isinstance(manifest, dict) else []:
+                  if not (skill_dir / str(rel)).exists():
+                      findings.append({"severity": "high", "skill": skill_dir.name, "issue": f"missing always_load: {rel}"})
+              if fm.get("name") != skill_dir.name:
+                  findings.append({"severity": "high", "skill": skill_dir.name, "issue": f"frontmatter name {fm.get('name')!r} differs from directory"})
+              if manifest.get("version") != fm.get("metadata", {}).get("version") if isinstance(fm.get("metadata"), dict) else True:
+                  findings.append({"severity": "medium", "skill": skill_dir.name, "issue": "manifest/frontmatter version mismatch"})
+              if not has_injection_boundary:
+                  findings.append({"severity": "high", "skill": skill_dir.name, "issue": "no explicit external-content/prompt-injection boundary"})
+              interface = agent.get("interface", {}) if isinstance(agent, dict) else {}
+              default_prompt = interface.get("default_prompt") if isinstance(interface, dict) else None
+              if not isinstance(default_prompt, str) or not default_prompt.strip():
+                  findings.append({"severity": "medium", "skill": skill_dir.name, "issue": "missing agents/openai.yaml default_prompt"})
+              skill_rows.append(
+                  {
+                      "skill": skill_dir.name,
+                      "frontmatter": fm,
+                      "manifest_version": manifest.get("version") if isinstance(manifest, dict) else None,
+                      "route_count": len(routes) if isinstance(routes, dict) else 0,
+                      "trigger_count": len(triggers),
+                      "prompt_injection_boundary": has_injection_boundary,
+                      "agent_default_prompt": default_prompt,
+                  }
+              )
+
+          for trigger, owners in sorted(trigger_map.items()):
+              if trigger and len(set(owners)) > 1:
+                  findings.append({"severity": "medium", "issue": f"trigger collision: {trigger}", "skills": sorted(set(owners))})
+
+          payload = {"skills": skill_rows, "findings": findings}
+          (out / "skill-audit.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+          PY
+
+          python - <<'PY'
+          from __future__ import annotations
+
+          import json
+          import shutil
+          import subprocess
+          import sys
+          import tempfile
+          from pathlib import Path
+
+          root = Path.cwd()
+          out = root / "audit-evidence"
+          results: list[dict[str, object]] = []
+
+          def run(label: str, args: list[str], expected: int | None = None) -> subprocess.CompletedProcess[str]:
+              completed = subprocess.run(args, cwd=root, capture_output=True, text=True, check=False)
+              results.append(
+                  {
+                      "label": label,
+                      "command": args,
+                      "returncode": completed.returncode,
+                      "expected": expected,
+                      "stdout": completed.stdout,
+                      "stderr": completed.stderr,
+                  }
+              )
+              return completed
+
+          with tempfile.TemporaryDirectory() as temporary:
+              temp = Path(temporary)
+              copy_target = temp / "copy"
+              link_target = temp / "link"
+              foreign_target = temp / "foreign"
+
+              run(
+                  "copy install",
+                  [sys.executable, "scripts/install.py", "--agent", "codex", "--scope", "project", "--target", str(copy_target), "--skill", "tsao-dft-suite"],
+                  0,
+              )
+              run(
+                  "repeat install without force",
+                  [sys.executable, "scripts/install.py", "--agent", "codex", "--scope", "project", "--target", str(copy_target), "--skill", "tsao-dft-suite"],
+                  1,
+              )
+              run(
+                  "copy uninstall",
+                  [sys.executable, "scripts/install.py", "--agent", "codex", "--scope", "project", "--target", str(copy_target), "--skill", "tsao-dft-suite", "--uninstall"],
+                  0,
+              )
+              run(
+                  "symlink install",
+                  [sys.executable, "scripts/install.py", "--agent", "codex", "--scope", "project", "--target", str(link_target), "--skill", "tsao-dft-suite", "--method", "symlink"],
+                  0,
+              )
+              run(
+                  "symlink uninstall",
+                  [sys.executable, "scripts/install.py", "--agent", "codex", "--scope", "project", "--target", str(link_target), "--skill", "tsao-dft-suite", "--uninstall"],
+                  0,
+              )
+
+              victim = foreign_target / "tsao-dft-suite"
+              victim.mkdir(parents=True)
+              sentinel = victim / "FOREIGN_DATA.txt"
+              sentinel.write_text("must survive\n", encoding="utf-8")
+              run(
+                  "force over foreign directory",
+                  [sys.executable, "scripts/install.py", "--agent", "codex", "--scope", "project", "--target", str(foreign_target), "--skill", "tsao-dft-suite", "--force"],
+              )
+              results.append(
+                  {
+                      "label": "foreign directory ownership result",
+                      "sentinel_survived": sentinel.exists(),
+                      "destination_exists": victim.exists(),
+                  }
+              )
+
+          (out / "installer-audit.json").write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
+          PY
+
+          python - <<'PY'
+          from __future__ import annotations
+
+          import json
+          import re
+          from pathlib import Path
+
+          import yaml
+
+          root = Path.cwd()
+          out = root / "audit-evidence"
+          required = [
+              "SECURITY.md",
+              "CONTRIBUTING.md",
+              "CODE_OF_CONDUCT.md",
+              ".github/CODEOWNERS",
+              ".github/dependabot.yml",
+              ".github/ISSUE_TEMPLATE/config.yml",
+              ".github/pull_request_template.md",
+              "CITATION.cff",
+              "THIRD_PARTY.md",
+          ]
+          files = {item: (root / item).exists() for item in required}
+          workflows = sorted(path.relative_to(root).as_posix() for path in (root / ".github/workflows").glob("*.y*ml"))
+          workflow_findings: list[str] = []
+          action_re = re.compile(r"uses:\s*([^@\s]+)@([^\s#]+)")
+          dangerous = ("pull_request_target", "workflow_run", "issues:", "issue_comment:")
+          for rel in workflows:
+              text = (root / rel).read_text(encoding="utf-8")
+              for action, ref in action_re.findall(text):
+                  if not re.fullmatch(r"[0-9a-f]{40}", ref):
+                      workflow_findings.append(f"{rel}: action not pinned to full SHA: {action}@{ref}")
+              for token in dangerous:
+                  if token in text:
+                      workflow_findings.append(f"{rel}: dangerous/sensitive trigger present: {token}")
+          payload = {"standard_files": files, "workflows": workflows, "workflow_findings": workflow_findings}
+          (out / "governance-audit.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+          PY
+
+          git status --porcelain=v1 > audit-evidence/git-status-after.txt
+
+      - name: Upload full audit evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: repository-full-audit-${{ github.sha }}
+          path: audit-evidence/
+          if-no-files-found: error
+          retention-days: 14

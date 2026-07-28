@@ -1,6 +1,6 @@
 ---
 name: tsao-dft-hpc-provenance
-description: "Prepare and audit local, Slurm, PBS and cloud/HPC computational-chemistry execution: environment inspection, dependency checks, CPU/GPU and native-code acceleration planning, resource estimates, job scripts, benchmark campaigns, batch DAGs, monitoring, failure classification, checkpoint/restart policy, provenance, reproducibility and scientific CI."
+description: "Prepare and audit local, Slurm, PBS and cloud/HPC computational-chemistry execution: environment inspection, dependency checks, CPU/GPU and native-code acceleration planning, resource estimates, job scripts, benchmark campaigns, real-result evidence import, numerical-equivalence-first comparison, scoped L3 performance qualification, batch DAGs, monitoring, failure classification, checkpoint/restart policy, provenance, reproducibility and scientific CI."
 license: MIT
 compatibility: Python 3.10+ and PyYAML. Slurm, PBS, CUDA-X, OpenACC, MPI, containers, AiiDA, Snakemake and Nextflow are optional external systems.
 metadata: {"version": "0.4.0-alpha.1", "author": "SUNHAOJUN22", "repository": "https://github.com/SUNHAOJUN22/TsaoDFT_skill"}
@@ -8,7 +8,7 @@ metadata: {"version": "0.4.0-alpha.1", "author": "SUNHAOJUN22", "repository": "h
 
 # Tsao DFT HPC and Provenance
 
-This Skill owns execution mechanics, not scientific method selection. It consumes accepted plans from the scientific Skills and returns immutable run records and validated outputs.
+This Skill owns execution mechanics and performance evidence handling, not scientific method selection. It consumes accepted plans from the scientific Skills and returns immutable run records, validated outputs and bounded qualification reports.
 
 ## Workflow
 
@@ -18,9 +18,10 @@ This Skill owns execution mechanics, not scientific method selection. It consume
 4. Materialize the reviewed acceleration profile into a base Manifest, CPU reference, GPU scaling candidates and a benchmark matrix; all generated candidates remain `pending`.
 5. Estimate CPU/GPU hours, memory, wall time and storage before production submission.
 6. Generate scripts from a reviewed manifest. Submission, cancellation and destructive cleanup require explicit user instruction.
-7. Monitor scheduler and logs. Classify exact failures before changing one parameter at a time.
-8. Preserve input, actual script, stdout/stderr, checkpoints, output hashes, software/environment fingerprint, GPU identity and restart lineage.
-9. Promote outputs only after the engine parser validates them; HPC success is not scientific acceptance.
+7. Import supplied real-engine result records and verify schemas, method identity, artifact hashes, parser acceptance, build and hardware identity.
+8. Require numerical equivalence before calculating effective speedup; retain all failed and successful attempts.
+9. Aggregate repeated runs using medians and robust dispersion, then build an immutable evidence bundle and scoped qualification report.
+10. Promote a public capability only through separate explicit review; a scoped performance qualification never changes the public level automatically.
 
 ## Routes
 
@@ -28,6 +29,7 @@ This Skill owns execution mechanics, not scientific method selection. It consume
 |---|---|
 | Environment, modules, dependencies | `environment` |
 | CPU/GPU, CUDA-X, native-code and edge acceleration plan | `acceleration` |
+| Real benchmark import, comparison and scoped L3 eligibility | `performance_evidence` |
 | Slurm/PBS/local job script | `job_script` |
 | Benchmark matrix, homogeneous array or workflow DAG | `batch` |
 | Monitor, failure and restart | `recovery` |
@@ -42,38 +44,51 @@ This Skill owns execution mechanics, not scientific method selection. It consume
 - Do not hide failed attempts. Keep every attempt, error signature and fix.
 - Containers do not solve licensed-software or pseudopotential distribution rights.
 - Scheduler completion means only that the process ended; the engine-specific validator owns result quality.
-- A requested GPU, a Python package or a CUDA-X library name is not performance evidence. Only a supported build plus immutable target-environment benchmarks can establish a scoped speedup.
-- Mixed precision, surrogate inference and native extensions cannot weaken the declared convergence, accuracy, provenance or fallback contract.
-- Do not hard-code scheduler GPU ordinals. Use scheduler binding and record the resulting visible-device map and GPU UUIDs.
+- A requested GPU, Python package, CUDA-X name, generated candidate or self-reported L3 label is not performance evidence.
+- Effective speedup is undefined until input, method, model, convergence, parser and numerical-equivalence gates pass.
+- Do not report the fastest single run as the result; use the policy repeat count and robust summary.
+- Mixed precision, surrogate inference and native extensions cannot weaken convergence, accuracy, provenance or fallback contracts.
+- Optional metric adapters parse supplied summaries and report `NOT_AVAILABLE`; they never invoke external tools or fabricate zero values.
+- `QUALIFIED_FOR_SCOPED_L3_PERFORMANCE_EVIDENCE` is evidence eligibility only and never auto-promotes the public capability level.
 
-## Deterministic DFT execution controls
+## Deterministic controls
 
 - engine-aware Gaussian/VASP/QE/CP2K job-script generation;
 - site-profile validation without credentials;
-- CPU/GPU allocation estimates;
-- evidence-bounded engine, CUDA-X, C++/native and edge acceleration planning with explicit non-applicability decisions;
-- acceleration Manifest validation for backend, vendor, rank/GPU topology, precision, build fingerprint and benchmark-plan identity;
-- Slurm `srun` generation with CPU/GPU binding and no hard-coded `CUDA_VISIBLE_DEVICES`;
-- runtime capture of scheduler rank identity, visible-device mapping, NVIDIA GPU UUID, PCI bus ID and driver version;
-- deterministic CPU-reference and GPU-scaling campaign materialization without submission;
-- checkpoint/restart lineage compatibility;
-- immutable provenance collection and failure classification;
-- Slurm array generation for homogeneous, independently reviewed tasks;
-- OpenMP/BLAS thread and optional per-node CPU-capacity validation.
+- CPU/GPU allocation estimates and Slurm CPU/GPU binding;
+- acceleration planning and pending campaign materialization;
+- benchmark-result Schema and JSON/YAML/JSONL/CSV import;
+- artifact SHA-256 verification and duplicate run-identity rejection;
+- method/build/hardware/parser identity validation;
+- energy/force/stress/property numerical-equivalence gates;
+- median, quartile, IQR, MAD, outlier, speedup, scaling-efficiency and resource-cost summaries;
+- immutable evidence bundles retaining successful and failed attempts;
+- scoped performance qualification with explicit failure states and independent review;
+- non-invoking parsers for `sacct`, GNU `time -v`, `nvidia-smi`, ROCm, Intel GPU, Nsight and engine-parser summaries;
+- checkpoint/restart lineage, immutable provenance and failure classification.
 
-`plan_acceleration.py` emits a compatibility plan. `materialize_acceleration_campaign.py` converts a matching base Manifest and profile into pending benchmark artifacts. Neither tool patches, launches or claims a faster DFT engine.
+## Commands
 
 ```bash
-python skills/tsao-dft-hpc-provenance/scripts/materialize_acceleration_campaign.py \
-  skills/tsao-dft-hpc-provenance/templates/vasp-gpu-hpc-manifest.yaml \
-  skills/tsao-dft-hpc-provenance/templates/acceleration-profile.yaml \
-  --manifest-out build/vasp-h100.yaml \
-  --matrix-out build/benchmark-matrix.csv \
-  --candidate-dir build/candidates \
-  --plan-out build/acceleration-plan.json
+python skills/tsao-dft-hpc-provenance/scripts/validate_benchmark_result.py \
+  results/*.yaml --artifact-root run-artifacts
+
+python skills/tsao-dft-hpc-provenance/scripts/import_benchmark_evidence.py \
+  results/* --artifact-root run-artifacts --out build/evidence.jsonl
+
+python skills/tsao-dft-hpc-provenance/scripts/compare_acceleration_results.py \
+  build/evidence.jsonl \
+  --policy skills/tsao-dft-hpc-provenance/templates/performance-qualification-policy.yaml \
+  --artifact-root run-artifacts --out build/comparison.json
+
+python skills/tsao-dft-hpc-provenance/scripts/qualify_performance_evidence.py \
+  build/evidence.jsonl \
+  --policy skills/tsao-dft-hpc-provenance/templates/performance-qualification-policy.yaml \
+  --artifact-root run-artifacts --review approved-review.yaml \
+  --out-dir build/performance-evidence
 ```
 
-Submission remains approval-gated.
+These commands process supplied evidence only. They do not submit jobs or execute an engine.
 
 ## Untrusted content and instruction hierarchy
 

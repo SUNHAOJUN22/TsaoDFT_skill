@@ -26,12 +26,16 @@ def stages(include_tests: bool = True) -> list[Stage]:
     items = [
         Stage("demo assets", (sys.executable, "scripts/generate_readme_demos.py")),
         Stage("dependency contract", (sys.executable, "scripts/validate_dependencies.py")),
+        Stage("packaging model", (sys.executable, "scripts/validate_packaging_model.py")),
         Stage("catalog", (sys.executable, "scripts/validate_catalog.py")),
+        Stage("Agent eval contracts", (sys.executable, "scripts/validate_agent_evals.py")),
         Stage("AI assets", (sys.executable, "scripts/validate_ai_assets.py")),
         Stage("README visuals", (sys.executable, "scripts/validate_readme_visuals.py", "--strict")),
         Stage("README links", (sys.executable, "scripts/validate_readme_links.py")),
         Stage("Ruff lint", (sys.executable, "-m", "ruff", "check", ".")),
         Stage("Ruff format", (sys.executable, "-m", "ruff", "format", "--check", ".")),
+        Stage("mypy", (sys.executable, "scripts/run_type_checks.py"), timeout_seconds=900.0),
+        Stage("Bandit", (sys.executable, "scripts/run_bandit.py"), timeout_seconds=600.0),
         Stage("repository", (sys.executable, "scripts/validate_repo.py", "--strict")),
     ]
     if include_tests:

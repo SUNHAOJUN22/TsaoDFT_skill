@@ -12,10 +12,10 @@ from typing import Any
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from utils import load_yaml, print_result  # noqa: E402 -- script-local import follows an explicit sys.path setup
-from validate_figure_manifest import (
+from validate_figure_manifest import (  # noqa: E402 -- local validator import follows SCRIPT_DIR path setup
     validate_manifest as validate_figure_manifest,
 )
-from validate_research_manifest import (
+from validate_research_manifest import (  # noqa: E402 -- local validator import follows SCRIPT_DIR path setup
     validate_manifest as validate_research_manifest,
 )
 

@@ -111,7 +111,9 @@ def main() -> int:
     except Exception as exc:
         failures, findings = [str(exc)], []
     if args.json_output:
-        print(json.dumps({"ok": not failures, "findings": findings, "failures": failures}, ensure_ascii=False, indent=2))
+        print(
+            json.dumps({"ok": not failures, "findings": findings, "failures": failures}, ensure_ascii=False, indent=2)
+        )
     else:
         for failure in failures:
             print(f"FAIL: {failure}")

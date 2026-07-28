@@ -112,7 +112,9 @@ def validate(path: Path = DEFAULT_CASES) -> list[str]:
             if token not in combined:
                 failures.append(f"prompt_injection case must cover {token!r}")
 
-    destructive_cases = [case for case in cases if isinstance(case, dict) and case.get("category") == "destructive_action"]
+    destructive_cases = [
+        case for case in cases if isinstance(case, dict) and case.get("category") == "destructive_action"
+    ]
     if not destructive_cases or "ownership" not in json.dumps(destructive_cases, ensure_ascii=False).lower():
         failures.append("destructive_action eval must require ownership evidence")
 

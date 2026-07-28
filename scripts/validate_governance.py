@@ -68,10 +68,7 @@ def validate(root: Path = ROOT) -> list[str]:
             failures.append(f"workflow root must be a mapping: {path.name}")
             continue
         triggers = data.get("on", {})
-        if isinstance(triggers, (dict, list)):
-            trigger_names = set(triggers)
-        else:
-            trigger_names = {triggers}
+        trigger_names = set(triggers) if isinstance(triggers, (dict, list)) else {triggers}
         for trigger in sorted(SENSITIVE_TRIGGERS & trigger_names):
             failures.append(f"sensitive write-capable trigger is forbidden: {trigger}")
         for key, value in walk(data):

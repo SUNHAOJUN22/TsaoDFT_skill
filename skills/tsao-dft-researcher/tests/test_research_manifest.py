@@ -4,7 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from validate_research_manifest import (
+from validate_research_manifest import (  # noqa: E402 -- test import follows explicit scripts path setup
     validate_manifest,
 )
 

@@ -19,7 +19,7 @@ from generate_job_script import (  # noqa: E402 -- script-local import follows a
     engine_command,
     q,
 )
-from validate_hpc_manifest import (
+from validate_hpc_manifest import (  # noqa: E402 -- local validator import follows SCRIPT_DIR path setup
     validate as validate_manifest,
 )
 

@@ -22,7 +22,9 @@ def validate(root: Path = ROOT) -> list[str]:
     except Exception as exc:
         return [f"pyproject parse failed: {exc}"]
     if "build-system" in data:
-        failures.append("repository-only Skill suite must not declare a build-system until a package layout is implemented")
+        failures.append(
+            "repository-only Skill suite must not declare a build-system until a package layout is implemented"
+        )
     tool = data.get("tool")
     tsao = tool.get("tsao-dft") if isinstance(tool, dict) else None
     if not isinstance(tsao, dict) or tsao.get("packaging-model") != "repository-skill-suite":

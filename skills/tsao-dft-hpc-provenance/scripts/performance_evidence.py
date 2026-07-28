@@ -78,7 +78,7 @@ def require_number(
     exclusive: bool = False,
 ) -> float:
     value = mapping.get(key)
-    if isinstance(value, bool):
+    if value is None or isinstance(value, bool):
         errors.append(f"{path}.{key} must be numeric")
         return 0.0
     try:
@@ -96,7 +96,7 @@ def require_number(
 
 def require_integer(mapping: dict[str, Any], key: str, path: str, errors: list[str], *, minimum: int = 0) -> int:
     value = mapping.get(key)
-    if isinstance(value, bool):
+    if value is None or isinstance(value, bool):
         errors.append(f"{path}.{key} must be an integer")
         return minimum
     try:
@@ -107,6 +107,13 @@ def require_integer(mapping: dict[str, Any], key: str, path: str, errors: list[s
     if result < minimum:
         errors.append(f"{path}.{key} must be >={minimum}")
     return result
+
+
+def performance_float(record: dict[str, Any], key: str) -> float:
+    value = (record.get("performance") or {}).get(key)
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"validated performance field is not numeric: {key}")
+    return float(value)
 
 
 def parse_scalar(value: str) -> Any:
@@ -572,9 +579,9 @@ def numerical_equivalence(
         "force_max_abs_ev_per_angstrom": float(tolerances.get("force_max_abs_ev_per_angstrom", 0.0)),
         "stress_max_abs_gpa": float(tolerances.get("stress_max_abs_gpa", 0.0)),
     }
-    for name, deviation in maximums.items():
-        if deviation is not None and deviation > limits[name]:
-            reasons.append(f"{name}={deviation} exceeds tolerance {limits[name]}")
+    for name, maximum_deviation in maximums.items():
+        if maximum_deviation is not None and maximum_deviation > limits[name]:
+            reasons.append(f"{name}={maximum_deviation} exceeds tolerance {limits[name]}")
     property_limits = tolerances.get("property_abs") or {}
     default_property_limit = float(tolerances.get("property_abs_default", 0.0))
     for name, deviation in property_deviations.items():
@@ -626,12 +633,12 @@ def compare_evidence(records: list[dict[str, Any]], policy: dict[str, Any]) -> d
         parser_passed = [record for record in group if parser_success(record)]
         eligible = [record for record in group if eligible_success(record)]
         failures = [record for record in group if not parser_success(record)]
-        wall_values = [float((record.get("performance") or {}).get("wall_time_s")) for record in eligible]
+        wall_values = [performance_float(record, "wall_time_s") for record in eligible]
         resources = candidate_resource_counts(group)
         build_ids = {str((record.get("engine") or {}).get("build_fingerprint_id", "")) for record in group}
         hardware_ids = {str((record.get("hardware") or {}).get("hardware_fingerprint_id", "")) for record in group}
         gpu_identity = {tuple(sorted((record.get("hardware") or {}).get("gpu_uuids") or [])) for record in group}
-        equivalence = {
+        equivalence: dict[str, Any] = {
             "status": "NOT_APPLICABLE" if candidate_id == reference_id else "NOT_EVALUATED",
             "maximum_deviations": {},
             "property_deviations": {},
@@ -640,7 +647,7 @@ def compare_evidence(records: list[dict[str, Any]], policy: dict[str, Any]) -> d
         if candidate_id != reference_id and reference_id is not None and eligible and reference_eligible:
             equivalence = numerical_equivalence(eligible, reference_eligible, policy)
         performance = group[0].get("performance") or {}
-        summary = {
+        summary: dict[str, Any] = {
             "candidate_id": candidate_id,
             "role": group[0].get("role"),
             "total_runs": len(group),
@@ -658,31 +665,31 @@ def compare_evidence(records: list[dict[str, Any]], policy: dict[str, Any]) -> d
             "resources": resources,
             "wall_time_s": numeric_summary(wall_values, outlier_threshold),
             "cpu_time_s": numeric_summary(
-                [float((record.get("performance") or {}).get("cpu_time_s")) for record in eligible],
+                [performance_float(record, "cpu_time_s") for record in eligible],
                 outlier_threshold,
             ),
             "scf_iterations": numeric_summary(
-                [float((record.get("performance") or {}).get("scf_iterations")) for record in eligible],
+                [performance_float(record, "scf_iterations") for record in eligible],
                 outlier_threshold,
             ),
             "peak_host_memory_mb": max(
-                [float((record.get("performance") or {}).get("peak_host_memory_mb")) for record in eligible] or [0.0]
+                [performance_float(record, "peak_host_memory_mb") for record in eligible] or [0.0]
             ),
             "peak_device_memory_mb": max(
                 [
-                    float((record.get("performance") or {}).get("peak_device_memory_mb"))
+                    performance_float(record, "peak_device_memory_mb")
                     for record in eligible
                     if (record.get("performance") or {}).get("peak_device_memory_mb") is not None
                 ]
                 or [0.0]
             ),
             "io_bytes": numeric_summary(
-                [float((record.get("performance") or {}).get("io_bytes")) for record in eligible],
+                [performance_float(record, "io_bytes") for record in eligible],
                 outlier_threshold,
             ),
             "energy_joules": numeric_summary(
                 [
-                    float((record.get("performance") or {}).get("energy_joules"))
+                    performance_float(record, "energy_joules")
                     for record in eligible
                     if (record.get("performance") or {}).get("energy_joules") is not None
                 ],
@@ -954,8 +961,8 @@ def parse_optional_metric(kind: str, text: str) -> dict[str, Any]:
             return {"status": "NOT_AVAILABLE", "reason": "no sacct data rows"}
         delimiter = "|" if "|" in lines[0] else None
         header = lines[0].split(delimiter)
-        values = lines[1].split(delimiter)
-        row = {key.strip(): value.strip() for key, value in zip(header, values, strict=False)}
+        columns = lines[1].split(delimiter)
+        row = {key.strip(): value.strip() for key, value in zip(header, columns, strict=False)}
         return {
             "status": "AVAILABLE",
             "job_id": row.get("JobID") or row.get("JobIDRaw"),
@@ -965,20 +972,20 @@ def parse_optional_metric(kind: str, text: str) -> dict[str, Any]:
             "peak_host_memory_kib": parse_memory_kib(row.get("MaxRSS") or ""),
         }
     if kind == "time-v":
-        values: dict[str, str] = {}
+        metrics: dict[str, str] = {}
         for line in text.splitlines():
-            if ":" in line:
-                key, value = line.split(":", 1)
-                values[key.strip()] = value.strip()
-        user = float(values.get("User time (seconds)", 0.0) or 0.0)
-        system = float(values.get("System time (seconds)", 0.0) or 0.0)
+            if ": " in line:
+                key, value = line.rsplit(": ", 1)
+                metrics[key.strip()] = value.strip()
+        user = float(metrics.get("User time (seconds)", 0.0) or 0.0)
+        system = float(metrics.get("System time (seconds)", 0.0) or 0.0)
         return {
-            "status": "AVAILABLE" if values else "NOT_AVAILABLE",
-            "wall_time_s": parse_duration(values.get("Elapsed (wall clock) time (h:mm:ss or m:ss)", "")),
+            "status": "AVAILABLE" if metrics else "NOT_AVAILABLE",
+            "wall_time_s": parse_duration(metrics.get("Elapsed (wall clock) time (h:mm:ss or m:ss)", "")),
             "cpu_time_s": user + system,
-            "peak_host_memory_kib": parse_memory_kib(values.get("Maximum resident set size (kbytes)", "")),
-            "filesystem_inputs": parse_scalar(values.get("File system inputs", "0")),
-            "filesystem_outputs": parse_scalar(values.get("File system outputs", "0")),
+            "peak_host_memory_kib": parse_memory_kib(metrics.get("Maximum resident set size (kbytes)", "")),
+            "filesystem_inputs": parse_scalar(metrics.get("File system inputs", "0")),
+            "filesystem_outputs": parse_scalar(metrics.get("File system outputs", "0")),
         }
     if kind == "nvidia-smi":
         rows = []

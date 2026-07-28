@@ -6,6 +6,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Any
 from unittest.mock import patch
 
 import yaml
@@ -24,6 +25,9 @@ def load_core():
 
 
 class PerformanceEvidenceTests(unittest.TestCase):
+    core: Any
+    policy: dict[str, Any]
+
     @classmethod
     def setUpClass(cls):
         cls.core = load_core()

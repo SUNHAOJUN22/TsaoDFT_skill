@@ -2,6 +2,10 @@
 
 ## Unreleased — compute efficiency, README visual, CI and repository hardening
 
+- Closed the full repository audit with a hosted green run on Python 3.10, 3.12 and 3.13, CodeQL `security-extended`, runtime/development `pip-audit`, CycloneDX SBOM generation, isolated mypy and Bandit.
+- Expanded the deterministic baseline to 118 tests across nine non-empty suites, including installer ownership safety, prompt-injection boundaries, Agent eval contracts, governance, packaging, type and security gates.
+- Replaced unsafe workflow YAML loading with `yaml.safe_load` while handling YAML 1.1's Boolean interpretation of `on`, and replaced the production installer assertion with an explicit safety error.
+- Converted the Bandit exception list into an exact reviewed `(path, test_id)` contract with substantive reasons; new, duplicate or stale entries fail regression tests.
 - Completed a tracked-file, code, Skill, installer, governance, dependency, packaging and supply-chain audit with evidence recorded in `docs/REPOSITORY_FULL_AUDIT.md`.
 - Rebuilt the installer around explicit ownership records, atomic staged copies, foreign-directory refusal, modified-install protection, safe backups and symlink-target verification.
 - Added explicit untrusted-content and prompt-injection boundaries to all eight Skills plus `docs/AGENT_SECURITY_MODEL.md`.
@@ -12,36 +16,26 @@
 - Added blocking runtime/development `pip-audit`, CycloneDX SBOM generation and CodeQL Python `security-extended` analysis to the pinned GitHub Actions workflow.
 - Added an offline dependency contract across `requirements.txt`, `requirements-dev.txt`, `pyproject.toml`, `VERSION`, the Python floor and the Ruff target.
 - Hardened `quality_gate.py` with per-stage timeouts, deterministic timeout records and machine-clean JSON output.
-- Added eight regression tests for dependency drift and quality-gate semantics, expanding the baseline from 92 to 100 tests across nine suites.
+- Added regression tests for dependency drift and quality-gate semantics.
 - Kept native GitHub Actions matrix jobs as the only blocking CI authority, added `pip check`, and changed compatibility status summaries to retried best-effort observability that cannot fail a passing job.
 - Added `docs/CODE_QUALITY_AUDIT.md` with the repository-wide analysis, findings, remediation and acceptance criteria.
 - Rebuilt the governed cover as `uiux_pro_v8_hero_evidence_bento`, using fresh AI-generated visual direction beneath deterministic vector typography, capability cards, workflow gates and evidence bento.
 - Rewrote both README files from first principles around a Hero-Centric + Trust & Authority structure: 30-second positioning, evidence workflow, eight-Skill map, curated deterministic figures, support levels, quick start, quality gate and scientific boundaries.
 - Updated the UI/UX Pro Max design-system record, generation provenance and AI manifest; verified the 1600×900 cover at full and half README widths.
-- Rewrote both README files around a dark scientific research-operating-system narrative, with clearer evidence, support-level, performance, installation and scientific-boundary sections.
-- Rebuilt the single governed conceptual overview as `uiux_pro_v7_dark_scientific_os`, restoring the user-approved dark molecular/materials/HPC visual energy while keeping an explicit non-computational-data boundary.
 - Regenerated all eight deterministic SVG demonstrations as high-contrast dark evidence dashboards with fixed dimensions, accessible titles/descriptions and visible synthetic-data labels.
-- Updated `docs/README_VISUAL_DESIGN_SYSTEM.md`, AI image governance and the generation record with the Hero-Centric Research OS + Evidence Dashboard + Bento Capability Grid design system.
 - Added a second performance-audit pass with chunked file hashes, bounded canonical dataset hashing, Slurm-array compaction and reproducible baseline microbenchmarks.
 - Added approval-gated Slurm array generation, streamed JSONL task tables, unique per-task Gaussian scratch paths and OpenMP/BLAS/per-node oversubscription validation.
 - Added finite-value, data-shape and constant-feature provenance to the adaptive NumPy ridge baseline without introducing SciPy.
 - Added `docs/PERFORMANCE_AUDIT.md` with measured tradeoffs, primary sources, deferred candidates and real-node validation boundaries.
-- Expanded the test baseline from 78 to 92 while preserving all nine isolated suites.
 - Replaced repeated full-file VASP, Quantum ESPRESSO and CP2K output decoding with read-only memory-mapped evidence scans; selected fields and acceptance boundaries remain unchanged.
 - Added automatic primal/dual ridge selection so wide DFT descriptor matrices solve the smaller sample-space system, with stable least squares for `alpha = 0` and solver provenance in the model card.
 - Removed repeated duplicate-signature field sorting from the DFT dataset validator.
-- Added eight regression tests for streaming parsers and adaptive ridge solvers, increasing the test count from 70 to 78.
 - Added `docs/PERFORMANCE_GUIDE.md` with implementation benchmarks and official NumPy, Python, ASE and Slurm execution guidance.
 - Upgraded pinned GitHub Actions to Node 24-compatible `checkout` v6, `setup-python` v6 and `upload-artifact` v7 commits.
-- Refined the single README cover into the `premium_scientific_v5_editorial` composition: larger typography, one evidence rail, one electronic-structure core and one integrated molecular/periodic/provenance panel.
-- Replaced the dense `premium_scientific_v3` module-card gallery with one restrained conceptual cover and a curated set of five deterministic README visuals.
 - Deleted seven redundant AI module-card SVGs and prohibited deprecated `assets/ai/modules/` references from returning.
 - Kept all eight deterministic demo assets under strict, read-only integrity validation while decoupling asset validation from README curation.
-- Added bilingual README cross-validation for the single governed cover and the curated scientific demonstrations.
-- Added an offline bilingual README link gate for local files, directories and Markdown anchors; external URLs are never requested by CI.
-- Replaced the old demo placeholder fallback with strict SVG integrity checks; missing or degraded figures fail CI instead of generating low-quality artwork.
-- Hardened CI with Python 3.10/3.12/3.13, pinned Ruff lint/format gates, dependency bounds, concurrency control, failure-log artifacts and manual dispatch.
-- Removed obsolete issue-triggered bootstrap, README-patch, clean-rebuild and self-attestation workflows; `ci.yml` is the single permanent quality gate.
+- Added bilingual README cross-validation and an offline local-link gate; external URLs are never requested by deterministic CI.
+- Removed obsolete issue-triggered bootstrap, README-patch, clean-rebuild, self-attestation and one-time repair workflows; `ci.yml` is the single permanent workflow.
 - Removed stale maintenance payloads, root patch bundles and workflow probes; closed obsolete maintenance issues.
 
 ## 0.4.0-alpha.1 — 2026-07-24

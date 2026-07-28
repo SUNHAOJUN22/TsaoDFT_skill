@@ -248,7 +248,8 @@ def install_skill(
             destination.symlink_to(source, target_is_directory=True)
             installed_digest = tree_digest(source)
         else:
-            assert staged is not None
+            if staged is None:
+                raise InstallSafetyError("internal error: copy installation was not staged")
             os.replace(staged, destination)
             staged = None
             installed_digest = tree_digest(destination)

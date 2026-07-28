@@ -60,14 +60,14 @@ def validate(root: Path = ROOT) -> list[str]:
         failures.append(f"expected only .github/workflows/ci.yml, found {[path.name for path in workflow_paths]}")
     for path in workflow_paths:
         try:
-            data = yaml.load(path.read_text(encoding="utf-8"), Loader=yaml.BaseLoader)
+            data = yaml.safe_load(path.read_text(encoding="utf-8"))
         except Exception as exc:
             failures.append(f"workflow parse failed {path.name}: {exc}")
             continue
         if not isinstance(data, dict):
             failures.append(f"workflow root must be a mapping: {path.name}")
             continue
-        triggers = data.get("on", {})
+        triggers = data.get("on", data.get(True, {}))
         trigger_names = set(triggers) if isinstance(triggers, (dict, list)) else {triggers}
         for trigger in sorted(SENSITIVE_TRIGGERS & trigger_names):
             failures.append(f"sensitive write-capable trigger is forbidden: {trigger}")

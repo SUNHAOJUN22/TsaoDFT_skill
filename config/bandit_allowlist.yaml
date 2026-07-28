@@ -30,3 +30,15 @@ entries:
   - path: skills/tsao-dft-ml-active-learning/scripts/train_ridge_baseline.py
     test_id: B311
     reason: the seeded pseudo-random generator is used for reproducible scientific data splitting, never for credentials or cryptography.
+  - path: scripts/run_bandit.py
+    test_id: B404
+    reason: the wrapper imports subprocess only to invoke the pinned Bandit module with a fixed repository-owned argv list.
+  - path: scripts/run_bandit.py
+    test_id: B603
+    reason: Bandit receives fixed paths and flags through an argv list; shell execution and user command text are not used.
+  - path: scripts/run_type_checks.py
+    test_id: B404
+    reason: the wrapper imports subprocess only to invoke the pinned mypy module for discovered repository directories.
+  - path: scripts/run_type_checks.py
+    test_id: B603
+    reason: mypy receives sys.executable, fixed flags and repository-owned directory paths through an argv list with shell disabled.

@@ -2,6 +2,11 @@
 
 ## Unreleased — compute efficiency, README visual, CI and repository hardening
 
+- Added an offline dependency contract across `requirements.txt`, `requirements-dev.txt`, `pyproject.toml`, `VERSION`, the Python floor and the Ruff target.
+- Hardened `quality_gate.py` with per-stage timeouts, deterministic timeout records and machine-clean JSON output.
+- Added eight regression tests for dependency drift and quality-gate semantics, expanding the baseline from 92 to 100 tests across nine suites.
+- Simplified CI to native GitHub Actions checks, added `pip check`, and removed the custom commit-status API call that could fail independently of code quality.
+- Added `docs/CODE_QUALITY_AUDIT.md` with the repository-wide analysis, findings, remediation and acceptance criteria.
 - Rebuilt the governed cover as `uiux_pro_v8_hero_evidence_bento`, using fresh AI-generated visual direction beneath deterministic vector typography, capability cards, workflow gates and evidence bento.
 - Rewrote both README files from first principles around a Hero-Centric + Trust & Authority structure: 30-second positioning, evidence workflow, eight-Skill map, curated deterministic figures, support levels, quick start, quality gate and scientific boundaries.
 - Updated the UI/UX Pro Max design-system record, generation provenance and AI manifest; verified the 1600×900 cover at full and half README widths.
@@ -27,7 +32,7 @@
 - Added bilingual README cross-validation for the single governed cover and the curated scientific demonstrations.
 - Added an offline bilingual README link gate for local files, directories and Markdown anchors; external URLs are never requested by CI.
 - Replaced the old demo placeholder fallback with strict SVG integrity checks; missing or degraded figures fail CI instead of generating low-quality artwork.
-- Hardened CI with Python 3.10/3.12/3.13, pinned Ruff lint/format gates, dependency bounds, concurrency control, failure-log artifacts, commit statuses and manual dispatch.
+- Hardened CI with Python 3.10/3.12/3.13, pinned Ruff lint/format gates, dependency bounds, concurrency control, failure-log artifacts and manual dispatch.
 - Removed obsolete issue-triggered bootstrap, README-patch, clean-rebuild and self-attestation workflows; `ci.yml` is the single permanent quality gate.
 - Removed stale maintenance payloads, root patch bundles and workflow probes; closed obsolete maintenance issues.
 

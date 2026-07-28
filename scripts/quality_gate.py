@@ -29,6 +29,8 @@ def stages(include_tests: bool = True) -> list[Stage]:
         Stage("packaging model", (sys.executable, "scripts/validate_packaging_model.py")),
         Stage("catalog", (sys.executable, "scripts/validate_catalog.py")),
         Stage("Agent eval contracts", (sys.executable, "scripts/validate_agent_evals.py")),
+        Stage("governance", (sys.executable, "scripts/validate_governance.py")),
+        Stage("ignore markers", (sys.executable, "scripts/validate_ignore_markers.py")),
         Stage("AI assets", (sys.executable, "scripts/validate_ai_assets.py")),
         Stage("README visuals", (sys.executable, "scripts/validate_readme_visuals.py", "--strict")),
         Stage("README links", (sys.executable, "scripts/validate_readme_links.py")),

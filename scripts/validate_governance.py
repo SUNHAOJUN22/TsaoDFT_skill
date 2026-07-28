@@ -86,7 +86,9 @@ def validate(root: Path = ROOT) -> list[str]:
             failures.append(f"permanent CI missing required triggers: {sorted(missing_triggers)}")
         if isinstance(triggers, dict):
             schedule = triggers.get("schedule")
-            if not isinstance(schedule, list) or not any(isinstance(item, dict) and item.get("cron") for item in schedule):
+            if not isinstance(schedule, list) or not any(
+                isinstance(item, dict) and item.get("cron") for item in schedule
+            ):
                 failures.append("permanent CI schedule must contain a cron expression")
         jobs = data.get("jobs")
         job_names = set(jobs) if isinstance(jobs, dict) else set()

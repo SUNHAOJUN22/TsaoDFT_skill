@@ -40,7 +40,7 @@ jobs:
           set +e
           {
             python .github/fix-dynamic-imports-once.py
-            python -m ruff format scripts tests skills
+            python -m ruff format .
             python -m ruff check .
             python -m ruff format --check .
           } 2>&1 | tee dynamic-import-fix.log

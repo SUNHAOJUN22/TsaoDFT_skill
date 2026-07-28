@@ -94,12 +94,15 @@ capabilities:
   support_level: L2_VALIDATED_ADAPTER
   scripts:
   - generate_job_script.py
+  - generate_job_array.py
   - validate_hpc_manifest.py
   - validate_site_profile.py
   - estimate_resources.py
   - validate_restart_lineage.py
+  - plan_acceleration.py
   external_requirements:
   - real scheduler/site for L3
+  - real accelerator and versioned engine build for measured performance evidence
 - id: kinetics
   skill: tsao-dft-kinetics-multiscale
   status: implemented_core_handoff

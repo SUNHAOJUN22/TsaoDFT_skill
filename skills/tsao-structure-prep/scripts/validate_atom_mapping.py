@@ -7,13 +7,18 @@ import argparse
 import json
 import math
 from pathlib import Path
+from typing import Any
 
 from inspect_xyz import parse_xyz
 
 
-def validate(a: list[dict], b: list[dict], mapping: list[int] | None = None) -> tuple[list[str], list[str], dict]:
-    e = []
-    w = []
+def validate(
+    a: list[dict[str, Any]],
+    b: list[dict[str, Any]],
+    mapping: list[int] | None = None,
+) -> tuple[list[str], list[str], dict[str, Any]]:
+    e: list[str] = []
+    w: list[str] = []
     if len(a) != len(b):
         e.append(f"atom count differs: {len(a)} vs {len(b)}")
         return e, w, {}
@@ -24,7 +29,7 @@ def validate(a: list[dict], b: list[dict], mapping: list[int] | None = None) -> 
         return e, w, {}
     sq = 0.0
     maxd = 0.0
-    element_mismatch = []
+    element_mismatch: list[tuple[int, int, object, object]] = []
     for i, j1 in enumerate(mapping):
         aa = a[i]
         bb = b[j1 - 1]

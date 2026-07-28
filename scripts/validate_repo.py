@@ -6,12 +6,12 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import xml.etree.ElementTree as ET
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
 import yaml
+from defusedxml import ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 TEXT_SUFFIXES = {
@@ -182,9 +182,12 @@ def main() -> int:
             else:
                 if release and capability.get("release") != release:
                     failures.append("CAPABILITY_STATUS release mismatch")
-                registered = {
-                    item.get("skill") for item in capability.get("capabilities", []) if isinstance(item, dict)
-                }
+                registered: set[str] = set()
+                for item in capability.get("capabilities", []):
+                    if isinstance(item, dict):
+                        skill_name = item.get("skill")
+                        if isinstance(skill_name, str):
+                            registered.add(skill_name)
                 missing = {skill.name for skill in skill_dirs} - registered
                 if missing:
                     failures.append(f"skills missing from CAPABILITY_STATUS: {sorted(missing)}")
@@ -192,64 +195,68 @@ def main() -> int:
             failures.append(f"CAPABILITY_STATUS parse failed: {exc}")
 
     checked_files = 0
-    for path in iter_files(ROOT):
-        if path.name == "SHA256SUMS" or path.resolve() == Path(__file__).resolve():
+    for file_path in iter_files(ROOT):
+        if file_path.name == "SHA256SUMS" or file_path.resolve() == Path(__file__).resolve():
             continue
-        rel = path.relative_to(ROOT)
-        if path.name.endswith(BACKUP_SUFFIXES):
-            failures.append(f"backup or editor-temporary file is forbidden: {rel}")
-        if path.stat().st_size == 0:
-            failures.append(f"empty file is forbidden: {rel}")
+        relative_path = file_path.relative_to(ROOT)
+        if file_path.name.endswith(BACKUP_SUFFIXES):
+            failures.append(f"backup or editor-temporary file is forbidden: {relative_path}")
+        if file_path.stat().st_size == 0:
+            failures.append(f"empty file is forbidden: {relative_path}")
             continue
-        if path.suffix.lower() not in TEXT_SUFFIXES and path.name not in {"VERSION", "LICENSE"}:
+        if file_path.suffix.lower() not in TEXT_SUFFIXES and file_path.name not in {"VERSION", "LICENSE"}:
             continue
         try:
-            text = path.read_text(encoding="utf-8")
+            text = file_path.read_text(encoding="utf-8")
         except UnicodeDecodeError as exc:
-            failures.append(f"non-UTF8 text file {rel}: {exc}")
+            failures.append(f"non-UTF8 text file {relative_path}: {exc}")
             continue
         checked_files += 1
-        if "\ufffd" in text:
-            failures.append(f"UTF-8 replacement character in {rel}")
-        if path.suffix.lower() == ".txt" and path.stat().st_size > 65_536 and BASE64_PAYLOAD_RE.fullmatch(text):
-            failures.append(f"large encoded bootstrap payload is forbidden: {rel}")
+        if "�" in text:
+            failures.append(f"UTF-8 replacement character in {relative_path}")
+        if (
+            file_path.suffix.lower() == ".txt"
+            and file_path.stat().st_size > 65_536
+            and BASE64_PAYLOAD_RE.fullmatch(text)
+        ):
+            failures.append(f"large encoded bootstrap payload is forbidden: {relative_path}")
         for pattern in FORBIDDEN_PATH_PATTERNS:
             if re.search(pattern, text):
-                warnings.append(f"possible local absolute path in {rel}")
+                warnings.append(f"possible local absolute path in {relative_path}")
         try:
-            if path.suffix.lower() == ".json":
+            if file_path.suffix.lower() == ".json":
                 json.loads(text)
-            elif path.suffix.lower() in {".yaml", ".yml"}:
+            elif file_path.suffix.lower() in {".yaml", ".yml"}:
                 yaml.safe_load(text)
-            elif path.suffix.lower() == ".py":
-                compile(text, str(rel), "exec")
-            elif path.suffix.lower() == ".svg":
+            elif file_path.suffix.lower() == ".py":
+                compile(text, str(relative_path), "exec")
+            elif file_path.suffix.lower() == ".svg":
                 ET.fromstring(text)
         except Exception as exc:
-            failures.append(f"parse/compile failed {rel}: {exc}")
+            failures.append(f"parse/compile failed {relative_path}: {exc}")
 
     for readme_name in ("README.md", "README_EN.md"):
-        path = ROOT / readme_name
-        if not path.is_file():
+        readme_path = ROOT / readme_name
+        if not readme_path.is_file():
             continue
-        text = path.read_text(encoding="utf-8")
-        refs = set(MD_IMAGE_RE.findall(text)) | set(HTML_IMAGE_RE.findall(text))
+        text = readme_path.read_text(encoding="utf-8")
+        refs: set[str] = set(MD_IMAGE_RE.findall(text)) | set(HTML_IMAGE_RE.findall(text))
         for ref in refs:
             if ref.startswith(("http://", "https://")):
                 continue
-            rel = Path(ref)
-            if rel.is_absolute() or ".." in rel.parts:
+            image_path = Path(ref)
+            if image_path.is_absolute() or ".." in image_path.parts:
                 failures.append(f"{readme_name} contains unsafe image path: {ref}")
-            elif not (ROOT / rel).is_file():
+            elif not (ROOT / image_path).is_file():
                 failures.append(f"{readme_name} image missing: {ref}")
         checks.append({"check": f"{readme_name}-images", "count": len(refs), "ok": True})
 
     for name in sorted(REQUIRED_DEMOS):
-        path = ROOT / "assets" / "demo" / name
-        if not path.is_file() or path.stat().st_size == 0:
-            failures.append(f"missing demo asset: {path.relative_to(ROOT)}")
-        elif "SYNTHETIC DEMO · NOT SCIENTIFIC DATA" not in path.read_text(encoding="utf-8"):
-            failures.append(f"demo lacks synthetic-data notice: {path.relative_to(ROOT)}")
+        demo_path = ROOT / "assets" / "demo" / name
+        if not demo_path.is_file() or demo_path.stat().st_size == 0:
+            failures.append(f"missing demo asset: {demo_path.relative_to(ROOT)}")
+        elif "SYNTHETIC DEMO · NOT SCIENTIFIC DATA" not in demo_path.read_text(encoding="utf-8"):
+            failures.append(f"demo lacks synthetic-data notice: {demo_path.relative_to(ROOT)}")
 
     checks.extend(
         (
@@ -260,9 +267,10 @@ def main() -> int:
     if args.strict:
         failures.extend(f"strict warning: {item}" for item in warnings)
 
-    result = {
+    skill_names = [skill_path.name for skill_path in skill_dirs]
+    result: dict[str, Any] = {
         "ok": not failures,
-        "skills": [path.name for path in skill_dirs],
+        "skills": skill_names,
         "failures": failures,
         "warnings": warnings,
         "checks": checks,
@@ -271,7 +279,7 @@ def main() -> int:
         print(json.dumps(result, ensure_ascii=False, indent=2))
     else:
         print(f"Repository: {ROOT}")
-        print(f"Skills: {', '.join(result['skills'])}")
+        print(f"Skills: {', '.join(skill_names)}")
         for item in warnings:
             print(f"WARN: {item}")
         for item in failures:

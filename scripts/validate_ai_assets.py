@@ -6,11 +6,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import re
-import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
 import yaml
+from defusedxml import ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "assets/ai/manifest.yaml"

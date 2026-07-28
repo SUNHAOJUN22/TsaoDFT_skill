@@ -14,8 +14,14 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from generate_job_script import approval_guard, engine_command, q  # noqa: E402
-from validate_hpc_manifest import validate as validate_manifest  # noqa: E402
+from generate_job_script import (  # noqa: E402 -- script-local import follows an explicit sys.path setup
+    approval_guard,
+    engine_command,
+    q,
+)
+from validate_hpc_manifest import (
+    validate as validate_manifest,
+)
 
 
 def load_campaign(path: Path) -> tuple[dict, dict, list[dict]]:

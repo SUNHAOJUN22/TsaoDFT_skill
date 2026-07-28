@@ -62,7 +62,7 @@ def _load(path: Path) -> Any:
     if path.suffix.lower() == ".json":
         return json.loads(text)
     try:
-        import yaml  # type: ignore
+        import yaml
     except ImportError as exc:
         raise RuntimeError("PyYAML is required for YAML manifests; use JSON or install pyyaml") from exc
     return yaml.safe_load(text)

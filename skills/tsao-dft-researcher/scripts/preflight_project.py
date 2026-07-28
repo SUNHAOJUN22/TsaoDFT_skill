@@ -11,9 +11,13 @@ from typing import Any
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
-from utils import load_yaml, print_result  # noqa: E402
-from validate_figure_manifest import validate_manifest as validate_figure_manifest  # noqa: E402
-from validate_research_manifest import validate_manifest as validate_research_manifest  # noqa: E402
+from utils import load_yaml, print_result  # noqa: E402 -- script-local import follows an explicit sys.path setup
+from validate_figure_manifest import (
+    validate_manifest as validate_figure_manifest,
+)
+from validate_research_manifest import (
+    validate_manifest as validate_research_manifest,
+)
 
 VALID_STATUSES = {
     "planned",

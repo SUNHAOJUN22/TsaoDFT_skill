@@ -9,8 +9,8 @@ import re
 from pathlib import Path
 
 
-def parse_incar(path: Path) -> dict:
-    d = {}
+def parse_incar(path: Path) -> dict[str, str]:
+    d: dict[str, str] = {}
     if not path.exists():
         return d
     for raw in path.read_text(encoding="utf-8", errors="replace").splitlines():
@@ -21,7 +21,7 @@ def parse_incar(path: Path) -> dict:
     return d
 
 
-def parse_poscar(path: Path) -> dict:
+def parse_poscar(path: Path) -> dict[str, object]:
     lines = [x.rstrip() for x in path.read_text(encoding="utf-8", errors="replace").splitlines() if x.strip()]
     if len(lines) < 8:
         raise ValueError("POSCAR too short")

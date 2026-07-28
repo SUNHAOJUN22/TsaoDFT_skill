@@ -12,7 +12,7 @@ from typing import Any
 SCRIPT_DIR = Path(__file__).resolve().parent
 SKILL_DIR = SCRIPT_DIR.parent
 sys.path.insert(0, str(SCRIPT_DIR))
-from utils import load_yaml  # noqa: E402
+from utils import load_yaml  # noqa: E402 -- script-local import follows an explicit sys.path setup
 
 
 def load_document(path: Path) -> dict[str, Any]:

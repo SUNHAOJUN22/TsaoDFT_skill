@@ -6,8 +6,9 @@ from __future__ import annotations
 import argparse
 import json
 import re
+from typing import Any
 
-RULES = [
+RULES: list[tuple[str, list[str]]] = [
     ("tsao-dft-catalysis-profile", [r"\bDCS\b", r"MCSOMe", r"DMOS", r"Ti/TEA", r"Ziegler", r"polyolefin catal"]),
     (
         "tsao-periodic-dft-materials",
@@ -56,9 +57,9 @@ RULES = [
 ]
 
 
-def route(text: str) -> dict:
-    scores = {name: 0 for name, _ in RULES}
-    matches = {name: [] for name, _ in RULES}
+def route(text: str) -> dict[str, Any]:
+    scores: dict[str, int] = {name: 0 for name, _ in RULES}
+    matches: dict[str, list[str]] = {name: [] for name, _ in RULES}
     for name, patterns in RULES:
         for p in patterns:
             if re.search(p, text, re.I):
@@ -66,7 +67,7 @@ def route(text: str) -> dict:
                 matches[name].append(p)
     ranked = sorted(scores, key=lambda n: (scores[n], n), reverse=True)
     primary = ranked[0] if scores[ranked[0]] else "tsao-dft-researcher"
-    helpers = []
+    helpers: list[str] = []
     if primary not in {"tsao-structure-prep", "tsao-dft-hpc-provenance"}:
         helpers.append("tsao-structure-prep")
     if any(k in text.lower() for k in ["run", "submit", "cluster", "slurm", "pbs", "hpc"]):

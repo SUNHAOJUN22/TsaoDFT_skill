@@ -348,20 +348,21 @@ def _excited_states(text: str) -> list[dict[str, Any]]:
             i += 1
             continue
         state, label, ev, nm, osc = match.groups()
-        item = {
+        contributions: list[dict[str, Any]] = []
+        item: dict[str, Any] = {
             "state": int(state),
             "label": label.strip(),
             "energy_eV": fnum(ev),
             "wavelength_nm": fnum(nm),
             "oscillator_strength": fnum(osc),
-            "contributions": [],
+            "contributions": contributions,
         }
         j = i + 1
         while j < len(lines) and j <= i + 30:
             cm = contribution.match(lines[j])
             if cm:
                 src, src_spin, dst, dst_spin, coeff = cm.groups()
-                item["contributions"].append(
+                contributions.append(
                     {
                         "from_orbital": int(src),
                         "from_spin": src_spin or None,
@@ -370,7 +371,7 @@ def _excited_states(text: str) -> list[dict[str, Any]]:
                         "coefficient": fnum(coeff),
                     }
                 )
-            elif lines[j].strip().startswith("Excited State") or (not lines[j].strip() and item["contributions"]):
+            elif lines[j].strip().startswith("Excited State") or (not lines[j].strip() and contributions):
                 break
             j += 1
         output.append(item)

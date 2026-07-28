@@ -4,7 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-from parse_gaussian import parse_log  # noqa: E402
+from parse_gaussian import parse_log  # noqa: E402 -- script-local import follows an explicit sys.path setup
 
 
 class ParseGaussianTests(unittest.TestCase):

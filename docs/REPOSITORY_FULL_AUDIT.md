@@ -2,8 +2,8 @@
 
 Date: 2026-07-28  
 Branch: `main`  
-Final validated source commit before documentation sync: `bcdfca6e81ae977287702fd6f4aba9f8cfa93e46`  
-Final validation run: `30344814556`
+Final validated source commit before documentation sync: `22b0ffbf8ad29966f9f1419b64bc1c7cd776f0bd`  
+Final validation run: `30371686253`
 
 ## Audit rule
 
@@ -18,7 +18,7 @@ The final hosted run passed:
 - locked Python 3.10 quality and security gate;
 - locked Python 3.12 quality and security gate;
 - locked Python 3.13 quality and security gate;
-- 137 unit tests across nine non-empty suites;
+- 148 unit tests across nine non-empty suites;
 - Ruff lint and formatting;
 - isolated mypy checks across 18 targets;
 - Bandit production audit with exact reviewed allowances;
@@ -27,13 +27,13 @@ The final hosted run passed:
 - runtime, development and exact locked-environment `pip-audit`;
 - locked CycloneDX JSON SBOM generation and artifact upload.
 
-No failure artifact was generated for the final run because all blocking gates passed.
+No failure artifact was generated for the final accepted run because all blocking gates passed.
 
 ## Repository inventory and architecture
 
 The repository is intentionally a **repository-style Agent Skill collection**, not a wheel-ready Python library or an electronic-structure solver. It contains eight independently installable Skills, shared root tooling, deterministic tests, scientific demo assets, governance files, three Python-version constraint snapshots and one permanent GitHub Actions workflow.
 
-Python owns the control plane: manifests, validation, provenance, scheduling, parsing and experiment control. Gaussian, VASP, Quantum ESPRESSO and CP2K remain external compiled engines. The acceleration planner may recommend engine-native GPU builds or measured native extensions, but it does not replace, patch or redistribute those engines.
+Python owns the control plane: manifests, validation, provenance, scheduling, parsing and experiment control. Gaussian, VASP, Quantum ESPRESSO and CP2K remain external compiled engines. The acceleration layer may recommend or materialize engine-native GPU execution contracts, but it does not replace, patch, launch or redistribute those engines.
 
 The duplicated `audit_skill.py` and `utils.py` files under different Skills are recorded maintenance debt, not accidental cache files: each installed Skill must remain self-contained. Consolidation may only occur through a packaging model that preserves independent installation.
 
@@ -101,23 +101,29 @@ A machine-readable claim policy defines the exact L0–L3 levels, forbidden publ
 - required engine, version, site, run ID and artifact SHA-256 for L3;
 - public README and Skill wording against forbidden unsupported claims.
 
-Parser tests, scheduler completion, GPU allocation, synthetic fixtures and generated acceleration plans cannot promote a capability to `L3_EXECUTION_TESTED`.
+Parser tests, scheduler completion, GPU allocation, synthetic fixtures, generated plans, bound scripts and pending benchmark candidates cannot promote a capability to `L3_EXECUTION_TESTED`.
 
-### Medium — acceleration planning and Python/native boundary
+### Medium — acceleration planning, binding and benchmark materialization
 
-**Original gap:** the HPC Skill could request GPUs but did not express GPU topology, CUDA-X applicability, engine-build ownership, Python/native boundaries, edge routing or a benchmark evidence contract.
+**Original gap:** the HPC Skill could request GPUs but did not express GPU topology, CUDA-X applicability, engine-build ownership, Python/native boundaries, edge routing, scheduler binding, runtime GPU identity or a reproducible benchmark-candidate contract.
 
 **Remediation:**
 
 - added `plan_acceleration.py` and a versioned acceleration profile;
+- added `materialize_acceleration_campaign.py` and an engine-matched VASP base Manifest;
 - added deterministic VASP, Quantum ESPRESSO, CP2K, Gaussian, generic-native, atomistic-ML and edge routes;
 - classified cuBLAS, cuSOLVER, cuSOLVERMp, cuFFT, cuFFTMp, cuSPARSE, NCCL, NVSHMEM, cuTENSOR, cuEquivariance and CUTLASS by workload and integration boundary;
 - rejected the false assumption that a library name can be injected into an arbitrary engine binary;
+- validated backend/vendor compatibility, rank-per-GPU topology, oversubscription approval, precision and build/benchmark identities;
+- generated Slurm `srun` CPU/GPU binding while preserving scheduler-owned visible-device assignment;
+- captured scheduler rank identity, visible-device mapping, GPU UUID, PCI bus, driver and memory metadata;
+- created an FP64 CPU scientific reference and declared 1/2/4-GPU scaling candidates;
+- reset every materialized candidate to `approval: pending` and performed no submission;
 - kept Python on the control plane and moved only profiled numerical hotspots toward C++/Fortran/CUDA/OpenACC or portability backends;
 - required CPU fallback, build fingerprints, FP64 or validated mixed precision and immutable real-engine benchmark evidence;
-- added ten deterministic tests covering engine routes, edge routing, equivariant ML, invalid GPU builds, non-applicability and repeatability.
+- added twenty-one deterministic acceleration tests covering planning, validation, binding, runtime identity and campaign materialization.
 
-The planner is an `L2_VALIDATED_ADAPTER`. Its output is planning evidence, not a speedup measurement.
+The planner and materializer are `L2_VALIDATED_ADAPTER` capabilities. Their output is planning and execution-contract evidence, not a speedup measurement.
 
 ### Medium — deterministic secret detection
 
@@ -180,7 +186,7 @@ Each stage has a deterministic timeout. Test discovery must report at least one 
 
 `.github/workflows/ci.yml` is the only permanent workflow. It runs on `main` pushes, pull requests, manual dispatch and a weekly schedule. The blocking authority is the native GitHub Actions job result. Compatibility status publication is best-effort and cannot turn passing code into a false failure.
 
-The one-shot Ruff formatter used during remediation was deleted after committing the exact formatter output. The permanent workflow does not use `pull_request_target`, `workflow_run`, issue-triggered writes, `contents: write` or unpinned third-party Actions.
+Temporary formatting/export workflow content used to obtain the exact locked Ruff output was removed. The permanent workflow was restored to its original content SHA before final acceptance and retains read-only contents permission.
 
 ## Final test distribution
 
@@ -192,10 +198,10 @@ The one-shot Ruff formatter used during remediation was deleted after committing
 | `tsao-structure-prep` | 5 |
 | `tsao-periodic-dft-materials` | 11 |
 | `tsao-dft-ml-active-learning` | 16 |
-| `tsao-dft-hpc-provenance` | 23 |
+| `tsao-dft-hpc-provenance` | 34 |
 | `tsao-dft-kinetics-multiscale` | 5 |
 | `tsao-dft-catalysis-profile` | 5 |
-| **Total** | **137** |
+| **Total** | **148** |
 
 ## GitHub settings not verified
 

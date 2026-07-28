@@ -20,6 +20,9 @@ dev = [
   "tomli>=2,<3; python_version < '3.11'",
 ]
 
+[tool.tsao-dft]
+packaging-model = "repository-skill-suite"
+
 [tool.ruff]
 target-version = "py310"
 line-length = 120

@@ -2,6 +2,14 @@
 
 ## Unreleased — compute efficiency, README visual, CI and repository hardening
 
+- Completed a tracked-file, code, Skill, installer, governance, dependency, packaging and supply-chain audit with evidence recorded in `docs/REPOSITORY_FULL_AUDIT.md`.
+- Rebuilt the installer around explicit ownership records, atomic staged copies, foreign-directory refusal, modified-install protection, safe backups and symlink-target verification.
+- Added explicit untrusted-content and prompt-injection boundaries to all eight Skills plus `docs/AGENT_SECURITY_MODEL.md`.
+- Added 13 versioned positive/adversarial Agent eval contracts and deterministic schema graders while retaining live cross-model execution as `NOT_VERIFIED`.
+- Replaced standard-library SVG parsing with `defusedxml` and added permanent mypy and Bandit gates with exact low-risk justifications.
+- Added `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, CODEOWNERS, issue/PR templates, third-party notices and supply-chain/packaging policies.
+- Classified the project explicitly as a repository-style Skill suite rather than claiming an unsupported wheel/sdist distribution model.
+- Added blocking runtime/development `pip-audit`, CycloneDX SBOM generation and CodeQL Python `security-extended` analysis to the pinned GitHub Actions workflow.
 - Added an offline dependency contract across `requirements.txt`, `requirements-dev.txt`, `pyproject.toml`, `VERSION`, the Python floor and the Ruff target.
 - Hardened `quality_gate.py` with per-stage timeouts, deterministic timeout records and machine-clean JSON output.
 - Added eight regression tests for dependency drift and quality-gate semantics, expanding the baseline from 92 to 100 tests across nine suites.

@@ -790,7 +790,10 @@ def candidate_qualification_status(
         return "BUILD_IDENTITY_MISSING", ["build fingerprint is missing or inconsistent"]
     if not candidate.get("hardware_identity_consistent"):
         return "HARDWARE_IDENTITY_MISSING", ["hardware fingerprint or GPU identity is missing or inconsistent"]
-    if candidate.get("parser_accepted_runs", 0) < int(policy.get("minimum_successful_repeats", 3)):
+    minimum_repeats = int(policy.get("minimum_successful_repeats", 3))
+    parser_accepted_runs = int(candidate.get("parser_accepted_runs", 0))
+    total_runs = int(candidate.get("total_runs", 0))
+    if total_runs >= minimum_repeats and parser_accepted_runs < minimum_repeats:
         return "PARSER_NOT_ACCEPTED", ["insufficient parser-accepted successful runs"]
     if not candidate.get("all_artifacts_verified"):
         return "ARTIFACT_HASH_MISMATCH", ["one or more artifacts are missing, unchecked or mismatched"]

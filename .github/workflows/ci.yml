@@ -1,4 +1,4 @@
-name: TsaoDFT one-shot real-evidence typing closure
+name: TsaoDFT encoded real-evidence typing closure
 
 on:
   push:
@@ -20,111 +20,12 @@ jobs:
           python-version: "3.12"
       - name: Install locked Ruff
         run: python -m pip install "ruff==0.15.22"
-      - name: Apply type narrowing
-        shell: bash
+      - name: Apply encoded patch
+        env:
+          PATCH_B64: "ZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCgpwYXRoID0gUGF0aCgnc2tpbGxzL3RzYW8tZGZ0LWhwYy1wcm92ZW5hbmNlL3NjcmlwdHMvcGVyZm9ybWFuY2VfZXZpZGVuY2UucHknKQp0ZXh0ID0gcGF0aC5yZWFkX3RleHQoZW5jb2Rpbmc9J3V0Zi04JykKb2xkID0gJyAgICB2YWx1ZSA9IG1hcHBpbmcuZ2V0KGtleSlcbiAgICBpZiBpc2luc3RhbmNlKHZhbHVlLCBib29sKTpcbicKbmV3ID0gJyAgICB2YWx1ZSA9IG1hcHBpbmcuZ2V0KGtleSlcbiAgICBpZiB2YWx1ZSBpcyBOb25lIG9yIGlzaW5zdGFuY2UodmFsdWUsIGJvb2wpOlxuJwphc3NlcnQgdGV4dC5jb3VudChvbGQpID09IDIsIHRleHQuY291bnQob2xkKQp0ZXh0ID0gdGV4dC5yZXBsYWNlKG9sZCwgbmV3KQptYXJrZXIgPSAiICAgIHJldHVybiByZXN1bHRcblxuXG5kZWYgcGFyc2Vfc2NhbGFyKHZhbHVlOiBzdHIpIC0+IEFueTpcbiIKaGVscGVyID0gIiAgICByZXR1cm4gcmVzdWx0XG5cblxuZGVmIHBlcmZvcm1hbmNlX2Zsb2F0KHJlY29yZDogZGljdFtzdHIsIEFueV0sIGtleTogc3RyKSAtPiBmbG9hdDpcbiAgICB2YWx1ZSA9IChyZWNvcmQuZ2V0KFwicGVyZm9ybWFuY2VcIikgb3Ige30pLmdldChrZXkpXG4gICAgaWYgaXNpbnN0YW5jZSh2YWx1ZSwgYm9vbCkgb3Igbm90IGlzaW5zdGFuY2UodmFsdWUsIChpbnQsIGZsb2F0KSk6XG4gICAgICAgIHJhaXNlIFZhbHVlRXJyb3IoZlwidmFsaWRhdGVkIHBlcmZvcm1hbmNlIGZpZWxkIGlzIG5vdCBudW1lcmljOiB7a2V5fVwiKVxuICAgIHJldHVybiBmbG9hdCh2YWx1ZSlcblxuXG5kZWYgcGFyc2Vfc2NhbGFyKHZhbHVlOiBzdHIpIC0+IEFueTpcbiIKYXNzZXJ0IG1hcmtlciBpbiB0ZXh0CnRleHQgPSB0ZXh0LnJlcGxhY2UobWFya2VyLCBoZWxwZXIsIDEpCm9sZF9ibG9jayA9ICcgICAgZm9yIG5hbWUsIGRldmlhdGlvbiBpbiBtYXhpbXVtcy5pdGVtcygpOlxuICAgICAgICBpZiBkZXZpYXRpb24gaXMgbm90IE5vbmUgYW5kIGRldmlhdGlvbiA+IGxpbWl0c1tuYW1lXTpcbiAgICAgICAgICAgIHJlYXNvbnMuYXBwZW5kKGZcIntuYW1lfT17ZGV2aWF0aW9ufSBleGNlZWRzIHRvbGVyYW5jZSB7bGltaXRzW25hbWVdfVwiKVxuJwpuZXdfYmxvY2sgPSAnICAgIGZvciBuYW1lLCBtYXhpbXVtX2RldmlhdGlvbiBpbiBtYXhpbXVtcy5pdGVtcygpOlxuICAgICAgICBpZiBtYXhpbXVtX2RldmlhdGlvbiBpcyBub3QgTm9uZSBhbmQgbWF4aW11bV9kZXZpYXRpb24gPiBsaW1pdHNbbmFtZV06XG4gICAgICAgICAgICByZWFzb25zLmFwcGVuZChmXCJ7bmFtZX09e21heGltdW1fZGV2aWF0aW9ufSBleGNlZWRzIHRvbGVyYW5jZSB7bGltaXRzW25hbWVdfVwiKVxuJwphc3NlcnQgb2xkX2Jsb2NrIGluIHRleHQKdGV4dCA9IHRleHQucmVwbGFjZShvbGRfYmxvY2ssIG5ld19ibG9jaywgMSkKb2xkX3dhbGwgPSAnICAgICAgICB3YWxsX3ZhbHVlcyA9IFtmbG9hdCgocmVjb3JkLmdldChcInBlcmZvcm1hbmNlXCIpIG9yIHt9KS5nZXQoXCJ3YWxsX3RpbWVfc1wiKSkgZm9yIHJlY29yZCBpbiBlbGlnaWJsZV1cbicKYXNzZXJ0IG9sZF93YWxsIGluIHRleHQKdGV4dCA9IHRleHQucmVwbGFjZShvbGRfd2FsbCwgJyAgICAgICAgd2FsbF92YWx1ZXMgPSBbcGVyZm9ybWFuY2VfZmxvYXQocmVjb3JkLCBcIndhbGxfdGltZV9zXCIpIGZvciByZWNvcmQgaW4gZWxpZ2libGVdXG4nLCAxKQp0ZXh0ID0gdGV4dC5yZXBsYWNlKCcgICAgICAgIGVxdWl2YWxlbmNlID0ge1xuJywgJyAgICAgICAgZXF1aXZhbGVuY2U6IGRpY3Rbc3RyLCBBbnldID0ge1xuJywgMSkKdGV4dCA9IHRleHQucmVwbGFjZSgnICAgICAgICBzdW1tYXJ5ID0ge1xuJywgJyAgICAgICAgc3VtbWFyeTogZGljdFtzdHIsIEFueV0gPSB7XG4nLCAxKQpyZXBsYWNlbWVudHMgPSB7CiAgICAnW2Zsb2F0KChyZWNvcmQuZ2V0KFwicGVyZm9ybWFuY2VcIikgb3Ige30pLmdldChcImNwdV90aW1lX3NcIikpIGZvciByZWNvcmQgaW4gZWxpZ2libGVdJzogJ1twZXJmb3JtYW5jZV9mbG9hdChyZWNvcmQsIFwiY3B1X3RpbWVfc1wiKSBmb3IgcmVjb3JkIGluIGVsaWdpYmxlXScsCiAgICAnW2Zsb2F0KChyZWNvcmQuZ2V0KFwicGVyZm9ybWFuY2VcIikgb3Ige30pLmdldChcInNjZl9pdGVyYXRpb25zXCIpKSBmb3IgcmVjb3JkIGluIGVsaWdpYmxlXSc6ICdbcGVyZm9ybWFuY2VfZmxvYXQocmVjb3JkLCBcInNjZl9pdGVyYXRpb25zXCIpIGZvciByZWNvcmQgaW4gZWxpZ2libGVdJywKICAgICdbZmxvYXQoKHJlY29yZC5nZXQoXCJwZXJmb3JtYW5jZVwiKSBvciB7fSkuZ2V0KFwicGVha19ob3N0X21lbW9yeV9tYlwiKSkgZm9yIHJlY29yZCBpbiBlbGlnaWJsZV0nOiAnW3BlcmZvcm1hbmNlX2Zsb2F0KHJlY29yZCwgXCJwZWFrX2hvc3RfbWVtb3J5X21iXCIpIGZvciByZWNvcmQgaW4gZWxpZ2libGVdJywKICAgICdmbG9hdCgocmVjb3JkLmdldChcInBlcmZvcm1hbmNlXCIpIG9yIHt9KS5nZXQoXCJwZWFrX2RldmljZV9tZW1vcnlfbWJcIikpJzogJ3BlcmZvcm1hbmNlX2Zsb2F0KHJlY29yZCwgXCJwZWFrX2RldmljZV9tZW1vcnlfbWJcIiknLAogICAgJ1tmbG9hdCgocmVjb3JkLmdldChcInBlcmZvcm1hbmNlXCIpIG9yIHt9KS5nZXQoXCJpb19ieXRlc1wiKSkgZm9yIHJlY29yZCBpbiBlbGlnaWJsZV0nOiAnW3BlcmZvcm1hbmNlX2Zsb2F0KHJlY29yZCwgXCJpb19ieXRlc1wiKSBmb3IgcmVjb3JkIGluIGVsaWdpYmxlXScsCiAgICAnZmxvYXQoKHJlY29yZC5nZXQoXCJwZXJmb3JtYW5jZVwiKSBvciB7fSkuZ2V0KFwiZW5lcmd5X2pvdWxlc1wiKSknOiAncGVyZm9ybWFuY2VfZmxvYXQocmVjb3JkLCBcImVuZXJneV9qb3VsZXNcIiknLAp9CmZvciBzb3VyY2UsIHRhcmdldCBpbiByZXBsYWNlbWVudHMuaXRlbXMoKToKICAgIGFzc2VydCBzb3VyY2UgaW4gdGV4dCwgc291cmNlCiAgICB0ZXh0ID0gdGV4dC5yZXBsYWNlKHNvdXJjZSwgdGFyZ2V0KQpvbGRfc2FjY3QgPSAnICAgICAgICB2YWx1ZXMgPSBsaW5lc1sxXS5zcGxpdChkZWxpbWl0ZXIpXG4gICAgICAgIHJvdyA9IHtrZXkuc3RyaXAoKTogdmFsdWUuc3RyaXAoKSBmb3Iga2V5LCB2YWx1ZSBpbiB6aXAoaGVhZGVyLCB2YWx1ZXMsIHN0cmljdD1GYWxzZSl9XG4nCm5ld19zYWNjdCA9ICcgICAgICAgIGNvbHVtbnMgPSBsaW5lc1sxXS5zcGxpdChkZWxpbWl0ZXIpXG4gICAgICAgIHJvdyA9IHtrZXkuc3RyaXAoKTogdmFsdWUuc3RyaXAoKSBmb3Iga2V5LCB2YWx1ZSBpbiB6aXAoaGVhZGVyLCBjb2x1bW5zLCBzdHJpY3Q9RmFsc2UpfVxuJwphc3NlcnQgb2xkX3NhY2N0IGluIHRleHQKdGV4dCA9IHRleHQucmVwbGFjZShvbGRfc2FjY3QsIG5ld19zYWNjdCwgMSkKb2xkX3RpbWUgPSAnICAgICAgICB2YWx1ZXM6IGRpY3Rbc3RyLCBzdHJdID0ge31cbiAgICAgICAgZm9yIGxpbmUgaW4gdGV4dC5zcGxpdGxpbmVzKCk6XG4gICAgICAgICAgICBpZiBcIjpcIiBpbiBsaW5lOlxuICAgICAgICAgICAgICAgIGtleSwgdmFsdWUgPSBsaW5lLnNwbGl0KFwiOlwiLCAxKVxuICAgICAgICAgICAgICAgIHZhbHVlc1trZXkuc3RyaXAoKV0gPSB2YWx1ZS5zdHJpcCgpXG4gICAgICAgIHVzZXIgPSBmbG9hdCh2YWx1ZXMuZ2V0KFwiVXNlciB0aW1lIChzZWNvbmRzKVwiLCAwLjApIG9yIDAuMClcbiAgICAgICAgc3lzdGVtID0gZmxvYXQodmFsdWVzLmdldChcIlN5c3RlbSB0aW1lIChzZWNvbmRzKVwiLCAwLjApIG9yIDAuMClcbicKbmV3X3RpbWUgPSAnICAgICAgICBtZXRyaWNzOiBkaWN0W3N0ciwgc3RyXSA9IHt9XG4gICAgICAgIGZvciBsaW5lIGluIHRleHQuc3BsaXRsaW5lcygpOlxuICAgICAgICAgICAgaWYgXCI6IFwiIGluIGxpbmU6XG4gICAgICAgICAgICAgICAga2V5LCB2YWx1ZSA9IGxpbmUucnNwbGl0KFwiOiBcIiwgMSlcbiAgICAgICAgICAgICAgICBtZXRyaWNzW2tleS5zdHJpcCgpXSA9IHZhbHVlLnN0cmlwKClcbiAgICAgICAgdXNlciA9IGZsb2F0KG1ldHJpY3MuZ2V0KFwiVXNlciB0aW1lIChzZWNvbmRzKVwiLCAwLjApIG9yIDAuMClcbiAgICAgICAgc3lzdGVtID0gZmxvYXQobWV0cmljcy5nZXQoXCJTeXN0ZW0gdGltZSAoc2Vjb25kcylcIiwgMC4wKSBvciAwLjApXG4nCmFzc2VydCBvbGRfdGltZSBpbiB0ZXh0CnRleHQgPSB0ZXh0LnJlcGxhY2Uob2xkX3RpbWUsIG5ld190aW1lLCAxKQp0ZXh0ID0gdGV4dC5yZXBsYWNlKCdcInN0YXR1c1wiOiBcIkFWQUlMQUJMRVwiIGlmIHZhbHVlcyBlbHNlIFwiTk9UX0FWQUlMQUJMRVwiLCcsICdcInN0YXR1c1wiOiBcIkFWQUlMQUJMRVwiIGlmIG1ldHJpY3MgZWxzZSBcIk5PVF9BVkFJTEFCTEVcIiwnLCAxKQp0ZXh0ID0gdGV4dC5yZXBsYWNlKCdwYXJzZV9kdXJhdGlvbih2YWx1ZXMuZ2V0KFwiRWxhcHNlZCAod2FsbCBjbG9jaykgdGltZSAoaDptbTpzcyBvciBtOnNzKVwiLCBcIlwiKSknLCAncGFyc2VfZHVyYXRpb24obWV0cmljcy5nZXQoXCJFbGFwc2VkICh3YWxsIGNsb2NrKSB0aW1lIChoOm1tOnNzIG9yIG06c3MpXCIsIFwiXCIpKScsIDEpCnRleHQgPSB0ZXh0LnJlcGxhY2UoJ3BhcnNlX21lbW9yeV9raWIodmFsdWVzLmdldChcIk1heGltdW0gcmVzaWRlbnQgc2V0IHNpemUgKGtieXRlcylcIiwgXCJcIikpJywgJ3BhcnNlX21lbW9yeV9raWIobWV0cmljcy5nZXQoXCJNYXhpbXVtIHJlc2lkZW50IHNldCBzaXplIChrYnl0ZXMpXCIsIFwiXCIpKScsIDEpCnRleHQgPSB0ZXh0LnJlcGxhY2UoJ3BhcnNlX3NjYWxhcih2YWx1ZXMuZ2V0KFwiRmlsZSBzeXN0ZW0gaW5wdXRzXCIsIFwiMFwiKSknLCAncGFyc2Vfc2NhbGFyKG1ldHJpY3MuZ2V0KFwiRmlsZSBzeXN0ZW0gaW5wdXRzXCIsIFwiMFwiKSknLCAxKQp0ZXh0ID0gdGV4dC5yZXBsYWNlKCdwYXJzZV9zY2FsYXIodmFsdWVzLmdldChcIkZpbGUgc3lzdGVtIG91dHB1dHNcIiwgXCIwXCIpKScsICdwYXJzZV9zY2FsYXIobWV0cmljcy5nZXQoXCJGaWxlIHN5c3RlbSBvdXRwdXRzXCIsIFwiMFwiKSknLCAxKQpwYXRoLndyaXRlX3RleHQodGV4dCwgZW5jb2Rpbmc9J3V0Zi04JykKCnRlc3RfcGF0aCA9IFBhdGgoJ3NraWxscy90c2FvLWRmdC1ocGMtcHJvdmVuYW5jZS90ZXN0cy90ZXN0X3BlcmZvcm1hbmNlX2V2aWRlbmNlLnB5JykKdGVzdHMgPSB0ZXN0X3BhdGgucmVhZF90ZXh0KGVuY29kaW5nPSd1dGYtOCcpCnRlc3RzID0gdGVzdHMucmVwbGFjZSgnZnJvbSBwYXRobGliIGltcG9ydCBQYXRoXG4nLCAnZnJvbSBwYXRobGliIGltcG9ydCBQYXRoXG5mcm9tIHR5cGluZyBpbXBvcnQgQW55XG4nLCAxKQp0ZXN0cyA9IHRlc3RzLnJlcGxhY2UoJ2NsYXNzIFBlcmZvcm1hbmNlRXZpZGVuY2VUZXN0cyh1bml0dGVzdC5UZXN0Q2FzZSk6XG4nLCAnY2xhc3MgUGVyZm9ybWFuY2VFdmlkZW5jZVRlc3RzKHVuaXR0ZXN0LlRlc3RDYXNlKTpcbiAgICBjb3JlOiBBbnlcbiAgICBwb2xpY3k6IGRpY3Rbc3RyLCBBbnldXG4nLCAxKQp0ZXN0X3BhdGgud3JpdGVfdGV4dCh0ZXN0cywgZW5jb2Rpbmc9J3V0Zi04JykK"
         run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          path = Path("skills/tsao-dft-hpc-provenance/scripts/performance_evidence.py")
-          text = path.read_text(encoding="utf-8")
-          old = '    value = mapping.get(key)\n    if isinstance(value, bool):\n'
-          new = '    value = mapping.get(key)\n    if value is None or isinstance(value, bool):\n'
-          assert text.count(old) == 2
-          text = text.replace(old, new)
-          marker = '''    return result
-
-
-def parse_scalar(value: str) -> Any:
-'''
-          helper = '''    return result
-
-
-def performance_float(record: dict[str, Any], key: str) -> float:
-    value = (record.get("performance") or {}).get(key)
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise ValueError(f"validated performance field is not numeric: {key}")
-    return float(value)
-
-
-def parse_scalar(value: str) -> Any:
-'''
-          assert marker in text
-          text = text.replace(marker, helper, 1)
-          text = text.replace(
-              '''    for name, deviation in maximums.items():
-        if deviation is not None and deviation > limits[name]:
-            reasons.append(f"{name}={deviation} exceeds tolerance {limits[name]}")
-''',
-              '''    for name, maximum_deviation in maximums.items():
-        if maximum_deviation is not None and maximum_deviation > limits[name]:
-            reasons.append(f"{name}={maximum_deviation} exceeds tolerance {limits[name]}")
-''',
-              1,
-          )
-          text = text.replace(
-              '        wall_values = [float((record.get("performance") or {}).get("wall_time_s")) for record in eligible]\n',
-              '        wall_values = [performance_float(record, "wall_time_s") for record in eligible]\n',
-              1,
-          )
-          text = text.replace('        equivalence = {\n', '        equivalence: dict[str, Any] = {\n', 1)
-          text = text.replace('        summary = {\n', '        summary: dict[str, Any] = {\n', 1)
-          replacements = {
-              '[float((record.get("performance") or {}).get("cpu_time_s")) for record in eligible]': '[performance_float(record, "cpu_time_s") for record in eligible]',
-              '[float((record.get("performance") or {}).get("scf_iterations")) for record in eligible]': '[performance_float(record, "scf_iterations") for record in eligible]',
-              '[float((record.get("performance") or {}).get("peak_host_memory_mb")) for record in eligible]': '[performance_float(record, "peak_host_memory_mb") for record in eligible]',
-              'float((record.get("performance") or {}).get("peak_device_memory_mb"))': 'performance_float(record, "peak_device_memory_mb")',
-              '[float((record.get("performance") or {}).get("io_bytes")) for record in eligible]': '[performance_float(record, "io_bytes") for record in eligible]',
-              'float((record.get("performance") or {}).get("energy_joules"))': 'performance_float(record, "energy_joules")',
-          }
-          for source, target in replacements.items():
-              assert source in text
-              text = text.replace(source, target)
-          text = text.replace(
-              '''        values = lines[1].split(delimiter)
-        row = {key.strip(): value.strip() for key, value in zip(header, values, strict=False)}
-''',
-              '''        columns = lines[1].split(delimiter)
-        row = {key.strip(): value.strip() for key, value in zip(header, columns, strict=False)}
-''',
-              1,
-          )
-          text = text.replace(
-              '''        values: dict[str, str] = {}
-        for line in text.splitlines():
-            if ":" in line:
-                key, value = line.split(":", 1)
-                values[key.strip()] = value.strip()
-        user = float(values.get("User time (seconds)", 0.0) or 0.0)
-        system = float(values.get("System time (seconds)", 0.0) or 0.0)
-''',
-              '''        metrics: dict[str, str] = {}
-        for line in text.splitlines():
-            if ": " in line:
-                key, value = line.rsplit(": ", 1)
-                metrics[key.strip()] = value.strip()
-        user = float(metrics.get("User time (seconds)", 0.0) or 0.0)
-        system = float(metrics.get("System time (seconds)", 0.0) or 0.0)
-''',
-              1,
-          )
-          text = text.replace('"status": "AVAILABLE" if values else "NOT_AVAILABLE",', '"status": "AVAILABLE" if metrics else "NOT_AVAILABLE",', 1)
-          text = text.replace('parse_duration(values.get("Elapsed (wall clock) time (h:mm:ss or m:ss)", ""))', 'parse_duration(metrics.get("Elapsed (wall clock) time (h:mm:ss or m:ss)", ""))', 1)
-          text = text.replace('parse_memory_kib(values.get("Maximum resident set size (kbytes)", ""))', 'parse_memory_kib(metrics.get("Maximum resident set size (kbytes)", ""))', 1)
-          text = text.replace('parse_scalar(values.get("File system inputs", "0"))', 'parse_scalar(metrics.get("File system inputs", "0"))', 1)
-          text = text.replace('parse_scalar(values.get("File system outputs", "0"))', 'parse_scalar(metrics.get("File system outputs", "0"))', 1)
-          path.write_text(text, encoding="utf-8")
-
-          test_path = Path("skills/tsao-dft-hpc-provenance/tests/test_performance_evidence.py")
-          tests = test_path.read_text(encoding="utf-8")
-          tests = tests.replace('from pathlib import Path\n', 'from pathlib import Path\nfrom typing import Any\n', 1)
-          tests = tests.replace(
-              'class PerformanceEvidenceTests(unittest.TestCase):\n',
-              'class PerformanceEvidenceTests(unittest.TestCase):\n    core: Any\n    policy: dict[str, Any]\n',
-              1,
-          )
-          test_path.write_text(tests, encoding="utf-8")
-          PY
+          printf '%s' "$PATCH_B64" | base64 -d > /tmp/apply_typing_patch.py
+          python /tmp/apply_typing_patch.py
           python -m ruff format \
             skills/tsao-dft-hpc-provenance/scripts/performance_evidence.py \
             skills/tsao-dft-hpc-provenance/tests/test_performance_evidence.py

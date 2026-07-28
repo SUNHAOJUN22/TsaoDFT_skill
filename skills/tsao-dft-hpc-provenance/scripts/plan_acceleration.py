@@ -64,10 +64,7 @@ LIBRARIES: dict[str, dict[str, str]] = {
     },
 }
 
-ALIASES = {
-    re.sub(r"[^a-z0-9]", "", name.lower()): name
-    for name in LIBRARIES
-}
+ALIASES = {re.sub(r"[^a-z0-9]", "", name.lower()): name for name in LIBRARIES}
 
 
 def normalize_library(value: str) -> str:
@@ -171,7 +168,10 @@ def library_decision(name: str, profile: dict[str, Any]) -> tuple[str, str]:
         return "not-applicable", "CUDA-X requires an NVIDIA CUDA target; keep a vendor-neutral fallback."
     if name == "cuequivariance":
         if stage == "ml-surrogate" and model_family in {"equivariant", "mace", "nequip", "e3nn"}:
-            return "recommended", "Use for equivariant atomistic ML; it does not accelerate a Kohn-Sham engine directly."
+            return (
+                "recommended",
+                "Use for equivariant atomistic ML; it does not accelerate a Kohn-Sham engine directly.",
+            )
         return "not-applicable", "Reserve for equivariant ML potentials, not ordinary DFT parsing or SCF execution."
     if name == "cutensor":
         if stage == "ml-surrogate" or custom:
@@ -266,8 +266,8 @@ def build_plan(profile: dict[str, Any]) -> dict[str, Any]:
             }
         )
 
-    ranks_per_node = gpus if gpus and str(profile["stage"]).lower() == "engine" else int(
-        hardware.get("tasks_per_node", 1)
+    ranks_per_node = (
+        gpus if gpus and str(profile["stage"]).lower() == "engine" else int(hardware.get("tasks_per_node", 1))
     )
     benchmarks = [
         "CPU reference with identical scientific inputs and convergence thresholds",

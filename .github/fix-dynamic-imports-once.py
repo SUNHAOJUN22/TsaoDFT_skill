@@ -5,6 +5,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REPLACEMENTS = {
+    "scripts/validate_governance.py": [
+        (
+            '        if isinstance(triggers, (dict, list)):\n            trigger_names = set(triggers)\n        else:\n            trigger_names = {triggers}\n',
+            '        trigger_names = set(triggers) if isinstance(triggers, (dict, list)) else {triggers}\n',
+        )
+    ],
     "skills/tsao-dft-hpc-provenance/scripts/generate_job_array.py": [
         (
             "from validate_hpc_manifest import (\n",
@@ -51,4 +57,4 @@ for relative, replacements in REPLACEMENTS.items():
         text = text.replace(old, new, 1)
     path.write_text(text, encoding="utf-8")
 
-print("Annotated six intentional dynamic imports.")
+print("Applied final governance and dynamic-import annotations.")

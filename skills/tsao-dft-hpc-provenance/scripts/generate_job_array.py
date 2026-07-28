@@ -7,6 +7,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -74,20 +75,21 @@ def load_campaign(path: Path) -> tuple[dict, dict, list[dict]]:
     return campaign, base, tasks
 
 
-def task_record(campaign: dict, base: dict, task: dict) -> dict:
-    merged = dict(base)
+def task_record(campaign: dict[str, Any], base: dict[str, Any], task: dict[str, Any]) -> dict[str, Any]:
+    merged: dict[str, Any] = dict(base)
     merged.update({key: value for key, value in task.items() if key != "task_id"})
-    record = {
+    environment: dict[str, str] = {}
+    record: dict[str, Any] = {
         "task_id": str(task["task_id"]),
         "workdir": str(merged["workdir"]),
         "command": engine_command(merged),
-        "environment": {},
+        "environment": environment,
     }
     if (base.get("scratch") or {}).get("path"):
         scratch = Path(str(campaign["scratch_root"])) / str(task["task_id"])
         record["scratch_path"] = str(scratch)
         if base.get("engine") == "gaussian":
-            record["environment"]["GAUSS_SCRDIR"] = str(scratch)
+            environment["GAUSS_SCRDIR"] = str(scratch)
     return record
 
 

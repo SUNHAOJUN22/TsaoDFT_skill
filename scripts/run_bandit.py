@@ -31,8 +31,12 @@ def load_allowlist(path: Path = ALLOWLIST) -> dict[tuple[str, str], str]:
         path_value = entry.get("path")
         test_id = entry.get("test_id")
         reason = entry.get("reason")
-        if not all(isinstance(value, str) and value.strip() for value in (path_value, test_id, reason)):
-            raise ValueError(f"Bandit allowlist entry[{index}] requires path, test_id and reason")
+        if not isinstance(path_value, str) or not path_value.strip():
+            raise ValueError(f"Bandit allowlist entry[{index}] requires a non-empty path")
+        if not isinstance(test_id, str) or not test_id.strip():
+            raise ValueError(f"Bandit allowlist entry[{index}] requires a non-empty test_id")
+        if not isinstance(reason, str) or not reason.strip():
+            raise ValueError(f"Bandit allowlist entry[{index}] requires a non-empty reason")
         key = (path_value, test_id)
         if key in result:
             raise ValueError(f"duplicate Bandit allowlist entry: {key}")

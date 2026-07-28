@@ -28,9 +28,9 @@ def main() -> int:
         reader = csv.DictReader(handle)
         if not reader.fieldnames or "label" not in reader.fieldnames or args.column not in reader.fieldnames:
             raise SystemExit(f"CSV must contain 'label' and '{args.column}' columns")
-        for row in reader:
-            label = row.get("label")
-            energy_text = row.get(args.column)
+        for source_row in reader:
+            label = source_row.get("label")
+            energy_text = source_row.get(args.column)
             if label is None or energy_text is None:
                 raise SystemExit("CSV contains a row with a missing label or energy")
             raw_rows.append((label, float(energy_text)))
@@ -61,12 +61,12 @@ def main() -> int:
     with table_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=["label", args.column, "relative_kcal_mol"])
         writer.writeheader()
-        for row in rows:
+        for energy_row in rows:
             writer.writerow(
                 {
-                    "label": row["label"],
-                    args.column: row["energy"],
-                    "relative_kcal_mol": f"{row['relative_kcal_mol']:.4f}",
+                    "label": energy_row["label"],
+                    args.column: energy_row["energy"],
+                    "relative_kcal_mol": f"{energy_row['relative_kcal_mol']:.4f}",
                 }
             )
 

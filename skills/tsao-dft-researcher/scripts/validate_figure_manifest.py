@@ -187,13 +187,11 @@ def validate_manifest(
                         if field not in params:
                             errors.append(f"{pwhere}: ESP panel missing {field}")
                     vmin, vmax = params.get("esp_min"), params.get("esp_max")
-                    numeric_scale = isinstance(vmin, (int, float)) and isinstance(vmax, (int, float))
-                    if numeric_scale and not vmin < 0 < vmax:
-                        errors.append(f"{pwhere}: ESP scale must cross zero")
-                    if numeric_scale and not math.isclose(
-                        abs(float(vmin)), abs(float(vmax)), rel_tol=1e-6, abs_tol=1e-12
-                    ):
-                        errors.append(f"{pwhere}: ESP comparison scale must be symmetric")
+                    if isinstance(vmin, (int, float)) and isinstance(vmax, (int, float)):
+                        if not vmin < 0 < vmax:
+                            errors.append(f"{pwhere}: ESP scale must cross zero")
+                        if not math.isclose(abs(vmin), abs(vmax), rel_tol=1e-6, abs_tol=1e-12):
+                            errors.append(f"{pwhere}: ESP comparison scale must be symmetric")
                 if panel_type in {"spin_density", "difference_density"} and (
                     not isinstance(params.get("positive_isovalue"), (int, float))
                     or not isinstance(params.get("negative_isovalue"), (int, float))

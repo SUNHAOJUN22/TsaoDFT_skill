@@ -27,7 +27,7 @@ def main() -> int:
         return 1
     names = list(axes)
     exclusions = set(d.get("exclusions") or [])
-    rows = []
+    rows: list[dict[str, object]] = []
     for combo in itertools.product(*(axes[n] for n in names)):
         row = dict(zip(names, combo, strict=False))
         key = "|".join(f"{k}={row[k]}" for k in names)

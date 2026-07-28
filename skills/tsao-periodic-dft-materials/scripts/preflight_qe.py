@@ -14,17 +14,17 @@ def parse(text: str) -> dict:
     for block in re.finditer(r"&(\w+)(.*?)\n\s*/", text, re.S):
         sec = block.group(1).lower()
         vals = {}
-        for m in re.finditer(r"(\w+)\s*=\s*([^,\n/]+)", block.group(2)):
-            vals[m.group(1).lower()] = m.group(2).strip().strip("'\"")
+        for value_match in re.finditer(r"(\w+)\s*=\s*([^,\n/]+)", block.group(2)):
+            vals[value_match.group(1).lower()] = value_match.group(2).strip().strip("'\"")
         n[sec] = vals
     species = []
-    m = re.search(
+    species_match = re.search(
         r"ATOMIC_SPECIES\s*\n(.*?)(?=\n\s*(?:ATOMIC_POSITIONS|CELL_PARAMETERS|K_POINTS|CONSTRAINTS|OCCUPATIONS|$))",
         text,
         re.S | re.I,
     )
-    if m:
-        for line in m.group(1).splitlines():
+    if species_match:
+        for line in species_match.group(1).splitlines():
             p = line.split()
             if len(p) >= 3:
                 species.append({"element": p[0], "mass": p[1], "pseudopotential": p[2]})

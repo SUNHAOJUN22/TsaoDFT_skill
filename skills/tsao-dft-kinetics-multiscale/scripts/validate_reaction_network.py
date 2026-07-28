@@ -10,8 +10,8 @@ from pathlib import Path
 import yaml
 
 
-def side_balance(side: dict, species: dict, key: str) -> dict:
-    out = {}
+def side_balance(side: dict, species: dict, key: str) -> dict[str, float]:
+    out: dict[str, float] = {}
     for sid, coef in (side or {}).items():
         val = species[sid].get(key, {} if key == "composition" else 0)
         if isinstance(val, dict):

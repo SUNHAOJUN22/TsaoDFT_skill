@@ -9,6 +9,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -16,12 +17,12 @@ STREAM_HASH_ROW_THRESHOLD = 25_000
 HASH_BATCH_ROWS = 256
 
 
-def load_rows(path: Path):
+def load_rows(path: Path) -> list[dict[str, str]]:
     with path.open(encoding="utf-8", newline="") as handle:
         return list(csv.DictReader(handle))
 
 
-def canonical_rows_sha256(rows: list[dict], stream_threshold: int = STREAM_HASH_ROW_THRESHOLD) -> str:
+def canonical_rows_sha256(rows: list[dict[str, str]], stream_threshold: int = STREAM_HASH_ROW_THRESHOLD) -> str:
     """Hash the existing canonical JSON representation without a large temporary string.
 
     Small datasets keep the faster one-shot path. Large CSV-derived row lists are
@@ -48,9 +49,9 @@ def canonical_rows_sha256(rows: list[dict], stream_threshold: int = STREAM_HASH_
     return digest.hexdigest()
 
 
-def validate(rows: list[dict], cfg: dict) -> tuple[list[str], list[str], dict]:
-    errors = []
-    warnings = []
+def validate(rows: list[dict[str, str]], cfg: dict[str, Any]) -> tuple[list[str], list[str], dict[str, Any]]:
+    errors: list[str] = []
+    warnings: list[str] = []
     columns = cfg.get("columns") or {}
     sample_id = columns.get("sample_id", "sample_id")
     parent = columns.get("parent_id", "parent_id")
@@ -87,8 +88,14 @@ def validate(rows: list[dict], cfg: dict) -> tuple[list[str], list[str], dict]:
     if invalid_target:
         errors.append(f"invalid target values at rows {invalid_target[:10]}")
 
-    fingerprints = {row.get(fingerprint) for row in rows if row.get(fingerprint)} if fingerprint in fields else set()
-    fidelities = {row.get(fidelity) for row in rows if row.get(fidelity)} if fidelity in fields else set()
+    fingerprints: set[str] = (
+        {fingerprint_value for row in rows if (fingerprint_value := row.get(fingerprint))}
+        if fingerprint in fields
+        else set()
+    )
+    fidelities: set[str] = (
+        {fidelity_value for row in rows if (fidelity_value := row.get(fidelity))} if fidelity in fields else set()
+    )
     if fingerprint not in fields:
         warnings.append("method_fingerprint column absent; DFT label provenance cannot be checked row-wise")
     elif len(fingerprints) > 1 and not cfg.get("mixed_method_policy"):
@@ -100,7 +107,7 @@ def validate(rows: list[dict], cfg: dict) -> tuple[list[str], list[str], dict]:
 
     ignored = {sample_id, parent, split}
     signature_fields = tuple(sorted(fields - ignored))
-    signatures = {}
+    signatures: dict[tuple[tuple[str, str], ...], list[int]] = {}
     for index, row in enumerate(rows):
         signature = tuple((key, row.get(key, "")) for key in signature_fields)
         signatures.setdefault(signature, []).append(index + 2)
@@ -108,12 +115,16 @@ def validate(rows: list[dict], cfg: dict) -> tuple[list[str], list[str], dict]:
     if duplicates:
         warnings.append(f"exact duplicate non-ID records: {duplicates[:5]}")
 
-    leakage = []
+    leakage: list[tuple[str | None, list[str]]] = []
     if split in fields:
-        group_splits = {}
+        group_splits: dict[str | None, set[str | None]] = {}
         for row in rows:
             group_splits.setdefault(row.get(parent), set()).add(row.get(split))
-        leakage = [(group, sorted(values)) for group, values in group_splits.items() if len(values - {None, ""}) > 1]
+        leakage = [
+            (group, sorted(str(value) for value in values if value not in {None, ""}))
+            for group, values in group_splits.items()
+            if len(values - {None, ""}) > 1
+        ]
         if leakage:
             errors.append(f"parent/group leakage across splits: {leakage[:10]}")
     else:

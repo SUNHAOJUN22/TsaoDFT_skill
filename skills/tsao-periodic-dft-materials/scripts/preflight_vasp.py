@@ -7,6 +7,18 @@ import argparse
 import json
 import re
 from pathlib import Path
+from typing import TypedDict
+
+
+class PoscarData(TypedDict):
+    comment: str
+    scale: float
+    lattice_vectors: list[list[float]]
+    species: list[str]
+    counts: list[int]
+    atom_count: int
+    selective_dynamics: bool
+    coordinate_mode: str
 
 
 def parse_incar(path: Path) -> dict[str, str]:
@@ -21,7 +33,7 @@ def parse_incar(path: Path) -> dict[str, str]:
     return d
 
 
-def parse_poscar(path: Path) -> dict[str, object]:
+def parse_poscar(path: Path) -> PoscarData:
     lines = [x.rstrip() for x in path.read_text(encoding="utf-8", errors="replace").splitlines() if x.strip()]
     if len(lines) < 8:
         raise ValueError("POSCAR too short")
@@ -78,10 +90,10 @@ def validate(run: Path) -> dict:
         if not (run / f).exists():
             e.append(f"missing {f}")
     try:
-        pos = parse_poscar(run / "POSCAR") if (run / "POSCAR").exists() else {}
+        pos: PoscarData | None = parse_poscar(run / "POSCAR") if (run / "POSCAR").exists() else None
     except Exception as exc:
         e.append(f"POSCAR: {exc}")
-        pos = {}
+        pos = None
     inc = parse_incar(run / "INCAR")
     kp = parse_kpoints(run / "KPOINTS")
     titles = potcar_titles(run / "POTCAR")
@@ -92,7 +104,7 @@ def validate(run: Path) -> dict:
             w.append(f"INCAR missing explicit {key}")
     if "KSPACING" not in inc and not kp:
         w.append("neither KSPACING nor KPOINTS found")
-    if pos.get("species") and titles:
+    if pos is not None and pos["species"] and titles:
         inferred = []
         for title in titles:
             m = re.search(r"PAW_[A-Z]+\s+([A-Z][a-z]?)", title)
@@ -112,13 +124,13 @@ def validate(run: Path) -> dict:
     task = "relax" if nsw > 0 else "static"
     if task == "relax" and ibrion in (None, "-1"):
         w.append("relax inferred from NSW but IBRION is absent/-1")
-    if pos.get("selective_dynamics") and task == "static":
+    if pos is not None and pos["selective_dynamics"] and task == "static":
         w.append("selective dynamics present but NSW=0/static")
     if inc.get("ISPIN") == "2" and "MAGMOM" not in inc:
         w.append("spin-polarized run lacks explicit MAGMOM")
     if any(k.startswith("LDAU") for k in inc) and "LDAUU" not in inc:
         e.append("DFT+U tags present without LDAUU")
-    if pos.get("coordinate_mode", "").startswith("c") and abs(pos.get("scale", 1.0) - 1.0) > 1e-12:
+    if pos is not None and pos["coordinate_mode"].startswith("c") and abs(pos["scale"] - 1.0) > 1e-12:
         w.append("Cartesian POSCAR with non-unit scale requires deliberate interpretation")
     return {
         "ok": not e,
@@ -126,7 +138,7 @@ def validate(run: Path) -> dict:
         "warnings": w,
         "task_inferred": task,
         "incar": inc,
-        "poscar": pos,
+        "poscar": pos or {},
         "kpoints": kp,
         "potcar_titel": titles,
         "scientific_acceptance": "PENDING",

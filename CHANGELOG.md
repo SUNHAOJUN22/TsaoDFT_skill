@@ -2,8 +2,11 @@
 
 ## Unreleased — compute efficiency, README visual, CI and repository hardening
 
+- Added an evidence-bounded DFT acceleration planner for workstation, HPC and edge targets, with deterministic routes for VASP, Quantum ESPRESSO, CP2K, Gaussian, atomistic ML surrogates and custom native kernels.
+- Added explicit applicability decisions for cuBLAS, cuSOLVER, cuSOLVERMp, cuFFT, cuFFTMp, cuSPARSE, NCCL, NVSHMEM, cuTENSOR, cuEquivariance and CUTLASS instead of treating CUDA-X names as universal drop-in acceleration switches.
+- Defined the Python control-plane and C++/Fortran/CUDA/OpenACC native-kernel boundary, CPU fallback, mixed-precision validation, MPI-rank/GPU mapping, edge orchestration and immutable real-engine benchmark requirements.
+- Expanded the deterministic baseline to 137 tests across nine non-empty suites, including ten acceleration-planner tests for VASP/QE/CP2K routes, edge execution, equivariant ML, CUDA-X non-applicability, invalid GPU builds and deterministic output.
 - Closed the extended hardening pass with exact Python 3.10/3.12/3.13 constraints, weekly hosted security runs, locked-environment `pip-audit`, locked CycloneDX SBOM, capability-claim enforcement and deterministic secret-pattern checks.
-- Expanded the deterministic baseline to 127 tests across nine non-empty suites, including constraint provenance, forbidden scientific claims, immutable L3 evidence fields and secret-scanner regressions.
 - Closed the full repository audit with hosted green runs on Python 3.10, 3.12 and 3.13, CodeQL `security-extended`, runtime/development/locked `pip-audit`, CycloneDX SBOM generation, isolated mypy and Bandit.
 - Replaced unsafe workflow YAML loading with `yaml.safe_load` while handling YAML 1.1's Boolean interpretation of `on`, and replaced the production installer assertion with an explicit safety error.
 - Converted the Bandit exception list into an exact reviewed `(path, test_id)` contract with substantive reasons; new, duplicate or stale entries fail regression tests.
@@ -22,6 +25,7 @@
 - Added `docs/CODE_QUALITY_AUDIT.md` with the repository-wide analysis, findings, remediation and acceptance criteria.
 - Rebuilt the governed cover as `uiux_pro_v8_hero_evidence_bento`, using fresh AI-generated visual direction beneath deterministic vector typography, capability cards, workflow gates and evidence bento.
 - Rewrote both README files from first principles around a Hero-Centric + Trust & Authority structure: 30-second positioning, evidence workflow, eight-Skill map, curated deterministic figures, support levels, quick start, quality gate and scientific boundaries.
+- Updated both README files with the executable acceleration entry point, 137-test baseline and the same GPU/CUDA-X/native-code/edge scientific boundaries.
 - Updated the UI/UX Pro Max design-system record, generation provenance and AI manifest; verified the 1600×900 cover at full and half README widths.
 - Regenerated all eight deterministic SVG demonstrations as high-contrast dark evidence dashboards with fixed dimensions, accessible titles/descriptions and visible synthetic-data labels.
 - Added a second performance-audit pass with chunked file hashes, bounded canonical dataset hashing, Slurm-array compaction and reproducible baseline microbenchmarks.
@@ -31,7 +35,7 @@
 - Replaced repeated full-file VASP, Quantum ESPRESSO and CP2K output decoding with read-only memory-mapped evidence scans; selected fields and acceptance boundaries remain unchanged.
 - Added automatic primal/dual ridge selection so wide DFT descriptor matrices solve the smaller sample-space system, with stable least squares for `alpha = 0` and solver provenance in the model card.
 - Removed repeated duplicate-signature field sorting from the DFT dataset validator.
-- Added `docs/PERFORMANCE_GUIDE.md` with implementation benchmarks and official NumPy, Python, ASE and Slurm execution guidance.
+- Added `docs/PERFORMANCE_GUIDE.md` with implementation benchmarks and official NumPy, Python, ASE, Slurm, CUDA-X and engine-acceleration guidance.
 - Upgraded pinned GitHub Actions to Node 24-compatible `checkout` v6, `setup-python` v6 and `upload-artifact` v7 commits.
 - Deleted seven redundant AI module-card SVGs and prohibited deprecated `assets/ai/modules/` references from returning.
 - Kept all eight deterministic demo assets under strict, read-only integrity validation while decoupling asset validation from README curation.

@@ -125,6 +125,11 @@ def materialize_manifest(
     base_manifest: dict[str, Any],
     profile: dict[str, Any],
 ) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
+    base_engine = str(base_manifest.get("engine", "")).lower()
+    profile_engine = str(profile.get("engine", "")).lower()
+    if base_engine != profile_engine:
+        raise ValueError(f"base manifest engine {base_engine!r} does not match acceleration profile {profile_engine!r}")
+
     plan = build_plan(profile)
     if not plan.get("ok", False):
         raise ValueError("; ".join(plan.get("errors", ["acceleration plan is invalid"])))

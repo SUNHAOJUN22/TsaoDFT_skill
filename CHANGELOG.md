@@ -2,8 +2,9 @@
 
 ## Unreleased — compute efficiency, README visual, CI and repository hardening
 
-- Closed the full repository audit with a hosted green run on Python 3.10, 3.12 and 3.13, CodeQL `security-extended`, runtime/development `pip-audit`, CycloneDX SBOM generation, isolated mypy and Bandit.
-- Expanded the deterministic baseline to 118 tests across nine non-empty suites, including installer ownership safety, prompt-injection boundaries, Agent eval contracts, governance, packaging, type and security gates.
+- Closed the extended hardening pass with exact Python 3.10/3.12/3.13 constraints, weekly hosted security runs, locked-environment `pip-audit`, locked CycloneDX SBOM, capability-claim enforcement and deterministic secret-pattern checks.
+- Expanded the deterministic baseline to 127 tests across nine non-empty suites, including constraint provenance, forbidden scientific claims, immutable L3 evidence fields and secret-scanner regressions.
+- Closed the full repository audit with hosted green runs on Python 3.10, 3.12 and 3.13, CodeQL `security-extended`, runtime/development/locked `pip-audit`, CycloneDX SBOM generation, isolated mypy and Bandit.
 - Replaced unsafe workflow YAML loading with `yaml.safe_load` while handling YAML 1.1's Boolean interpretation of `on`, and replaced the production installer assertion with an explicit safety error.
 - Converted the Bandit exception list into an exact reviewed `(path, test_id)` contract with substantive reasons; new, duplicate or stale entries fail regression tests.
 - Completed a tracked-file, code, Skill, installer, governance, dependency, packaging and supply-chain audit with evidence recorded in `docs/REPOSITORY_FULL_AUDIT.md`.

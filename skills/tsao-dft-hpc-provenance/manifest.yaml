@@ -37,6 +37,24 @@ routes:
     - references/gpu-acceleration.md
     - references/environment.md
     - references/site-profiles-and-lineage.md
+  performance_evidence:
+    triggers:
+    - benchmark result
+    - real benchmark evidence
+    - numerical equivalence
+    - speedup
+    - strong scaling efficiency
+    - artifact hash
+    - performance evidence bundle
+    - L3 performance qualification
+    - sacct
+    - nvidia-smi
+    - Nsight
+    - rocm-smi
+    load:
+    - references/performance-evidence-and-qualification.md
+    - references/provenance.md
+    - references/gpu-acceleration.md
   job_script:
     triggers:
     - Slurm
@@ -76,10 +94,12 @@ routes:
     - supply chain
     - build fingerprint
     - GPU UUID
+    - evidence bundle
     load:
     - references/provenance.md
     - references/security.md
     - references/gpu-acceleration.md
+    - references/performance-evidence-and-qualification.md
   site_and_restart:
     triggers:
     - site profile

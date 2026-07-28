@@ -101,9 +101,16 @@ capabilities:
   - validate_restart_lineage.py
   - plan_acceleration.py
   - materialize_acceleration_campaign.py
+  - validate_benchmark_result.py
+  - import_benchmark_evidence.py
+  - compare_acceleration_results.py
+  - qualify_performance_evidence.py
+  - collect_optional_metrics.py
+  - performance_evidence.py
   external_requirements:
   - real scheduler/site for L3
   - real accelerator and versioned engine build for measured performance evidence
+  - immutable real-engine run artifacts and independent review for scoped L3 performance evidence
 - id: kinetics
   skill: tsao-dft-kinetics-multiscale
   status: implemented_core_handoff

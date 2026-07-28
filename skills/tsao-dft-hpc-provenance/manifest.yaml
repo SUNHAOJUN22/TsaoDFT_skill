@@ -29,6 +29,10 @@ routes:
     - C++
     - native extension
     - parallel performance
+    - GPU binding
+    - rank per GPU
+    - benchmark matrix
+    - acceleration campaign
     load:
     - references/gpu-acceleration.md
     - references/environment.md
@@ -40,8 +44,10 @@ routes:
     - job script
     - resources
     - walltime
+    - srun binding
     load:
     - references/job-scripts.md
+    - references/gpu-acceleration.md
   batch:
     triggers:
     - batch
@@ -68,9 +74,12 @@ routes:
     - container
     - CI
     - supply chain
+    - build fingerprint
+    - GPU UUID
     load:
     - references/provenance.md
     - references/security.md
+    - references/gpu-acceleration.md
   site_and_restart:
     triggers:
     - site profile

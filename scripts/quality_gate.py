@@ -19,11 +19,13 @@ ROOT = Path(__file__).resolve().parents[1]
 class Stage:
     name: str
     command: tuple[str, ...]
+    timeout_seconds: float = 240.0
 
 
 def stages(include_tests: bool = True) -> list[Stage]:
     items = [
         Stage("demo assets", (sys.executable, "scripts/generate_readme_demos.py")),
+        Stage("dependency contract", (sys.executable, "scripts/validate_dependencies.py")),
         Stage("catalog", (sys.executable, "scripts/validate_catalog.py")),
         Stage("AI assets", (sys.executable, "scripts/validate_ai_assets.py")),
         Stage("README visuals", (sys.executable, "scripts/validate_readme_visuals.py", "--strict")),
@@ -33,32 +35,82 @@ def stages(include_tests: bool = True) -> list[Stage]:
         Stage("repository", (sys.executable, "scripts/validate_repo.py", "--strict")),
     ]
     if include_tests:
-        items.append(Stage("unit tests", (sys.executable, "scripts/run_all_tests.py")))
+        items.append(Stage("unit tests", (sys.executable, "scripts/run_all_tests.py"), timeout_seconds=900.0))
     return items
+
+
+def run_stage(
+    stage: Stage,
+    env: dict[str, str],
+    *,
+    timeout_override: float | None = None,
+    capture_output: bool = False,
+) -> dict[str, object]:
+    started = time.monotonic()
+    timeout = timeout_override if timeout_override is not None else stage.timeout_seconds
+    try:
+        process = subprocess.run(
+            stage.command,
+            cwd=ROOT,
+            text=True,
+            env=env,
+            timeout=timeout,
+            capture_output=capture_output,
+            check=False,
+        )
+        result: dict[str, object] = {
+            "stage": stage.name,
+            "returncode": process.returncode,
+            "seconds": round(time.monotonic() - started, 3),
+            "timed_out": False,
+        }
+        if capture_output and process.returncode != 0:
+            result["output"] = ((process.stdout or "") + (process.stderr or "")).rstrip()
+        return result
+    except subprocess.TimeoutExpired as exc:
+        result = {
+            "stage": stage.name,
+            "returncode": 124,
+            "seconds": round(time.monotonic() - started, 3),
+            "timed_out": True,
+            "timeout_seconds": timeout,
+        }
+        if capture_output:
+            stdout = exc.stdout if isinstance(exc.stdout, str) else ""
+            stderr = exc.stderr if isinstance(exc.stderr, str) else ""
+            result["output"] = (stdout + stderr).rstrip()
+        return result
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--skip-tests", action="store_true", help="Run static gates only")
     parser.add_argument("--json", action="store_true", dest="json_output")
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=None,
+        help="Override the timeout for every stage in seconds; must be positive",
+    )
     args = parser.parse_args()
+    if args.timeout is not None and args.timeout <= 0:
+        parser.error("--timeout must be positive")
 
     env = os.environ.copy()
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     results: list[dict[str, object]] = []
     started = time.monotonic()
+    expected = stages(include_tests=not args.skip_tests)
 
-    for index, stage in enumerate(stages(include_tests=not args.skip_tests), start=1):
-        stage_started = time.monotonic()
-        process = subprocess.run(stage.command, cwd=ROOT, text=True, env=env)
-        elapsed = round(time.monotonic() - stage_started, 3)
-        results.append({"stage": stage.name, "returncode": process.returncode, "seconds": elapsed})
+    for index, stage in enumerate(expected, start=1):
+        result = run_stage(stage, env, timeout_override=args.timeout, capture_output=args.json_output)
+        results.append(result)
         if not args.json_output:
-            print(f"[{index}] {stage.name}: {'PASS' if process.returncode == 0 else 'FAIL'} ({elapsed:.3f}s)")
-        if process.returncode != 0:
+            status = "PASS" if result["returncode"] == 0 else "TIMEOUT" if result["timed_out"] else "FAIL"
+            print(f"[{index}] {stage.name}: {status} ({result['seconds']:.3f}s)")
+        if result["returncode"] != 0:
             break
 
-    expected = stages(include_tests=not args.skip_tests)
     ok = len(results) == len(expected) and all(item["returncode"] == 0 for item in results)
     payload = {
         "ok": ok,

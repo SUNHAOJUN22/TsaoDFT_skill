@@ -136,7 +136,6 @@ jobs:
       PYTHONDONTWRITEBYTECODE: "1"
       PYTHONHASHSEED: "0"
       AUDIT_DIR: ${{ runner.temp }}/tsao-full-audit
-      GITHUB_TOKEN: ${{ github.token }}
 
     steps:
       - name: Checkout complete history
@@ -166,7 +165,9 @@ jobs:
           python -m pip check
 
       - name: Run evidence-producing audit
-        run: bash .github/full-audit-once.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/run-full-audit-once.sh
 
       - name: Upload full audit evidence
         if: always()

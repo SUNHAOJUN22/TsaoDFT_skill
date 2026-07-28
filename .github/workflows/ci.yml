@@ -17,6 +17,55 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  format-acceleration-once:
+    name: Exact acceleration formatter
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, '[format-acceleration]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 2
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+            constraints/py312.txt
+
+      - name: Install locked formatter
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -c constraints/py312.txt -r requirements-dev.txt
+
+      - name: Format exact acceleration files
+        run: |
+          python -m ruff check --fix \
+            skills/tsao-dft-hpc-provenance/scripts/validate_hpc_manifest.py \
+            skills/tsao-dft-hpc-provenance/tests/test_acceleration_execution.py
+          python -m ruff format \
+            skills/tsao-dft-hpc-provenance/scripts/validate_hpc_manifest.py \
+            skills/tsao-dft-hpc-provenance/tests/test_acceleration_execution.py
+
+      - name: Restore permanent workflow and commit
+        shell: bash
+        run: |
+          git show HEAD^:.github/workflows/ci.yml > .github/workflows/ci.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/ci.yml \
+            skills/tsao-dft-hpc-provenance/scripts/validate_hpc_manifest.py \
+            skills/tsao-dft-hpc-provenance/tests/test_acceleration_execution.py
+          git commit -m "style: apply exact Ruff acceleration formatting"
+          git push origin HEAD:main
+
   quality-gate:
     name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest

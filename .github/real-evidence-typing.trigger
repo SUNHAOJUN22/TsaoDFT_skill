@@ -1,1 +1,1 @@
-one-shot trigger for the reviewed real-evidence typing closure
+execute encoded one-shot typing closure

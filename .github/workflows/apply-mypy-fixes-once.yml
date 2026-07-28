@@ -40,6 +40,7 @@ jobs:
           set +e
           {
             python .github/apply-mypy-fixes-once.py
+            python .github/fix-mypy-walrus-once.py
             python -m ruff format .
             python -m ruff check .
             python scripts/run_type_checks.py
@@ -80,6 +81,7 @@ jobs:
         if: steps.repairs.outputs.exit_code == '0'
         run: |
           rm .github/apply-mypy-fixes-once.py
+          rm .github/fix-mypy-walrus-once.py
           rm .github/workflows/apply-mypy-fixes-once.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'

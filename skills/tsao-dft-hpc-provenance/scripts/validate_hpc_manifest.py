@@ -236,6 +236,8 @@ def main() -> int:
     parser.add_argument("manifest", type=Path)
     args = parser.parse_args()
     loaded = yaml.safe_load(args.manifest.read_text(encoding="utf-8")) or {}
+    errors: list[str]
+    warnings: list[str]
     if not isinstance(loaded, dict):
         errors, warnings = ["manifest root must be a mapping"], []
     else:

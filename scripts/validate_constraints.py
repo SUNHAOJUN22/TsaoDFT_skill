@@ -57,7 +57,9 @@ def parse_constraint_file(path: Path) -> tuple[dict[str, str], list[str]]:
 
 def validate(root: Path = ROOT) -> list[str]:
     failures: list[str] = []
-    required = direct_requirement_names(root / "requirements.txt") | direct_requirement_names(root / "requirements-dev.txt")
+    required = direct_requirement_names(root / "requirements.txt") | direct_requirement_names(
+        root / "requirements-dev.txt"
+    )
     for stem, version in SUPPORTED.items():
         path = root / "constraints" / f"{stem}.txt"
         pins, parse_failures = parse_constraint_file(path)

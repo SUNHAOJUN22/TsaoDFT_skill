@@ -2,12 +2,12 @@
 
 Date: 2026-07-28  
 Version: `0.4.0-alpha.1`  
-Validated source commit before documentation sync: `360046f4edc680dd4f50421ad9dd4c7576eaa763`  
-GitHub Actions run: `30338083011`
+Validated source commit before documentation sync: `bcdfca6e81ae977287702fd6f4aba9f8cfa93e46`  
+GitHub Actions run: `30344814556`
 
 ## Result
 
-**PASS — 127 unit tests across 9 isolated suites, 0 failed suites.**
+**PASS — 137 unit tests across 9 isolated suites, 0 failed suites.**
 
 | Suite | Tests | Result |
 |---|---:|---|
@@ -17,7 +17,7 @@ GitHub Actions run: `30338083011`
 | `tsao-structure-prep` | 5 | PASS |
 | `tsao-periodic-dft-materials` | 11 | PASS |
 | `tsao-dft-ml-active-learning` | 16 | PASS |
-| `tsao-dft-hpc-provenance` | 13 | PASS |
+| `tsao-dft-hpc-provenance` | 23 | PASS |
 | `tsao-dft-kinetics-multiscale` | 5 | PASS |
 | `tsao-dft-catalysis-profile` | 5 | PASS |
 
@@ -51,7 +51,7 @@ Each stage has an explicit timeout. JSON mode captures child output and remains 
 
 ## Hosted CI evidence
 
-Run `30338083011` completed successfully with:
+Run `30344814556` completed successfully with:
 
 - locked Python 3.10 quality gate: PASS;
 - locked Python 3.12 quality gate: PASS;
@@ -63,7 +63,7 @@ Run `30338083011` completed successfully with:
 - locked CycloneDX JSON SBOM generation and upload: PASS;
 - no failure-log artifact, because every blocking gate passed.
 
-The GitHub Actions workflow is the only permanent workflow, runs weekly as well as on `main`, PR and manual triggers, and pins every reusable Action to a full commit SHA.
+The GitHub Actions workflow is the only permanent workflow, runs weekly as well as on `main`, PR and manual triggers, and pins every reusable Action to a full commit SHA. The one-shot formatter workflow used during remediation was deleted after its exact output was committed.
 
 ## Security and Agent coverage
 
@@ -101,9 +101,21 @@ The root suite includes deterministic checks for:
 
 ## Scientific and performance coverage
 
-The 127 tests cover DFT-first routing, method fingerprints, cross-Skill handoffs, Gaussian preflight and synthetic parsing, minimum/TS/IRC acceptance, Multiwfn recipes, uncertainty budgets, structure mapping, VASP/QE/CP2K adapters, convergence and compatibility gates, provenance-safe DFT datasets, leakage controls, adaptive ridge solvers, HPC scripts and arrays, restart lineage, thermodynamic closure, uncertainty propagation, Cantera-oriented handoff, catalyst scope, figure manifests and deterministic scientific demonstrations.
+The 137 tests cover DFT-first routing, method fingerprints, cross-Skill handoffs, Gaussian preflight and synthetic parsing, minimum/TS/IRC acceptance, Multiwfn recipes, uncertainty budgets, structure mapping, VASP/QE/CP2K adapters, convergence and compatibility gates, provenance-safe DFT datasets, leakage controls, adaptive ridge solvers, HPC scripts and arrays, restart lineage, thermodynamic closure, uncertainty propagation, Cantera-oriented handoff, catalyst scope, figure manifests and deterministic scientific demonstrations.
 
-Performance regression coverage protects memory-mapped periodic parsers, streaming SHA-256, bounded canonical dataset hashing, primal/dual ridge equivalence and Slurm-array compaction.
+The ten new acceleration tests cover:
+
+- engine-native VASP GPU planning with the OpenACC, one-rank-per-GPU, `NCORE=1`, `KPAR` and NCCL starting points;
+- Quantum ESPRESSO pools, task groups, diagonalization and empirical decomposition;
+- CP2K CUDA, DBCSR/GRID/DBM/PW and ELPA planning;
+- cuEquivariance only for equivariant atomistic ML;
+- cuTENSOR rejection as a drop-in VASP flag;
+- edge orchestration for production DFT;
+- CPU fallback and CUDA-X non-applicability;
+- rejection of a GPU engine build without a GPU;
+- deterministic repeatability.
+
+Performance regression coverage also protects memory-mapped periodic parsers, streaming SHA-256, bounded canonical dataset hashing, primal/dual ridge equivalence and Slurm-array compaction.
 
 ## Commands
 
@@ -135,8 +147,10 @@ python scripts/run_type_checks.py
 python scripts/run_bandit.py
 python scripts/validate_repo.py --strict
 python scripts/run_all_tests.py
+python skills/tsao-dft-hpc-provenance/scripts/plan_acceleration.py \
+  skills/tsao-dft-hpc-provenance/templates/acceleration-profile.yaml
 ```
 
 ## Important non-claims
 
-The tests use deterministic fixtures and synthetic output excerpts. They do not establish licensed real-engine execution for Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD, Slurm/PBS, DeepChem/GNN or Cantera. Selected capabilities therefore remain **L2 validated adapters**, not L3 execution-tested engines. L3 requires immutable evidence from the legal engine, version and site.
+The tests use deterministic fixtures and synthetic output excerpts. They do not establish licensed real-engine execution or measured GPU acceleration for Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD, Slurm/PBS, DeepChem/GNN or Cantera. Selected capabilities therefore remain **L2 validated adapters**, not L3 execution-tested engines. L3 requires immutable evidence from the legal engine, version, build, hardware and site.

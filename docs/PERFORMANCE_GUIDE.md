@@ -58,7 +58,7 @@ The generator never submits the result. Pending or rejected approval inserts a r
 - `NUMEXPR_NUM_THREADS`
 - `NUMEXPR_MAX_THREADS`
 
-When `cpus_per_node` is provided, `tasks_per_node × cpus_per_task` may not exceed it. This is a conservative manifest check, not a replacement for site topology documentation.
+When `cpus_per_node` is provided, `tasks_per_node × cpus_per_task` may not exceed it. The acceleration contract additionally checks `tasks_per_node = gpus_per_node × ranks_per_gpu`, requires explicit GPU-oversubscription approval and rejects incompatible backend/vendor pairs.
 
 ### GPU, native-code and edge acceleration planner
 
@@ -80,6 +80,26 @@ The report separates four routes:
 It evaluates cuBLAS, cuSOLVER, cuSOLVERMp, cuFFT, cuFFTMp, cuSPARSE, NCCL, NVSHMEM, cuTENSOR, cuEquivariance and CUTLASS without treating any library as a universal drop-in switch. It records initial MPI-rank/GPU mapping, build fingerprint requirements, CPU/native boundaries, benchmark metrics, mixed-precision warnings and explicit non-claims.
 
 The planner is an L2 validated adapter. It does not modify or launch licensed engines, and its output is L1 planning evidence until real target-environment measurements are attached.
+
+### Bound acceleration benchmark materialization
+
+`materialize_acceleration_campaign.py` converts a matching base Manifest and acceleration profile into reproducible, approval-gated benchmark artifacts:
+
+```bash
+python skills/tsao-dft-hpc-provenance/scripts/materialize_acceleration_campaign.py \
+  skills/tsao-dft-hpc-provenance/templates/vasp-gpu-hpc-manifest.yaml \
+  skills/tsao-dft-hpc-provenance/templates/acceleration-profile.yaml \
+  --manifest-out build/vasp-h100.yaml \
+  --matrix-out build/benchmark-matrix.csv \
+  --candidate-dir build/candidates \
+  --plan-out build/acceleration-plan.json
+```
+
+The default profile produces an FP64 CPU scientific reference and 1/2/4-GPU candidates. It preserves engine identity, scientific input, method fingerprint and convergence policy; calculates tasks and CPUs from `gpus_per_node`, `ranks_per_gpu` and `cpus_per_gpu`; writes one candidate Manifest per matrix row; and forces every candidate to `approval: pending`. It never calls `sbatch`, `qsub`, `srun` or the DFT engine.
+
+For Slurm, `launcher: auto` generates a reviewed `srun` step with total ranks, ranks per node, CPUs per task, bad-exit propagation and declared CPU/GPU binding. One-rank-per-GPU layouts request one GPU per task. The script leaves device visibility to the scheduler rather than exporting a fixed `CUDA_VISIBLE_DEVICES`.
+
+When runtime capture is enabled, the generated script records profile/build/benchmark IDs, scheduler job/node/local-rank fields, visible-device variables and NVIDIA GPU name, UUID, PCI bus, driver and memory where `nvidia-smi` is available. These fields are provenance, not a performance result.
 
 ## Reproducible microbenchmark
 

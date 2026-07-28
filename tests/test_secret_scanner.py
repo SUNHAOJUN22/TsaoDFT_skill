@@ -28,11 +28,9 @@ class SecretScannerTests(unittest.TestCase):
     def test_private_key_and_token_are_rejected(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            (root / "example.md").write_text(
-                "-----BEGIN PRIVATE KEY-----\n"
-                "github_pat_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_ABCDEFGHIJKLMNOPQRSTUVWXYZ\n",
-                encoding="utf-8",
-            )
+            private_header = "-----BEGIN " + "PRIVATE KEY-----\n"
+            synthetic_token = "github_" + "pat_" + "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_ABCDEFGHIJKLMNOPQRSTUVWXYZ\n"
+            (root / "example.md").write_text(private_header + synthetic_token, encoding="utf-8")
             failures = validator.validate(root)
             self.assertTrue(any("private-key" in item for item in failures), failures)
             self.assertTrue(any("github-token" in item for item in failures), failures)

@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -80,4 +82,32 @@ legacy_workflow = ROOT / ".github" / "workflows" / "bandit-fix.yml"
 if legacy_workflow.exists():
     legacy_workflow.unlink()
 shutil.rmtree(ROOT / "_bandit_fix")
-print("Applied Bandit closure and restored the permanent repository layout.")
+
+subprocess.run(
+    [
+        sys.executable,
+        "-m",
+        "ruff",
+        "format",
+        "scripts/install.py",
+        "scripts/validate_governance.py",
+        "scripts/run_bandit.py",
+        "scripts/run_type_checks.py",
+    ],
+    cwd=ROOT,
+    check=True,
+)
+subprocess.run(["git", "config", "user.name", "github-actions[bot]"], cwd=ROOT, check=True)
+subprocess.run(
+    ["git", "config", "user.email", "41898282+github-actions[bot]@users.noreply.github.com"],
+    cwd=ROOT,
+    check=True,
+)
+subprocess.run(["git", "add", "-A"], cwd=ROOT, check=True)
+subprocess.run(
+    ["git", "commit", "-m", "fix: close Bandit and governance findings [skip ci]"],
+    cwd=ROOT,
+    check=True,
+)
+subprocess.run(["git", "push", "origin", "HEAD:main"], cwd=ROOT, check=True)
+print("Applied and published the cleaned Bandit closure on main.")

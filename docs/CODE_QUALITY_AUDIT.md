@@ -40,11 +40,11 @@ The workflow had a global job timeout, while individual validation stages could 
 
 **Remediation:** capture child output in JSON mode and include it only for failed stages.
 
-### 4. CI contained a non-essential network failure point
+### 4. CI status publishing could become a false failure source
 
-The workflow manually posted commit statuses through the GitHub REST API even though GitHub Actions already creates native matrix checks. A transient status-API error could fail an otherwise successful quality run.
+The workflow manually posted commit statuses through the GitHub REST API even though GitHub Actions already creates native matrix checks. The former posting step was blocking, so a transient status-API error could fail an otherwise successful quality run.
 
-**Remediation:** rely on native Actions checks, keep immutable action pins and failure artifacts, add `pip check`, and remove the custom status-posting code and `statuses: write` permission.
+**Remediation:** keep native GitHub Actions matrix jobs as the only blocking authority, add `pip check`, remove unnecessary write permission from the core gate, and make the three compatibility status summaries explicitly best-effort with retries and `continue-on-error`. A summary-posting outage can reduce observability but cannot turn passing code into a failed job.
 
 ### 5. New quality contracts needed direct regression tests
 

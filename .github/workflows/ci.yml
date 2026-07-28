@@ -172,3 +172,50 @@ jobs:
         uses: github/codeql-action/analyze@7211b7c8077ea37d8641b6271f6a365a22a5fbfa # v4.36.0
         with:
           category: "/language:python"
+
+  constraints-snapshot:
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, '[constraints-snapshot]')
+    name: Snapshot constraints Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12", "3.13"]
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Setup Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Resolve and capture environment
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+          python -m pip check
+          mkdir -p constraints-output
+          python -m pip freeze --all \
+            | grep -Ev '^(pip|setuptools|wheel)==' \
+            | LC_ALL=C sort \
+            > "constraints-output/py${PYTHON_VERSION/./}.txt"
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          path = Path('constraints-output') / f"py{os.environ['PYTHON_VERSION'].replace('.', '')}.txt"
+          if not path.is_file() or path.stat().st_size == 0:
+              raise SystemExit('empty constraints snapshot')
+          print(path.read_text(encoding='utf-8'))
+          PY
+        env:
+          PYTHON_VERSION: ${{ matrix.python-version }}
+      - name: Upload constraints snapshot
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: constraints-py${{ matrix.python-version }}
+          path: constraints-output/*.txt
+          if-no-files-found: error
+          retention-days: 7

@@ -12,10 +12,29 @@ l3_required_evidence:
   - site
   - run_id
   - artifact_sha256
+acceleration_l3_required_evidence:
+  - engine
+  - engine_version
+  - build_fingerprint
+  - site
+  - hardware_fingerprint
+  - run_ids
+  - artifact_sha256
+  - cpu_reference
+  - minimum_repeats
+  - numerical_equivalence_pass
+  - parser_acceptance_pass
+  - performance_policy_pass
+  - evidence_bundle_sha256
+  - independent_review_approved
 required_boundaries:
   - normal termination is not scientific acceptance
   - scheduler completion is not scientific acceptance
   - a parser or fixture test cannot establish L3 execution support
+  - a generated acceleration plan or benchmark candidate is not measured speedup evidence
+  - a self-reported L3 label in imported evidence is ignored
+  - numerical equivalence must pass before speedup is calculated
+  - scoped L3 performance eligibility does not automatically change the public capability level
   - AI conceptual imagery is not computational or experimental evidence
   - ML score correlation and SHAP are not causal or mechanistic proof
   - every downstream handoff preserves hashes method fingerprint support level and unresolved assumptions
@@ -23,6 +42,7 @@ allowed_claim_templates:
   - Calculated evidence supports a bounded preference under the stated model method reference state and uncertainty.
   - The selected-field adapter is validated by deterministic fixtures and repository tests at L2_VALIDATED_ADAPTER.
   - Real-engine execution is NOT VERIFIED unless immutable engine version site and artifact evidence is recorded.
+  - A scoped performance result is eligible for L3 review only when real-engine repeats numerical equivalence artifact hashes hardware identity and independent review all pass.
 forbidden_claim_phrases:
   - DFT proves catalyst performance
   - parser tests prove real engine execution

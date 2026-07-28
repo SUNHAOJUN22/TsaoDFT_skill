@@ -28,7 +28,11 @@ def main() -> int:
     if args.records_out:
         args.records_out.parent.mkdir(parents=True, exist_ok=True)
         args.records_out.write_text(json.dumps(records, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps({**report, "records_out": str(args.records_out) if args.records_out else None}, ensure_ascii=False, indent=2))
+    print(
+        json.dumps(
+            {**report, "records_out": str(args.records_out) if args.records_out else None}, ensure_ascii=False, indent=2
+        )
+    )
     return 0 if report["ok"] else 1
 
 

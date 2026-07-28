@@ -94,9 +94,7 @@ def require_number(
     return result
 
 
-def require_integer(
-    mapping: dict[str, Any], key: str, path: str, errors: list[str], *, minimum: int = 0
-) -> int:
+def require_integer(mapping: dict[str, Any], key: str, path: str, errors: list[str], *, minimum: int = 0) -> int:
     value = mapping.get(key)
     if isinstance(value, bool):
         errors.append(f"{path}.{key} must be an integer")
@@ -560,9 +558,7 @@ def numerical_equivalence(
         if stress_deviation is None:
             reasons.append("stress vector missing or incompatible")
         else:
-            maximums["stress_max_abs_gpa"] = max(
-                float(maximums["stress_max_abs_gpa"] or 0.0), stress_deviation
-            )
+            maximums["stress_max_abs_gpa"] = max(float(maximums["stress_max_abs_gpa"] or 0.0), stress_deviation)
         candidate_properties = results.get("properties") or {}
         for name, reference_value in (baseline.get("properties") or {}).items():
             if name not in candidate_properties:
@@ -633,12 +629,8 @@ def compare_evidence(records: list[dict[str, Any]], policy: dict[str, Any]) -> d
         wall_values = [float((record.get("performance") or {}).get("wall_time_s")) for record in eligible]
         resources = candidate_resource_counts(group)
         build_ids = {str((record.get("engine") or {}).get("build_fingerprint_id", "")) for record in group}
-        hardware_ids = {
-            str((record.get("hardware") or {}).get("hardware_fingerprint_id", "")) for record in group
-        }
-        gpu_identity = {
-            tuple(sorted((record.get("hardware") or {}).get("gpu_uuids") or [])) for record in group
-        }
+        hardware_ids = {str((record.get("hardware") or {}).get("hardware_fingerprint_id", "")) for record in group}
+        gpu_identity = {tuple(sorted((record.get("hardware") or {}).get("gpu_uuids") or [])) for record in group}
         equivalence = {
             "status": "NOT_APPLICABLE" if candidate_id == reference_id else "NOT_EVALUATED",
             "maximum_deviations": {},
@@ -657,7 +649,9 @@ def compare_evidence(records: list[dict[str, Any]], policy: dict[str, Any]) -> d
             "failed_runs": len(failures),
             "minimum_repeats_pass": len(eligible) >= minimum_repeats,
             "build_identity_consistent": len(build_ids) == 1 and "" not in build_ids,
-            "hardware_identity_consistent": len(hardware_ids) == 1 and "" not in hardware_ids and len(gpu_identity) == 1,
+            "hardware_identity_consistent": len(hardware_ids) == 1
+            and "" not in hardware_ids
+            and len(gpu_identity) == 1,
             "all_artifacts_verified": bool(group) and all(all_artifacts_verified(record) for record in group),
             "all_sources_real_engine": bool(group)
             and all((record.get("evidence_source") or {}).get("kind") == "real-engine" for record in group),
@@ -672,8 +666,7 @@ def compare_evidence(records: list[dict[str, Any]], policy: dict[str, Any]) -> d
                 outlier_threshold,
             ),
             "peak_host_memory_mb": max(
-                [float((record.get("performance") or {}).get("peak_host_memory_mb")) for record in eligible]
-                or [0.0]
+                [float((record.get("performance") or {}).get("peak_host_memory_mb")) for record in eligible] or [0.0]
             ),
             "peak_device_memory_mb": max(
                 [
@@ -698,9 +691,7 @@ def compare_evidence(records: list[dict[str, Any]], policy: dict[str, Any]) -> d
             "numerical_equivalence": equivalence,
             "run_ids": sorted(str((record.get("execution") or {}).get("run_id", "")) for record in group),
             "input_sha256": str((group[0].get("scientific") or {}).get("input_sha256", "")),
-            "method_fingerprint_id": str(
-                (group[0].get("scientific") or {}).get("method_fingerprint_id", "")
-            ),
+            "method_fingerprint_id": str((group[0].get("scientific") or {}).get("method_fingerprint_id", "")),
             "reported_support_level_ignored": sorted(
                 {str(record.get("support_level")) for record in group if record.get("support_level") is not None}
             ),
@@ -763,9 +754,8 @@ def compare_evidence(records: list[dict[str, Any]], policy: dict[str, Any]) -> d
         for candidate_id, summary in candidate_summaries.items()
         if candidate_id != reference_id
         and summary.get("cpu_to_candidate_speedup") is not None
-        and summary["cpu_to_candidate_speedup"] > float(
-            (policy.get("performance") or {}).get("minimum_cpu_to_candidate_speedup", 1.0)
-        )
+        and summary["cpu_to_candidate_speedup"]
+        > float((policy.get("performance") or {}).get("minimum_cpu_to_candidate_speedup", 1.0))
     ]
     best = max(eligible_for_best, key=lambda item: item["cpu_to_candidate_speedup"], default=None)
     return {
@@ -824,7 +814,9 @@ def qualify_evidence(
     for candidate_id, candidate in sorted((summary.get("candidates") or {}).items()):
         if candidate.get("role") == "scientific-reference":
             continue
-        status, reasons = candidate_qualification_status(candidate, summary.get("reference_status", "FAIL"), policy, review)
+        status, reasons = candidate_qualification_status(
+            candidate, summary.get("reference_status", "FAIL"), policy, review
+        )
         if status not in QUALIFICATION_STATUSES:
             raise ValueError(f"unexpected qualification status: {status}")
         qualifications[candidate_id] = {
@@ -905,9 +897,7 @@ def write_evidence_bundle(
     manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     evidence_bundle_sha256 = sha256_file(manifest_path)
     qualification = qualify_evidence(summary, policy, review, evidence_bundle_sha256)
-    qualification_path.write_text(
-        json.dumps(qualification, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
+    qualification_path.write_text(json.dumps(qualification, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     paths = [summary_path, markdown_path, manifest_path, qualification_path]
     checksum_lines = [f"{sha256_file(path)}  {path.name}" for path in sorted(paths, key=lambda item: item.name)]
     checksums_path.write_text("\n".join(checksum_lines) + "\n", encoding="utf-8")

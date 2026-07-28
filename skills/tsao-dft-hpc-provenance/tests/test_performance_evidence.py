@@ -301,9 +301,7 @@ class PerformanceEvidenceTests(unittest.TestCase):
         summary = self.core.compare_evidence(records, self.policy)
         self.assertEqual(summary["candidates"]["gpu-1"]["failed_runs"], 1)
         with tempfile.TemporaryDirectory() as out:
-            bundle = self.core.write_evidence_bundle(
-                Path(out), records, summary, self.policy, self.approved_review()
-            )
+            bundle = self.core.write_evidence_bundle(Path(out), records, summary, self.policy, self.approved_review())
             manifest = json.loads((Path(out) / "performance-evidence-manifest.json").read_text(encoding="utf-8"))
             self.assertEqual(manifest["failed_attempts_retained"], 1)
             self.assertTrue(bundle["ok"])
@@ -388,7 +386,9 @@ class PerformanceEvidenceTests(unittest.TestCase):
     def test_csv_dotted_field_import(self):
         path = self.artifact_root / "record.csv"
         with path.open("w", encoding="utf-8", newline="") as handle:
-            writer = csv.DictWriter(handle, fieldnames=["schema_version", "benchmark_plan_id", "candidate_id", "repeat_index"])
+            writer = csv.DictWriter(
+                handle, fieldnames=["schema_version", "benchmark_plan_id", "candidate_id", "repeat_index"]
+            )
             writer.writeheader()
             writer.writerow(
                 {
@@ -413,9 +413,7 @@ class PerformanceEvidenceTests(unittest.TestCase):
         records = self.validated([*self.reference_records(), *self.gpu_records()])
         summary = self.core.compare_evidence(records, self.policy)
         with tempfile.TemporaryDirectory() as out:
-            bundle = self.core.write_evidence_bundle(
-                Path(out), records, summary, self.policy, self.approved_review()
-            )
+            bundle = self.core.write_evidence_bundle(Path(out), records, summary, self.policy, self.approved_review())
             names = {Path(path).name for path in bundle["files"]}
             self.assertEqual(
                 names,

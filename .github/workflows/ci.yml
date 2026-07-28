@@ -135,7 +135,6 @@ jobs:
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
       PYTHONDONTWRITEBYTECODE: "1"
       PYTHONHASHSEED: "0"
-      AUDIT_DIR: ${{ runner.temp }}/tsao-full-audit
 
     steps:
       - name: Checkout complete history
@@ -166,6 +165,7 @@ jobs:
 
       - name: Run evidence-producing audit
         env:
+          AUDIT_DIR: ${{ runner.temp }}/tsao-full-audit
           GH_TOKEN: ${{ github.token }}
         run: bash .github/run-full-audit-once.sh
 

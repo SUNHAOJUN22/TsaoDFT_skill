@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-118%20passing-16A34A" alt="118 tests passing">
+  <img src="https://img.shields.io/badge/tests-127%20passing-16A34A" alt="127 tests passing">
   <img src="https://img.shields.io/badge/support-L0%E2%80%93L3-6D5DFB" alt="Support levels L0 to L3">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
@@ -97,7 +97,7 @@ planned
 | `L2_VALIDATED_ADAPTER` | 有确定性预检、解析、验证脚本和仓库测试 | 可报告“适配器已验证”，不能声称真实引擎已回归 |
 | `L3_EXECUTION_TESTED` | L2 + 真实引擎、版本、场站和不可变回归证据 | 可在明确范围内报告真实执行覆盖 |
 
-Gaussian、VASP、Quantum ESPRESSO 和 CP2K 当前提供选定字段的 **L2 适配器**。缺少合法真实引擎回归材料时，仓库不会宣称 L3。
+Gaussian、VASP、Quantum ESPRESSO 和 CP2K 当前提供选定字段的 **L2 适配器**。缺少合法真实引擎回归材料时，仓库不会宣称 L3。机器可读主张边界见 [`docs/SCIENTIFIC_CLAIM_POLICY.yaml`](docs/SCIENTIFIC_CLAIM_POLICY.yaml)。
 
 ## 快速开始
 
@@ -132,20 +132,23 @@ python scripts/install.py \
 ## 工程质量与一键验收
 
 ```bash
-python -m pip install -r requirements-dev.txt
+python -m pip install -c constraints/py312.txt -r requirements-dev.txt
 python -m pip check
 python scripts/quality_gate.py
 ```
 
-当前基线：**118 项单元测试、9 个隔离套件、0 个失败套件**。每个质量阶段都有明确超时，`--json` 输出可直接供机器解析。质量门依次检查：
+当前基线：**127 项单元测试、9 个隔离套件、0 个失败套件**。每个质量阶段都有明确超时，`--json` 输出可直接供机器解析。质量门依次检查：
 
 ```text
 versioned demo assets
 → dependency and version contract
+→ cross-version exact CI constraints
 → repository-only packaging model
 → DFT catalog
 → Agent eval contracts
 → governance and workflow policy
+→ capability and scientific-claim boundaries
+→ high-confidence secret patterns
 → explained ignore markers
 → governed AI cover
 → bilingual README visuals
@@ -158,13 +161,15 @@ versioned demo assets
 → all non-empty test suites
 ```
 
-GitHub Actions 还独立执行 Python 3.10 / 3.12 / 3.13、CodeQL `security-extended`、运行时与开发依赖 `pip-audit`，并生成 CycloneDX JSON SBOM。
+GitHub Actions 以 Python 3.10 / 3.12 / 3.13 的独立约束快照运行，并每周重新执行 CodeQL `security-extended`、运行时/开发/锁定环境 `pip-audit`，生成锁定环境 CycloneDX JSON SBOM。约束更新必须通过审查后的快照流程，不能手工静默漂移。
 
-工程审计、性能实现与边界见：
+工程审计、供应链、安全模型与性能边界见：
 
 - [`docs/REPOSITORY_FULL_AUDIT.md`](docs/REPOSITORY_FULL_AUDIT.md)
 - [`docs/CODE_QUALITY_AUDIT.md`](docs/CODE_QUALITY_AUDIT.md)
 - [`docs/AGENT_SECURITY_MODEL.md`](docs/AGENT_SECURITY_MODEL.md)
+- [`docs/SUPPLY_CHAIN_POLICY.md`](docs/SUPPLY_CHAIN_POLICY.md)
+- [`docs/SCIENTIFIC_CLAIM_POLICY.yaml`](docs/SCIENTIFIC_CLAIM_POLICY.yaml)
 - [`docs/PERFORMANCE_AUDIT.md`](docs/PERFORMANCE_AUDIT.md)
 - [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md)
 - [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md)
@@ -187,9 +192,11 @@ GitHub Actions 还独立执行 Python 3.10 / 3.12 / 3.13、CodeQL `security-exte
 | [`docs/ENGINE_SUPPORT_MATRIX.md`](docs/ENGINE_SUPPORT_MATRIX.md) | 引擎覆盖与支持等级 |
 | [`docs/CAPABILITY_STATUS.yaml`](docs/CAPABILITY_STATUS.yaml) | 机器可读能力状态 |
 | [`docs/SCIENTIFIC_BOUNDARIES.md`](docs/SCIENTIFIC_BOUNDARIES.md) | 科学边界与非主张 |
+| [`docs/SCIENTIFIC_CLAIM_POLICY.yaml`](docs/SCIENTIFIC_CLAIM_POLICY.yaml) | 机器可读主张强度与 L3 证据合同 |
 | [`docs/CROSS_SKILL_HANDOFF.md`](docs/CROSS_SKILL_HANDOFF.md) | 跨 Skill 交接合同 |
 | [`docs/REPOSITORY_FULL_AUDIT.md`](docs/REPOSITORY_FULL_AUDIT.md) | 全仓库安全、供应链与 Agent Skill 审计 |
 | [`docs/CODE_QUALITY_AUDIT.md`](docs/CODE_QUALITY_AUDIT.md) | 全仓库代码、测试与 CI 审计 |
+| [`docs/SUPPLY_CHAIN_POLICY.md`](docs/SUPPLY_CHAIN_POLICY.md) | 依赖锁定、漏洞审计、SBOM 与发布策略 |
 | [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md) | AI 图像治理 |
 | [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md) | README 视觉设计系统 |
 | [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) | 测试、图件与工程验收 |

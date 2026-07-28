@@ -1,4 +1,4 @@
-schema_version: "1.1"
+schema_version: "1.2"
 job_id: JOB001
 engine: gaussian
 engine_version: "16-C.01"
@@ -20,6 +20,19 @@ resources:
   gpus_per_node: 0
   partition: null
 environment: {modules: [], source: [], variables: {OMP_NUM_THREADS: "8"}}
+acceleration:
+  enabled: false
+  profile_id: CPU-ONLY
+  backend: none
+  mode: none
+  gpu_vendor: none
+  ranks_per_gpu: 1
+  allow_gpu_oversubscription: false
+  cpu_bind: none
+  gpu_bind: none
+  device_order: scheduler
+  precision: fp64
+  record_runtime: false
 scratch: {path: ./scratch, preserve_on_failure: true}
 expected_outputs: [job.log, job.chk]
 estimated_storage_gb: 4

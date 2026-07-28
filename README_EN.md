@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-92%20passing-16A34A" alt="92 tests passing">
+  <img src="https://img.shields.io/badge/tests-100%20passing-16A34A" alt="100 tests passing">
   <img src="https://img.shields.io/badge/support-L0%E2%80%93L3-6D5DFB" alt="Support levels L0 to L3">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
@@ -133,13 +133,15 @@ Production execution still requires legally configured engines, licences, pseudo
 
 ```bash
 python -m pip install -r requirements-dev.txt
+python -m pip check
 python scripts/quality_gate.py
 ```
 
-Current baseline: **92 unit tests, 9 isolated suites, 0 failed suites**. Gate order:
+Current baseline: **100 unit tests, 9 isolated suites, 0 failed suites**. Every quality stage has an explicit timeout, and `--json` is safe for machine parsing. Gate order:
 
 ```text
 versioned demo assets
+→ dependency and version contract
 → DFT catalog
 → governed AI cover
 → bilingual README visuals
@@ -150,8 +152,9 @@ versioned demo assets
 → all non-empty test suites
 ```
 
-Performance implementation and boundaries:
+Engineering audit, performance implementation and boundaries:
 
+- [`docs/CODE_QUALITY_AUDIT.md`](docs/CODE_QUALITY_AUDIT.md)
 - [`docs/PERFORMANCE_AUDIT.md`](docs/PERFORMANCE_AUDIT.md)
 - [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md)
 - [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md)
@@ -175,6 +178,7 @@ This repository:
 | [`docs/CAPABILITY_STATUS.yaml`](docs/CAPABILITY_STATUS.yaml) | Machine-readable capability status |
 | [`docs/SCIENTIFIC_BOUNDARIES.md`](docs/SCIENTIFIC_BOUNDARIES.md) | Scientific boundaries and non-claims |
 | [`docs/CROSS_SKILL_HANDOFF.md`](docs/CROSS_SKILL_HANDOFF.md) | Cross-Skill handoff contract |
+| [`docs/CODE_QUALITY_AUDIT.md`](docs/CODE_QUALITY_AUDIT.md) | Repository-wide code, test and CI audit |
 | [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md) | AI-image governance |
 | [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md) | README visual design system |
 | [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) | Test, visual and engineering gates |

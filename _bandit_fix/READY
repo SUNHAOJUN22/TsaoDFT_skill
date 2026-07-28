@@ -1,1 +1,1 @@
-Publish the cleaned Bandit closure and restore the permanent repository layout.
+Commit the exact Bandit closure; permanent CI will perform the independent final validation.

@@ -45,7 +45,9 @@ def validate(root: Path = ROOT) -> list[str]:
             failures.append(f"{name} release does not match VERSION")
 
     levels = policy.get("support_levels")
-    allowed_levels = set(levels) if isinstance(levels, list) and all(isinstance(item, str) for item in levels) else set()
+    allowed_levels = (
+        set(levels) if isinstance(levels, list) and all(isinstance(item, str) for item in levels) else set()
+    )
     if allowed_levels != {"L0_REFERENCE", "L1_HANDOFF", "L2_VALIDATED_ADAPTER", "L3_EXECUTION_TESTED"}:
         failures.append("scientific claim policy must define the exact L0-L3 support levels")
     evidence_fields = policy.get("l3_required_evidence")

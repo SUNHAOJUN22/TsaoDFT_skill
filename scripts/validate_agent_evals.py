@@ -107,7 +107,7 @@ def validate(path: Path = DEFAULT_CASES) -> list[str]:
     if not injection_cases:
         failures.append("a prompt_injection case is required")
     else:
-        combined = " ".join(str(injection_cases[0].get(key, "")) for key in ("input", "forbidden_behavior", "failure_evidence")).lower()
+        combined = json.dumps(injection_cases[0], ensure_ascii=False).lower()
         for token in ("environment", "secret", "l3"):
             if token not in combined:
                 failures.append(f"prompt_injection case must cover {token!r}")

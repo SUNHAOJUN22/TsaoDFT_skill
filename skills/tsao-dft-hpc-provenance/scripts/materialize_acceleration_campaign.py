@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Materialize a reviewed acceleration profile into HPC manifests and a benchmark matrix."""
 
+# The script-local imports intentionally follow SCRIPT_DIR insertion for standalone installation.
+# ruff: noqa: E402
+
 from __future__ import annotations
 
 import argparse
@@ -18,8 +21,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from plan_acceleration import build_plan  # noqa: E402 -- local imports follow SCRIPT_DIR path setup
-from validate_hpc_manifest import validate as validate_manifest  # noqa: E402 -- local imports follow SCRIPT_DIR path setup
+from plan_acceleration import build_plan
+from validate_hpc_manifest import validate as validate_manifest
 
 BACKEND_BY_VENDOR = {
     "none": "none",

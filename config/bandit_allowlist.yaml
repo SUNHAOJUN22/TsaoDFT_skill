@@ -1,0 +1,32 @@
+schema_version: 1
+entries:
+  - path: scripts/benchmark_performance.py
+    test_id: B404
+    reason: subprocess is used only for controlled local benchmark fixtures; no user command string is executed.
+  - path: scripts/benchmark_performance.py
+    test_id: B607
+    reason: the benchmark invokes the current Python executable or a fixed repository script and records implementation timing only.
+  - path: scripts/benchmark_performance.py
+    test_id: B603
+    reason: arguments are fixed repository-owned values and are never passed through a shell.
+  - path: scripts/install.py
+    test_id: B404
+    reason: subprocess is limited to fixed repository validator commands during explicit --validate operation.
+  - path: scripts/install.py
+    test_id: B603
+    reason: the installer executes an argv list built from sys.executable and fixed repository script paths with shell disabled.
+  - path: scripts/quality_gate.py
+    test_id: B404
+    reason: the gate runs a closed list of repository-owned commands without shell interpolation.
+  - path: scripts/quality_gate.py
+    test_id: B603
+    reason: stage argv values are immutable code constants and shell execution is disabled.
+  - path: scripts/run_all_tests.py
+    test_id: B404
+    reason: the runner starts unittest with sys.executable and discovered repository test directories only.
+  - path: scripts/run_all_tests.py
+    test_id: B603
+    reason: unittest arguments are an argv list and are not constructed from untrusted command text.
+  - path: skills/tsao-dft-ml-active-learning/scripts/train_ridge_baseline.py
+    test_id: B311
+    reason: the seeded pseudo-random generator is used for reproducible scientific data splitting, never for credentials or cryptography.

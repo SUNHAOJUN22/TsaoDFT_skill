@@ -26,16 +26,20 @@ engine_ids:
 - E032
 applies_to:
 - Gaussian/periodic DFT HPC
+- CPU/GPU and CUDA-X acceleration planning
+- C++/native-extension and portability boundaries
+- edge orchestration and surrogate inference
 - batch campaigns
 - provenance and restart
 - scientific CI
 not_for:
 - silent job submission
 - scientific method selection
-- redistribution of licensed software
+- redistribution or patching of licensed software
+- unmeasured universal speedup claims
 version: 0.4.0-alpha.1
 implementation_status: implemented_generation_validation
 support_level: L2_VALIDATED_ADAPTER
 external_requirements:
-- real scheduler/site required for L3
+- real accelerator, engine build and site required for L3
 orchestrated_by: tsao-dft-suite

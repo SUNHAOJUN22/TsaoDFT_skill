@@ -2,7 +2,7 @@
 
 <p align="center">
   <strong>A DFT-first, evidence-locked and auditable research operating system for molecular and periodic science</strong><br>
-  From structure preparation and real-engine execution to wavefunctions, materials properties, machine learning, kinetics, HPC provenance and publication-claim audit
+  From structure preparation and real-engine execution to wavefunctions, materials properties, machine learning, kinetics, GPU/HPC acceleration provenance and publication-claim audit
 </p>
 
 <p align="center">
@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-127%20passing-16A34A" alt="127 tests passing">
+  <img src="https://img.shields.io/badge/tests-137%20passing-16A34A" alt="137 tests passing">
   <img src="https://img.shields.io/badge/support-L0%E2%80%93L3-6D5DFB" alt="Support levels L0 to L3">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
@@ -30,7 +30,7 @@
 <td width="25%" valign="top"><strong>DFT-first</strong><br><sub>A question is grounded in structure, method fingerprint, reference state and acceptance criteria before execution.</sub></td>
 <td width="25%" valign="top"><strong>Evidence graph</strong><br><sub>Calculations, artifacts, figures and manuscript claims receive explicit support edges; failed attempts remain visible.</sub></td>
 <td width="25%" valign="top"><strong>Multi-engine</strong><br><sub>Molecular work covers Gaussian / Multiwfn / VMD; periodic work covers VASP / QE / CP2K.</sub></td>
-<td width="25%" valign="top"><strong>Scale with provenance</strong><br><sub>DFT labels, ML, kinetics and HPC may consume accepted evidence but never bypass scientific boundaries.</sub></td>
+<td width="25%" valign="top"><strong>Scale with provenance</strong><br><sub>CPU/GPU, CUDA-X, ML, kinetics and HPC may consume accepted evidence but never bypass scientific boundaries.</sub></td>
 </tr>
 </table>
 
@@ -68,7 +68,7 @@ Every state transition must answer:
 | [`tsao-periodic-dft-materials`](skills/tsao-periodic-dft-materials/) | VASP, Quantum ESPRESSO and CP2K, including surfaces/defects, bands/DOS, NEB and convergence | Does not distribute POTCAR, pseudopotentials or restricted databases; incompatible energies cannot be mixed |
 | [`tsao-dft-ml-active-learning`](skills/tsao-dft-ml-active-learning/) | DFT-label audit, leakage prevention, applicability domain, uncertainty, active learning and inverse design | High R², SHAP or acquisition score does not prove mechanism, causality or synthesizability |
 | [`tsao-dft-kinetics-multiscale`](skills/tsao-dft-kinetics-multiscale/) | Eyring/TST, reaction networks, detailed balance, uncertainty, microkinetics and reactor handoff | Consumes only data with explicit and accepted standard/reference states |
-| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | Local/Slurm/PBS execution, estimates, arrays, checkpoints, restart lineage and hashes | Scheduler success only means that the process ended |
+| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | Local/Slurm/PBS execution, GPU/CUDA-X/native-code/edge acceleration planning, estimates, arrays, checkpoints, restart lineage and hashes | GPU allocation or scheduler completion proves neither speedup nor scientific acceptance |
 | [`tsao-dft-catalysis-profile`](skills/tsao-dft-catalysis-profile/) | DCS/MCSOMe/DMOS, Si–O/Si–C, Ti/TEA, Ziegler–Natta and polyolefin catalysis | Scoped profile; never auto-applied to unrelated catalysis |
 
 ## Scientific figures: conceptual identity and deterministic evidence stay separate
@@ -129,6 +129,20 @@ python scripts/install.py \
 
 Production execution still requires legally configured engines, licences, pseudopotentials or basis libraries, a site guide and user authorisation.
 
+## GPU, parallel and edge acceleration entry point
+
+Copy and edit the profile with the real engine, hardware topology, GPU build, CUDA-X libraries and precision policy:
+
+```bash
+python skills/tsao-dft-hpc-provenance/scripts/plan_acceleration.py \
+  skills/tsao-dft-hpc-provenance/templates/acceleration-profile.yaml \
+  --out acceleration-plan.json
+```
+
+The planner emits routes for VASP, Quantum ESPRESSO, CP2K, Gaussian or a custom native kernel; an initial MPI-rank/GPU mapping; CPU fallback; the Python/C++ boundary; applicability decisions for cuBLAS, cuSOLVER, cuFFT, NCCL, cuTENSOR, cuEquivariance and related libraries; and a benchmark matrix. It never injects a CUDA-X name into an arbitrary executable or presents a plan as measured acceleration evidence.
+
+Core rule: **keep Python on the manifest, validation, scheduling, provenance and experiment-control plane; migrate only profiled numerical hotspots to C++/Fortran/CUDA/OpenACC or a portability backend.** Edge devices should preferentially run structure checks, preprocessing, queue control and validated surrogate inference, while production DFT normally returns to a workstation or HPC system.
+
 ## Engineering quality and one-command acceptance
 
 ```bash
@@ -137,7 +151,7 @@ python -m pip check
 python scripts/quality_gate.py
 ```
 
-Current baseline: **127 unit tests, 9 isolated suites, 0 failed suites**. Every quality stage has an explicit timeout, and `--json` is safe for machine parsing. Gate order:
+Current baseline: **137 unit tests, 9 isolated suites, 0 failed suites**. Every quality stage has an explicit timeout, and `--json` is safe for machine parsing. Gate order:
 
 ```text
 versioned demo assets
@@ -182,6 +196,7 @@ This repository:
 - does not bypass licences, site policy or software access controls;
 - never presents conceptual AI imagery as an orbital, ESP, band structure, free-energy profile, transition state, mechanism or experiment;
 - never equates normal termination, scheduler completion, model score or attractive graphics with scientific acceptance;
+- never equates GPU allocation, a CUDA-X dependency or planner output with measured acceleration;
 - never claims `L3_EXECUTION_TESTED` without immutable real-engine evidence.
 
 ## Documentation map
@@ -199,6 +214,7 @@ This repository:
 | [`docs/SUPPLY_CHAIN_POLICY.md`](docs/SUPPLY_CHAIN_POLICY.md) | Dependency locking, vulnerability audit, SBOM and release policy |
 | [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md) | AI-image governance |
 | [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md) | README visual design system |
+| [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md) | Compute, GPU, native-code and edge acceleration boundaries |
 | [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) | Test, visual and engineering gates |
 
 Repository policy: **work directly on `main`; do not create feature, fix or temporary branches. Use Tags / Releases for publication snapshots.**

@@ -74,7 +74,10 @@ class DependencyContractTests(unittest.TestCase):
     def test_python_floor_and_ruff_target_must_match(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            self.write_fixture(root, pyproject=BASE_PYPROJECT.replace('target-version = "py310"', 'target-version = "py311"'))
+            self.write_fixture(
+                root,
+                pyproject=BASE_PYPROJECT.replace('target-version = "py310"', 'target-version = "py311"'),
+            )
             failures = validate_dependencies.validate(root)
             self.assertTrue(any(item.startswith("Ruff target 3.11") for item in failures), failures)
 

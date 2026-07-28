@@ -100,6 +100,7 @@ capabilities:
   - estimate_resources.py
   - validate_restart_lineage.py
   - plan_acceleration.py
+  - materialize_acceleration_campaign.py
   external_requirements:
   - real scheduler/site for L3
   - real accelerator and versioned engine build for measured performance evidence

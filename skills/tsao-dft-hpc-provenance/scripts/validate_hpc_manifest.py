@@ -129,9 +129,7 @@ def validate_acceleration(
 
     if not str(acceleration.get("profile_id", "")).strip():
         errors.append("enabled acceleration requires acceleration.profile_id")
-    if mode in {"engine-native", "custom-native"} and not str(
-        acceleration.get("build_fingerprint_id", "")
-    ).strip():
+    if mode in {"engine-native", "custom-native"} and not str(acceleration.get("build_fingerprint_id", "")).strip():
         errors.append(f"acceleration.mode={mode} requires acceleration.build_fingerprint_id")
     if not str(acceleration.get("benchmark_plan_id", "")).strip():
         errors.append("enabled acceleration requires acceleration.benchmark_plan_id")
@@ -141,9 +139,7 @@ def validate_acceleration(
     if launcher == "auto" and scheduler != "slurm":
         errors.append("launcher=auto is currently supported only for Slurm")
     if scheduler != "slurm" and gpu_bind != "none":
-        warnings.append(
-            "GPU binding is site-specific outside Slurm and must be verified in the explicit launcher"
-        )
+        warnings.append("GPU binding is site-specific outside Slurm and must be verified in the explicit launcher")
     if precision != "fp64":
         warnings.append("mixed precision requires property-specific comparison with an FP64 reference")
 

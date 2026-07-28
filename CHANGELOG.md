@@ -5,7 +5,11 @@
 - Added an evidence-bounded DFT acceleration planner for workstation, HPC and edge targets, with deterministic routes for VASP, Quantum ESPRESSO, CP2K, Gaussian, atomistic ML surrogates and custom native kernels.
 - Added explicit applicability decisions for cuBLAS, cuSOLVER, cuSOLVERMp, cuFFT, cuFFTMp, cuSPARSE, NCCL, NVSHMEM, cuTENSOR, cuEquivariance and CUTLASS instead of treating CUDA-X names as universal drop-in acceleration switches.
 - Defined the Python control-plane and C++/Fortran/CUDA/OpenACC native-kernel boundary, CPU fallback, mixed-precision validation, MPI-rank/GPU mapping, edge orchestration and immutable real-engine benchmark requirements.
-- Expanded the deterministic baseline to 137 tests across nine non-empty suites, including ten acceleration-planner tests for VASP/QE/CP2K routes, edge execution, equivariant ML, CUDA-X non-applicability, invalid GPU builds and deterministic output.
+- Added acceleration Manifest contracts for backend/vendor compatibility, rank-per-GPU topology, oversubscription approval, CPU/GPU binding, precision, build fingerprints and benchmark-plan identity.
+- Added Slurm `srun` generation with explicit CPU/GPU binding, one-GPU-per-task allocation for one-rank-per-GPU layouts, bad-exit propagation and scheduler-owned device visibility.
+- Added runtime acceleration provenance for scheduler rank identity, visible-device mapping, NVIDIA GPU UUID, PCI bus ID, driver version, memory, acceleration profile, build fingerprint and benchmark-plan identity.
+- Added deterministic acceleration campaign materialization that combines a matching engine Manifest and profile into an accelerated Manifest, an FP64 CPU reference, GPU scaling candidates and a CSV matrix; every candidate remains `pending` and no submission is performed.
+- Expanded the deterministic baseline to 148 tests across nine non-empty suites: the original ten planner tests plus eleven execution-chain tests for Manifest validation, rank/GPU consistency, binding, runtime identity, CPU/GPU candidate materialization and deterministic output.
 - Closed the extended hardening pass with exact Python 3.10/3.12/3.13 constraints, weekly hosted security runs, locked-environment `pip-audit`, locked CycloneDX SBOM, capability-claim enforcement and deterministic secret-pattern checks.
 - Closed the full repository audit with hosted green runs on Python 3.10, 3.12 and 3.13, CodeQL `security-extended`, runtime/development/locked `pip-audit`, CycloneDX SBOM generation, isolated mypy and Bandit.
 - Replaced unsafe workflow YAML loading with `yaml.safe_load` while handling YAML 1.1's Boolean interpretation of `on`, and replaced the production installer assertion with an explicit safety error.
@@ -25,7 +29,7 @@
 - Added `docs/CODE_QUALITY_AUDIT.md` with the repository-wide analysis, findings, remediation and acceptance criteria.
 - Rebuilt the governed cover as `uiux_pro_v8_hero_evidence_bento`, using fresh AI-generated visual direction beneath deterministic vector typography, capability cards, workflow gates and evidence bento.
 - Rewrote both README files from first principles around a Hero-Centric + Trust & Authority structure: 30-second positioning, evidence workflow, eight-Skill map, curated deterministic figures, support levels, quick start, quality gate and scientific boundaries.
-- Updated both README files with the executable acceleration entry point, 137-test baseline and the same GPU/CUDA-X/native-code/edge scientific boundaries.
+- Updated both README files with the executable acceleration entry point, test baseline and the same GPU/CUDA-X/native-code/edge scientific boundaries.
 - Updated the UI/UX Pro Max design-system record, generation provenance and AI manifest; verified the 1600×900 cover at full and half README widths.
 - Regenerated all eight deterministic SVG demonstrations as high-contrast dark evidence dashboards with fixed dimensions, accessible titles/descriptions and visible synthetic-data labels.
 - Added a second performance-audit pass with chunked file hashes, bounded canonical dataset hashing, Slurm-array compaction and reproducible baseline microbenchmarks.

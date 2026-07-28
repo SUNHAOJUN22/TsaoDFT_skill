@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-118%20passing-16A34A" alt="118 tests passing">
+  <img src="https://img.shields.io/badge/tests-127%20passing-16A34A" alt="127 tests passing">
   <img src="https://img.shields.io/badge/support-L0%E2%80%93L3-6D5DFB" alt="Support levels L0 to L3">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
@@ -97,7 +97,7 @@ The visual system follows UI/UX Pro Max product classification, Pattern, Style, 
 | `L2_VALIDATED_ADAPTER` | Deterministic preflight/parser/validator plus repository tests | May report adapter validation, not real-engine regression |
 | `L3_EXECUTION_TESTED` | L2 plus immutable evidence from the real engine, version and site | May report real execution only within the documented scope |
 
-Gaussian, VASP, Quantum ESPRESSO and CP2K currently expose selected-field **L2 adapters**. TsaoDFT does not claim L3 without legal real-engine regression evidence.
+Gaussian, VASP, Quantum ESPRESSO and CP2K currently expose selected-field **L2 adapters**. TsaoDFT does not claim L3 without legal real-engine regression evidence. The machine-readable claim boundary is in [`docs/SCIENTIFIC_CLAIM_POLICY.yaml`](docs/SCIENTIFIC_CLAIM_POLICY.yaml).
 
 ## Quick start
 
@@ -132,20 +132,23 @@ Production execution still requires legally configured engines, licences, pseudo
 ## Engineering quality and one-command acceptance
 
 ```bash
-python -m pip install -r requirements-dev.txt
+python -m pip install -c constraints/py312.txt -r requirements-dev.txt
 python -m pip check
 python scripts/quality_gate.py
 ```
 
-Current baseline: **118 unit tests, 9 isolated suites, 0 failed suites**. Every quality stage has an explicit timeout, and `--json` is safe for machine parsing. Gate order:
+Current baseline: **127 unit tests, 9 isolated suites, 0 failed suites**. Every quality stage has an explicit timeout, and `--json` is safe for machine parsing. Gate order:
 
 ```text
 versioned demo assets
 → dependency and version contract
+→ cross-version exact CI constraints
 → repository-only packaging model
 → DFT catalog
 → Agent eval contracts
 → governance and workflow policy
+→ capability and scientific-claim boundaries
+→ high-confidence secret patterns
 → explained ignore markers
 → governed AI cover
 → bilingual README visuals
@@ -158,13 +161,15 @@ versioned demo assets
 → all non-empty test suites
 ```
 
-GitHub Actions independently runs Python 3.10 / 3.12 / 3.13, CodeQL `security-extended`, runtime and development `pip-audit`, and a CycloneDX JSON SBOM build.
+GitHub Actions runs separate Python 3.10 / 3.12 / 3.13 constraint snapshots and re-runs weekly CodeQL `security-extended`, runtime/development/locked-environment `pip-audit`, and a locked CycloneDX JSON SBOM build. Constraint refreshes must use the reviewed snapshot procedure rather than silent manual drift.
 
-Engineering audit, performance implementation and boundaries:
+Engineering audit, supply-chain policy, Agent security and performance boundaries:
 
 - [`docs/REPOSITORY_FULL_AUDIT.md`](docs/REPOSITORY_FULL_AUDIT.md)
 - [`docs/CODE_QUALITY_AUDIT.md`](docs/CODE_QUALITY_AUDIT.md)
 - [`docs/AGENT_SECURITY_MODEL.md`](docs/AGENT_SECURITY_MODEL.md)
+- [`docs/SUPPLY_CHAIN_POLICY.md`](docs/SUPPLY_CHAIN_POLICY.md)
+- [`docs/SCIENTIFIC_CLAIM_POLICY.yaml`](docs/SCIENTIFIC_CLAIM_POLICY.yaml)
 - [`docs/PERFORMANCE_AUDIT.md`](docs/PERFORMANCE_AUDIT.md)
 - [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md)
 - [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md)
@@ -187,9 +192,11 @@ This repository:
 | [`docs/ENGINE_SUPPORT_MATRIX.md`](docs/ENGINE_SUPPORT_MATRIX.md) | Engine coverage and support levels |
 | [`docs/CAPABILITY_STATUS.yaml`](docs/CAPABILITY_STATUS.yaml) | Machine-readable capability status |
 | [`docs/SCIENTIFIC_BOUNDARIES.md`](docs/SCIENTIFIC_BOUNDARIES.md) | Scientific boundaries and non-claims |
+| [`docs/SCIENTIFIC_CLAIM_POLICY.yaml`](docs/SCIENTIFIC_CLAIM_POLICY.yaml) | Machine-readable claim-strength and L3 evidence contract |
 | [`docs/CROSS_SKILL_HANDOFF.md`](docs/CROSS_SKILL_HANDOFF.md) | Cross-Skill handoff contract |
 | [`docs/REPOSITORY_FULL_AUDIT.md`](docs/REPOSITORY_FULL_AUDIT.md) | Full repository security, supply-chain and Agent Skill audit |
 | [`docs/CODE_QUALITY_AUDIT.md`](docs/CODE_QUALITY_AUDIT.md) | Repository-wide code, test and CI audit |
+| [`docs/SUPPLY_CHAIN_POLICY.md`](docs/SUPPLY_CHAIN_POLICY.md) | Dependency locking, vulnerability audit, SBOM and release policy |
 | [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md) | AI-image governance |
 | [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md) | README visual design system |
 | [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) | Test, visual and engineering gates |

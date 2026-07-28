@@ -1,15 +1,15 @@
 # Test Report
 
-Date: 2026-07-27  
+Date: 2026-07-28  
 Version: `0.4.0-alpha.1`
 
 ## Result
 
-**PASS — 92 unit tests across 9 isolated suites, 0 failed suites.**
+**PASS — 100 unit tests across 9 isolated suites, 0 failed suites.**
 
 | Suite | Tests | Result |
 |---|---:|---|
-| Repository, catalog, installer, plugin, minimal AI-cover governance, demo-asset integrity, curated README visual completeness, offline link integrity and strict validator | 17 | PASS |
+| Repository, dependency contract, quality-gate semantics, catalog, installer, plugin, minimal AI-cover governance, demo-asset integrity, curated README visual completeness, offline link integrity and strict validator | 25 | PASS |
 | `tsao-dft-suite` | 4 | PASS |
 | `tsao-dft-researcher` | 16 | PASS |
 | `tsao-structure-prep` | 5 | PASS |
@@ -28,10 +28,23 @@ Every discovered suite must execute at least one test. A missing, unparseable or
 - automated normalization was followed by exact review and repair of the remaining semantic and robustness findings;
 - the final enforced Ruff result is zero findings;
 - runtime dependencies have explicit compatible upper bounds;
+- runtime and development dependency declarations are compared offline across requirements files and `pyproject.toml`;
+- `VERSION`, the PEP 440 project version, the Python floor and the Ruff target are contract-checked;
 - obsolete bootstrap, patch-bundle and workflow-probe files were removed;
 - strict validation rejects private root bundles, workflow probes, backup/editor files, empty files and large encoded bootstrap payloads;
 - `.github/workflows/ci.yml` is the only permitted workflow file;
-- GitHub Actions dependencies are pinned to immutable Node 24-compatible commit SHAs.
+- GitHub Actions dependencies are pinned to immutable Node 24-compatible commit SHAs;
+- native Actions checks replace the former custom commit-status API call, eliminating a non-essential network failure point;
+- `pip check` verifies the installed dependency environment before the quality gate starts.
+
+## Quality-gate robustness
+
+- every stage has a deterministic timeout and reports return code 124 on expiry;
+- the unit-test stage has a larger explicit timeout than static validation stages;
+- `--timeout` accepts only positive values;
+- `--json` captures child output so the emitted document remains valid machine-readable JSON;
+- stage ordering is regression-tested, including dependency validation before Ruff and repository checks;
+- `--skip-tests` removes only the final unit-test stage.
 
 ## Efficiency coverage
 
@@ -53,7 +66,7 @@ Every discovered suite must execute at least one test. A missing, unparseable or
 - explicit failure for missing, unsafe or unsupported local link targets;
 - explicit failure for missing, degraded or placeholder demo assets, with no automatic fallback writes;
 - explicit rejection of wording that presents conceptual illustrations as calculated orbitals, surfaces or scientific results;
-- local full-width and half-width raster review of the `uiux_pro_v7_dark_scientific_os` overview and all eight dark deterministic demo assets before publication;
+- local full-width and half-width raster review of the `uiux_pro_v8_hero_evidence_bento` overview and all eight dark deterministic demo assets before publication;
 - one documented dark scientific README design system with consistent palette, typography, density, accessible status labels and anti-pattern controls;
 - complete bilingual README rewrite with the same governed overview, required deterministic figures, documentation map and scientific-boundary language.
 
@@ -78,6 +91,7 @@ Every discovered suite must execute at least one test. A missing, unparseable or
 
 ```bash
 python -m pip install -r requirements-dev.txt
+python -m pip check
 python scripts/quality_gate.py
 ```
 
@@ -85,6 +99,7 @@ Focused diagnostics:
 
 ```bash
 python scripts/generate_readme_demos.py
+python scripts/validate_dependencies.py
 python scripts/validate_catalog.py
 python scripts/validate_ai_assets.py
 python scripts/validate_readme_visuals.py --strict

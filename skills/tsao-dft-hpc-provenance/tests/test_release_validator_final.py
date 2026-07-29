@@ -67,6 +67,12 @@ class ReleaseValidatorFinalTests(unittest.TestCase):
         errors, _ = self.validator.validate(manifest)
         self.assertIn("unsupported scheduler", errors)
 
+    def test_unknown_engine_is_rejected(self) -> None:
+        manifest = copy.deepcopy(self.base)
+        manifest["engine"] = "unknown-engine"
+        errors, _ = self.validator.validate(manifest)
+        self.assertIn("unsupported engine", errors)
+
 
 if __name__ == "__main__":
     unittest.main()

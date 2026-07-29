@@ -61,6 +61,12 @@ class ReleaseValidatorFinalTests(unittest.TestCase):
         errors, _ = self.validator.validate(manifest)
         self.assertIn("L3 execution cannot use approval=not_required", errors)
 
+    def test_unknown_scheduler_is_rejected(self) -> None:
+        manifest = copy.deepcopy(self.base)
+        manifest["scheduler"] = "unknown-scheduler"
+        errors, _ = self.validator.validate(manifest)
+        self.assertIn("unsupported scheduler", errors)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -30,10 +30,10 @@ def percent(numerator: int, denominator: int) -> float:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", action="store_true", dest="json_output")
-    parser.add_argument("--total-statement", type=float, default=85.0)
-    parser.add_argument("--total-branch", type=float, default=75.0)
-    parser.add_argument("--core-statement", type=float, default=80.0)
-    parser.add_argument("--core-branch", type=float, default=70.0)
+    parser.add_argument("--total-statement", type=float, default=90.0)
+    parser.add_argument("--total-branch", type=float, default=80.0)
+    parser.add_argument("--core-statement", type=float, default=100.0)
+    parser.add_argument("--core-branch", type=float, default=95.0)
     args = parser.parse_args()
     with tempfile.TemporaryDirectory() as temporary:
         data_file = Path(temporary) / ".coverage"
@@ -102,12 +102,16 @@ def main() -> int:
                 "core_branch": args.core_branch,
             },
             "trust_core": {path: per_file.get(path) for path in TRUST_CORE},
+            "per_file": per_file,
             "failures": failures,
         }
         if args.json_output:
             print(json.dumps(payload, ensure_ascii=False, indent=2))
         else:
             print(f"Coverage statement={total_statement:.2f}% branch={total_branch:.2f}%")
+            for relative in TRUST_CORE:
+                values = per_file.get(relative)
+                print(f"CORE {relative}: {values}")
             for failure in failures:
                 print(f"FAIL: {failure}")
         return 0 if not failures else 1

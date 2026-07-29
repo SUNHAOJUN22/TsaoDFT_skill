@@ -103,8 +103,8 @@ class ReleaseCoreCoverageTests(unittest.TestCase):
 
         errors = []
         self.assertEqual(self.shell.validate_argv(["python", "a b.py"], "argv", errors), ["python", "a b.py"])
-        for value in (None, [], ["python", ""], ["python", 1], ["bad\narg"]):
-            self.shell.validate_argv(value, "argv", errors)
+        for argv_value in (None, [], ["python", ""], ["python", 1], ["bad\narg"]):
+            self.shell.validate_argv(argv_value, "argv", errors)
         self.assertGreaterEqual(len(errors), 5)
         self.assertEqual(self.shell.render_argv(["python", "a b.py"]), "python 'a b.py'")
         with self.assertRaises(ValueError):
@@ -128,8 +128,10 @@ class ReleaseCoreCoverageTests(unittest.TestCase):
             serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
         )
         self.assertRegex(self.shell.public_key_fingerprint(public), r"^[0-9a-f]{64}$")
-        rsa_public = generate_private_key(public_exponent=65537, key_size=2048).public_key().public_bytes(
-            serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
+        rsa_public = (
+            generate_private_key(public_exponent=65537, key_size=2048)
+            .public_key()
+            .public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
         )
         with self.assertRaises(ValueError):
             self.shell.public_key_fingerprint(rsa_public)
@@ -185,8 +187,10 @@ class ReleaseCoreCoverageTests(unittest.TestCase):
             self.assertTrue(self.shell.verify_signed_attestation(case, public, expected, now=now))
 
         self.assertTrue(self.shell.verify_signed_attestation(valid, b"not-a-key", expected, now=now))
-        other = Ed25519PrivateKey.generate().public_key().public_bytes(
-            serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
+        other = (
+            Ed25519PrivateKey.generate()
+            .public_key()
+            .public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
         )
         self.assertTrue(self.shell.verify_signed_attestation(valid, other, expected, now=now))
 
@@ -546,8 +550,8 @@ class ReleaseCoreCoverageTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             self.parser.parse_engine_output("unknown", Path("missing"))
-        with tempfile.TemporaryDirectory() as temporary:
-            empty = Path(temporary) / "empty"
+        with tempfile.TemporaryDirectory() as empty_dir:
+            empty = Path(empty_dir) / "empty"
             empty.write_text("", encoding="utf-8")
             for engine in ("gaussian", "vasp", "quantum-espresso", "cp2k"):
                 self.assertEqual(self.parser.parse_engine_output(engine, empty)["fatal_marker"], "SOURCE_MISSING")

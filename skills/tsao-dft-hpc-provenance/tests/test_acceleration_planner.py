@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import importlib.util
+import json
+import os
 import unittest
 from pathlib import Path
 from typing import Any
+from unittest import mock
 
 import yaml
 
@@ -38,6 +41,7 @@ class AccelerationPlannerTests(unittest.TestCase):
         report = self.planner.build_plan(clone(self.base))
         self.assertTrue(report["ok"])
         self.assertEqual(report["recommended_path"], "engine-native-gpu")
+        self.assertEqual(report["backend"], "cuda")
         self.assertEqual(report["resource_baseline"]["mpi_ranks_per_node"], 4)
 
     def test_vasp_plan_records_supported_gpu_starting_point(self):
@@ -90,6 +94,7 @@ class AccelerationPlannerTests(unittest.TestCase):
         profile = clone(self.base)
         profile["hardware"]["gpu_vendor"] = "none"
         profile["hardware"]["gpus_per_node"] = 0
+        profile["software"]["backend"] = "none"
         profile["software"]["engine_gpu_build"] = False
         profile["software"]["libraries"] = ["cuFFT"]
         report = self.planner.build_plan(profile)
@@ -101,9 +106,84 @@ class AccelerationPlannerTests(unittest.TestCase):
         profile = clone(self.base)
         profile["hardware"]["gpu_vendor"] = "none"
         profile["hardware"]["gpus_per_node"] = 0
+        profile["software"]["backend"] = "none"
         report = self.planner.build_plan(profile)
         self.assertFalse(report["ok"])
-        self.assertIn("engine_gpu_build requires at least one NVIDIA GPU", report["errors"])
+        self.assertIn("engine_gpu_build requires at least one GPU", report["errors"])
+
+    def test_amd_hip_profile_selects_rocm_libraries(self):
+        profile = clone(self.base)
+        profile["engine"] = "cp2k"
+        profile["hardware"]["gpu_vendor"] = "amd"
+        profile["hardware"]["gpu_model"] = "MI300X"
+        profile["software"]["backend"] = "hip"
+        profile["software"]["libraries"] = ["rocBLAS", "rocFFT", "RCCL"]
+        report = self.planner.build_plan(profile)
+        self.assertTrue(report["ok"])
+        self.assertEqual(report["backend"], "hip")
+        self.assertEqual(library(report, "rocblas")["decision"], "engine-build")
+        self.assertEqual(library(report, "rccl")["decision"], "benchmark")
+        self.assertIn("CP2K_USE_ACCEL=HIP", " ".join(report["engine_actions"]))
+
+    def test_intel_sycl_profile_selects_onemkl(self):
+        profile = clone(self.base)
+        profile["engine"] = "generic"
+        profile["hardware"]["gpu_vendor"] = "intel"
+        profile["software"]["backend"] = "sycl"
+        profile["software"]["custom_engine_integration"] = True
+        profile["software"]["libraries"] = ["oneMKL", "oneCCL", "Kokkos"]
+        report = self.planner.build_plan(profile)
+        self.assertTrue(report["ok"])
+        self.assertEqual(report["backend"], "sycl")
+        self.assertEqual(library(report, "onemkl")["decision"], "engine-build")
+        self.assertEqual(library(report, "kokkos")["decision"], "benchmark")
+
+    def test_apple_edge_surrogate_uses_metal_route(self):
+        profile = clone(self.base)
+        profile["engine"] = "generic"
+        profile["stage"] = "ml-surrogate"
+        profile["hardware"]["target"] = "edge"
+        profile["hardware"]["gpu_vendor"] = "apple"
+        profile["hardware"]["gpus_per_node"] = 1
+        profile["software"]["backend"] = "metal"
+        profile["software"]["engine_gpu_build"] = False
+        profile["software"]["build_fingerprint_id"] = ""
+        profile["software"]["libraries"] = ["MPS", "Array API", "DLPack"]
+        report = self.planner.build_plan(profile)
+        self.assertTrue(report["ok"])
+        self.assertEqual(report["recommended_path"], "metal-accelerated-edge-surrogate")
+        self.assertEqual(library(report, "mps")["decision"], "benchmark")
+        self.assertEqual(library(report, "arrayapi")["decision"], "recommended-interface")
+
+    def test_backend_vendor_mismatch_is_rejected(self):
+        profile = clone(self.base)
+        profile["hardware"]["gpu_vendor"] = "amd"
+        profile["software"]["backend"] = "cuda"
+        report = self.planner.build_plan(profile)
+        self.assertFalse(report["ok"])
+        self.assertIn(
+            "software.backend=cuda is incompatible with hardware.gpu_vendor=amd",
+            report["errors"],
+        )
+
+    def test_compatibility_contract_covers_native_and_zero_copy_boundaries(self):
+        report = self.planner.build_plan(clone(self.base))
+        contract = report["compatibility_contract"]
+        interfaces = " ".join(contract["interface_priority"])
+        self.assertIn("C ABI", interfaces)
+        self.assertIn("DLPack", interfaces)
+        self.assertTrue(contract["cpu_fallback_required"])
+        self.assertTrue(any("transfer" in item for item in report["data_movement_strategy"]))
+
+    def test_environment_inventory_does_not_invoke_or_expose_values(self):
+        secret_value = "should-never-be-returned"
+        with mock.patch.dict(os.environ, {"CUDA_VISIBLE_DEVICES": secret_value}, clear=False):
+            report = self.planner.inspect_environment()
+        rendered = json.dumps(report)
+        self.assertTrue(report["ok"])
+        self.assertFalse(report["invoked_external_tools"])
+        self.assertEqual(report["environment_markers"]["CUDA_VISIBLE_DEVICES"], "SET")
+        self.assertNotIn(secret_value, rendered)
 
     def test_plans_are_deterministic(self):
         profile = clone(self.base)

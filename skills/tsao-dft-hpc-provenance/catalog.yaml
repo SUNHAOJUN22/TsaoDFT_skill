@@ -26,9 +26,12 @@ engine_ids:
 - E032
 applies_to:
 - Gaussian/periodic DFT HPC
-- CPU/GPU and CUDA-X acceleration planning
-- C++/native-extension and portability boundaries
-- edge orchestration and surrogate inference
+- NVIDIA CUDA-X and OpenACC acceleration planning
+- AMD ROCm/HIP acceleration planning
+- Intel oneAPI/SYCL and Apple Metal acceleration planning
+- C++/Fortran/native-extension and Kokkos portability boundaries
+- Python Array API and DLPack interoperability
+- edge orchestration and validated surrogate inference
 - benchmark candidate materialization
 - real benchmark evidence import and validation
 - numerical-equivalence-first performance comparison

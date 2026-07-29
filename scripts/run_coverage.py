@@ -33,32 +33,45 @@ def test_suites() -> list[Path]:
     return [path for path in candidates if path.is_dir()]
 
 
-def collect_coverage(data_file: Path) -> list[str]:
+def write_coverage_config(path: Path, data_file: Path) -> None:
+    path.write_text(
+        "\n".join(
+            [
+                "[run]",
+                "branch = true",
+                "parallel = true",
+                "patch =",
+                "    subprocess",
+                "source =",
+                f"    {ROOT / 'scripts'}",
+                f"    {ROOT / 'skills'}",
+                f"data_file = {data_file}",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+
+def collect_coverage(config_file: Path) -> list[str]:
     errors: list[str] = []
-    for index, suite in enumerate(test_suites()):
+    for suite in test_suites():
         command = [
             sys.executable,
             "-m",
             "coverage",
             "run",
-            f"--data-file={data_file}",
-            "--branch",
-            "--source=scripts,skills",
+            f"--rcfile={config_file}",
+            "--parallel-mode",
+            "-m",
+            "unittest",
+            "discover",
+            "-s",
+            str(suite),
+            "-p",
+            "test_*.py",
+            "-v",
         ]
-        if index:
-            command.append("--append")
-        command.extend(
-            [
-                "-m",
-                "unittest",
-                "discover",
-                "-s",
-                str(suite),
-                "-p",
-                "test_*.py",
-                "-v",
-            ]
-        )
         completed = subprocess.run(command, cwd=ROOT, capture_output=True, text=True, check=False)
         if completed.returncode:
             output = ((completed.stdout or "") + (completed.stderr or "")).rstrip()
@@ -84,14 +97,25 @@ def main() -> int:
     parser.add_argument("--core-branch", type=float, default=95.0)
     args = parser.parse_args()
     with tempfile.TemporaryDirectory() as temporary:
-        data_file = Path(temporary) / ".coverage"
-        collection_errors = collect_coverage(data_file)
+        temporary_path = Path(temporary)
+        data_file = temporary_path / ".coverage"
+        config_file = temporary_path / "coveragerc"
+        write_coverage_config(config_file, data_file)
+        collection_errors = collect_coverage(config_file)
         if collection_errors:
             payload: dict[str, Any] = {"ok": False, "errors": collection_errors}
             write_report(args.report, payload)
             print(json.dumps(payload, ensure_ascii=False, indent=2))
             return 1
-        coverage = Coverage(data_file=str(data_file), branch=True)
+        coverage = Coverage(config_file=str(config_file), data_file=str(data_file))
+        try:
+            coverage.combine(data_paths=[str(temporary_path)], strict=True)
+        except Exception as exc:
+            payload = {"ok": False, "errors": [f"coverage combine failed: {exc}"]}
+            write_report(args.report, payload)
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+            return 1
+        coverage.save()
         coverage.load()
         measured = sorted(coverage.get_data().measured_files())
         total_statements = total_missing = total_branches = total_missing_branches = 0

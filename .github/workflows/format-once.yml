@@ -1,0 +1,39 @@
+name: One-shot Ruff formatting artifact
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/format-once.yml
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+
+      - name: Install locked formatter
+        run: python -m pip install ruff==0.15.22
+
+      - name: Format acceleration planner
+        run: |
+          python -m ruff format skills/tsao-dft-hpc-provenance/scripts/plan_acceleration.py
+          python -m ruff format --check skills/tsao-dft-hpc-provenance/scripts/plan_acceleration.py
+
+      - name: Upload formatted source
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ruff-formatted-planner-${{ github.sha }}
+          path: skills/tsao-dft-hpc-provenance/scripts/plan_acceleration.py
+          if-no-files-found: error
+          retention-days: 1

@@ -19,7 +19,6 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 SAFE_IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:@+/-]{0,127}$")
 SAFE_JOB_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$")
 SAFE_ENV_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
-SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 CONTROL_RE = re.compile(r"[\x00-\x1f\x7f]")
 SHELL_META_RE = re.compile(r"[;&|`$<>\n\r]")
 
@@ -30,6 +29,14 @@ def canonical_json(value: Any) -> str:
 
 def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def sha256_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while chunk := handle.read(chunk_size):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def sha256_object(value: Any) -> str:
@@ -100,7 +107,7 @@ def validate_module_or_source(value: Any, field: str, errors: list[str]) -> str:
 
 
 def manifest_binding_payload(manifest: dict[str, Any]) -> dict[str, Any]:
-    scientific = {
+    return {
         "job_id": manifest.get("job_id"),
         "engine": manifest.get("engine"),
         "engine_version": manifest.get("engine_version"),
@@ -115,7 +122,6 @@ def manifest_binding_payload(manifest: dict[str, Any]) -> dict[str, Any]:
         "parser": manifest.get("parser"),
         "expected_outputs": manifest.get("expected_outputs"),
     }
-    return scientific
 
 
 def manifest_sha256(manifest: dict[str, Any]) -> str:
@@ -198,9 +204,8 @@ def verify_signed_attestation(
     if attestation.get("key_fingerprint") != observed_fingerprint:
         errors.append("attestation key fingerprint mismatch")
     unsigned = {key: value for key, value in attestation.items() if key != "signature"}
-    signature_text = attestation.get("signature")
     try:
-        signature = base64.b64decode(signature_text, validate=True)
+        signature = base64.b64decode(attestation.get("signature"), validate=True)
         key = serialization.load_pem_public_key(public_key_pem)
         if not isinstance(key, Ed25519PublicKey):
             raise ValueError("review key must be Ed25519")

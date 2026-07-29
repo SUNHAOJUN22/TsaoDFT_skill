@@ -1,5 +1,5 @@
 schema_version: "1.0"
-policy_id: TSAODFT-PERFORMANCE-QUALIFICATION-V1
+policy_id: TSAODFT-PERFORMANCE-QUALIFICATION-V2
 minimum_successful_repeats: 3
 require_independent_review: true
 require_real_engine_source: true
@@ -41,4 +41,5 @@ qualification_statuses:
   - ARTIFACT_HASH_MISMATCH
   - REFERENCE_MISSING
   - PERFORMANCE_NOT_IMPROVED
+  - PERFORMANCE_POLICY_FAILED
   - L2_ONLY

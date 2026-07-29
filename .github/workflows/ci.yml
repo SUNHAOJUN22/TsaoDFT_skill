@@ -1,4 +1,4 @@
-name: One-shot remaining core coverage normalization
+name: One-shot release coverage integration staging
 
 on:
   push:
@@ -9,12 +9,12 @@ permissions:
   statuses: write
 
 concurrency:
-  group: tsao-remaining-core-normalize
+  group: tsao-release-coverage-integration
   cancel-in-progress: false
 
 jobs:
-  normalize:
-    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: normalize remaining core coverage tests' }}"
+  integrate:
+    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: integrate release coverage staging' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -28,8 +28,8 @@ jobs:
         run: |
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
             -f state=pending \
-            -f context=tsao-dft/remaining-core-normalize \
-            -f description="Remaining core coverage normalization running" \
+            -f context=tsao-dft/release-coverage-integration \
+            -f description="Release coverage integration staging running" \
             -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
       - name: Checkout full history
@@ -53,32 +53,99 @@ jobs:
           python -m pip install -c constraints/py312.txt -r requirements-dev.txt
           python -m pip check
 
-      - name: Apply exact Ruff normalization
+      - name: Add final validator paths and normalize coverage tests
         run: |
-          python -m ruff check --fix skills/tsao-dft-hpc-provenance/tests/test_release_core_remaining.py
-          python -m ruff format skills/tsao-dft-hpc-provenance/tests/test_release_core_remaining.py
+          cat > skills/tsao-dft-hpc-provenance/tests/test_release_validator_final.py <<'PY'
+          from __future__ import annotations
+
+          import copy
+          import importlib.util
+          import unittest
+          from pathlib import Path
+          from typing import Any
+
+          import yaml
+
+          ROOT = Path(__file__).resolve().parents[1]
+
+
+          def load_validator() -> Any:
+              path = ROOT / "scripts/validate_hpc_manifest.py"
+              spec = importlib.util.spec_from_file_location("release_validator_final", path)
+              if spec is None or spec.loader is None:
+                  raise RuntimeError(f"cannot import {path}")
+              module = importlib.util.module_from_spec(spec)
+              spec.loader.exec_module(module)
+              return module
+
+
+          class ReleaseValidatorFinalTests(unittest.TestCase):
+              validator: Any
+              base: dict[str, Any]
+
+              @classmethod
+              def setUpClass(cls) -> None:
+                  cls.validator = load_validator()
+                  cls.base = yaml.safe_load((ROOT / "templates/hpc-manifest.yaml").read_text(encoding="utf-8"))
+
+              def test_enabled_acceleration_requires_non_none_identity(self) -> None:
+                  manifest = copy.deepcopy(self.base)
+                  manifest["resources"].update({"gpus_per_node": 1, "tasks_per_node": 1})
+                  manifest["acceleration"].update(
+                      {
+                          "enabled": True,
+                          "backend": "none",
+                          "mode": "none",
+                          "gpu_vendor": "none",
+                      }
+                  )
+                  errors: list[str] = []
+                  warnings: list[str] = []
+                  self.validator.validate_acceleration(manifest, manifest["resources"], errors, warnings)
+                  self.assertTrue(any("non-none backend" in error for error in errors))
+
+              def test_non_mapping_variables_and_approved_error_are_rejected(self) -> None:
+                  manifest = copy.deepcopy(self.base)
+                  manifest["environment"]["variables"] = []
+                  manifest["approval"] = "approved"
+                  errors, _ = self.validator.validate(manifest)
+                  self.assertIn("environment.variables must be a mapping", errors)
+                  self.assertIn("approved manifest has validation errors", errors)
+
+
+          if __name__ == "__main__":
+              unittest.main()
+          PY
+          python -m ruff check --fix \
+            skills/tsao-dft-hpc-provenance/tests/test_release_core_remaining.py \
+            skills/tsao-dft-hpc-provenance/tests/test_release_validator_final.py \
+            tests/test_release_validator_integration.py
+          python -m ruff format \
+            skills/tsao-dft-hpc-provenance/tests/test_release_core_remaining.py \
+            skills/tsao-dft-hpc-provenance/tests/test_release_validator_final.py \
+            tests/test_release_validator_integration.py
 
       - name: Run complete gate against permanent CI
         shell: bash
         run: |
           set -o pipefail
-          git checkout ce6e161d1292fede55b18814c3f2d2b95a4426ce -- .github/workflows/ci.yml
-          python scripts/quality_gate.py 2>&1 | tee remaining-core-normalize-quality.log
+          git checkout ccd0e111c2a1c7a4fb9e5742c248b1c75b4ef8a6 -- .github/workflows/ci.yml
+          python scripts/quality_gate.py 2>&1 | tee release-coverage-integration-quality.log
           git checkout HEAD -- .github/workflows/ci.yml
 
-      - name: Commit, rebase, revalidate and push code
+      - name: Commit only after complete gate passes
         shell: bash
         run: |
           set -o pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "style: normalize remaining release-core tests"
+          git commit -m "test: integrate release coverage closure"
           for attempt in 1 2 3; do
             git fetch origin main
             git rebase origin/main
-            git checkout ce6e161d1292fede55b18814c3f2d2b95a4426ce -- .github/workflows/ci.yml
-            python scripts/quality_gate.py 2>&1 | tee "remaining-core-normalize-rebased-${attempt}.log"
+            git checkout ccd0e111c2a1c7a4fb9e5742c248b1c75b4ef8a6 -- .github/workflows/ci.yml
+            python scripts/quality_gate.py 2>&1 | tee "release-coverage-integration-rebased-${attempt}.log"
             git checkout HEAD -- .github/workflows/ci.yml
             if git push origin HEAD:main; then
               exit 0
@@ -95,14 +162,14 @@ jobs:
           JOB_STATUS: ${{ job.status }}
         run: |
           state=failure
-          description='Remaining core coverage normalization failed'
+          description='Release coverage integration staging failed'
           if [ "$JOB_STATUS" = 'success' ]; then
             state=success
-            description='Remaining core coverage normalization passed'
+            description='Release coverage integration staging passed'
           fi
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
             -f state="$state" \
-            -f context=tsao-dft/remaining-core-normalize \
+            -f context=tsao-dft/release-coverage-integration \
             -f description="$description" \
             -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
@@ -110,7 +177,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: remaining-core-normalize-${{ github.sha }}
-          path: remaining-core-normalize-*.log
+          name: release-coverage-integration-${{ github.sha }}
+          path: release-coverage-integration-*.log
           if-no-files-found: warn
           retention-days: 14

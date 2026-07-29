@@ -1,4 +1,4 @@
-name: One-shot exact release coverage formatting
+name: One-shot release coverage typing closure
 
 on:
   push:
@@ -9,12 +9,12 @@ permissions:
   statuses: write
 
 concurrency:
-  group: tsao-release-coverage-format
+  group: tsao-release-coverage-typing
   cancel-in-progress: false
 
 jobs:
-  format-and-verify:
-    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: run exact release coverage formatting' }}"
+  repair:
+    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: close release coverage typing' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
@@ -28,8 +28,8 @@ jobs:
         run: |
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
             -f state=pending \
-            -f context=tsao-dft/release-coverage-format \
-            -f description="Exact release coverage formatting running" \
+            -f context=tsao-dft/release-coverage-typing \
+            -f description="Release coverage typing closure running" \
             -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
       - name: Checkout full history
@@ -53,9 +53,34 @@ jobs:
           python -m pip install -c constraints/py312.txt -r requirements-dev.txt
           python -m pip check
 
-      - name: Remove duplicate payload and format reviewed test
+      - name: Apply reviewed test typing fixes
         run: |
           rm -f .github/coverage_repair_payload.py
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('skills/tsao-dft-hpc-provenance/tests/test_release_core_coverage.py')
+          text = path.read_text(encoding='utf-8')
+          old = '''        for value in (None, [], ["python", ""], ["python", 1], ["bad\narg"]):
+              self.shell.validate_argv(value, "argv", errors)
+          '''
+          new = '''        for argv_value in (None, [], ["python", ""], ["python", 1], ["bad\narg"]):
+              self.shell.validate_argv(argv_value, "argv", errors)
+          '''
+          if old not in text:
+              raise SystemExit('argv typing target missing')
+          text = text.replace(old, new, 1)
+          old = '''        with tempfile.TemporaryDirectory() as temporary:
+              empty = Path(temporary) / "empty"
+              empty.write_text("", encoding="utf-8")
+          '''
+          new = '''        with tempfile.TemporaryDirectory() as empty_dir:
+              empty = Path(empty_dir) / "empty"
+              empty.write_text("", encoding="utf-8")
+          '''
+          if old not in text:
+              raise SystemExit('temporary directory typing target missing')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
           python -m ruff check --fix skills/tsao-dft-hpc-provenance/tests/test_release_core_coverage.py
           python -m ruff format skills/tsao-dft-hpc-provenance/tests/test_release_core_coverage.py
 
@@ -64,7 +89,7 @@ jobs:
         run: |
           set -o pipefail
           git checkout c6adf6432d26cbe337a83abf775a590edaa2dc1b -- .github/workflows/ci.yml
-          python scripts/quality_gate.py 2>&1 | tee release-coverage-format-quality.log
+          python scripts/quality_gate.py 2>&1 | tee release-coverage-typing-quality.log
           git checkout HEAD -- .github/workflows/ci.yml
 
       - name: Commit, rebase, revalidate and push code
@@ -74,12 +99,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "style: normalize release trust-core coverage tests"
+          git commit -m "test: close release trust-core typing gaps"
           for attempt in 1 2 3; do
             git fetch origin main
             git rebase origin/main
             git checkout c6adf6432d26cbe337a83abf775a590edaa2dc1b -- .github/workflows/ci.yml
-            python scripts/quality_gate.py 2>&1 | tee "release-coverage-format-rebased-${attempt}.log"
+            python scripts/quality_gate.py 2>&1 | tee "release-coverage-typing-rebased-${attempt}.log"
             git checkout HEAD -- .github/workflows/ci.yml
             if git push origin HEAD:main; then
               exit 0
@@ -96,14 +121,14 @@ jobs:
           JOB_STATUS: ${{ job.status }}
         run: |
           state=failure
-          description='Exact release coverage formatting failed'
+          description='Release coverage typing closure failed'
           if [ "$JOB_STATUS" = 'success' ]; then
             state=success
-            description='Exact release coverage formatting passed'
+            description='Release coverage typing closure passed'
           fi
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
             -f state="$state" \
-            -f context=tsao-dft/release-coverage-format \
+            -f context=tsao-dft/release-coverage-typing \
             -f description="$description" \
             -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
@@ -111,7 +136,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: release-coverage-format-${{ github.sha }}
-          path: release-coverage-format-*.log
+          name: release-coverage-typing-${{ github.sha }}
+          path: release-coverage-typing-*.log
           if-no-files-found: warn
           retention-days: 14

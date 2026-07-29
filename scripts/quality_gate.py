@@ -40,6 +40,12 @@ def stages(include_tests: bool = True) -> list[Stage]:
         Stage("Ruff lint", (sys.executable, "-m", "ruff", "check", ".")),
         Stage("Ruff format", (sys.executable, "-m", "ruff", "format", "--check", ".")),
         Stage("mypy", (sys.executable, "scripts/run_type_checks.py"), timeout_seconds=900.0),
+        Stage(
+            "trust-boundary strict mypy",
+            (sys.executable, "scripts/run_strict_type_checks.py"),
+            timeout_seconds=900.0,
+        ),
+        Stage("coverage", (sys.executable, "scripts/run_coverage.py"), timeout_seconds=1200.0),
         Stage("Bandit", (sys.executable, "scripts/run_bandit.py"), timeout_seconds=600.0),
         Stage("repository", (sys.executable, "scripts/validate_repo.py", "--strict")),
     ]

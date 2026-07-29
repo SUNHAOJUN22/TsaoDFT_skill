@@ -7,9 +7,13 @@ routes:
   environment:
     triggers:
     - environment
+    - environment inventory
+    - hardware inventory
     - module
     - dependency
     - CUDA
+    - ROCm
+    - oneAPI
     - MPI
     - software version
     load:
@@ -24,11 +28,34 @@ routes:
     - cuFFTMp
     - NCCL
     - NVSHMEM
+    - TensorRT
+    - HIP
+    - ROCm
+    - rocBLAS
+    - rocSOLVER
+    - rocFFT
+    - rocSPARSE
+    - RCCL
+    - hipTensor
+    - SYCL
+    - oneAPI
+    - oneMKL
+    - oneCCL
+    - OpenVINO
+    - Metal
+    - MPS
     - OpenACC
+    - OpenMP offload
+    - Kokkos
+    - Python Array API
+    - DLPack
     - edge computing
     - C++
+    - Fortran
     - native extension
     - parallel performance
+    - data movement
+    - zero-copy
     - GPU binding
     - rank per GPU
     - benchmark matrix
@@ -51,6 +78,7 @@ routes:
     - nvidia-smi
     - Nsight
     - rocm-smi
+    - xpu-smi
     load:
     - references/performance-evidence-and-qualification.md
     - references/provenance.md

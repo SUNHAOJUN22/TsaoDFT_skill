@@ -12,9 +12,14 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from performance_evidence import compare_evidence, summary_markdown  # noqa: E402 -- standalone Skill import contract
-from trust_boundary import isolate_benchmark_plan, load_json, load_yaml, schema_errors, validate_policy  # noqa: E402 -- standalone Skill import contract
 from import_benchmark_evidence import import_with_schema  # noqa: E402 -- standalone Skill import contract
+from performance_evidence import compare_evidence, summary_markdown  # noqa: E402 -- standalone Skill import contract
+from trust_boundary import (  # noqa: E402 -- standalone Skill import contract
+    isolate_benchmark_plan,
+    load_json,
+    load_yaml,
+    validate_policy,
+)
 
 
 def main() -> int:

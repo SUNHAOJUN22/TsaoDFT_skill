@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   repair:
-    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: run permanent Ruff repair' }}"
+    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: retry permanent Ruff repair' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -53,11 +53,30 @@ jobs:
           python -m pip install -c constraints/py312.txt -r requirements-dev.txt
           python -m pip check
 
-      - name: Apply exact repository Ruff repair and restore permanent CI
+      - name: Apply reviewed SIM108 and exact Ruff repair
         run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('skills/tsao-dft-hpc-provenance/scripts/inspect_execution_environment.py')
+          text = path.read_text(encoding='utf-8')
+          old = '''    if errors:
+              report = {"ok": False, "errors": errors, "inventory": report}
+          else:
+              report = {"ok": True, "inventory": report}
+          '''
+          new = '''    report = (
+              {"ok": False, "errors": errors, "inventory": report}
+              if errors
+              else {"ok": True, "inventory": report}
+          )
+          '''
+          if old not in text:
+              raise SystemExit('reviewed SIM108 target was not found exactly')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
           python -m ruff check --fix .
           python -m ruff format .
-          git checkout HEAD~2 -- .github/workflows/ci.yml
+          git checkout e94340da02ca62d43b410235a5628cb696dd2e24 -- .github/workflows/ci.yml
           rm -f .github/workflows/ruff-repair-once.yml .github/ruff-repair.trigger
 
       - name: Run complete quality gate

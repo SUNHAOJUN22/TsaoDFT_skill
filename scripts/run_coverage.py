@@ -27,6 +27,45 @@ def percent(numerator: int, denominator: int) -> float:
     return 100.0 if denominator == 0 else 100.0 * numerator / denominator
 
 
+def test_suites() -> list[Path]:
+    candidates = [ROOT / "tests", *sorted((ROOT / "skills").glob("*/tests"))]
+    return [path for path in candidates if path.is_dir()]
+
+
+def collect_coverage(data_file: Path) -> list[str]:
+    errors: list[str] = []
+    for index, suite in enumerate(test_suites()):
+        command = [
+            sys.executable,
+            "-m",
+            "coverage",
+            "run",
+            f"--data-file={data_file}",
+            "--branch",
+            "--source=scripts,skills",
+        ]
+        if index:
+            command.append("--append")
+        command.extend(
+            [
+                "-m",
+                "unittest",
+                "discover",
+                "-s",
+                str(suite),
+                "-p",
+                "test_*.py",
+                "-v",
+            ]
+        )
+        completed = subprocess.run(command, cwd=ROOT, capture_output=True, text=True, check=False)
+        if completed.returncode:
+            output = ((completed.stdout or "") + (completed.stderr or "")).rstrip()
+            errors.append(f"coverage suite failed: {suite.relative_to(ROOT)}\n{output}")
+            break
+    return errors
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", action="store_true", dest="json_output")
@@ -37,19 +76,9 @@ def main() -> int:
     args = parser.parse_args()
     with tempfile.TemporaryDirectory() as temporary:
         data_file = Path(temporary) / ".coverage"
-        command = [
-            sys.executable,
-            "-m",
-            "coverage",
-            "run",
-            f"--data-file={data_file}",
-            "--branch",
-            "--source=scripts,skills",
-            "scripts/run_all_tests.py",
-        ]
-        completed = subprocess.run(command, cwd=ROOT, capture_output=True, text=True, check=False)
-        if completed.returncode:
-            payload = {"ok": False, "errors": [completed.stdout + completed.stderr]}
+        collection_errors = collect_coverage(data_file)
+        if collection_errors:
+            payload = {"ok": False, "errors": collection_errors}
             print(json.dumps(payload, ensure_ascii=False, indent=2))
             return 1
         coverage = Coverage(data_file=str(data_file), branch=True)

@@ -45,3 +45,15 @@ entries:
   - path: skills/tsao-dft-hpc-provenance/scripts/inspect_execution_environment.py
     test_id: B404
     reason: subprocess is restricted to a fixed allowlist of read-only version and device inventory commands with shell disabled.
+  - path: scripts/run_coverage.py
+    test_id: B404
+    reason: subprocess is used only to invoke the current Python interpreter with the fixed repository coverage runner and shell disabled.
+  - path: scripts/run_coverage.py
+    test_id: B603
+    reason: coverage receives a fixed repository-owned argv list; no untrusted command text or shell interpolation is used.
+  - path: scripts/run_strict_type_checks.py
+    test_id: B404
+    reason: subprocess is used only to invoke the pinned mypy module against a closed tuple of repository trust-core paths.
+  - path: scripts/run_strict_type_checks.py
+    test_id: B603
+    reason: strict mypy receives sys.executable, fixed flags and repository-owned targets through argv with shell disabled.

@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  statuses: write
 
 jobs:
   format:
@@ -37,3 +38,15 @@ jobs:
           path: skills/tsao-dft-hpc-provenance/scripts/plan_acceleration.py
           if-no-files-found: error
           retention-days: 1
+
+      - name: Publish artifact run locator
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state=success \
+            -f context=tsao-dft/format-artifact \
+            -f description="Ruff-formatted planner artifact available" \
+            -f target_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"

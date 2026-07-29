@@ -129,13 +129,15 @@ class ReleaseCoreRemainingTests(unittest.TestCase):
             self.trust._write_json(json_path, {"b": 2, "a": 1})
             self.assertEqual(json.loads(json_path.read_text(encoding="utf-8")), {"a": 1, "b": 2})
 
-            with patch.object(
-                self.trust,
-                "verify_content_addressed_bundle",
-                return_value={"ok": False, "errors": ["forced"]},
+            with (
+                patch.object(
+                    self.trust,
+                    "verify_content_addressed_bundle",
+                    return_value={"ok": False, "errors": ["forced"]},
+                ),
+                self.assertRaises(ValueError),
             ):
-                with self.assertRaises(ValueError):
-                    self.trust.publish_content_addressed_bundle(root, [], {}, {}, {}, {})
+                self.trust.publish_content_addressed_bundle(root, [], {}, {}, {}, {})
             self.assertEqual([path for path in root.iterdir() if path.is_dir()], [])
 
             published = self.trust.publish_content_addressed_bundle(root, [], {}, {}, {}, {})
@@ -395,9 +397,7 @@ class ReleaseCoreRemainingTests(unittest.TestCase):
 
         errors = []
         warnings = []
-        self.validator.validate_acceleration(
-            {"acceleration": "bad"}, {"gpus_per_node": 0}, errors, warnings
-        )
+        self.validator.validate_acceleration({"acceleration": "bad"}, {"gpus_per_node": 0}, errors, warnings)
         self.assertTrue(errors)
 
         metal = self.base_manifest()

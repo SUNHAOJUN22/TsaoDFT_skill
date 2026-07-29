@@ -250,7 +250,7 @@ class ReleaseManifestCoverageTests(unittest.TestCase):
         case_errors = []
         case_warnings = []
         self.validator.validate_acceleration(enabled, enabled["resources"], case_errors, case_warnings)
-        self.assertTrue(case_errors)
+        self.assertEqual(case_errors, [])
         self.assertTrue(case_warnings)
 
     def test_validator_command_contract_routes(self) -> None:

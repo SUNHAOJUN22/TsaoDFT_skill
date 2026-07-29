@@ -1,4 +1,4 @@
-name: One-shot reviewed baseline migration
+name: One-shot publish reviewed baseline code
 
 on:
   push:
@@ -9,12 +9,12 @@ permissions:
   statuses: write
 
 concurrency:
-  group: tsao-reviewed-baseline-migration
+  group: tsao-publish-reviewed-baseline-code
   cancel-in-progress: false
 
 jobs:
-  migrate:
-    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: execute reviewed baseline migration helper' }}"
+  publish:
+    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: publish reviewed baseline migration code' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
@@ -28,8 +28,8 @@ jobs:
         run: |
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
             -f state=pending \
-            -f context=tsao-dft/baseline-migration \
-            -f description="Reviewed baseline migration running" \
+            -f context=tsao-dft/baseline-code \
+            -f description="Reviewed baseline code publication running" \
             -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
       - name: Checkout full history
@@ -53,12 +53,11 @@ jobs:
           python -m pip install -c constraints/py312.txt -r requirements-dev.txt
           python -m pip check
 
-      - name: Apply reviewed migration
+      - name: Apply reviewed migration code only
         run: |
           python .github/complete_baseline_migration.py
           python -m ruff check --fix .
           python -m ruff format .
-          git checkout 19ab8e80d65aa6e34da3ed02366f8bd7b12568b2 -- .github/workflows/ci.yml
           rm -f .github/complete_baseline_migration.py
           rm -f .github/workflows/ruff-repair-once.yml .github/ruff-repair.trigger
 
@@ -66,9 +65,9 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python scripts/quality_gate.py 2>&1 | tee baseline-migration-quality.log
+          python scripts/quality_gate.py 2>&1 | tee baseline-code-quality.log
 
-      - name: Commit, rebase, revalidate and push
+      - name: Commit, rebase, revalidate and push code
         shell: bash
         run: |
           set -o pipefail
@@ -79,7 +78,7 @@ jobs:
           for attempt in 1 2 3; do
             git fetch origin main
             git rebase origin/main
-            python scripts/quality_gate.py 2>&1 | tee "baseline-migration-rebased-${attempt}.log"
+            python scripts/quality_gate.py 2>&1 | tee "baseline-code-rebased-${attempt}.log"
             if git push origin HEAD:main; then
               exit 0
             fi
@@ -95,14 +94,14 @@ jobs:
           JOB_STATUS: ${{ job.status }}
         run: |
           state=failure
-          description='Reviewed baseline migration failed'
+          description='Reviewed baseline code publication failed'
           if [ "$JOB_STATUS" = 'success' ]; then
             state=success
-            description='Reviewed baseline migration passed'
+            description='Reviewed baseline code publication passed'
           fi
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
             -f state="$state" \
-            -f context=tsao-dft/baseline-migration \
+            -f context=tsao-dft/baseline-code \
             -f description="$description" \
             -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
@@ -110,7 +109,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: baseline-migration-${{ github.sha }}
-          path: baseline-migration-*.log
+          name: baseline-code-${{ github.sha }}
+          path: baseline-code-*.log
           if-no-files-found: warn
           retention-days: 14

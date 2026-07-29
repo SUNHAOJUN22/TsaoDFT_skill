@@ -287,9 +287,7 @@ class ReleaseFigureManifestCoverageTests(unittest.TestCase):
         unlabeled = self.base_manifest()
         unlabeled_panel = unlabeled["figures"][0]["panels"][0]
         unlabeled_panel.clear()
-        unlabeled_panel.update(
-            {"id": "schematic", "type": "schematic", "source_artifact_ids": ["prompt-1"]}
-        )
+        unlabeled_panel.update({"id": "schematic", "type": "schematic", "source_artifact_ids": ["prompt-1"]})
         self.assert_warning(unlabeled, "does not state whether AI generation was used")
 
         unknown = self.base_manifest()

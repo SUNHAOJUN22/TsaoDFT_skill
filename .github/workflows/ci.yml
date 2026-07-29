@@ -1,4 +1,4 @@
-name: One-shot release-core finalization against permanent CI
+name: One-shot release-core test push
 
 on:
   push:
@@ -9,12 +9,12 @@ permissions:
   statuses: write
 
 concurrency:
-  group: tsao-release-core-finalization-permanent-ci
+  group: tsao-release-core-test-push
   cancel-in-progress: false
 
 jobs:
   finalize:
-    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: validate release-core against permanent CI' }}"
+    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: push release-core tests without workflow changes' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
@@ -28,8 +28,8 @@ jobs:
         run: |
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
             -f state=pending \
-            -f context=tsao-dft/release-core-finalization \
-            -f description="Release-core finalization running" \
+            -f context=tsao-dft/release-core-test-push \
+            -f description="Release-core tests running" \
             -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
       - name: Checkout full history
@@ -146,13 +146,17 @@ jobs:
           python -m unittest discover -s skills/tsao-dft-hpc-provenance/tests -p 'test_release_validator_final.py' -v
           python -m unittest discover -s tests -p 'test_release_validator_integration.py' -v
 
-      - name: Commit clean tests and permanent CI
+      - name: Commit and push test files only
         shell: bash
         run: |
           set -o pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git checkout HEAD -- .github/workflows/ci.yml
+          git add \
+            skills/tsao-dft-hpc-provenance/tests/test_release_core_remaining.py \
+            skills/tsao-dft-hpc-provenance/tests/test_release_validator_final.py \
+            tests/test_release_validator_integration.py
           git commit -m "test: finalize release-core coverage closure"
           for attempt in 1 2 3; do
             git fetch origin main
@@ -172,24 +176,13 @@ jobs:
           JOB_STATUS: ${{ job.status }}
         run: |
           state=failure
-          description='Release-core finalization failed'
+          description='Release-core test push failed'
           if [ "$JOB_STATUS" = 'success' ]; then
             state=success
-            description='Release-core finalization passed'
+            description='Release-core tests passed and were pushed'
           fi
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
             -f state="$state" \
-            -f context=tsao-dft/release-core-finalization \
+            -f context=tsao-dft/release-core-test-push \
             -f description="$description" \
             -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-
-      - name: Upload diagnostics
-        if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: release-core-finalization-${{ github.sha }}
-          path: |
-            skills/tsao-dft-hpc-provenance/tests/test_release_core_remaining.py
-            skills/tsao-dft-hpc-provenance/tests/test_release_validator_final.py
-          if-no-files-found: warn
-          retention-days: 7

@@ -1,8 +1,8 @@
 ---
 name: tsao-dft-hpc-provenance
-description: "Prepare and audit local, Slurm, PBS and cloud/HPC computational-chemistry execution: environment inspection, dependency checks, CPU/GPU and native-code acceleration planning, resource estimates, job scripts, benchmark campaigns, real-result evidence import, numerical-equivalence-first comparison, scoped L3 performance qualification, batch DAGs, monitoring, failure classification, checkpoint/restart policy, provenance, reproducibility and scientific CI."
+description: "Prepare and audit local, Slurm, PBS and cloud/HPC computational-chemistry execution: environment inspection, dependency checks, cross-vendor CPU/GPU and native-code acceleration planning, resource estimates, job scripts, benchmark campaigns, real-result evidence import, numerical-equivalence-first comparison, scoped L3 performance qualification, batch DAGs, monitoring, failure classification, checkpoint/restart policy, provenance, reproducibility and scientific CI."
 license: MIT
-compatibility: Python 3.10+ and PyYAML. Slurm, PBS, CUDA-X, OpenACC, MPI, containers, AiiDA, Snakemake and Nextflow are optional external systems.
+compatibility: Python 3.10+ and PyYAML. Slurm, PBS, CUDA-X/OpenACC, ROCm/HIP, oneAPI/SYCL, Metal/MPS, OpenMP offload, Kokkos, MPI, containers, AiiDA, Snakemake and Nextflow are optional external systems.
 metadata: {"version": "0.4.0-alpha.1", "author": "SUNHAOJUN22", "repository": "https://github.com/SUNHAOJUN22/TsaoDFT_skill"}
 ---
 
@@ -13,22 +13,23 @@ This Skill owns execution mechanics and performance evidence handling, not scien
 ## Workflow
 
 1. Read a site guide or inspect the named execution target; never scan unrelated filesystems.
-2. Record executable/module/container, version, scheduler, partition/queue, scratch, quotas, CPU architecture, MPI/OpenMP/GPU layout, acceleration libraries and environment variables.
-3. Identify the measured bottleneck and select an engine-native, portable-native, ML-surrogate or CPU reference path before estimating cost.
-4. Materialize the reviewed acceleration profile into a base Manifest, CPU reference, GPU scaling candidates and a benchmark matrix; all generated candidates remain `pending`.
-5. Estimate CPU/GPU hours, memory, wall time and storage before production submission.
-6. Generate scripts from a reviewed manifest. Submission, cancellation and destructive cleanup require explicit user instruction.
-7. Import supplied real-engine result records and verify schemas, method identity, artifact hashes, parser acceptance, build and hardware identity.
-8. Require numerical equivalence before calculating effective speedup; retain all failed and successful attempts.
-9. Aggregate repeated runs using medians and robust dispersion, then build an immutable evidence bundle and scoped qualification report.
-10. Promote a public capability only through separate explicit review; a scoped performance qualification never changes the public level automatically.
+2. Record executable/module/container, version, scheduler, partition/queue, scratch, quotas, CPU architecture, MPI/OpenMP/GPU layout, accelerator backend, math/communication libraries and environment-variable presence without returning secret values.
+3. Identify the measured bottleneck and select an engine-native, portable-native, ML-surrogate, edge-inference or CPU reference path before estimating cost.
+4. Reject incompatible GPU-vendor/backend/library combinations before materializing a campaign.
+5. Materialize the reviewed acceleration profile into a base Manifest, CPU reference, accelerator scaling candidates and a benchmark matrix; all generated candidates remain `pending`.
+6. Estimate CPU/GPU hours, memory, wall time, transfer cost and storage before production submission.
+7. Generate scripts from a reviewed manifest. Submission, cancellation and destructive cleanup require explicit user instruction.
+8. Import supplied real-engine result records and verify schemas, method identity, artifact hashes, parser acceptance, build and hardware identity.
+9. Require numerical equivalence before calculating effective speedup; retain all failed and successful attempts.
+10. Aggregate repeated runs using medians and robust dispersion, then build an immutable evidence bundle and scoped qualification report.
+11. Promote a public capability only through separate explicit review; a scoped performance qualification never changes the public level automatically.
 
 ## Routes
 
 | Need | Route |
 |---|---|
-| Environment, modules, dependencies | `environment` |
-| CPU/GPU, CUDA-X, native-code and edge acceleration plan | `acceleration` |
+| Environment, modules, dependencies and non-invoking inventory | `environment` |
+| CPU/GPU, CUDA-X, ROCm, SYCL, Metal, portable-native and edge acceleration plan | `acceleration` |
 | Real benchmark import, comparison and scoped L3 eligibility | `performance_evidence` |
 | Slurm/PBS/local job script | `job_script` |
 | Benchmark matrix, homogeneous array or workflow DAG | `batch` |
@@ -44,11 +45,12 @@ This Skill owns execution mechanics and performance evidence handling, not scien
 - Do not hide failed attempts. Keep every attempt, error signature and fix.
 - Containers do not solve licensed-software or pseudopotential distribution rights.
 - Scheduler completion means only that the process ended; the engine-specific validator owns result quality.
-- A requested GPU, Python package, CUDA-X name, generated candidate or self-reported L3 label is not performance evidence.
+- A requested GPU, detected tool, Python package, library name, generated candidate or self-reported L3 label is not performance evidence.
+- Reject backend/vendor mismatches and do not inject accelerator libraries into arbitrary packaged or licensed binaries.
 - Effective speedup is undefined until input, method, model, convergence, parser and numerical-equivalence gates pass.
 - Do not report the fastest single run as the result; use the policy repeat count and robust summary.
 - Mixed precision, surrogate inference and native extensions cannot weaken convergence, accuracy, provenance or fallback contracts.
-- Optional metric adapters parse supplied summaries and report `NOT_AVAILABLE`; they never invoke external tools or fabricate zero values.
+- Optional inventory and metric adapters report availability or `NOT_AVAILABLE`; they never invoke external tools, expose environment values or fabricate zero values.
 - `QUALIFIED_FOR_SCOPED_L3_PERFORMANCE_EVIDENCE` is evidence eligibility only and never auto-promotes the public capability level.
 
 ## Deterministic controls
@@ -56,6 +58,9 @@ This Skill owns execution mechanics and performance evidence handling, not scien
 - engine-aware Gaussian/VASP/QE/CP2K job-script generation;
 - site-profile validation without credentials;
 - CPU/GPU allocation estimates and Slurm CPU/GPU binding;
+- NVIDIA CUDA/OpenACC, AMD HIP/ROCm, Intel SYCL/oneAPI and Apple Metal route validation;
+- Kokkos, Python Array API, DLPack and native C ABI/binding compatibility contracts;
+- non-invoking command/module/environment-presence inventory;
 - acceleration planning and pending campaign materialization;
 - benchmark-result Schema and JSON/YAML/JSONL/CSV import;
 - artifact SHA-256 verification and duplicate run-identity rejection;
@@ -70,6 +75,13 @@ This Skill owns execution mechanics and performance evidence handling, not scien
 ## Commands
 
 ```bash
+python skills/tsao-dft-hpc-provenance/scripts/plan_acceleration.py \
+  --inspect-environment --out build/acceleration-environment.json
+
+python skills/tsao-dft-hpc-provenance/scripts/plan_acceleration.py \
+  skills/tsao-dft-hpc-provenance/templates/acceleration-profile.yaml \
+  --out build/acceleration-plan.json
+
 python skills/tsao-dft-hpc-provenance/scripts/validate_benchmark_result.py \
   results/*.yaml --artifact-root run-artifacts
 
@@ -88,7 +100,7 @@ python skills/tsao-dft-hpc-provenance/scripts/qualify_performance_evidence.py \
   --out-dir build/performance-evidence
 ```
 
-These commands process supplied evidence only. They do not submit jobs or execute an engine.
+These commands inspect or process supplied profiles and evidence only. They do not submit jobs or execute an engine.
 
 ## Untrusted content and instruction hierarchy
 

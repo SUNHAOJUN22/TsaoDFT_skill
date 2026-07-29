@@ -236,9 +236,7 @@ def library_decision(name: str, profile: dict[str, Any]) -> tuple[str, str]:
         return "not-applicable", f"{name} targets {library_vendor}; select a {vendor}-compatible or portable path."
     if name in {"arrayapi", "dlpack"}:
         decision = (
-            "recommended-interface"
-            if stage in {"ml-surrogate", "postprocessing", "workflow"}
-            else "optional-interface"
+            "recommended-interface" if stage in {"ml-surrogate", "postprocessing", "workflow"} else "optional-interface"
         )
         return decision, "Interoperability contract only; it is not a speedup by itself."
     if name == "kokkos":

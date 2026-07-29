@@ -42,3 +42,6 @@ entries:
   - path: scripts/run_type_checks.py
     test_id: B603
     reason: mypy receives sys.executable, fixed flags and repository-owned directory paths through an argv list with shell disabled.
+  - path: skills/tsao-dft-hpc-provenance/scripts/inspect_execution_environment.py
+    test_id: B404
+    reason: subprocess is restricted to a fixed allowlist of read-only version and device inventory commands with shell disabled.

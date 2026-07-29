@@ -1,4 +1,5 @@
 name: One-shot release coverage integration staging
+# rerun after catalog CLI contract correction
 
 on:
   push:

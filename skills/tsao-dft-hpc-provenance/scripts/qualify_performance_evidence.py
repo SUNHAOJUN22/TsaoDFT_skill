@@ -14,6 +14,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 from import_benchmark_evidence import import_with_schema  # noqa: E402 -- standalone Skill import contract
 from performance_evidence import compare_evidence  # noqa: E402 -- standalone Skill import contract
+from shell_contract import canonical_json  # noqa: E402 -- standalone Skill import contract
 from trust_boundary import (  # noqa: E402 -- standalone Skill import contract
     enforce_policy,
     isolate_benchmark_plan,
@@ -25,7 +26,6 @@ from trust_boundary import (  # noqa: E402 -- standalone Skill import contract
     validate_policy,
     verify_review,
 )
-from shell_contract import canonical_json  # noqa: E402 -- standalone Skill import contract
 
 
 def main() -> int:
@@ -80,9 +80,7 @@ def main() -> int:
             "candidates": qualifications,
             "public_capability_level_changed": False,
         }
-        published = publish_content_addressed_bundle(
-            args.out_parent, records, summary, policy, review, qualification
-        )
+        published = publish_content_addressed_bundle(args.out_parent, records, summary, policy, review, qualification)
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(json.dumps({"ok": False, "errors": [str(exc)]}, ensure_ascii=False, indent=2))
         return 1

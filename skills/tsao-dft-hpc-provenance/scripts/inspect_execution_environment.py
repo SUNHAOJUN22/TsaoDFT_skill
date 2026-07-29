@@ -514,10 +514,7 @@ def main() -> int:
     args = parser.parse_args()
     report = collect_inventory(probe_commands=not args.no_command_probes)
     errors = validate_inventory(report)
-    if errors:
-        report = {"ok": False, "errors": errors, "inventory": report}
-    else:
-        report = {"ok": True, "inventory": report}
+    report = {"ok": False, "errors": errors, "inventory": report} if errors else {"ok": True, "inventory": report}
     rendered = (
         json.dumps(report, ensure_ascii=False, indent=2)
         if args.format == "json"

@@ -7,7 +7,8 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -23,6 +24,10 @@ def load_script(name: str) -> Any:
 
 
 class ShellTrustBoundaryTests(unittest.TestCase):
+    validator: Any
+    generator: Any
+    base: dict[str, Any]
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.validator = load_script("validate_hpc_manifest.py")

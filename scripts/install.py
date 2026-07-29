@@ -11,6 +11,8 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from collections.abc import Iterator
+from contextlib import contextmanager, nullcontext, suppress
 from pathlib import Path
 from typing import Any
 
@@ -20,11 +22,29 @@ AVAILABLE = sorted(path.name for path in SKILLS_DIR.iterdir() if path.is_dir() a
 REPOSITORY = "https://github.com/SUNHAOJUN22/TsaoDFT_skill"
 OWNERSHIP_DIR = ".tsao-skill-ownership"
 MARKER_SCHEMA = 1
+INSTALL_LOCK = ".tsao-install.lock"
 IGNORED_COPY_NAMES = {"__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache"}
 
 
 class InstallSafetyError(RuntimeError):
     """Raised when an installation operation cannot prove it is safe."""
+
+
+@contextmanager
+def install_lock(target: Path) -> Iterator[None]:
+    target.mkdir(parents=True, exist_ok=True)
+    lock = target / INSTALL_LOCK
+    try:
+        descriptor = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    except FileExistsError as exc:
+        raise InstallSafetyError(f"another TsaoDFT install operation holds {lock}") from exc
+    try:
+        os.write(descriptor, f"pid={os.getpid()}\n".encode())
+        yield
+    finally:
+        os.close(descriptor)
+        with suppress(FileNotFoundError):
+            lock.unlink()
 
 
 def default_target(agent: str, scope: str) -> Path:
@@ -236,6 +256,7 @@ def install_skill(
     target.mkdir(parents=True, exist_ok=True)
     staged: Path | None = None
     backup: Path | None = None
+    rollback: Path | None = None
     try:
         if method == "copy":
             staged = stage_copy(source, destination)
@@ -243,7 +264,9 @@ def install_skill(
             if backup_existing:
                 backup = backup_destination(destination)
             else:
-                remove_owned_destination(destination)
+                rollback = Path(tempfile.mkdtemp(prefix=f".{destination.name}.rollback-", dir=destination.parent))
+                rollback.rmdir()
+                os.replace(destination, rollback)
         if method == "symlink":
             destination.symlink_to(source, target_is_directory=True)
             installed_digest = tree_digest(source)
@@ -269,11 +292,16 @@ def install_skill(
                 "backup": str(backup) if backup is not None else None,
             },
         )
+        if rollback is not None and rollback.exists():
+            remove_owned_destination(rollback)
     except Exception:
         if staged is not None and staged.exists():
             shutil.rmtree(staged)
-        if backup is not None and backup.exists() and not destination.exists() and not destination.is_symlink():
-            os.replace(backup, destination)
+        original = backup if backup is not None else rollback
+        if original is not None and original.exists():
+            if destination.exists() or destination.is_symlink():
+                remove_owned_destination(destination)
+            os.replace(original, destination)
         raise
 
 
@@ -325,18 +353,20 @@ def main() -> int:
             return 0
     try:
         target = safe_target(args.target or default_target(args.agent, args.scope))
-        for skill in selected:
-            if args.uninstall:
-                uninstall_skill(target, skill, force=args.force, dry_run=args.dry_run)
-            else:
-                install_skill(
-                    target,
-                    skill,
-                    args.method,
-                    force=args.force,
-                    backup_existing=args.backup_existing,
-                    dry_run=args.dry_run,
-                )
+        lock_context = nullcontext() if args.dry_run else install_lock(target)
+        with lock_context:
+            for skill in selected:
+                if args.uninstall:
+                    uninstall_skill(target, skill, force=args.force, dry_run=args.dry_run)
+                else:
+                    install_skill(
+                        target,
+                        skill,
+                        args.method,
+                        force=args.force,
+                        backup_existing=args.backup_existing,
+                        dry_run=args.dry_run,
+                    )
     except (InstallSafetyError, OSError, shutil.Error) as exc:
         print(f"FAIL: {exc}", file=sys.stderr)
         return 1

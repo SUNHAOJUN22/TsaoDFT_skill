@@ -42,9 +42,7 @@ def import_with_schema(
             observed += 1
             schema_failures = validate_record_schema(record, schema)
             if schema_failures:
-                failures.append(
-                    {"source": str(path), "index": index, "stage": "schema", "errors": schema_failures}
-                )
+                failures.append({"source": str(path), "index": index, "stage": "schema", "errors": schema_failures})
                 continue
             compatibility = json.loads(json.dumps(record, ensure_ascii=False))
             compatibility["schema_version"] = "1.0"

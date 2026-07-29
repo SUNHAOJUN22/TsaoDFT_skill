@@ -13,7 +13,8 @@ from typing import Any
 import yaml
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -29,6 +30,13 @@ def load_script(name: str) -> Any:
 
 
 class EvidenceTrustBoundaryTests(unittest.TestCase):
+    trust: Any
+    shell: Any
+    performance: Any
+    result_schema: dict[str, Any]
+    policy_schema: dict[str, Any]
+    policy: dict[str, Any]
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.trust = load_script("trust_boundary.py")
@@ -52,21 +60,62 @@ class EvidenceTrustBoundaryTests(unittest.TestCase):
             "engine": {"name": "vasp", "version": "6.5.1", "executable": "vasp_std", "build_fingerprint_id": "BUILD-A"},
             "software": {"compiler": "nvhpc", "mpi": "openmpi", "openmp_runtime": "omp", "accelerator_runtime": "cuda"},
             "hardware": {
-                "site_id": "SITE-A", "hardware_fingerprint_id": "HW-A", "cpu_model": "EPYC", "cpu_arch": "x86_64",
-                "nodes": 1, "ranks_per_node": 1, "threads_per_rank": 8, "gpu_vendor": "nvidia", "gpu_model": "H100",
-                "gpu_uuids": ["GPU-A"], "gpu_memory_gb": 80, "driver_version": "590", "gpu_binding": "closest"
+                "site_id": "SITE-A",
+                "hardware_fingerprint_id": "HW-A",
+                "cpu_model": "EPYC",
+                "cpu_arch": "x86_64",
+                "nodes": 1,
+                "ranks_per_node": 1,
+                "threads_per_rank": 8,
+                "gpu_vendor": "nvidia",
+                "gpu_model": "H100",
+                "gpu_uuids": ["GPU-A"],
+                "gpu_memory_gb": 80,
+                "driver_version": "590",
+                "gpu_binding": "closest",
             },
-            "execution": {"scheduler": "slurm", "job_id": "JOB-1", "run_id": f"RUN-{repeat}", "site_id": "SITE-A", "filesystem": "lustre", "scratch_type": "nvme", "timestamp": "2026-07-29T00:00:00Z", "exit_status": 0},
+            "execution": {
+                "scheduler": "slurm",
+                "job_id": "JOB-1",
+                "run_id": f"RUN-{repeat}",
+                "site_id": "SITE-A",
+                "filesystem": "lustre",
+                "scratch_type": "nvme",
+                "timestamp": "2026-07-29T00:00:00Z",
+                "exit_status": 0,
+            },
             "scientific": {
-                "input_sha256": "1" * 64, "method_fingerprint_id": "MF-A",
-                "model_identity": {"functional": "PBE", "basis_or_pseudopotential": "POTCAR-HASH", "corrections": "none"},
-                "convergence_thresholds": {"ediff": 1e-6}, "observable_set": ["energy", "forces"],
-                "parser_accepted": True, "parser_status": "ACCEPTED",
-                "results": {"energy_ev": -10.0, "forces_ev_per_angstrom": [0.0, 0.0, 0.0], "stress_gpa": None, "properties": {}}
+                "input_sha256": "1" * 64,
+                "method_fingerprint_id": "MF-A",
+                "model_identity": {
+                    "functional": "PBE",
+                    "basis_or_pseudopotential": "POTCAR-HASH",
+                    "corrections": "none",
+                },
+                "convergence_thresholds": {"ediff": 1e-6},
+                "observable_set": ["energy", "forces"],
+                "parser_accepted": True,
+                "parser_status": "ACCEPTED",
+                "results": {
+                    "energy_ev": -10.0,
+                    "forces_ev_per_angstrom": [0.0, 0.0, 0.0],
+                    "stress_gpa": None,
+                    "properties": {},
+                },
             },
-            "performance": {"wall_time_s": 50.0, "cpu_time_s": 10.0, "scf_iterations": 10, "peak_host_memory_mb": 1000.0, "peak_device_memory_mb": 2000.0, "cpu_utilization_percent": 50.0, "gpu_utilization_percent": 80.0, "io_bytes": 100, "energy_joules": None},
+            "performance": {
+                "wall_time_s": 50.0,
+                "cpu_time_s": 10.0,
+                "scf_iterations": 10,
+                "peak_host_memory_mb": 1000.0,
+                "peak_device_memory_mb": 2000.0,
+                "cpu_utilization_percent": 50.0,
+                "gpu_utilization_percent": 80.0,
+                "io_bytes": 100,
+                "energy_joules": None,
+            },
             "artifacts": [{"path": "OUTCAR", "sha256": "2" * 64}],
-            "evidence_source": {"kind": "real-engine", "source_id": f"RUN-{repeat}", "missing_fields": []}
+            "evidence_source": {"kind": "real-engine", "source_id": f"RUN-{repeat}", "missing_fields": []},
         }
 
     def test_schema_rejects_float_integer_and_bad_timestamp(self):
@@ -105,11 +154,17 @@ class EvidenceTrustBoundaryTests(unittest.TestCase):
 
     def test_strong_scaling_policy_is_executable(self):
         candidate = {
-            "build_identity_consistent": True, "hardware_identity_consistent": True,
-            "parser_accepted_runs": 3, "total_runs": 3, "all_artifacts_verified": True,
-            "minimum_repeats_pass": True, "numerical_equivalence": {"status": "PASS"},
-            "cpu_to_candidate_speedup": 2.0, "strong_scaling_efficiency": 0.5,
-            "resources": {"gpus_total": 4}, "all_sources_real_engine": True,
+            "build_identity_consistent": True,
+            "hardware_identity_consistent": True,
+            "parser_accepted_runs": 3,
+            "total_runs": 3,
+            "all_artifacts_verified": True,
+            "minimum_repeats_pass": True,
+            "numerical_equivalence": {"status": "PASS"},
+            "cpu_to_candidate_speedup": 2.0,
+            "strong_scaling_efficiency": 0.5,
+            "resources": {"gpus_total": 4},
+            "all_sources_real_engine": True,
         }
         policy = copy.deepcopy(self.policy)
         policy["performance"]["minimum_strong_scaling_efficiency"] = 0.8
@@ -118,36 +173,56 @@ class EvidenceTrustBoundaryTests(unittest.TestCase):
 
     def signed_review(self, root_digest: str, candidate_ids: list[str]) -> tuple[dict[str, Any], bytes]:
         private = Ed25519PrivateKey.generate()
-        public = private.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
+        public = private.public_key().public_bytes(
+            serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
+        )
         now = datetime.now(timezone.utc)
         review = {
-            "schema_version": "1.0", "attestation_id": "REVIEW-1", "identity": "reviewer@example.org",
-            "decision": "approved", "scope": "scoped-performance-evidence",
-            "issued_at": now.isoformat(), "expires_at": (now + timedelta(days=1)).isoformat(),
-            "binding": {"policy_id": self.policy["policy_id"], "benchmark_plan_id": "PLAN-A", "candidate_ids": candidate_ids, "evidence_root_sha256": root_digest},
-            "signature_algorithm": "ed25519", "key_fingerprint": self.shell.public_key_fingerprint(public),
+            "schema_version": "1.0",
+            "attestation_id": "REVIEW-1",
+            "identity": "reviewer@example.org",
+            "decision": "approved",
+            "scope": "scoped-performance-evidence",
+            "issued_at": now.isoformat(),
+            "expires_at": (now + timedelta(days=1)).isoformat(),
+            "binding": {
+                "policy_id": self.policy["policy_id"],
+                "benchmark_plan_id": "PLAN-A",
+                "candidate_ids": candidate_ids,
+                "evidence_root_sha256": root_digest,
+            },
+            "signature_algorithm": "ed25519",
+            "key_fingerprint": self.shell.public_key_fingerprint(public),
         }
         review["signature"] = base64.b64encode(private.sign(self.shell.canonical_json(review).encode())).decode()
         return review, public
 
     def test_signed_review_is_bound_and_forgery_rejected(self):
         review, public = self.signed_review("a" * 64, ["gpu-1"])
-        self.assertEqual(self.trust.verify_review(review, public, "a" * 64, self.policy["policy_id"], "PLAN-A", ["gpu-1"]), [])
+        self.assertEqual(
+            self.trust.verify_review(review, public, "a" * 64, self.policy["policy_id"], "PLAN-A", ["gpu-1"]), []
+        )
         review["binding"]["candidate_ids"] = ["gpu-2"]
-        self.assertTrue(self.trust.verify_review(review, public, "a" * 64, self.policy["policy_id"], "PLAN-A", ["gpu-1"]))
+        self.assertTrue(
+            self.trust.verify_review(review, public, "a" * 64, self.policy["policy_id"], "PLAN-A", ["gpu-1"])
+        )
 
     def test_empty_reviewer_expired_and_wrong_digest_are_rejected(self):
         review, public = self.signed_review("a" * 64, ["gpu-1"])
         review["identity"] = ""
         review["binding"]["evidence_root_sha256"] = "b" * 64
         review["expires_at"] = "2000-01-01T00:00:00+00:00"
-        self.assertTrue(self.trust.verify_review(review, public, "a" * 64, self.policy["policy_id"], "PLAN-A", ["gpu-1"]))
+        self.assertTrue(
+            self.trust.verify_review(review, public, "a" * 64, self.policy["policy_id"], "PLAN-A", ["gpu-1"])
+        )
 
     def test_content_addressed_bundle_detects_all_tampering(self):
         review, _ = self.signed_review("a" * 64, ["gpu-1"])
         with tempfile.TemporaryDirectory() as temporary:
             parent = Path(temporary)
-            bundle = self.trust.publish_content_addressed_bundle(parent, [self.record()], {"benchmark_plan_id": "PLAN-A"}, self.policy, review, {"ok": True})
+            bundle = self.trust.publish_content_addressed_bundle(
+                parent, [self.record()], {"benchmark_plan_id": "PLAN-A"}, self.policy, review, {"ok": True}
+            )
             path = Path(bundle["out_dir"])
             self.assertTrue(self.trust.verify_content_addressed_bundle(path)["ok"])
             (path / "qualification-report.json").write_text("{}\n", encoding="utf-8")

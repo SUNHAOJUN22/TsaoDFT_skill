@@ -1,13 +1,10 @@
 from __future__ import annotations
 
 import importlib.util
-import json
 import tempfile
 import unittest
 from pathlib import Path
 from typing import Any
-
-import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -23,6 +20,9 @@ def load_script(name: str) -> Any:
 
 
 class BenchmarkBridgeTests(unittest.TestCase):
+    bridge: Any
+    parser: Any
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.bridge = load_script("benchmark_bridge.py")

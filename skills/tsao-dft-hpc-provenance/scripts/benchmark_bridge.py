@@ -5,12 +5,17 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-from shell_contract import sha256_file
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from shell_contract import sha256_file  # noqa: E402 -- standalone Skill import contract
 
 
 def load_mapping(path: Path) -> dict[str, Any]:
@@ -151,7 +156,9 @@ def build_record(
         exit_status = int(exit_status_value)
     return {
         "schema_version": "1.1",
-        "benchmark_plan_id": str(acceleration.get("benchmark_plan_id") or manifest.get("benchmark_plan_id") or "MISSING"),
+        "benchmark_plan_id": str(
+            acceleration.get("benchmark_plan_id") or manifest.get("benchmark_plan_id") or "MISSING"
+        ),
         "candidate_id": candidate_id,
         "role": role,
         "repeat_index": repeat_index,
@@ -264,5 +271,11 @@ def cli(engine: str) -> int:
         return 1
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps({"ok": True, "out": str(args.out), "missing_fields": record["evidence_source"]["missing_fields"]}, ensure_ascii=False, indent=2))
+    print(
+        json.dumps(
+            {"ok": True, "out": str(args.out), "missing_fields": record["evidence_source"]["missing_fields"]},
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
     return 0

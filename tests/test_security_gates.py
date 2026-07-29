@@ -21,6 +21,11 @@ EXPECTED_BANDIT_ALLOWANCES = {
     ("scripts/run_type_checks.py", "B404"),
     ("scripts/run_type_checks.py", "B603"),
     ("skills/tsao-dft-ml-active-learning/scripts/train_ridge_baseline.py", "B311"),
+    ("scripts/run_coverage.py", "B404"),
+    ("scripts/run_coverage.py", "B603"),
+    ("scripts/run_strict_type_checks.py", "B404"),
+    ("scripts/run_strict_type_checks.py", "B603"),
+    ("skills/tsao-dft-hpc-provenance/scripts/inspect_execution_environment.py", "B404"),
 }
 
 

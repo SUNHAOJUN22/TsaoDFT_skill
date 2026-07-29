@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -13,7 +14,16 @@ from typing import Any
 import yaml
 from jsonschema import Draft202012Validator, FormatChecker
 
-from shell_contract import canonical_json, sha256_bytes, sha256_file, verify_signed_attestation
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from shell_contract import (  # noqa: E402 -- standalone Skill import contract
+    canonical_json,
+    sha256_bytes,
+    sha256_file,
+    verify_signed_attestation,
+)
 
 POLICY_FIELDS = {
     "schema_version",
@@ -251,9 +261,13 @@ def publish_content_addressed_bundle(
     try:
         documents = {
             "records.json": (json.dumps(records, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode(),
-            "benchmark-summary.json": (json.dumps(summary, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode(),
+            "benchmark-summary.json": (
+                json.dumps(summary, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
+            ).encode(),
             "policy.json": (json.dumps(policy, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode(),
-            "review-attestation.json": (json.dumps(review, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode(),
+            "review-attestation.json": (
+                json.dumps(review, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
+            ).encode(),
             "qualification-report.json": (
                 json.dumps(qualification, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
             ).encode(),
@@ -301,7 +315,9 @@ def verify_content_addressed_bundle(path: Path) -> dict[str, Any]:
         expected_names = set(files) | {"evidence-root.json"}
         observed_names = {item.name for item in path.iterdir() if item.is_file()}
         if observed_names != expected_names:
-            errors.append(f"bundle file set mismatch: expected {sorted(expected_names)}, found {sorted(observed_names)}")
+            errors.append(
+                f"bundle file set mismatch: expected {sorted(expected_names)}, found {sorted(observed_names)}"
+            )
         for name, metadata in files.items():
             file_path = path / name
             if not file_path.is_file():

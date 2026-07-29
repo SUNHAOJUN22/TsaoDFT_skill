@@ -167,7 +167,12 @@ def build(manifest: dict[str, Any]) -> str:
     for key, value in variables.items():
         lines.append(f"export {key}={q(value)}")
     acceleration = manifest.get("acceleration") or {}
-    if acceleration.get("enabled") and acceleration.get("gpu_vendor") == "nvidia" and acceleration.get("device_order") == "pci_bus_id" and "CUDA_DEVICE_ORDER" not in variables:
+    if (
+        acceleration.get("enabled")
+        and acceleration.get("gpu_vendor") == "nvidia"
+        and acceleration.get("device_order") == "pci_bus_id"
+        and "CUDA_DEVICE_ORDER" not in variables
+    ):
         lines.append("export CUDA_DEVICE_ORDER=PCI_BUS_ID")
     scratch = manifest.get("scratch") or {}
     if scratch.get("path"):

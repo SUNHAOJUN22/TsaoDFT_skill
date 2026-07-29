@@ -55,9 +55,7 @@ class InstallerTransactionTests(unittest.TestCase):
                 patch.object(self.installer, "write_marker", side_effect=OSError("marker failed")),
                 self.assertRaises(OSError),
             ):
-                self.installer.install_skill(
-                    target, skill, "copy", force=True, backup_existing=True, dry_run=False
-                )
+                self.installer.install_skill(target, skill, "copy", force=True, backup_existing=True, dry_run=False)
             self.assertTrue((destination / "foreign.txt").is_file())
             self.assertFalse(destination.with_name(destination.name + ".backup").exists())
 

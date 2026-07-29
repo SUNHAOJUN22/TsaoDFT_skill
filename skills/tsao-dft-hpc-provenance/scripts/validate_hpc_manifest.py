@@ -6,20 +6,25 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-from shell_contract import (
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+from shell_contract import (  # noqa: E402 -- standalone Skill import contract
+    manifest_sha256,
     safe_env_name,
     safe_relative_path,
     safe_scalar,
+    sha256_object,
     validate_argv,
     validate_module_or_source,
     verify_signed_attestation,
-    manifest_sha256,
-    sha256_object,
 )
 
 ENGINES = {"gaussian", "vasp", "quantum-espresso", "cp2k", "generic"}
@@ -175,9 +180,7 @@ def _validate_approval(manifest: dict[str, Any], errors: list[str], approval_roo
         errors.append("approval attestation scope is not execute-reviewed-manifest")
 
 
-def validate(
-    data: dict[str, Any], *, approval_root: Path | None = None
-) -> tuple[list[str], list[str]]:
+def validate(data: dict[str, Any], *, approval_root: Path | None = None) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
     required = [
@@ -218,8 +221,13 @@ def validate(
     if not isinstance(resources, dict):
         errors.append("resources must be a mapping")
         resources = {}
-    for key in ("nodes", "tasks_per_node", "cpus_per_task"):
-        integer(resources.get(key), f"resources.{key}", errors, 1)
+    integer(resources.get("nodes"), "resources.nodes", errors, 1)
+    tasks_per_node = integer(resources.get("tasks_per_node"), "resources.tasks_per_node", errors, 1)
+    cpus_per_task = integer(resources.get("cpus_per_task"), "resources.cpus_per_task", errors, 1)
+    if resources.get("cpus_per_node") is not None:
+        cpus_per_node = integer(resources.get("cpus_per_node"), "resources.cpus_per_node", errors, 1)
+        if tasks_per_node * cpus_per_task > cpus_per_node:
+            errors.append("tasks_per_node * cpus_per_task exceeds cpus_per_node")
     memory = resources.get("memory_gb")
     if isinstance(memory, bool) or not isinstance(memory, (int, float)) or memory <= 0:
         errors.append("resources.memory_gb must be positive numeric")
@@ -241,6 +249,8 @@ def validate(
     if not isinstance(variables, dict):
         errors.append("environment.variables must be a mapping")
         variables = {}
+    if "CUDA_VISIBLE_DEVICES" in variables and data.get("scheduler") in {"slurm", "pbs"}:
+        warnings.append("hard-coded CUDA_VISIBLE_DEVICES under a scheduler should use scheduler GPU binding")
     for key, value in variables.items():
         safe_env_name(key, f"environment variable {key!r}", errors)
         if not isinstance(value, (str, int, float)) or isinstance(value, bool):
@@ -280,7 +290,8 @@ def main() -> int:
     args = parser.parse_args()
     loaded = yaml.safe_load(args.manifest.read_text(encoding="utf-8")) or {}
     if not isinstance(loaded, dict):
-        errors, warnings = ["manifest root must be a mapping"], []
+        errors: list[str] = ["manifest root must be a mapping"]
+        warnings: list[str] = []
     else:
         errors, warnings = validate(loaded, approval_root=args.approval_root or args.manifest.parent)
     print(json.dumps({"ok": not errors, "errors": errors, "warnings": warnings}, indent=2))

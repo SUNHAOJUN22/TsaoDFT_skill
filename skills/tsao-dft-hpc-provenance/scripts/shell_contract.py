@@ -205,11 +205,14 @@ def verify_signed_attestation(
         errors.append("attestation key fingerprint mismatch")
     unsigned = {key: value for key, value in attestation.items() if key != "signature"}
     try:
-        signature = base64.b64decode(attestation.get("signature"), validate=True)
-        key = serialization.load_pem_public_key(public_key_pem)
-        if not isinstance(key, Ed25519PublicKey):
+        signature_value = attestation.get("signature")
+        if not isinstance(signature_value, str):
+            raise ValueError("attestation signature must be base64 text")
+        signature = base64.b64decode(signature_value, validate=True)
+        public_key = serialization.load_pem_public_key(public_key_pem)
+        if not isinstance(public_key, Ed25519PublicKey):
             raise ValueError("review key must be Ed25519")
-        key.verify(signature, canonical_json(unsigned).encode("utf-8"))
+        public_key.verify(signature, canonical_json(unsigned).encode("utf-8"))
     except (ValueError, TypeError, InvalidSignature) as exc:
         errors.append(f"attestation signature verification failed: {exc}")
     return sorted(set(errors))

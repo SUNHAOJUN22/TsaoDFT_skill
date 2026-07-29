@@ -23,6 +23,9 @@ def load_script(name: str) -> Any:
 
 
 class EngineParserContractTests(unittest.TestCase):
+    core: Any
+    schema: dict[str, Any]
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.core = load_script("engine_parser_contract.py")

@@ -65,7 +65,10 @@ def _finalize(result: dict[str, Any], path: Path) -> dict[str, Any]:
 
 
 def _numbers(text: str) -> list[float]:
-    return [float(value.replace("D", "E").replace("d", "e")) for value in re.findall(r"[-+]?\d*\.?\d+(?:[DEde][-+]?\d+)?", text)]
+    return [
+        float(value.replace("D", "E").replace("d", "e"))
+        for value in re.findall(r"[-+]?\d*\.?\d+(?:[DEde][-+]?\d+)?", text)
+    ]
 
 
 def parse_gaussian(path: Path) -> dict[str, Any]:
@@ -148,7 +151,7 @@ def parse_vasp(path: Path) -> dict[str, Any]:
     result["elapsed_time_s"] = float(elapsed[-1]) if elapsed else None
     force_blocks = list(re.finditer(r"TOTAL-FORCE \(eV/Angst\)(.*?)(?:total drift|$)", text, re.DOTALL))
     if force_blocks:
-        vector = []
+        vector: list[float] = []
         for line in force_blocks[-1].group(1).splitlines():
             fields = line.split()
             if len(fields) >= 6:

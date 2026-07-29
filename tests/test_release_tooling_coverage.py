@@ -92,10 +92,12 @@ class ReleaseToolingCoverageTests(unittest.TestCase):
                 self.benchmark.load_module(Path(temporary) / "missing.py", "missing_module")
 
         called = subprocess.CalledProcessError(1, ["git"])
-        with tempfile.TemporaryDirectory() as temporary:
-            with patch.object(self.benchmark.subprocess, "check_output", side_effect=called):
-                with self.assertRaises(RuntimeError):
-                    self.benchmark.module_from_commit("missing", "x.py", Path(temporary), "missing")
+        with (
+            tempfile.TemporaryDirectory() as temporary,
+            patch.object(self.benchmark.subprocess, "check_output", side_effect=called),
+            self.assertRaises(RuntimeError),
+        ):
+            self.benchmark.module_from_commit("missing", "x.py", Path(temporary), "missing")
 
     def test_benchmark_job_array_and_main(self) -> None:
         fake_baseline = SimpleNamespace(build=lambda manifest: f"#!/bin/sh\n# {manifest['job_id']}\n")
@@ -187,18 +189,20 @@ class ReleaseToolingCoverageTests(unittest.TestCase):
             self.assertEqual(self.type_runner.main(), 0)
         self.assertTrue(json.loads(stdout.getvalue())["ok"])
 
-        with patch.object(
-            self.strict_runner.subprocess,
-            "run",
-            side_effect=[
-                subprocess.CompletedProcess([], 0),
-                subprocess.CompletedProcess([], 1),
-                subprocess.CompletedProcess([], 0),
-                subprocess.CompletedProcess([], 0),
-            ],
+        with (
+            patch.object(
+                self.strict_runner.subprocess,
+                "run",
+                side_effect=[
+                    subprocess.CompletedProcess([], 0),
+                    subprocess.CompletedProcess([], 1),
+                    subprocess.CompletedProcess([], 0),
+                    subprocess.CompletedProcess([], 0),
+                ],
+            ),
+            redirect_stdout(io.StringIO()),
         ):
-            with redirect_stdout(io.StringIO()):
-                self.assertEqual(self.strict_runner.main(), 1)
+            self.assertEqual(self.strict_runner.main(), 1)
 
     def test_quality_gate_stage_success_timeout_and_main(self) -> None:
         stages = self.gate.stages(include_tests=True)

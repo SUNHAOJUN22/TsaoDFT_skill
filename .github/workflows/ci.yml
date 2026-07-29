@@ -1,41 +1,136 @@
-name: One-shot release-core coverage semantics
+name: TsaoDFT quality and security gates
 
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * 1"
 
 permissions:
-  contents: write
-  statuses: write
+  contents: read
 
 concurrency:
-  group: tsao-release-core-coverage-semantics
-  cancel-in-progress: false
+  group: tsao-dft-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  repair:
-    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: validate release core coverage semantics' }}"
+  quality-gate:
+    name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      statuses: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: "3.10"
+            constraint: constraints/py310.txt
+          - python-version: "3.12"
+            constraint: constraints/py312.txt
+          - python-version: "3.13"
+            constraint: constraints/py313.txt
     env:
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
       PYTHONDONTWRITEBYTECODE: "1"
       PYTHONHASHSEED: "0"
+
     steps:
-      - name: Publish running status
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+            ${{ matrix.constraint }}
+
+      - name: Install and verify locked dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -c "${{ matrix.constraint }}" -r requirements-dev.txt
+          python -m pip check
+
+      - name: Capture complete quality gate
+        id: gate
+        shell: bash
+        run: |
+          set +e
+          python scripts/quality_gate.py 2>&1 | tee quality-gate.log
+          code=${PIPESTATUS[0]}
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload failure log
+        if: always() && steps.gate.outputs.exit_code != '0'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: quality-gate-python-${{ matrix.python-version }}
+          path: quality-gate.log
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload coverage evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-python-${{ matrix.python-version }}-${{ github.sha }}
+          path: coverage-report.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish best-effort compatibility summary
+        if: always() && github.event_name != 'pull_request'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
+          GATE_EXIT_CODE: ${{ steps.gate.outputs.exit_code }}
+          PYTHON_VERSION: ${{ matrix.python-version }}
+        shell: bash
         run: |
-          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
-            -f state=pending \
-            -f context=tsao-dft/release-core-coverage \
-            -f description="Release-core coverage semantics running" \
-            -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          state=failure
+          description='TsaoDFT quality gate failed'
+          if [ "$GATE_EXIT_CODE" = '0' ]; then
+            state=success
+            description='TsaoDFT quality gate passed'
+          fi
+          for attempt in 1 2 3; do
+            if gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
+              -f state="$state" \
+              -f context="tsao-dft/python-$PYTHON_VERSION" \
+              -f description="$description" \
+              -f target_url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"; then
+              exit 0
+            fi
+            sleep $((attempt * 2))
+          done
+          exit 1
 
-      - name: Checkout full history
+      - name: Fail job when quality gate fails
+        if: always() && steps.gate.outputs.exit_code != '0'
+        run: exit 1
+
+  supply-chain:
+    name: Dependency audit and SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+
+    steps:
+      - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-depth: 0
 
       - name: Setup Python 3.12
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -47,157 +142,56 @@ jobs:
             requirements-dev.txt
             constraints/py312.txt
 
-      - name: Install locked environment
+      - name: Install audited locked dependency set
         run: |
           python -m pip install --upgrade pip
           python -m pip install -c constraints/py312.txt -r requirements-dev.txt
           python -m pip check
 
-      - name: Apply reviewed release-core fixes
-        run: |
-          python - <<'PY'
-          from pathlib import Path
+      - name: Audit runtime dependency range
+        run: python -m pip_audit -r requirements.txt --format json --output pip-audit-runtime.json
 
-          test_path = Path('skills/tsao-dft-hpc-provenance/tests/test_release_core_coverage.py')
-          lines = test_path.read_text(encoding='utf-8').splitlines(keepends=True)
+      - name: Audit development dependency range
+        run: python -m pip_audit -r requirements-dev.txt --format json --output pip-audit-development.json
 
-          argv_loop = next(i for i, line in enumerate(lines) if 'for value in (None, [], ["python", ""]' in line)
-          lines[argv_loop] = lines[argv_loop].replace('for value in', 'for argv_value in', 1)
-          argv_call = next(
-              i
-              for i in range(argv_loop + 1, min(argv_loop + 5, len(lines)))
-              if 'self.shell.validate_argv(value,' in lines[i]
-          )
-          lines[argv_call] = lines[argv_call].replace('validate_argv(value,', 'validate_argv(argv_value,', 1)
+      - name: Audit exact locked environment
+        run: python -m pip_audit --no-deps -r constraints/py312.txt --format json --output pip-audit-locked.json
 
-          empty_line = next(i for i, line in enumerate(lines) if 'empty = Path(temporary) / "empty"' in line)
-          if empty_line == 0 or 'TemporaryDirectory() as temporary' not in lines[empty_line - 1]:
-              raise SystemExit('empty directory context target changed')
-          lines[empty_line - 1] = lines[empty_line - 1].replace('as temporary:', 'as empty_dir:', 1)
-          lines[empty_line] = lines[empty_line].replace('Path(temporary)', 'Path(empty_dir)', 1)
+      - name: Generate locked CycloneDX SBOM
+        run: python -m pip_audit --no-deps -r constraints/py312.txt --format cyclonedx-json --output sbom.cdx.json
 
-          total_runs = next(i for i, line in enumerate(lines) if line.strip() == 'case["total_runs"] = 1')
-          parser_runs = next(
-              i
-              for i in range(total_runs + 1, min(total_runs + 5, len(lines)))
-              if 'case["parser_accepted_runs"] = 1' in lines[i]
-          )
-          if not any('case["minimum_repeats_pass"] = False' in line for line in lines[parser_runs:parser_runs + 3]):
-              indent = lines[parser_runs][: len(lines[parser_runs]) - len(lines[parser_runs].lstrip())]
-              lines.insert(parser_runs + 1, indent + 'case["minimum_repeats_pass"] = False\n')
-
-          approved_line = next(i for i, line in enumerate(lines) if line.strip() == 'approved["approval"] = "approved"')
-          if not any('approved["acceleration"]["benchmark_plan_id"]' in line for line in lines[approved_line + 1:approved_line + 4]):
-              indent = lines[approved_line][: len(lines[approved_line]) - len(lines[approved_line].lstrip())]
-              lines.insert(approved_line + 1, indent + 'approved["acceleration"]["benchmark_plan_id"] = "PLAN-A"\n')
-
-          replace_marker = next(i for i, line in enumerate(lines) if 'patch.object(self.trust.os, "replace"' in line)
-          start = replace_marker
-          while start > 0 and lines[start].strip() != 'with (':
-              start -= 1
-          if lines[start].strip() != 'with (':
-              raise SystemExit('bundle failure context target changed')
-          publish = next(
-              i
-              for i in range(replace_marker, min(replace_marker + 15, len(lines)))
-              if 'self.trust.publish_content_addressed_bundle' in lines[i]
-          )
-          assertion = next(
-              i
-              for i in range(publish + 1, min(publish + 8, len(lines)))
-              if 'self.assertFalse(any(parent.iterdir()))' in lines[i]
-          )
-          indent = lines[start][: len(lines[start]) - len(lines[start].lstrip())]
-          inner = indent + '    '
-          lines[start:assertion + 1] = [
-              indent + 'with tempfile.TemporaryDirectory() as temporary:\n',
-              inner + 'parent = Path(temporary)\n',
-              inner + 'with (\n',
-              inner + '    patch.object(self.trust.os, "replace", side_effect=OSError("replace failed")),\n',
-              inner + '    self.assertRaises(OSError),\n',
-              inner + '):\n',
-              inner + '    self.trust.publish_content_addressed_bundle(\n',
-              inner + '        parent, [self.record()], {}, self.policy, review, {}\n',
-              inner + '    )\n',
-              inner + 'self.assertFalse(any(parent.iterdir()))\n',
-          ]
-          test_path.write_text(''.join(lines), encoding='utf-8')
-
-          coverage_path = Path('scripts/run_coverage.py')
-          coverage_lines = coverage_path.read_text(encoding='utf-8').splitlines(keepends=True)
-          if not any(line.strip() == 'RELEASE_CORE = frozenset(TRUST_CORE)' for line in coverage_lines):
-              percent_line = next(i for i, line in enumerate(coverage_lines) if line.startswith('def percent('))
-              coverage_lines.insert(percent_line, 'RELEASE_CORE = frozenset(TRUST_CORE)\n\n')
-
-          total_line = next(i for i, line in enumerate(coverage_lines) if line.strip() == 'total_statements += statements')
-          if total_line == 0 or coverage_lines[total_line - 1].strip() != 'if relative in RELEASE_CORE:':
-              for offset in range(4):
-                  coverage_lines[total_line + offset] = '    ' + coverage_lines[total_line + offset]
-              indent = coverage_lines[total_line][: len(coverage_lines[total_line]) - len(coverage_lines[total_line].lstrip()) - 4]
-              coverage_lines.insert(total_line, indent + 'if relative in RELEASE_CORE:\n')
-
-          trust_payload = next(i for i, line in enumerate(coverage_lines) if '"trust_core": {path: per_file.get(path) for path in TRUST_CORE}' in line)
-          if not any('"release_core": sorted(RELEASE_CORE)' in line for line in coverage_lines[max(0, trust_payload - 3):trust_payload + 1]):
-              indent = coverage_lines[trust_payload][: len(coverage_lines[trust_payload]) - len(coverage_lines[trust_payload].lstrip())]
-              coverage_lines.insert(trust_payload, indent + '"release_core": sorted(RELEASE_CORE),\n')
-          coverage_path.write_text(''.join(coverage_lines), encoding='utf-8')
-          PY
-          python -m ruff check --fix scripts/run_coverage.py skills/tsao-dft-hpc-provenance/tests/test_release_core_coverage.py
-          python -m ruff format scripts/run_coverage.py skills/tsao-dft-hpc-provenance/tests/test_release_core_coverage.py
-
-      - name: Run complete gate against permanent CI
-        shell: bash
-        run: |
-          set -o pipefail
-          git checkout 01ff7a15f6664df805f9e65be734e606173ca40e -- .github/workflows/ci.yml
-          python scripts/quality_gate.py 2>&1 | tee release-core-coverage-quality.log
-          git checkout HEAD -- .github/workflows/ci.yml
-
-      - name: Commit, rebase, revalidate and push code
-        shell: bash
-        run: |
-          set -o pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "test: enforce scoped release-core coverage"
-          for attempt in 1 2 3; do
-            git fetch origin main
-            git rebase origin/main
-            git checkout 01ff7a15f6664df805f9e65be734e606173ca40e -- .github/workflows/ci.yml
-            python scripts/quality_gate.py 2>&1 | tee "release-core-coverage-rebased-${attempt}.log"
-            git checkout HEAD -- .github/workflows/ci.yml
-            if git push origin HEAD:main; then
-              exit 0
-            fi
-            sleep $((attempt * 2))
-          done
-          exit 1
-
-      - name: Publish final status
-        if: always()
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-          JOB_STATUS: ${{ job.status }}
-        run: |
-          state=failure
-          description='Release-core coverage semantics failed'
-          if [ "$JOB_STATUS" = 'success' ]; then
-            state=success
-            description='Release-core coverage semantics passed'
-          fi
-          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
-            -f state="$state" \
-            -f context=tsao-dft/release-core-coverage \
-            -f description="$description" \
-            -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-
-      - name: Upload diagnostics
-        if: failure()
+      - name: Upload supply-chain evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: release-core-coverage-${{ github.sha }}
-          path: release-core-coverage-*.log
-          if-no-files-found: warn
-          retention-days: 14
+          name: supply-chain-${{ github.sha }}
+          path: |
+            pip-audit-runtime.json
+            pip-audit-development.json
+            pip-audit-locked.json
+            sbom.cdx.json
+          if-no-files-found: error
+          retention-days: 30
+
+  codeql:
+    name: CodeQL Python analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@7211b7c8077ea37d8641b6271f6a365a22a5fbfa # v4.36.0
+        with:
+          languages: python
+          queries: security-extended
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@7211b7c8077ea37d8641b6271f6a365a22a5fbfa # v4.36.0
+        with:
+          category: "/language:python"

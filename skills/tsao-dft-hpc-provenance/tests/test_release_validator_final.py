@@ -54,6 +54,13 @@ class ReleaseValidatorFinalTests(unittest.TestCase):
         self.assertIn("environment.variables must be a mapping", errors)
         self.assertIn("approved manifest has validation errors", errors)
 
+    def test_l3_execution_cannot_bypass_approval(self) -> None:
+        manifest = copy.deepcopy(self.base)
+        manifest["support_level"] = "L3_EXECUTION_TESTED"
+        manifest["approval"] = "not_required"
+        errors, _ = self.validator.validate(manifest)
+        self.assertIn("L3 execution cannot use approval=not_required", errors)
+
 
 if __name__ == "__main__":
     unittest.main()

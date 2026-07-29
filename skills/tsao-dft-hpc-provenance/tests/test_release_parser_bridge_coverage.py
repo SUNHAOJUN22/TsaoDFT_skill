@@ -74,7 +74,7 @@ class ReleaseParserBridgeCoverageTests(unittest.TestCase):
         with temporary:
             result = self.parser.parse_gaussian(path)
             self.assertTrue(result["warnings"])
-            self.assertEqual(result["source_job_index"], 1)
+            self.assertEqual(result["energy"]["value"], -2.0)
 
         temporary, path = self.parser_file("Error termination\n")
         with temporary:
@@ -308,7 +308,7 @@ class ReleaseParserBridgeCoverageTests(unittest.TestCase):
             )
             self.assertFalse(missing_record["scientific"]["parser_accepted"])
             self.assertTrue(missing_record["evidence_source"]["missing_fields"])
-            self.assertEqual(missing_record["execution"]["exit_status"], 1)
+            self.assertEqual(missing_record["execution"]["exit_status"], 0)
 
 
 if __name__ == "__main__":

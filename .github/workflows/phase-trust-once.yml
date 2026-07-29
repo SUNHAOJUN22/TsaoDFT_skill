@@ -1,0 +1,56 @@
+name: One-shot execution evidence trust hardening
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/phase_trust.trigger
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Setup Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+      - name: Apply reviewed patch
+        run: python .github/phase_trust_patch.py
+      - name: Install reviewed dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -c constraints/py312.txt -r requirements-dev.txt
+          python -m pip check
+      - name: Format and lint formal sources
+        run: |
+          python -m ruff format scripts skills tests
+          python -m ruff check scripts skills tests
+      - name: Strict trust-boundary typing
+        run: python scripts/run_strict_type_checks.py
+      - name: Production security audit
+        run: python scripts/run_bandit.py
+      - name: Targeted regression tests
+        run: |
+          python -m unittest discover -s skills/tsao-dft-hpc-provenance/tests -p 'test_*.py' -v
+          python -m unittest discover -s tests -p 'test_installer_transaction.py' -v
+      - name: Commit formal changes only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git reset -- \
+            .github/phase_trust_patch.py \
+            .github/phase_trust_payload.00 \
+            .github/phase_trust_payload.aa \
+            .github/phase_trust_payload.ab \
+            .github/phase_trust_payload.ac \
+            .github/phase_trust.trigger \
+            .github/workflows/phase-trust-once.yml
+          git commit -m "feat: harden execution and evidence trust boundaries"
+          git push origin HEAD:main

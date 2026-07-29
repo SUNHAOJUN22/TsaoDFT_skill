@@ -1,1 +1,1 @@
-execute reviewed trust-boundary hardening
+execute reviewed trust-boundary hardening v2

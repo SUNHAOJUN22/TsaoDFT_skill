@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   publish:
-    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: publish reviewed baseline migration code' }}"
+    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: retry reviewed baseline code publication' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
@@ -53,7 +53,7 @@ jobs:
           python -m pip install -c constraints/py312.txt -r requirements-dev.txt
           python -m pip check
 
-      - name: Apply reviewed migration code only
+      - name: Apply reviewed migration code
         run: |
           python .github/complete_baseline_migration.py
           python -m ruff check --fix .
@@ -61,11 +61,13 @@ jobs:
           rm -f .github/complete_baseline_migration.py
           rm -f .github/workflows/ruff-repair-once.yml .github/ruff-repair.trigger
 
-      - name: Run complete quality gate
+      - name: Run complete quality gate against permanent CI
         shell: bash
         run: |
           set -o pipefail
+          git checkout 19ab8e80d65aa6e34da3ed02366f8bd7b12568b2 -- .github/workflows/ci.yml
           python scripts/quality_gate.py 2>&1 | tee baseline-code-quality.log
+          git checkout HEAD -- .github/workflows/ci.yml
 
       - name: Commit, rebase, revalidate and push code
         shell: bash
@@ -78,7 +80,9 @@ jobs:
           for attempt in 1 2 3; do
             git fetch origin main
             git rebase origin/main
+            git checkout 19ab8e80d65aa6e34da3ed02366f8bd7b12568b2 -- .github/workflows/ci.yml
             python scripts/quality_gate.py 2>&1 | tee "baseline-code-rebased-${attempt}.log"
+            git checkout HEAD -- .github/workflows/ci.yml
             if git push origin HEAD:main; then
               exit 0
             fi

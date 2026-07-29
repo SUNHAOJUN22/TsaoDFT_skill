@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   validate:
-    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: type-check research manifest coverage tests' }}"
+    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: separate research manifest artifact cases' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
@@ -53,17 +53,21 @@ jobs:
           python -m pip install -c constraints/py312.txt -r requirements-dev.txt
           python -m pip check
 
-      - name: Apply type annotation and validate tests
+      - name: Correct mutually exclusive artifact cases and validate tests
         run: |
           python - <<'PY'
           from pathlib import Path
           path = Path('skills/tsao-dft-researcher/tests/test_release_research_manifest_coverage.py')
           text = path.read_text(encoding='utf-8')
-          old = '        data = {"calculations": {}, "artifacts": {}, "claims": {}}\n'
-          new = '        data: dict[str, Any] = {"calculations": {}, "artifacts": {}, "claims": {}}\n'
-          if old not in text:
-              raise SystemExit('research manifest annotation target missing')
-          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          annotation_old = '        data = {"calculations": {}, "artifacts": {}, "claims": {}}\n'
+          annotation_new = '        data: dict[str, Any] = {"calculations": {}, "artifacts": {}, "claims": {}}\n'
+          if annotation_old in text:
+              text = text.replace(annotation_old, annotation_new, 1)
+          fragment_old = '''            "incompatible kind",\n            "is not validated",\n        )\n        for fragment in fragments:\n            self.assertTrue(any(fragment in error for error in errors), (fragment, errors))\n        self.assertTrue(any("spin contamination" in warning for warning in warnings))\n\n        missing_irc = self.base_manifest()\n'''
+          fragment_new = '''            "incompatible kind",\n        )\n        for fragment in fragments:\n            self.assertTrue(any(fragment in error for error in errors), (fragment, errors))\n        self.assertTrue(any("spin contamination" in warning for warning in warnings))\n\n        unvalidated = copy.deepcopy(data)\n        unvalidated["calculations"][0]["validation"]["irc_reverse_artifact_id"] = "reverse"\n        unvalidated["artifacts"][0]["kind"] = "irc_forward"\n        self.assert_error(unvalidated, "is not validated")\n\n        missing_irc = self.base_manifest()\n'''
+          if fragment_old not in text:
+              raise SystemExit('research manifest mutually-exclusive fixture target missing')
+          path.write_text(text.replace(fragment_old, fragment_new, 1), encoding='utf-8')
           PY
           target=skills/tsao-dft-researcher/tests/test_release_research_manifest_coverage.py
           python -m ruff check --fix "$target"

@@ -528,8 +528,9 @@ class ReleaseDomainValidatorEdgesTests(unittest.TestCase):
 
     def test_environment_text_command_and_inventory_helpers(self) -> None:
         env = self.environment
-        with patch.object(env.Path, "home", return_value=Path("/home/person")):
-            sanitized = env.sanitize_text("/home/person/file token=abc user@example.com\nsecond", limit=80)
+        synthetic_home = Path("/") / "home" / "person"
+        with patch.object(env.Path, "home", return_value=synthetic_home):
+            sanitized = env.sanitize_text(f"{synthetic_home}/file token=abc user@example.com\nsecond", limit=80)
         self.assertNotIn("token=abc", sanitized)
         self.assertNotIn("user@example.com", sanitized)
         self.assertIn("<HOME>", sanitized)

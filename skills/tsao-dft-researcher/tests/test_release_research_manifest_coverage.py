@@ -94,7 +94,7 @@ class ReleaseResearchManifestCoverageTests(unittest.TestCase):
 
     def test_root_and_collection_contracts(self) -> None:
         self.assert_error([], "root must be an object")
-        data = {"calculations": {}, "artifacts": {}, "claims": {}}
+        data: dict[str, Any] = {"calculations": {}, "artifacts": {}, "claims": {}}
         errors, warnings = self.validator.validate_manifest(data)
         self.assertTrue(any("project_id" in error for error in errors))
         self.assertTrue(any("research_question" in error for error in errors))
@@ -211,11 +211,15 @@ class ReleaseResearchManifestCoverageTests(unittest.TestCase):
             "irc_endpoints_confirmed=true",
             "wavefunction_stable=true",
             "incompatible kind",
-            "is not validated",
         )
         for fragment in fragments:
             self.assertTrue(any(fragment in error for error in errors), (fragment, errors))
         self.assertTrue(any("spin contamination" in warning for warning in warnings))
+
+        unvalidated = copy.deepcopy(data)
+        unvalidated["calculations"][0]["validation"]["irc_reverse_artifact_id"] = "reverse"
+        unvalidated["artifacts"][0]["kind"] = "irc_forward"
+        self.assert_error(unvalidated, "is not validated")
 
         missing_irc = self.base_manifest()
         missing_irc["calculations"][0]["task_type"] = "transition_state"
@@ -346,25 +350,30 @@ class ReleaseResearchManifestCoverageTests(unittest.TestCase):
             self.assertEqual(self.validator._load(yaml_path)["project_id"], "yaml")
 
             stdout = io.StringIO()
-            with patch.object(sys, "argv", ["validate_research_manifest.py", str(json_path), "--json"]), redirect_stdout(
-                stdout
+            with (
+                patch.object(sys, "argv", ["validate_research_manifest.py", str(json_path), "--json"]),
+                redirect_stdout(stdout),
             ):
                 self.assertEqual(self.validator.main(), 0)
             self.assertTrue(json.loads(stdout.getvalue())["ok"])
 
             missing = root / "missing.json"
-            with patch.object(sys, "argv", ["validate_research_manifest.py", str(missing)]), redirect_stdout(
-                io.StringIO()
+            with (
+                patch.object(sys, "argv", ["validate_research_manifest.py", str(missing)]),
+                redirect_stdout(io.StringIO()),
             ):
                 self.assertEqual(self.validator.main(), 2)
 
-            with patch.object(sys, "argv", ["validate_research_manifest.py"]), redirect_stderr(
-                io.StringIO()
-            ), self.assertRaises(SystemExit):
+            with (
+                patch.object(sys, "argv", ["validate_research_manifest.py"]),
+                redirect_stderr(io.StringIO()),
+                self.assertRaises(SystemExit),
+            ):
                 self.validator.main()
 
-        with patch.object(sys, "argv", ["validate_research_manifest.py", "--self-test"]), redirect_stdout(
-            io.StringIO()
+        with (
+            patch.object(sys, "argv", ["validate_research_manifest.py", "--self-test"]),
+            redirect_stdout(io.StringIO()),
         ):
             self.assertEqual(self.validator.main(), 0)
 

@@ -1,4 +1,4 @@
-name: One-shot domain edge test normalization
+name: One-shot domain edge closure normalization
 
 on:
   push:
@@ -9,12 +9,12 @@ permissions:
   statuses: write
 
 concurrency:
-  group: tsao-domain-edge-normalization
+  group: tsao-domain-edge-closure-normalization
   cancel-in-progress: false
 
 jobs:
   normalize:
-    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: remove unexplained domain test ignore' }}"
+    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: normalize domain edge closures' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
@@ -29,7 +29,7 @@ jobs:
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
             -f state=pending \
             -f context=tsao-dft/domain-edge-normalization \
-            -f description="Domain edge test normalization running" \
+            -f description="Domain edge closure normalization running" \
             -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
       - name: Checkout full history
@@ -53,17 +53,22 @@ jobs:
           python -m pip install -c constraints/py312.txt -r requirements-dev.txt
           python -m pip check
 
-      - name: Replace unexplained ignore with explicit type guard
+      - name: Normalize type restoration and loop binding
         run: |
           python - <<'PY'
           from pathlib import Path
           path = Path('tests/test_release_domain_validator_edges.py')
           text = path.read_text(encoding='utf-8')
-          old = '''        else:\n            sys.modules["utils"] = previous_utils  # type: ignore[assignment]\n'''
-          new = '''        else:\n            assert isinstance(previous_utils, ModuleType)\n            sys.modules["utils"] = previous_utils\n'''
-          if old not in text:
+          ignore_old = '''        else:\n            sys.modules["utils"] = previous_utils  # type: ignore[assignment]\n'''
+          ignore_new = '''        else:\n            assert isinstance(previous_utils, ModuleType)\n            sys.modules["utils"] = previous_utils\n'''
+          if ignore_old not in text:
               raise SystemExit('domain validator ignore target missing')
-          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          text = text.replace(ignore_old, ignore_new, 1)
+          lambda_old = '''                result = query(runner=lambda *a, **k: subprocess.CompletedProcess([], 0, stdout=parser_text, stderr=""))\n'''
+          lambda_new = '''                result = query(\n                    runner=lambda *a, parser_text=parser_text, **k: subprocess.CompletedProcess(\n                        [], 0, stdout=parser_text, stderr=""\n                    )\n                )\n'''
+          if lambda_old not in text:
+              raise SystemExit('domain validator loop binding target missing')
+          path.write_text(text.replace(lambda_old, lambda_new, 1), encoding='utf-8')
           PY
           target=tests/test_release_domain_validator_edges.py
           python -m ruff check --fix "$target"
@@ -100,7 +105,7 @@ jobs:
           JOB_STATUS: ${{ job.status }}
         run: |
           state=failure
-          description='Domain edge test normalization failed'
+          description='Domain edge closure normalization failed'
           if [ "$JOB_STATUS" = 'success' ]; then
             state=success
             description='Domain edge tests passed and were pushed'

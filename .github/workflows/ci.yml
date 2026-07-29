@@ -1,5 +1,5 @@
 name: One-shot release coverage integration staging
-# rerun after catalog CLI contract correction
+# rerun with non-empty non-mapping variables fixture
 
 on:
   push:
@@ -107,7 +107,7 @@ jobs:
 
               def test_non_mapping_variables_and_approved_error_are_rejected(self) -> None:
                   manifest = copy.deepcopy(self.base)
-                  manifest["environment"]["variables"] = []
+                  manifest["environment"]["variables"] = ["bad"]
                   manifest["approval"] = "approved"
                   errors, _ = self.validator.validate(manifest)
                   self.assertIn("environment.variables must be a mapping", errors)

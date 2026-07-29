@@ -67,9 +67,17 @@ def collect_coverage(data_file: Path) -> list[str]:
     return errors
 
 
+def write_report(path: Path | None, payload: dict[str, Any]) -> None:
+    if path is None:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", action="store_true", dest="json_output")
+    parser.add_argument("--report", type=Path, default=Path("coverage-report.json"))
     parser.add_argument("--total-statement", type=float, default=90.0)
     parser.add_argument("--total-branch", type=float, default=80.0)
     parser.add_argument("--core-statement", type=float, default=100.0)
@@ -79,7 +87,8 @@ def main() -> int:
         data_file = Path(temporary) / ".coverage"
         collection_errors = collect_coverage(data_file)
         if collection_errors:
-            payload = {"ok": False, "errors": collection_errors}
+            payload: dict[str, Any] = {"ok": False, "errors": collection_errors}
+            write_report(args.report, payload)
             print(json.dumps(payload, ensure_ascii=False, indent=2))
             return 1
         coverage = Coverage(data_file=str(data_file), branch=True)
@@ -144,6 +153,7 @@ def main() -> int:
             "per_file": per_file,
             "failures": failures,
         }
+        write_report(args.report, payload)
         if args.json_output:
             print(json.dumps(payload, ensure_ascii=False, indent=2))
         else:

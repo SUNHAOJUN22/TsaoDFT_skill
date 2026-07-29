@@ -42,9 +42,9 @@ expected_outputs: [OUTCAR, vasprun.xml]
 estimated_storage_gb: 16
 checkpoint_policy: preserve
 preflight:
-  command: "python preflight_vasp.py ."
+  argv: [python, preflight_vasp.py, .]
   run_in_job: false
 parser:
-  command: "python parse_vasp.py OUTCAR"
+  argv: [python, parse_vasp.py, OUTCAR]
   run_in_job: false
 approval: pending

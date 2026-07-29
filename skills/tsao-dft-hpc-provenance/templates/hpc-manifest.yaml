@@ -37,6 +37,6 @@ scratch: {path: ./scratch, preserve_on_failure: true}
 expected_outputs: [job.log, job.chk]
 estimated_storage_gb: 4
 checkpoint_policy: preserve
-preflight: {command: "python preflight_gaussian_input.py job.gjf", run_in_job: false}
-parser: {command: "python parse_gaussian.py job.log --json", run_in_job: false}
+preflight: {argv: [python, preflight_gaussian_input.py, job.gjf], run_in_job: false}
+parser: {argv: [python, parse_gaussian.py, job.log, --json], run_in_job: false}
 approval: pending

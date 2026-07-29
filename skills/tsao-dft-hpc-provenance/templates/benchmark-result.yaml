@@ -1,4 +1,4 @@
-schema_version: "1.0"
+schema_version: "1.1"
 benchmark_plan_id: PERF-VASP-H100-001
 candidate_id: cpu-reference
 role: scientific-reference
@@ -48,7 +48,7 @@ scientific:
     force_ev_per_angstrom: 0.01
   observable_set: [energy, forces]
   parser_accepted: false
-  parser_status: TEMPLATE_NOT_EXECUTED
+  parser_status: REJECTED
   results:
     energy_ev: null
     forces_ev_per_angstrom: null
@@ -75,7 +75,3 @@ evidence_source:
     - real engine execution
     - real hardware identity
     - real output artifact
-review:
-  status: pending
-  reviewer: ""
-  reviewed_at: ""

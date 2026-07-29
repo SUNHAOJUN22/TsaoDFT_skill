@@ -38,7 +38,7 @@ def stages(include_tests: bool = True) -> list[Stage]:
         Stage("README visuals", (sys.executable, "scripts/validate_readme_visuals.py", "--strict")),
         Stage("README links", (sys.executable, "scripts/validate_readme_links.py")),
         Stage("Ruff lint", (sys.executable, "-m", "ruff", "check", ".")),
-        Stage("Ruff format", (sys.executable, "-m", "ruff", "format", "--check", ".")),
+        Stage("Ruff format", (sys.executable, "-m", "ruff", "format", "--diff", ".")),
         Stage("mypy", (sys.executable, "scripts/run_type_checks.py"), timeout_seconds=900.0),
         Stage(
             "trust-boundary strict mypy",

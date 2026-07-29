@@ -1,0 +1,87 @@
+name: One-shot TsaoComputation hardware and autotuning integration
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/phase-autotune-patch.py
+      - .github/phase-autotune-payload.*
+      - .github/workflows/phase-autotune-once.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tsao-autotune-main-integration
+  cancel-in-progress: false
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONHASHSEED: "0"
+    steps:
+      - name: Checkout complete main history
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+            constraints/py312.txt
+
+      - name: Install reviewed quality environment
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -c constraints/py312.txt -r requirements-dev.txt
+          python -m pip check
+
+      - name: Apply reviewed payload and exact formatting
+        run: |
+          python .github/phase-autotune-patch.py
+          python -m ruff format \
+            skills/tsao-dft-hpc-provenance/scripts/inspect_execution_environment.py \
+            skills/tsao-dft-hpc-provenance/scripts/generate_autotuning_candidates.py \
+            skills/tsao-dft-hpc-provenance/tests/test_environment_autotuning.py
+          rm -f .github/phase-autotune-patch.py .github/phase-autotune-payload.* .github/workflows/phase-autotune-once.yml
+
+      - name: Run complete quality gate before commit
+        run: python scripts/quality_gate.py 2>&1 | tee phase-autotune-quality.log
+
+      - name: Commit reviewed net change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: add hardware inventory and engine autotuning"
+
+      - name: Rebase onto latest main, revalidate, and push
+        run: |
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main
+            python scripts/quality_gate.py 2>&1 | tee "phase-autotune-rebased-${attempt}.log"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            sleep $((attempt * 2))
+          done
+          exit 1
+
+      - name: Upload diagnostic logs
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: phase-autotune-diagnostics-${{ github.sha }}
+          path: phase-autotune-*.log
+          if-no-files-found: warn
+          retention-days: 14

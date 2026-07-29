@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   repair:
-    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: close release coverage typing' }}"
+    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: retry release coverage typing' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
@@ -53,33 +53,23 @@ jobs:
           python -m pip install -c constraints/py312.txt -r requirements-dev.txt
           python -m pip check
 
-      - name: Apply reviewed test typing fixes
+      - name: Apply line-structured test typing fixes
         run: |
           rm -f .github/coverage_repair_payload.py
           python - <<'PY'
           from pathlib import Path
           path = Path('skills/tsao-dft-hpc-provenance/tests/test_release_core_coverage.py')
-          text = path.read_text(encoding='utf-8')
-          old = '''        for value in (None, [], ["python", ""], ["python", 1], ["bad\narg"]):
-              self.shell.validate_argv(value, "argv", errors)
-          '''
-          new = '''        for argv_value in (None, [], ["python", ""], ["python", 1], ["bad\narg"]):
-              self.shell.validate_argv(argv_value, "argv", errors)
-          '''
-          if old not in text:
-              raise SystemExit('argv typing target missing')
-          text = text.replace(old, new, 1)
-          old = '''        with tempfile.TemporaryDirectory() as temporary:
-              empty = Path(temporary) / "empty"
-              empty.write_text("", encoding="utf-8")
-          '''
-          new = '''        with tempfile.TemporaryDirectory() as empty_dir:
-              empty = Path(empty_dir) / "empty"
-              empty.write_text("", encoding="utf-8")
-          '''
-          if old not in text:
-              raise SystemExit('temporary directory typing target missing')
-          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          lines = path.read_text(encoding='utf-8').splitlines(keepends=True)
+          argv_loop = next(i for i, line in enumerate(lines) if 'for value in (None, [], ["python", ""]' in line)
+          lines[argv_loop] = lines[argv_loop].replace('for value in', 'for argv_value in', 1)
+          argv_call = next(i for i in range(argv_loop + 1, min(argv_loop + 5, len(lines))) if 'self.shell.validate_argv(value,' in lines[i])
+          lines[argv_call] = lines[argv_call].replace('validate_argv(value,', 'validate_argv(argv_value,', 1)
+          empty_line = next(i for i, line in enumerate(lines) if 'empty = Path(temporary) / "empty"' in line)
+          if empty_line == 0 or 'TemporaryDirectory() as temporary' not in lines[empty_line - 1]:
+              raise SystemExit('empty directory context target changed')
+          lines[empty_line - 1] = lines[empty_line - 1].replace('as temporary:', 'as empty_dir:', 1)
+          lines[empty_line] = lines[empty_line].replace('Path(temporary)', 'Path(empty_dir)', 1)
+          path.write_text(''.join(lines), encoding='utf-8')
           PY
           python -m ruff check --fix skills/tsao-dft-hpc-provenance/tests/test_release_core_coverage.py
           python -m ruff format skills/tsao-dft-hpc-provenance/tests/test_release_core_coverage.py

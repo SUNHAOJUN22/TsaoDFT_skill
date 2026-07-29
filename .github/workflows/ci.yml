@@ -1,4 +1,4 @@
-name: One-shot transactional and trust migration closure
+name: One-shot complete baseline migration closure
 
 on:
   push:
@@ -9,12 +9,12 @@ permissions:
   statuses: write
 
 concurrency:
-  group: tsao-transactional-trust-migration
+  group: tsao-complete-baseline-migration
   cancel-in-progress: false
 
 jobs:
   repair:
-    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: close transactional and trust migration gates' }}"
+    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: finalize baseline migration closure' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
@@ -27,9 +27,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
-            -f state=pending \
-            -f context=tsao-dft/migration-repair \
-            -f description="Transactional and trust migration closure running" \
+            -f state=pending -f context=tsao-dft/baseline-closure \
+            -f description="Complete baseline migration closure running" \
             -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
       - name: Checkout full history
@@ -53,47 +52,123 @@ jobs:
           python -m pip install -c constraints/py312.txt -r requirements-dev.txt
           python -m pip check
 
-      - name: Apply reviewed transactional and trust migration
+      - name: Apply complete reviewed baseline migration
         run: |
           python - <<'PY'
           from pathlib import Path
           import yaml
 
-          def replace_once(path: Path, old: str, new: str) -> None:
-              text = path.read_text(encoding='utf-8')
-              if old not in text:
-                  raise SystemExit(f'reviewed target not found in {path}: {old[:80]!r}')
-              path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          HPC = Path('skills/tsao-dft-hpc-provenance')
 
-          def ensure_script_local_import(path: Path, import_line: str) -> None:
+          def lines(path: Path) -> list[str]:
+              return path.read_text(encoding='utf-8').splitlines(keepends=True)
+
+          def write(path: Path, value: list[str]) -> None:
+              path.write_text(''.join(value), encoding='utf-8')
+
+          def ensure_local_import(path: Path, import_prefix: str) -> None:
               text = path.read_text(encoding='utf-8')
               if 'SCRIPT_DIR = Path(__file__).resolve().parent' in text:
                   return
               if 'import sys\n' not in text:
-                  marker = 'import ' + ('json' if 'import json\n' in text else 'argparse') + '\n'
-                  text = text.replace(marker, marker + 'import sys\n', 1)
-              old = import_line
-              new = (
-                  'SCRIPT_DIR = Path(__file__).resolve().parent\n'
-                  'if str(SCRIPT_DIR) not in sys.path:\n'
-                  '    sys.path.insert(0, str(SCRIPT_DIR))\n\n'
-                  + import_line.rstrip('\n')
-                  + '  # noqa: E402 -- standalone Skill import contract\n'
-              )
-              if old not in text:
-                  raise SystemExit(f'local import target not found in {path}')
-              path.write_text(text.replace(old, new, 1), encoding='utf-8')
+                  anchor = 'import json\n' if 'import json\n' in text else 'import argparse\n'
+                  text = text.replace(anchor, anchor + 'import sys\n', 1)
+              index = text.index(import_prefix)
+              end = text.index('\n', index) + 1
+              if import_prefix.endswith('(\n'):
+                  end = index + len(import_prefix)
+                  replacement = (
+                      'SCRIPT_DIR = Path(__file__).resolve().parent\n'
+                      'if str(SCRIPT_DIR) not in sys.path:\n'
+                      '    sys.path.insert(0, str(SCRIPT_DIR))\n\n'
+                      + import_prefix.rstrip('\n')
+                      + '  # noqa: E402 -- standalone Skill import contract\n'
+                  )
+              else:
+                  original = text[index:end]
+                  replacement = (
+                      'SCRIPT_DIR = Path(__file__).resolve().parent\n'
+                      'if str(SCRIPT_DIR) not in sys.path:\n'
+                      '    sys.path.insert(0, str(SCRIPT_DIR))\n\n'
+                      + original.rstrip('\n')
+                      + '  # noqa: E402 -- standalone Skill import contract\n'
+                  )
+              path.write_text(text[:index] + replacement + text[end:], encoding='utf-8')
+
+          inventory = HPC / 'scripts/inspect_execution_environment.py'
+          value = lines(inventory)
+          main_index = next(i for i, line in enumerate(value) if line.startswith('def main()'))
+          if not any(line.strip() == 'report = (' for line in value[main_index:]):
+              start = next(i for i in range(main_index, len(value)) if value[i].strip() == 'if errors:')
+              end = next(i for i in range(start, len(value)) if value[i].strip() == 'rendered = (')
+              value[start:end] = [
+                  '    report = (\n',
+                  '        {"ok": False, "errors": errors, "inventory": report}\n',
+                  '        if errors\n',
+                  '        else {"ok": True, "inventory": report}\n',
+                  '    )\n',
+              ]
+              write(inventory, value)
+
+          parser_path = HPC / 'scripts/engine_parser_contract.py'
+          value = lines(parser_path)
+          if not any('vector: list[float]' in line for line in value):
+              index = next(i for i, line in enumerate(value) if line.strip() == 'vector = []')
+              indent = value[index][: len(value[index]) - len(value[index].lstrip())]
+              value[index] = indent + 'vector: list[float] = []\n'
+              write(parser_path, value)
+
+          shell = HPC / 'scripts/shell_contract.py'
+          value = lines(shell)
+          if not any('signature_value = attestation.get("signature")' in line for line in value):
+              index = next(i for i, line in enumerate(value) if line.strip() == 'signature = base64.b64decode(attestation.get("signature"), validate=True)')
+              indent = value[index][: len(value[index]) - len(value[index].lstrip())]
+              value[index:index + 5] = [
+                  indent + 'signature_value = attestation.get("signature")\n',
+                  indent + 'if not isinstance(signature_value, str):\n',
+                  indent + '    raise ValueError("attestation signature must be base64 text")\n',
+                  indent + 'signature = base64.b64decode(signature_value, validate=True)\n',
+                  indent + 'public_key = serialization.load_pem_public_key(public_key_pem)\n',
+                  indent + 'if not isinstance(public_key, Ed25519PublicKey):\n',
+                  indent + '    raise ValueError("review key must be Ed25519")\n',
+                  indent + 'public_key.verify(signature, canonical_json(unsigned).encode("utf-8"))\n',
+              ]
+              write(shell, value)
+
+          validator_path = HPC / 'scripts/validate_hpc_manifest.py'
+          value = lines(validator_path)
+          if not any('errors: list[str] = ["manifest root must be a mapping"]' in line for line in value):
+              index = next(i for i, line in enumerate(value) if line.strip() == 'errors, warnings = ["manifest root must be a mapping"], []')
+              indent = value[index][: len(value[index]) - len(value[index].lstrip())]
+              value[index:index + 1] = [
+                  indent + 'errors: list[str] = ["manifest root must be a mapping"]\n',
+                  indent + 'warnings: list[str] = []\n',
+              ]
+              write(validator_path, value)
+
+          class_attributes = {
+              HPC / 'tests/test_engine_parser_contract.py': ('class EngineParserContractTests(unittest.TestCase):', ['    core: Any\n', '    schema: dict[str, Any]\n', '\n'], '    core: Any'),
+              HPC / 'tests/test_benchmark_bridge.py': ('class BenchmarkBridgeTests(unittest.TestCase):', ['    bridge: Any\n', '    parser: Any\n', '\n'], '    bridge: Any'),
+              HPC / 'tests/test_shell_trust_boundary.py': ('class ShellTrustBoundaryTests(unittest.TestCase):', ['    validator: Any\n', '    generator: Any\n', '    base: dict[str, Any]\n', '\n'], '    validator: Any'),
+              HPC / 'tests/test_evidence_trust_boundary.py': ('class EvidenceTrustBoundaryTests(unittest.TestCase):', ['    trust: Any\n', '    shell: Any\n', '    performance: Any\n', '    result_schema: dict[str, Any]\n', '    policy_schema: dict[str, Any]\n', '    policy: dict[str, Any]\n', '\n'], '    trust: Any'),
+          }
+          for path, (class_line, attributes, marker) in class_attributes.items():
+              value = lines(path)
+              if any(line.rstrip('\n') == marker for line in value):
+                  continue
+              index = next(i for i, line in enumerate(value) if line.strip() == class_line)
+              value[index + 1:index + 1] = attributes
+              write(path, value)
 
           install = Path('scripts/install.py')
           text = install.read_text(encoding='utf-8')
-          if 'from contextlib import contextmanager, nullcontext' not in text:
-              text = text.replace('import argparse\n', 'import argparse\nfrom contextlib import contextmanager, nullcontext\n', 1)
+          if 'from contextlib import contextmanager, nullcontext, suppress' not in text:
+              text = text.replace('import argparse\n', 'import argparse\nfrom contextlib import contextmanager, nullcontext, suppress\n', 1)
           if 'from collections.abc import Iterator' not in text:
               text = text.replace('from __future__ import annotations\n\n', 'from __future__ import annotations\n\nfrom collections.abc import Iterator\n', 1)
           if 'INSTALL_LOCK = ".tsao-install.lock"' not in text:
               text = text.replace('MARKER_SCHEMA = 1\n', 'MARKER_SCHEMA = 1\nINSTALL_LOCK = ".tsao-install.lock"\n', 1)
           if 'def install_lock(' not in text:
-              marker = 'def default_target(agent: str, scope: str) -> Path:\n'
               function = '''@contextmanager
           def install_lock(target: Path) -> Iterator[None]:
               target.mkdir(parents=True, exist_ok=True)
@@ -107,148 +182,65 @@ jobs:
                   yield
               finally:
                   os.close(descriptor)
-                  try:
+                  with suppress(FileNotFoundError):
                       lock.unlink()
-                  except FileNotFoundError:
-                      pass
 
 
           '''
-              if marker not in text:
-                  raise SystemExit('install lock insertion target missing')
-              text = text.replace(marker, function + marker, 1)
+              text = text.replace('def default_target(agent: str, scope: str) -> Path:\n', function + 'def default_target(agent: str, scope: str) -> Path:\n', 1)
           if 'rollback: Path | None = None' not in text:
-              text = text.replace(
-                  '    staged: Path | None = None\n    backup: Path | None = None\n',
-                  '    staged: Path | None = None\n    backup: Path | None = None\n    rollback: Path | None = None\n',
-                  1,
-              )
-          old_remove = '''            else:
-                      remove_owned_destination(destination)
-          '''
-          if old_remove in text:
-              text = text.replace(
-                  old_remove,
-                  '''            else:
-                      rollback = Path(tempfile.mkdtemp(prefix=f".{destination.name}.rollback-", dir=destination.parent))
-                      rollback.rmdir()
-                      os.replace(destination, rollback)
-          ''',
-                  1,
-              )
+              text = text.replace('    staged: Path | None = None\n    backup: Path | None = None\n', '    staged: Path | None = None\n    backup: Path | None = None\n    rollback: Path | None = None\n', 1)
+          text = text.replace(
+              '            else:\n                remove_owned_destination(destination)\n',
+              '            else:\n                rollback = Path(tempfile.mkdtemp(prefix=f".{destination.name}.rollback-", dir=destination.parent))\n                rollback.rmdir()\n                os.replace(destination, rollback)\n',
+              1,
+          )
           if 'if rollback is not None and rollback.exists()' not in text:
               start = text.index('        write_marker(\n', text.index('def install_skill('))
-              except_index = text.index('    except Exception:\n', start)
-              closing = text.rfind('        )\n', start, except_index)
-              if closing < 0:
-                  raise SystemExit('write_marker closing target missing')
-              closing += len('        )\n')
-              text = text[:closing] + (
-                  '        if rollback is not None and rollback.exists():\n'
-                  '            remove_owned_destination(rollback)\n'
-              ) + text[closing:]
-          old_except = '''        if backup is not None and backup.exists() and not destination.exists() and not destination.is_symlink():
-                  os.replace(backup, destination)
-              raise
-          '''
-          if old_except in text:
-              text = text.replace(
-                  old_except,
-                  '''        original = backup if backup is not None else rollback
-                  if original is not None and original.exists():
-                      if destination.exists() or destination.is_symlink():
-                          remove_owned_destination(destination)
-                      os.replace(original, destination)
-                  raise
-          ''',
-                  1,
-              )
+              exc = text.index('    except Exception:\n', start)
+              close = text.rfind('        )\n', start, exc) + len('        )\n')
+              text = text[:close] + '        if rollback is not None and rollback.exists():\n            remove_owned_destination(rollback)\n' + text[close:]
+          text = text.replace(
+              '        if backup is not None and backup.exists() and not destination.exists() and not destination.is_symlink():\n            os.replace(backup, destination)\n        raise\n',
+              '        original = backup if backup is not None else rollback\n        if original is not None and original.exists():\n            if destination.exists() or destination.is_symlink():\n                remove_owned_destination(destination)\n            os.replace(original, destination)\n        raise\n',
+              1,
+          )
           if 'lock_context = nullcontext() if args.dry_run else install_lock(target)' not in text:
-              old_main = '''        target = safe_target(args.target or default_target(args.agent, args.scope))
-                  for skill in selected:
-                      if args.uninstall:
-                          uninstall_skill(target, skill, force=args.force, dry_run=args.dry_run)
-                      else:
-                          install_skill(
-                              target,
-                              skill,
-                              args.method,
-                              force=args.force,
-                              backup_existing=args.backup_existing,
-                              dry_run=args.dry_run,
-                          )
-          '''
-              new_main = '''        target = safe_target(args.target or default_target(args.agent, args.scope))
-                  lock_context = nullcontext() if args.dry_run else install_lock(target)
-                  with lock_context:
-                      for skill in selected:
-                          if args.uninstall:
-                              uninstall_skill(target, skill, force=args.force, dry_run=args.dry_run)
-                          else:
-                              install_skill(
-                                  target,
-                                  skill,
-                                  args.method,
-                                  force=args.force,
-                                  backup_existing=args.backup_existing,
-                                  dry_run=args.dry_run,
-                              )
-          '''
-              if old_main not in text:
-                  raise SystemExit('installer main transaction target missing')
-              text = text.replace(old_main, new_main, 1)
+              start = text.index('        target = safe_target(', text.index('def main() -> int:'))
+              end = text.index('    except (InstallSafetyError', start)
+              old = text[start:end]
+              body = old.split('\n', 1)[1]
+              body = '\n'.join(('    ' + line if line else line) for line in body.split('\n'))
+              target_line = old.split('\n', 1)[0]
+              replacement = target_line + '\n        lock_context = nullcontext() if args.dry_run else install_lock(target)\n        with lock_context:\n' + body
+              text = text[:start] + replacement + text[end:]
           install.write_text(text, encoding='utf-8')
 
-          scripts = Path('skills/tsao-dft-hpc-provenance/scripts')
-          ensure_script_local_import(
-              scripts / 'validate_hpc_manifest.py',
-              'from shell_contract import (\n',
-          )
-          ensure_script_local_import(
-              scripts / 'benchmark_bridge.py',
-              'from shell_contract import sha256_file\n',
-          )
-          ensure_script_local_import(
-              scripts / 'trust_boundary.py',
-              'from shell_contract import canonical_json, sha256_bytes, sha256_file, verify_signed_attestation\n',
-          )
+          ensure_local_import(HPC / 'scripts/validate_hpc_manifest.py', 'from shell_contract import (\n')
+          ensure_local_import(HPC / 'scripts/benchmark_bridge.py', 'from shell_contract import sha256_file\n')
+          ensure_local_import(HPC / 'scripts/trust_boundary.py', 'from shell_contract import canonical_json, sha256_bytes, sha256_file, verify_signed_attestation\n')
 
-          example = Path('skills/tsao-dft-hpc-provenance/examples/slurm/hpc-manifest.yaml')
+          example = HPC / 'examples/slurm/hpc-manifest.yaml'
           manifest = yaml.safe_load(example.read_text(encoding='utf-8'))
           manifest['schema_version'] = '1.2'
-          manifest['acceleration'] = {
-              'enabled': False,
-              'profile_id': 'CPU-ONLY',
-              'backend': 'none',
-              'mode': 'none',
-              'gpu_vendor': 'none',
-              'ranks_per_gpu': 1,
-              'allow_gpu_oversubscription': False,
-              'cpu_bind': 'none',
-              'gpu_bind': 'none',
-              'device_order': 'scheduler',
-              'precision': 'fp64',
-              'record_runtime': False,
-          }
+          manifest['acceleration'] = {'enabled': False, 'profile_id': 'CPU-ONLY', 'backend': 'none', 'mode': 'none', 'gpu_vendor': 'none', 'ranks_per_gpu': 1, 'allow_gpu_oversubscription': False, 'cpu_bind': 'none', 'gpu_bind': 'none', 'device_order': 'scheduler', 'precision': 'fp64', 'record_runtime': False}
           manifest['preflight'] = {'argv': ['python', 'preflight_gaussian_input.py', 'demo.gjf'], 'run_in_job': False}
           manifest['parser'] = {'argv': ['python', 'parse_gaussian.py', 'demo.log', '--json'], 'run_in_job': False}
           example.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding='utf-8')
 
-          security_test = Path('tests/test_security_gates.py')
-          text = security_test.read_text(encoding='utf-8')
-          expected = [
-              '    ("scripts/run_coverage.py", "B404"),\n',
-              '    ("scripts/run_coverage.py", "B603"),\n',
-              '    ("scripts/run_strict_type_checks.py", "B404"),\n',
-              '    ("scripts/run_strict_type_checks.py", "B603"),\n',
-              '    ("skills/tsao-dft-hpc-provenance/scripts/inspect_execution_environment.py", "B404"),\n',
-          ]
+          security = Path('tests/test_security_gates.py')
+          text = security.read_text(encoding='utf-8')
           if '("scripts/run_coverage.py", "B404")' not in text:
               marker = '    ("skills/tsao-dft-ml-active-learning/scripts/train_ridge_baseline.py", "B311"),\n'
-              if marker not in text:
-                  raise SystemExit('Bandit expected-set insertion target missing')
-              text = text.replace(marker, marker + ''.join(expected), 1)
-              security_test.write_text(text, encoding='utf-8')
+              additions = ''.join([
+                  '    ("scripts/run_coverage.py", "B404"),\n',
+                  '    ("scripts/run_coverage.py", "B603"),\n',
+                  '    ("scripts/run_strict_type_checks.py", "B404"),\n',
+                  '    ("scripts/run_strict_type_checks.py", "B603"),\n',
+                  '    ("skills/tsao-dft-hpc-provenance/scripts/inspect_execution_environment.py", "B404"),\n',
+              ])
+              text = text.replace(marker, marker + additions, 1)
+              security.write_text(text, encoding='utf-8')
           PY
           python -m ruff check --fix .
           python -m ruff format .
@@ -259,7 +251,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python scripts/quality_gate.py 2>&1 | tee migration-closure-quality.log
+          python scripts/quality_gate.py 2>&1 | tee complete-baseline-quality.log
 
       - name: Commit and push net repair
         shell: bash
@@ -268,14 +260,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "fix: complete transactional and trust migration"
+          git commit -m "fix: complete baseline trust migration"
           for attempt in 1 2 3; do
             git fetch origin main
             git rebase origin/main
-            python scripts/quality_gate.py 2>&1 | tee "migration-closure-rebased-${attempt}.log"
-            if git push origin HEAD:main; then
-              exit 0
-            fi
+            python scripts/quality_gate.py 2>&1 | tee "complete-baseline-rebased-${attempt}.log"
+            if git push origin HEAD:main; then exit 0; fi
             sleep $((attempt * 2))
           done
           exit 1
@@ -287,15 +277,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           JOB_STATUS: ${{ job.status }}
         run: |
-          state=failure
-          description='Transactional or trust migration closure failed'
-          if [ "$JOB_STATUS" = 'success' ]; then
-            state=success
-            description='Transactional and trust migration closure passed'
-          fi
+          state=failure; description='Complete baseline migration failed'
+          if [ "$JOB_STATUS" = 'success' ]; then state=success; description='Complete baseline migration passed'; fi
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
-            -f state="$state" \
-            -f context=tsao-dft/migration-repair \
+            -f state="$state" -f context=tsao-dft/baseline-closure \
             -f description="$description" \
             -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
@@ -303,7 +288,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: migration-closure-${{ github.sha }}
-          path: migration-closure-*.log
+          name: complete-baseline-${{ github.sha }}
+          path: complete-baseline-*.log
           if-no-files-found: warn
           retention-days: 14

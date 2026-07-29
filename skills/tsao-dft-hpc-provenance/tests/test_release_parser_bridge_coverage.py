@@ -74,7 +74,7 @@ class ReleaseParserBridgeCoverageTests(unittest.TestCase):
         with temporary:
             result = self.parser.parse_gaussian(path)
             self.assertTrue(result["warnings"])
-            self.assertEqual(result["energy"]["value"], -2.0)
+            self.assertAlmostEqual(result["energy"]["value"], -54.422772491976)
 
         temporary, path = self.parser_file("Error termination\n")
         with temporary:

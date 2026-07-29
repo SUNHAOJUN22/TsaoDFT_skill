@@ -4,6 +4,7 @@ import importlib.util
 import inspect
 import io
 import json
+import runpy
 import sys
 import unittest
 from contextlib import redirect_stdout
@@ -16,7 +17,6 @@ VALIDATORS = (
     "validate_agent_evals.py",
     "validate_ai_assets.py",
     "validate_capability_claims.py",
-    "validate_catalog.py",
     "validate_constraints.py",
     "validate_dependencies.py",
     "validate_governance.py",
@@ -67,6 +67,15 @@ class ReleaseValidatorIntegrationTests(unittest.TestCase):
                     self.assertTrue(result.get("ok", not result.get("failures")), f"{name}: {result}")
                 else:
                     self.assertFalse(result, f"{name}: {result}")
+
+    def test_catalog_validator_cli_contract(self) -> None:
+        stdout = io.StringIO()
+        with redirect_stdout(stdout), self.assertRaises(SystemExit) as exit_context:
+            runpy.run_path(str(ROOT / "scripts/validate_catalog.py"), run_name="__main__")
+        self.assertEqual(exit_context.exception.code, 0)
+        payload = json.loads(stdout.getvalue())
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["errors"], [])
 
     def test_strict_repository_audit_main_json(self) -> None:
         module = load_script("validate_repo.py")

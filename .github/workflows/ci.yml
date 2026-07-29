@@ -1,4 +1,4 @@
-name: One-shot idempotent trust typing repair
+name: One-shot baseline gate closure
 
 on:
   push:
@@ -9,12 +9,12 @@ permissions:
   statuses: write
 
 concurrency:
-  group: tsao-idempotent-typing-repair
+  group: tsao-baseline-gate-closure
   cancel-in-progress: false
 
 jobs:
   repair:
-    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: apply idempotent trust typing repair' }}"
+    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: close baseline typing and Bandit gates' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -28,8 +28,8 @@ jobs:
         run: |
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
             -f state=pending \
-            -f context=tsao-dft/typing-repair \
-            -f description="Idempotent trust typing repair running" \
+            -f context=tsao-dft/baseline-repair \
+            -f description="Baseline typing and Bandit closure running" \
             -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
       - name: Checkout full history
@@ -53,7 +53,7 @@ jobs:
           python -m pip install -c constraints/py312.txt -r requirements-dev.txt
           python -m pip check
 
-      - name: Apply idempotent typing repairs
+      - name: Apply idempotent typing and Bandit repairs
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -66,22 +66,10 @@ jobs:
           def write(path: Path, lines: list[str]) -> None:
               path.write_text(''.join(lines), encoding='utf-8')
 
-          def replace_exact_line(path: Path, old: str, new_lines: list[str], already: str) -> None:
-              lines = read(path)
-              if any(already in line for line in lines):
-                  return
-              indexes = [index for index, line in enumerate(lines) if line.strip() == old]
-              if len(indexes) != 1:
-                  raise SystemExit(f'expected one target in {path}, found {len(indexes)}: {old}')
-              index = indexes[0]
-              indent = lines[index][: len(lines[index]) - len(lines[index].lstrip())]
-              lines[index:index + 1] = [indent + item + '\n' for item in new_lines]
-              write(path, lines)
-
           inventory = ROOT / 'scripts/inspect_execution_environment.py'
           lines = read(inventory)
-          if not any(line.strip() == 'report = (' for line in lines[lines.index(next(line for line in lines if line.startswith('def main()'))):]):
-              main_index = next(i for i, line in enumerate(lines) if line.startswith('def main()'))
+          main_index = next(i for i, line in enumerate(lines) if line.startswith('def main()'))
+          if not any(line.strip() == 'report = (' for line in lines[main_index:]):
               start = next(i for i in range(main_index, len(lines)) if lines[i].strip() == 'if errors:')
               end = next(i for i in range(start, len(lines)) if lines[i].strip() == 'rendered = (')
               candidate = ''.join(lines[start:end])
@@ -96,12 +84,13 @@ jobs:
               ]
               write(inventory, lines)
 
-          replace_exact_line(
-              ROOT / 'scripts/engine_parser_contract.py',
-              'vector = []',
-              ['vector: list[float] = []'],
-              'vector: list[float]',
-          )
+          parser_path = ROOT / 'scripts/engine_parser_contract.py'
+          lines = read(parser_path)
+          if not any('vector: list[float]' in line for line in lines):
+              index = next(i for i, line in enumerate(lines) if line.strip() == 'vector = []')
+              indent = lines[index][: len(lines[index]) - len(lines[index].lstrip())]
+              lines[index] = indent + 'vector: list[float] = []\n'
+              write(parser_path, lines)
 
           shell = ROOT / 'scripts/shell_contract.py'
           lines = read(shell)
@@ -112,6 +101,7 @@ jobs:
                   if line.strip() == 'signature = base64.b64decode(attestation.get("signature"), validate=True)'
               )
               indent = lines[index][: len(lines[index]) - len(lines[index].lstrip())]
+              observed = [lines[index + offset].strip() for offset in range(5)]
               expected = [
                   'signature = base64.b64decode(attestation.get("signature"), validate=True)',
                   'key = serialization.load_pem_public_key(public_key_pem)',
@@ -119,7 +109,6 @@ jobs:
                   'raise ValueError("review key must be Ed25519")',
                   'key.verify(signature, canonical_json(unsigned).encode("utf-8"))',
               ]
-              observed = [lines[index + offset].strip() for offset in range(5)]
               if observed != expected:
                   raise SystemExit(f'shell signature target changed: {observed}')
               lines[index:index + 5] = [
@@ -134,8 +123,8 @@ jobs:
               ]
               write(shell, lines)
 
-          manifest_validator = ROOT / 'scripts/validate_hpc_manifest.py'
-          lines = read(manifest_validator)
+          validator_path = ROOT / 'scripts/validate_hpc_manifest.py'
+          lines = read(validator_path)
           if not any('errors: list[str] = ["manifest root must be a mapping"]' in line for line in lines):
               index = next(
                   i for i, line in enumerate(lines) if line.strip() == 'errors, warnings = ["manifest root must be a mapping"], []'
@@ -145,7 +134,7 @@ jobs:
                   indent + 'errors: list[str] = ["manifest root must be a mapping"]\n',
                   indent + 'warnings: list[str] = []\n',
               ]
-              write(manifest_validator, lines)
+              write(validator_path, lines)
 
           class_attributes = {
               ROOT / 'tests/test_engine_parser_contract.py': (
@@ -184,6 +173,25 @@ jobs:
               index = next(i for i, line in enumerate(lines) if line.strip() == class_line)
               lines[index + 1:index + 1] = attributes
               write(path, lines)
+
+          allowlist = Path('config/bandit_allowlist.yaml')
+          text = allowlist.read_text(encoding='utf-8')
+          additions = '''
+            - path: scripts/run_coverage.py
+              test_id: B404
+              reason: subprocess is used only to invoke the current Python interpreter with the fixed repository coverage runner and shell disabled.
+            - path: scripts/run_coverage.py
+              test_id: B603
+              reason: coverage receives a fixed repository-owned argv list; no untrusted command text or shell interpolation is used.
+            - path: scripts/run_strict_type_checks.py
+              test_id: B404
+              reason: subprocess is used only to invoke the pinned mypy module against a closed tuple of repository trust-core paths.
+            - path: scripts/run_strict_type_checks.py
+              test_id: B603
+              reason: strict mypy receives sys.executable, fixed flags and repository-owned targets through argv with shell disabled.
+          '''
+          if 'path: scripts/run_coverage.py' not in text:
+              allowlist.write_text(text.rstrip() + '\n' + additions.lstrip(), encoding='utf-8')
           PY
           python -m ruff check --fix .
           python -m ruff format .
@@ -194,7 +202,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python scripts/quality_gate.py 2>&1 | tee idempotent-typing-quality.log
+          python scripts/quality_gate.py 2>&1 | tee baseline-closure-quality.log
 
       - name: Commit and push net repair
         shell: bash
@@ -203,11 +211,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "fix: close trust typing and formatting gates"
+          git commit -m "fix: close trust baseline quality gates"
           for attempt in 1 2 3; do
             git fetch origin main
             git rebase origin/main
-            python scripts/quality_gate.py 2>&1 | tee "idempotent-typing-rebased-${attempt}.log"
+            python scripts/quality_gate.py 2>&1 | tee "baseline-closure-rebased-${attempt}.log"
             if git push origin HEAD:main; then
               exit 0
             fi
@@ -223,14 +231,14 @@ jobs:
           JOB_STATUS: ${{ job.status }}
         run: |
           state=failure
-          description='Idempotent trust typing repair failed'
+          description='Baseline typing or Bandit closure failed'
           if [ "$JOB_STATUS" = 'success' ]; then
             state=success
-            description='Idempotent trust typing repair passed'
+            description='Baseline typing and Bandit closure passed'
           fi
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
             -f state="$state" \
-            -f context=tsao-dft/typing-repair \
+            -f context=tsao-dft/baseline-repair \
             -f description="$description" \
             -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
@@ -238,7 +246,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: idempotent-typing-repair-${{ github.sha }}
-          path: idempotent-typing-*.log
+          name: baseline-closure-${{ github.sha }}
+          path: baseline-closure-*.log
           if-no-files-found: warn
           retention-days: 14

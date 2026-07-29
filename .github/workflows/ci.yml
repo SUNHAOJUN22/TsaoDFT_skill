@@ -1,4 +1,4 @@
-name: One-shot research manifest coverage formatting
+name: One-shot research manifest coverage validation
 
 on:
   push:
@@ -9,12 +9,12 @@ permissions:
   statuses: write
 
 concurrency:
-  group: tsao-research-manifest-format
+  group: tsao-research-manifest-validate
   cancel-in-progress: false
 
 jobs:
-  format:
-    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: format research manifest coverage tests' }}"
+  validate:
+    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: type-check research manifest coverage tests' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
@@ -53,8 +53,18 @@ jobs:
           python -m pip install -c constraints/py312.txt -r requirements-dev.txt
           python -m pip check
 
-      - name: Format and validate research manifest tests
+      - name: Apply type annotation and validate tests
         run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('skills/tsao-dft-researcher/tests/test_release_research_manifest_coverage.py')
+          text = path.read_text(encoding='utf-8')
+          old = '        data = {"calculations": {}, "artifacts": {}, "claims": {}}\n'
+          new = '        data: dict[str, Any] = {"calculations": {}, "artifacts": {}, "claims": {}}\n'
+          if old not in text:
+              raise SystemExit('research manifest annotation target missing')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
           target=skills/tsao-dft-researcher/tests/test_release_research_manifest_coverage.py
           python -m ruff check --fix "$target"
           python -m ruff format "$target"
@@ -70,7 +80,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add skills/tsao-dft-researcher/tests/test_release_research_manifest_coverage.py
-          git commit -m "style: format research manifest coverage tests"
+          git commit -m "test: validate research manifest coverage boundaries"
           for attempt in 1 2 3; do
             git fetch origin main
             git rebase origin/main

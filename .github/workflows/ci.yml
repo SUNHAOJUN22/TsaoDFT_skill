@@ -1,4 +1,4 @@
-name: One-shot release coverage expectation repair
+name: One-shot manifest coverage input repair
 
 on:
   push:
@@ -9,12 +9,12 @@ permissions:
   statuses: write
 
 concurrency:
-  group: tsao-release-coverage-expectations
+  group: tsao-manifest-coverage-input
   cancel-in-progress: false
 
 jobs:
   repair:
-    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: correct release coverage expectations' }}"
+    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: correct manifest coverage input' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -28,8 +28,8 @@ jobs:
         run: |
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
             -f state=pending \
-            -f context=tsao-dft/release-coverage-expectations \
-            -f description="Release coverage expectation repair running" \
+            -f context=tsao-dft/manifest-coverage-input \
+            -f description="Manifest coverage input repair running" \
             -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
       - name: Checkout full history
@@ -53,42 +53,29 @@ jobs:
           python -m pip install -c constraints/py312.txt -r requirements-dev.txt
           python -m pip check
 
-      - name: Correct reviewed test expectations
+      - name: Make acceleration case intentionally invalid
         run: |
           python - <<'PY'
           from pathlib import Path
-
-          parser_path = Path('skills/tsao-dft-hpc-provenance/tests/test_release_parser_bridge_coverage.py')
-          text = parser_path.read_text(encoding='utf-8')
-          replacements = {
-              'self.assertEqual(result["source_job_index"], 1)': 'self.assertEqual(result["job_index"], 2)',
-              'self.assertEqual(missing_record["execution"]["exit_status"], 1)': 'self.assertEqual(missing_record["execution"]["exit_status"], 0)',
-          }
-          for old, new in replacements.items():
-              if old not in text:
-                  raise SystemExit(f'parser expectation target missing: {old}')
-              text = text.replace(old, new, 1)
-          parser_path.write_text(text, encoding='utf-8')
-
-          manifest_path = Path('skills/tsao-dft-hpc-provenance/tests/test_release_manifest_coverage.py')
-          text = manifest_path.read_text(encoding='utf-8')
+          path = Path('skills/tsao-dft-hpc-provenance/tests/test_release_manifest_coverage.py')
+          text = path.read_text(encoding='utf-8')
           anchor = '        enabled["acceleration"]["device_order"] = "pci_bus_id"\n'
           addition = '        enabled["acceleration"]["backend"] = "metal"\n'
           if addition not in text:
               if anchor not in text:
-                  raise SystemExit('manifest invalid-acceleration target missing')
+                  raise SystemExit('manifest acceleration target missing')
               text = text.replace(anchor, anchor + addition, 1)
-          manifest_path.write_text(text, encoding='utf-8')
+          path.write_text(text, encoding='utf-8')
           PY
-          python -m ruff check --fix skills/tsao-dft-hpc-provenance/tests/test_release_parser_bridge_coverage.py skills/tsao-dft-hpc-provenance/tests/test_release_manifest_coverage.py
-          python -m ruff format skills/tsao-dft-hpc-provenance/tests/test_release_parser_bridge_coverage.py skills/tsao-dft-hpc-provenance/tests/test_release_manifest_coverage.py
+          python -m ruff check --fix skills/tsao-dft-hpc-provenance/tests/test_release_manifest_coverage.py
+          python -m ruff format skills/tsao-dft-hpc-provenance/tests/test_release_manifest_coverage.py
 
       - name: Run complete gate against permanent CI
         shell: bash
         run: |
           set -o pipefail
-          git checkout f8f2aa8571f734e99acb16d8ff82a14d8464d98c -- .github/workflows/ci.yml
-          python scripts/quality_gate.py 2>&1 | tee release-coverage-expectations-quality.log
+          git checkout d1e3c3d9bf90fdf619f92e4c7eff8fcb268e9686 -- .github/workflows/ci.yml
+          python scripts/quality_gate.py 2>&1 | tee manifest-coverage-input-quality.log
           git checkout HEAD -- .github/workflows/ci.yml
 
       - name: Commit, rebase, revalidate and push code
@@ -98,12 +85,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "test: correct release coverage expectations"
+          git commit -m "test: correct manifest acceleration coverage input"
           for attempt in 1 2 3; do
             git fetch origin main
             git rebase origin/main
-            git checkout f8f2aa8571f734e99acb16d8ff82a14d8464d98c -- .github/workflows/ci.yml
-            python scripts/quality_gate.py 2>&1 | tee "release-coverage-expectations-rebased-${attempt}.log"
+            git checkout d1e3c3d9bf90fdf619f92e4c7eff8fcb268e9686 -- .github/workflows/ci.yml
+            python scripts/quality_gate.py 2>&1 | tee "manifest-coverage-input-rebased-${attempt}.log"
             git checkout HEAD -- .github/workflows/ci.yml
             if git push origin HEAD:main; then
               exit 0
@@ -120,14 +107,14 @@ jobs:
           JOB_STATUS: ${{ job.status }}
         run: |
           state=failure
-          description='Release coverage expectation repair failed'
+          description='Manifest coverage input repair failed'
           if [ "$JOB_STATUS" = 'success' ]; then
             state=success
-            description='Release coverage expectation repair passed'
+            description='Manifest coverage input repair passed'
           fi
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
             -f state="$state" \
-            -f context=tsao-dft/release-coverage-expectations \
+            -f context=tsao-dft/manifest-coverage-input \
             -f description="$description" \
             -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
@@ -135,7 +122,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: release-coverage-expectations-${{ github.sha }}
-          path: release-coverage-expectations-*.log
+          name: manifest-coverage-input-${{ github.sha }}
+          path: manifest-coverage-input-*.log
           if-no-files-found: warn
           retention-days: 14

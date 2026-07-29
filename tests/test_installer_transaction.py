@@ -51,11 +51,13 @@ class InstallerTransactionTests(unittest.TestCase):
                     "backup": None,
                 },
             )
-            with patch.object(self.installer, "write_marker", side_effect=OSError("marker failed")):
-                with self.assertRaises(OSError):
-                    self.installer.install_skill(
-                        target, skill, "copy", force=True, backup_existing=True, dry_run=False
-                    )
+            with (
+                patch.object(self.installer, "write_marker", side_effect=OSError("marker failed")),
+                self.assertRaises(OSError),
+            ):
+                self.installer.install_skill(
+                    target, skill, "copy", force=True, backup_existing=True, dry_run=False
+                )
             self.assertTrue((destination / "foreign.txt").is_file())
             self.assertFalse(destination.with_name(destination.name + ".backup").exists())
 
@@ -64,9 +66,8 @@ class InstallerTransactionTests(unittest.TestCase):
             target = Path(temporary)
             lock = target / self.installer.INSTALL_LOCK
             lock.write_text("busy", encoding="utf-8")
-            with self.assertRaises(self.installer.InstallSafetyError):
-                with self.installer.install_lock(target):
-                    pass
+            with self.assertRaises(self.installer.InstallSafetyError), self.installer.install_lock(target):
+                pass
 
 
 if __name__ == "__main__":

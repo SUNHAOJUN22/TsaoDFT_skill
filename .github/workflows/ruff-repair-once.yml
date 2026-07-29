@@ -1,0 +1,87 @@
+name: One-shot exact Ruff repair and full gate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/ruff-repair-once.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tsao-ruff-repair-main
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONHASHSEED: "0"
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@a309ff8b426b58e0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+            constraints/py312.txt
+
+      - name: Install reviewed environment
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -c constraints/py312.txt -r requirements-dev.txt
+          python -m pip check
+
+      - name: Apply safe exact Ruff repairs
+        run: |
+          python -m ruff check --fix .
+          python -m ruff format .
+          rm -f .github/workflows/ruff-repair-once.yml
+
+      - name: Run full quality gate
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/quality_gate.py 2>&1 | tee ruff-repair-quality.log
+
+      - name: Commit net repair
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "style: normalize trust and autotuning code"
+
+      - name: Rebase, revalidate and push
+        shell: bash
+        run: |
+          set -o pipefail
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main
+            python scripts/quality_gate.py 2>&1 | tee "ruff-repair-rebased-${attempt}.log"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            sleep $((attempt * 2))
+          done
+          exit 1
+
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ruff-repair-diagnostics-${{ github.sha }}
+          path: ruff-repair-*.log
+          if-no-files-found: warn
+          retention-days: 14

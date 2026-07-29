@@ -4,14 +4,13 @@ import importlib.metadata
 import importlib.util
 import io
 import json
-import os
 import subprocess
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stderr, redirect_stdout
+from contextlib import redirect_stdout
 from pathlib import Path
-from types import ModuleType, SimpleNamespace
+from types import ModuleType
 from typing import Any
 from unittest.mock import patch
 
@@ -48,7 +47,8 @@ def load_script(relative: str, name: str) -> Any:
         if previous_utils is sentinel:
             sys.modules.pop("utils", None)
         else:
-            sys.modules["utils"] = previous_utils  # type: ignore[assignment]
+            assert isinstance(previous_utils, ModuleType)
+            sys.modules["utils"] = previous_utils
 
 
 class ReleaseDomainValidatorEdgesTests(unittest.TestCase):
@@ -347,10 +347,7 @@ class ReleaseDomainValidatorEdgesTests(unittest.TestCase):
     def poscar(self, *, selective: bool = False, cartesian: bool = False, scale: float = 1.0) -> str:
         mode = "Cartesian" if cartesian else "Direct"
         selector = "Selective dynamics\n" if selective else ""
-        return (
-            f"test\n{scale}\n1 0 0\n0 1 0\n0 0 1\nH He\n1 1\n{selector}{mode}\n"
-            "0 0 0 T T T\n0.5 0.5 0.5 F F F\n"
-        )
+        return f"test\n{scale}\n1 0 0\n0 1 0\n0 0 1\nH He\n1 1\n{selector}{mode}\n0 0 0 T T T\n0.5 0.5 0.5 F F F\n"
 
     def test_vasp_parsers_and_validation_boundaries(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -467,7 +464,9 @@ class ReleaseDomainValidatorEdgesTests(unittest.TestCase):
 
             templates = root / "skill" / "templates"
             templates.mkdir(parents=True)
-            (templates / "vmd-esp.tcl").write_text("{{DENSITY_CUBE}} {{ESP_CUBE}} {{WIDTH}} {{CAMERA_COMMANDS}}", encoding="utf-8")
+            (templates / "vmd-esp.tcl").write_text(
+                "{{DENSITY_CUBE}} {{ESP_CUBE}} {{WIDTH}} {{CAMERA_COMMANDS}}", encoding="utf-8"
+            )
             (templates / "vmd-orbital.tcl").write_text("{{CUBE_FILE}} {{ISOVALUE}} {{HEIGHT}}", encoding="utf-8")
 
             esp_spec = root / "esp.yaml"
@@ -545,8 +544,12 @@ class ReleaseDomainValidatorEdgesTests(unittest.TestCase):
         no_version = subprocess.CompletedProcess([], 0, stdout="", stderr="")
         failed = subprocess.CompletedProcess([], 2, stdout="bad", stderr="")
         self.assertEqual(env.run_read_only("tool", [], runner=lambda *a, **k: success)["status"], env.AVAILABLE)
-        self.assertEqual(env.run_read_only("tool", [], runner=lambda *a, **k: no_version)["status"], env.AVAILABLE_NO_VERSION)
-        self.assertEqual(env.run_read_only("tool", [], runner=lambda *a, **k: failed)["status"], env.AVAILABLE_NO_VERSION)
+        self.assertEqual(
+            env.run_read_only("tool", [], runner=lambda *a, **k: no_version)["status"], env.AVAILABLE_NO_VERSION
+        )
+        self.assertEqual(
+            env.run_read_only("tool", [], runner=lambda *a, **k: failed)["status"], env.AVAILABLE_NO_VERSION
+        )
 
         def exploding(*_: Any, **__: Any) -> subprocess.CompletedProcess[str]:
             raise OSError("boom")
@@ -618,7 +621,11 @@ class ReleaseDomainValidatorEdgesTests(unittest.TestCase):
             with patch.object(env, "resolve_command", return_value=None):
                 self.assertEqual(query(runner=lambda *a, **k: completed), [])
             with patch.object(env, "resolve_command", return_value="/bin/tool"):
-                result = query(runner=lambda *a, **k: subprocess.CompletedProcess([], 0, stdout=parser_text, stderr=""))
+                result = query(
+                    runner=lambda *a, parser_text=parser_text, **k: subprocess.CompletedProcess(
+                        [], 0, stdout=parser_text, stderr=""
+                    )
+                )
                 self.assertTrue(result)
                 self.assertEqual(query(runner=lambda *a, **k: nonzero), [])
                 self.assertEqual(query(runner=exploding_runner), [])
@@ -668,8 +675,12 @@ class ReleaseDomainValidatorEdgesTests(unittest.TestCase):
         invalid = {"schema_version": "bad", "cpu": [], "gpus": {}, "toolchain": [], "privacy": {}}
         self.assertGreaterEqual(len(env.validate_inventory(invalid)), 8)
 
-        static_commands = {key: {"status": env.NOT_AVAILABLE, "command": None, "version": None} for key in env.COMMAND_SPECS}
-        static_engines = {key: {"status": env.NOT_AVAILABLE, "command": None, "version": None} for key in env.ENGINE_SPECS}
+        static_commands = {
+            key: {"status": env.NOT_AVAILABLE, "command": None, "version": None} for key in env.COMMAND_SPECS
+        }
+        static_engines = {
+            key: {"status": env.NOT_AVAILABLE, "command": None, "version": None} for key in env.ENGINE_SPECS
+        }
         with (
             patch.object(env, "inspect_command_group", side_effect=[static_commands, static_engines]),
             patch.object(env, "apple_gpu_inventory", return_value=[]),
@@ -683,7 +694,11 @@ class ReleaseDomainValidatorEdgesTests(unittest.TestCase):
             out = Path(temporary) / "inventory.yaml"
             with (
                 patch.object(env, "collect_inventory", return_value=report),
-                patch.object(sys, "argv", ["inspect_execution_environment.py", "--no-command-probes", "--format", "yaml", "--out", str(out)]),
+                patch.object(
+                    sys,
+                    "argv",
+                    ["inspect_execution_environment.py", "--no-command-probes", "--format", "yaml", "--out", str(out)],
+                ),
                 redirect_stdout(io.StringIO()),
             ):
                 self.assertEqual(env.main(), 0)

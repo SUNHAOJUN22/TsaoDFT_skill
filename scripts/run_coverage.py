@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from typing import Any
 
 from coverage import Coverage
 
@@ -85,7 +86,7 @@ def main() -> int:
         coverage.load()
         measured = sorted(coverage.get_data().measured_files())
         total_statements = total_missing = total_branches = total_missing_branches = 0
-        per_file: dict[str, dict[str, float]] = {}
+        per_file: dict[str, dict[str, Any]] = {}
         for filename in measured:
             path = Path(filename)
             try:
@@ -102,8 +103,17 @@ def main() -> int:
             total_branches += branches
             total_missing_branches += missing_branches
             per_file[relative] = {
-                "statement": percent(statements - missing, statements),
-                "branch": percent(branches - missing_branches, branches),
+                "statement": round(percent(statements - missing, statements), 2),
+                "branch": round(percent(branches - missing_branches, branches), 2),
+                "statements": statements,
+                "missing_statements": missing,
+                "branches": branches,
+                "missing_branches": missing_branches,
+                "missing_lines": sorted(analysis.missing),
+                "missing_branch_arcs": {
+                    str(line): sorted(destinations)
+                    for line, destinations in sorted(analysis.missing_branch_arcs().items())
+                },
             }
         total_statement = percent(total_statements - total_missing, total_statements)
         total_branch = percent(total_branches - total_missing_branches, total_branches)
@@ -139,8 +149,17 @@ def main() -> int:
         else:
             print(f"Coverage statement={total_statement:.2f}% branch={total_branch:.2f}%")
             for relative in TRUST_CORE:
-                values = per_file.get(relative)
-                print(f"CORE {relative}: {values}")
+                print(f"CORE {relative}: {json.dumps(per_file.get(relative), ensure_ascii=False)}")
+            low_files = sorted(
+                (
+                    (relative, values)
+                    for relative, values in per_file.items()
+                    if values["statement"] < args.total_statement or values["branch"] < args.total_branch
+                ),
+                key=lambda item: (item[1]["statement"], item[1]["branch"], item[0]),
+            )
+            for relative, values in low_files:
+                print(f"GAP {relative}: {json.dumps(values, ensure_ascii=False)}")
             for failure in failures:
                 print(f"FAIL: {failure}")
         return 0 if not failures else 1

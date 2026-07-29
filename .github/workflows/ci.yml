@@ -1,4 +1,4 @@
-name: One-shot observable release-core finalization
+name: One-shot release-core finalization against permanent CI
 
 on:
   push:
@@ -9,12 +9,12 @@ permissions:
   statuses: write
 
 concurrency:
-  group: tsao-release-core-finalization-observable
+  group: tsao-release-core-finalization-permanent-ci
   cancel-in-progress: false
 
 jobs:
   finalize:
-    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: retry release-core finalization' }}"
+    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: validate release-core against permanent CI' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 35
     env:
@@ -125,6 +125,9 @@ jobs:
             skills/tsao-dft-hpc-provenance/tests/test_release_validator_final.py \
             tests/test_release_validator_integration.py
 
+      - name: Stage permanent CI for governance validation
+        run: git checkout 9350932d24157b9d62b22e72c94bad9d28a427ba -- .github/workflows/ci.yml
+
       - name: Run targeted lint type and unit tests
         run: |
           python -m ruff check \
@@ -143,13 +146,12 @@ jobs:
           python -m unittest discover -s skills/tsao-dft-hpc-provenance/tests -p 'test_release_validator_final.py' -v
           python -m unittest discover -s tests -p 'test_release_validator_integration.py' -v
 
-      - name: Commit clean tests and restore permanent CI
+      - name: Commit clean tests and permanent CI
         shell: bash
         run: |
           set -o pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout 9350932d24157b9d62b22e72c94bad9d28a427ba -- .github/workflows/ci.yml
           git add -A
           git commit -m "test: finalize release-core coverage closure"
           for attempt in 1 2 3; do

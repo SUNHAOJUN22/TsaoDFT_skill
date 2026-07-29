@@ -88,7 +88,7 @@ class ReleaseToolingCoverageTests(unittest.TestCase):
             module_path.write_text("VALUE = 3\n", encoding="utf-8")
             module = self.benchmark.load_module(module_path, "release_loaded_module", Path(temporary))
             self.assertEqual(module.VALUE, 3)
-            with self.assertRaises(RuntimeError):
+            with self.assertRaises(FileNotFoundError):
                 self.benchmark.load_module(Path(temporary) / "missing.py", "missing_module")
 
         called = subprocess.CalledProcessError(1, ["git"])

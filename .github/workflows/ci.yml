@@ -1,4 +1,4 @@
-name: One-shot permanent typing repair
+name: One-shot idempotent trust typing repair
 
 on:
   push:
@@ -9,12 +9,12 @@ permissions:
   statuses: write
 
 concurrency:
-  group: tsao-permanent-typing-repair
+  group: tsao-idempotent-typing-repair
   cancel-in-progress: false
 
 jobs:
   repair:
-    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: repair trust typing' }}"
+    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: apply idempotent trust typing repair' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -29,7 +29,7 @@ jobs:
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
             -f state=pending \
             -f context=tsao-dft/typing-repair \
-            -f description="Trust typing repair and full gate running" \
+            -f description="Idempotent trust typing repair running" \
             -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
       - name: Checkout full history
@@ -53,98 +53,137 @@ jobs:
           python -m pip install -c constraints/py312.txt -r requirements-dev.txt
           python -m pip check
 
-      - name: Apply reviewed typing and Ruff repairs
+      - name: Apply idempotent typing repairs
         run: |
           python - <<'PY'
           from pathlib import Path
 
-          def replace_once(path_text: str, old: str, new: str) -> None:
-              path = Path(path_text)
-              text = path.read_text(encoding='utf-8')
-              if old not in text:
-                  raise SystemExit(f'reviewed target not found: {path_text}: {old[:60]!r}')
-              path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          ROOT = Path('skills/tsao-dft-hpc-provenance')
 
-          inventory = Path('skills/tsao-dft-hpc-provenance/scripts/inspect_execution_environment.py')
-          text = inventory.read_text(encoding='utf-8')
-          start = text.index('    if errors:\n', text.index('def main() -> int:'))
-          end = text.index('    rendered = (\n', start)
-          block = text[start:end]
-          if '"inventory": report' not in block or '    else:\n' not in block:
-              raise SystemExit('reviewed SIM108 block failed structural validation')
-          replacement = '''    report = (
-              {"ok": False, "errors": errors, "inventory": report}
-              if errors
-              else {"ok": True, "inventory": report}
-          )
-          '''
-          inventory.write_text(text[:start] + replacement + text[end:], encoding='utf-8')
+          def read(path: Path) -> list[str]:
+              return path.read_text(encoding='utf-8').splitlines(keepends=True)
 
-          replace_once(
-              'skills/tsao-dft-hpc-provenance/scripts/engine_parser_contract.py',
-              '        vector = []\n',
-              '        vector: list[float] = []\n',
-          )
-          replace_once(
-              'skills/tsao-dft-hpc-provenance/scripts/shell_contract.py',
-              '''    try:
-              signature = base64.b64decode(attestation.get("signature"), validate=True)
-              key = serialization.load_pem_public_key(public_key_pem)
-              if not isinstance(key, Ed25519PublicKey):
-                  raise ValueError("review key must be Ed25519")
-              key.verify(signature, canonical_json(unsigned).encode("utf-8"))
-          ''',
-              '''    try:
-              signature_value = attestation.get("signature")
-              if not isinstance(signature_value, str):
-                  raise ValueError("attestation signature must be base64 text")
-              signature = base64.b64decode(signature_value, validate=True)
-              public_key = serialization.load_pem_public_key(public_key_pem)
-              if not isinstance(public_key, Ed25519PublicKey):
-                  raise ValueError("review key must be Ed25519")
-              public_key.verify(signature, canonical_json(unsigned).encode("utf-8"))
-          ''',
-          )
-          replace_once(
-              'skills/tsao-dft-hpc-provenance/scripts/validate_hpc_manifest.py',
-              '''    if not isinstance(loaded, dict):
-              errors, warnings = ["manifest root must be a mapping"], []
-          else:
-          ''',
-              '''    if not isinstance(loaded, dict):
-              errors: list[str] = ["manifest root must be a mapping"]
-              warnings: list[str] = []
-          else:
-          ''',
-          )
-          replace_once(
-              'skills/tsao-dft-hpc-provenance/tests/test_engine_parser_contract.py',
-              'class EngineParserContractTests(unittest.TestCase):\n',
-              'class EngineParserContractTests(unittest.TestCase):\n    core: Any\n    schema: dict[str, Any]\n\n',
-          )
-          replace_once(
-              'skills/tsao-dft-hpc-provenance/tests/test_benchmark_bridge.py',
-              'class BenchmarkBridgeTests(unittest.TestCase):\n',
-              'class BenchmarkBridgeTests(unittest.TestCase):\n    bridge: Any\n    parser: Any\n\n',
-          )
-          replace_once(
-              'skills/tsao-dft-hpc-provenance/tests/test_shell_trust_boundary.py',
-              'class ShellTrustBoundaryTests(unittest.TestCase):\n',
-              'class ShellTrustBoundaryTests(unittest.TestCase):\n    validator: Any\n    generator: Any\n    base: dict[str, Any]\n\n',
-          )
-          replace_once(
-              'skills/tsao-dft-hpc-provenance/tests/test_evidence_trust_boundary.py',
-              'class EvidenceTrustBoundaryTests(unittest.TestCase):\n',
-              '''class EvidenceTrustBoundaryTests(unittest.TestCase):
-              trust: Any
-              shell: Any
-              performance: Any
-              result_schema: dict[str, Any]
-              policy_schema: dict[str, Any]
-              policy: dict[str, Any]
+          def write(path: Path, lines: list[str]) -> None:
+              path.write_text(''.join(lines), encoding='utf-8')
 
-          ''',
+          def replace_exact_line(path: Path, old: str, new_lines: list[str], already: str) -> None:
+              lines = read(path)
+              if any(already in line for line in lines):
+                  return
+              indexes = [index for index, line in enumerate(lines) if line.strip() == old]
+              if len(indexes) != 1:
+                  raise SystemExit(f'expected one target in {path}, found {len(indexes)}: {old}')
+              index = indexes[0]
+              indent = lines[index][: len(lines[index]) - len(lines[index].lstrip())]
+              lines[index:index + 1] = [indent + item + '\n' for item in new_lines]
+              write(path, lines)
+
+          inventory = ROOT / 'scripts/inspect_execution_environment.py'
+          lines = read(inventory)
+          if not any(line.strip() == 'report = (' for line in lines[lines.index(next(line for line in lines if line.startswith('def main()'))):]):
+              main_index = next(i for i, line in enumerate(lines) if line.startswith('def main()'))
+              start = next(i for i in range(main_index, len(lines)) if lines[i].strip() == 'if errors:')
+              end = next(i for i in range(start, len(lines)) if lines[i].strip() == 'rendered = (')
+              candidate = ''.join(lines[start:end])
+              if '"inventory": report' not in candidate or 'else:' not in candidate:
+                  raise SystemExit('inventory SIM108 target failed structural validation')
+              lines[start:end] = [
+                  '    report = (\n',
+                  '        {"ok": False, "errors": errors, "inventory": report}\n',
+                  '        if errors\n',
+                  '        else {"ok": True, "inventory": report}\n',
+                  '    )\n',
+              ]
+              write(inventory, lines)
+
+          replace_exact_line(
+              ROOT / 'scripts/engine_parser_contract.py',
+              'vector = []',
+              ['vector: list[float] = []'],
+              'vector: list[float]',
           )
+
+          shell = ROOT / 'scripts/shell_contract.py'
+          lines = read(shell)
+          if not any('signature_value = attestation.get("signature")' in line for line in lines):
+              index = next(
+                  i
+                  for i, line in enumerate(lines)
+                  if line.strip() == 'signature = base64.b64decode(attestation.get("signature"), validate=True)'
+              )
+              indent = lines[index][: len(lines[index]) - len(lines[index].lstrip())]
+              expected = [
+                  'signature = base64.b64decode(attestation.get("signature"), validate=True)',
+                  'key = serialization.load_pem_public_key(public_key_pem)',
+                  'if not isinstance(key, Ed25519PublicKey):',
+                  'raise ValueError("review key must be Ed25519")',
+                  'key.verify(signature, canonical_json(unsigned).encode("utf-8"))',
+              ]
+              observed = [lines[index + offset].strip() for offset in range(5)]
+              if observed != expected:
+                  raise SystemExit(f'shell signature target changed: {observed}')
+              lines[index:index + 5] = [
+                  indent + 'signature_value = attestation.get("signature")\n',
+                  indent + 'if not isinstance(signature_value, str):\n',
+                  indent + '    raise ValueError("attestation signature must be base64 text")\n',
+                  indent + 'signature = base64.b64decode(signature_value, validate=True)\n',
+                  indent + 'public_key = serialization.load_pem_public_key(public_key_pem)\n',
+                  indent + 'if not isinstance(public_key, Ed25519PublicKey):\n',
+                  indent + '    raise ValueError("review key must be Ed25519")\n',
+                  indent + 'public_key.verify(signature, canonical_json(unsigned).encode("utf-8"))\n',
+              ]
+              write(shell, lines)
+
+          manifest_validator = ROOT / 'scripts/validate_hpc_manifest.py'
+          lines = read(manifest_validator)
+          if not any('errors: list[str] = ["manifest root must be a mapping"]' in line for line in lines):
+              index = next(
+                  i for i, line in enumerate(lines) if line.strip() == 'errors, warnings = ["manifest root must be a mapping"], []'
+              )
+              indent = lines[index][: len(lines[index]) - len(lines[index].lstrip())]
+              lines[index:index + 1] = [
+                  indent + 'errors: list[str] = ["manifest root must be a mapping"]\n',
+                  indent + 'warnings: list[str] = []\n',
+              ]
+              write(manifest_validator, lines)
+
+          class_attributes = {
+              ROOT / 'tests/test_engine_parser_contract.py': (
+                  'class EngineParserContractTests(unittest.TestCase):',
+                  ['    core: Any\n', '    schema: dict[str, Any]\n', '\n'],
+                  '    core: Any',
+              ),
+              ROOT / 'tests/test_benchmark_bridge.py': (
+                  'class BenchmarkBridgeTests(unittest.TestCase):',
+                  ['    bridge: Any\n', '    parser: Any\n', '\n'],
+                  '    bridge: Any',
+              ),
+              ROOT / 'tests/test_shell_trust_boundary.py': (
+                  'class ShellTrustBoundaryTests(unittest.TestCase):',
+                  ['    validator: Any\n', '    generator: Any\n', '    base: dict[str, Any]\n', '\n'],
+                  '    validator: Any',
+              ),
+              ROOT / 'tests/test_evidence_trust_boundary.py': (
+                  'class EvidenceTrustBoundaryTests(unittest.TestCase):',
+                  [
+                      '    trust: Any\n',
+                      '    shell: Any\n',
+                      '    performance: Any\n',
+                      '    result_schema: dict[str, Any]\n',
+                      '    policy_schema: dict[str, Any]\n',
+                      '    policy: dict[str, Any]\n',
+                      '\n',
+                  ],
+                  '    trust: Any',
+              ),
+          }
+          for path, (class_line, attributes, marker) in class_attributes.items():
+              lines = read(path)
+              if any(line.rstrip('\n') == marker for line in lines):
+                  continue
+              index = next(i for i, line in enumerate(lines) if line.strip() == class_line)
+              lines[index + 1:index + 1] = attributes
+              write(path, lines)
           PY
           python -m ruff check --fix .
           python -m ruff format .
@@ -155,7 +194,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python scripts/quality_gate.py 2>&1 | tee permanent-typing-repair-quality.log
+          python scripts/quality_gate.py 2>&1 | tee idempotent-typing-quality.log
 
       - name: Commit and push net repair
         shell: bash
@@ -168,7 +207,7 @@ jobs:
           for attempt in 1 2 3; do
             git fetch origin main
             git rebase origin/main
-            python scripts/quality_gate.py 2>&1 | tee "permanent-typing-repair-rebased-${attempt}.log"
+            python scripts/quality_gate.py 2>&1 | tee "idempotent-typing-rebased-${attempt}.log"
             if git push origin HEAD:main; then
               exit 0
             fi
@@ -184,10 +223,10 @@ jobs:
           JOB_STATUS: ${{ job.status }}
         run: |
           state=failure
-          description='Trust typing repair or full gate failed'
+          description='Idempotent trust typing repair failed'
           if [ "$JOB_STATUS" = 'success' ]; then
             state=success
-            description='Trust typing repair and full gate passed'
+            description='Idempotent trust typing repair passed'
           fi
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
             -f state="$state" \
@@ -199,7 +238,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: permanent-typing-repair-${{ github.sha }}
-          path: permanent-typing-repair-*.log
+          name: idempotent-typing-repair-${{ github.sha }}
+          path: idempotent-typing-*.log
           if-no-files-found: warn
           retention-days: 14

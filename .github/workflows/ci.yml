@@ -1,41 +1,136 @@
-name: One-shot remaining release-core paths
+name: TsaoDFT quality and security gates
 
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * 1"
 
 permissions:
-  contents: write
-  statuses: write
+  contents: read
 
 concurrency:
-  group: tsao-remaining-release-core-paths
-  cancel-in-progress: false
+  group: tsao-dft-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  repair:
-    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: close remaining release core paths' }}"
+  quality-gate:
+    name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      statuses: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: "3.10"
+            constraint: constraints/py310.txt
+          - python-version: "3.12"
+            constraint: constraints/py312.txt
+          - python-version: "3.13"
+            constraint: constraints/py313.txt
     env:
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
       PYTHONDONTWRITEBYTECODE: "1"
       PYTHONHASHSEED: "0"
+
     steps:
-      - name: Publish running status
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+            ${{ matrix.constraint }}
+
+      - name: Install and verify locked dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -c "${{ matrix.constraint }}" -r requirements-dev.txt
+          python -m pip check
+
+      - name: Capture complete quality gate
+        id: gate
+        shell: bash
+        run: |
+          set +e
+          python scripts/quality_gate.py 2>&1 | tee quality-gate.log
+          code=${PIPESTATUS[0]}
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload failure log
+        if: always() && steps.gate.outputs.exit_code != '0'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: quality-gate-python-${{ matrix.python-version }}
+          path: quality-gate.log
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload coverage evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-python-${{ matrix.python-version }}-${{ github.sha }}
+          path: coverage-report.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish best-effort compatibility summary
+        if: always() && github.event_name != 'pull_request'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
+          GATE_EXIT_CODE: ${{ steps.gate.outputs.exit_code }}
+          PYTHON_VERSION: ${{ matrix.python-version }}
+        shell: bash
         run: |
-          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
-            -f state=pending \
-            -f context=tsao-dft/release-core-remaining \
-            -f description="Remaining release-core path tests running" \
-            -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          state=failure
+          description='TsaoDFT quality gate failed'
+          if [ "$GATE_EXIT_CODE" = '0' ]; then
+            state=success
+            description='TsaoDFT quality gate passed'
+          fi
+          for attempt in 1 2 3; do
+            if gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
+              -f state="$state" \
+              -f context="tsao-dft/python-$PYTHON_VERSION" \
+              -f description="$description" \
+              -f target_url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"; then
+              exit 0
+            fi
+            sleep $((attempt * 2))
+          done
+          exit 1
 
-      - name: Checkout full history
+      - name: Fail job when quality gate fails
+        if: always() && steps.gate.outputs.exit_code != '0'
+        run: exit 1
+
+  supply-chain:
+    name: Dependency audit and SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+
+    steps:
+      - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-depth: 0
 
       - name: Setup Python 3.12
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -47,129 +142,56 @@ jobs:
             requirements-dev.txt
             constraints/py312.txt
 
-      - name: Install locked environment
+      - name: Install audited locked dependency set
         run: |
           python -m pip install --upgrade pip
           python -m pip install -c constraints/py312.txt -r requirements-dev.txt
           python -m pip check
 
-      - name: Install reviewed tests and fix test preconditions
-        env:
-          TEST_PAYLOAD: "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"
-        run: |
-          python - <<'PY'
-          import base64
-          import gzip
-          import os
-          from pathlib import Path
+      - name: Audit runtime dependency range
+        run: python -m pip_audit -r requirements.txt --format json --output pip-audit-runtime.json
 
-          target = Path('skills/tsao-dft-hpc-provenance/tests/test_release_core_remaining.py')
-          target.write_bytes(gzip.decompress(base64.b64decode(os.environ['TEST_PAYLOAD'])))
+      - name: Audit development dependency range
+        run: python -m pip_audit -r requirements-dev.txt --format json --output pip-audit-development.json
 
-          path = Path('skills/tsao-dft-hpc-provenance/tests/test_release_core_coverage.py')
-          lines = path.read_text(encoding='utf-8').splitlines(keepends=True)
+      - name: Audit exact locked environment
+        run: python -m pip_audit --no-deps -r constraints/py312.txt --format json --output pip-audit-locked.json
 
-          total_runs = next(i for i, line in enumerate(lines) if line.strip() == 'case["total_runs"] = 1')
-          parser_runs = next(
-              i
-              for i in range(total_runs + 1, min(total_runs + 5, len(lines)))
-              if 'case["parser_accepted_runs"] = 1' in lines[i]
-          )
-          if not any('case["minimum_repeats_pass"] = False' in line for line in lines[parser_runs:parser_runs + 3]):
-              indent = lines[parser_runs][: len(lines[parser_runs]) - len(lines[parser_runs].lstrip())]
-              lines.insert(parser_runs + 1, indent + 'case["minimum_repeats_pass"] = False\n')
+      - name: Generate locked CycloneDX SBOM
+        run: python -m pip_audit --no-deps -r constraints/py312.txt --format cyclonedx-json --output sbom.cdx.json
 
-          approved_line = next(i for i, line in enumerate(lines) if line.strip() == 'approved["approval"] = "approved"')
-          if not any('approved["acceleration"]["benchmark_plan_id"]' in line for line in lines[approved_line + 1:approved_line + 4]):
-              indent = lines[approved_line][: len(lines[approved_line]) - len(lines[approved_line].lstrip())]
-              lines.insert(approved_line + 1, indent + 'approved["acceleration"]["benchmark_plan_id"] = "PLAN-A"\n')
-
-          replace_marker = next(i for i, line in enumerate(lines) if 'patch.object(self.trust.os, "replace"' in line)
-          start = replace_marker
-          while start > 0 and lines[start].strip() != 'with (':
-              start -= 1
-          publish = next(
-              i
-              for i in range(replace_marker, min(replace_marker + 15, len(lines)))
-              if 'self.trust.publish_content_addressed_bundle' in lines[i]
-          )
-          assertion = next(
-              i
-              for i in range(publish + 1, min(publish + 8, len(lines)))
-              if 'self.assertFalse(any(parent.iterdir()))' in lines[i]
-          )
-          indent = lines[start][: len(lines[start]) - len(lines[start].lstrip())]
-          inner = indent + '    '
-          lines[start:assertion + 1] = [
-              indent + 'with tempfile.TemporaryDirectory() as temporary:\n',
-              inner + 'parent = Path(temporary)\n',
-              inner + 'with (\n',
-              inner + '    patch.object(self.trust.os, "replace", side_effect=OSError("replace failed")),\n',
-              inner + '    self.assertRaises(OSError),\n',
-              inner + '):\n',
-              inner + '    self.trust.publish_content_addressed_bundle(\n',
-              inner + '        parent, [self.record()], {}, self.policy, review, {}\n',
-              inner + '    )\n',
-              inner + 'self.assertFalse(any(parent.iterdir()))\n',
-          ]
-          path.write_text(''.join(lines), encoding='utf-8')
-          PY
-          python -m ruff check --fix skills/tsao-dft-hpc-provenance/tests/test_release_core_coverage.py skills/tsao-dft-hpc-provenance/tests/test_release_core_remaining.py
-          python -m ruff format skills/tsao-dft-hpc-provenance/tests/test_release_core_coverage.py skills/tsao-dft-hpc-provenance/tests/test_release_core_remaining.py
-
-      - name: Run complete gate against permanent CI
-        shell: bash
-        run: |
-          set -o pipefail
-          git checkout a9f0eb36bd9bf8b89f2cc1e64238198083e2f8ad -- .github/workflows/ci.yml
-          python scripts/quality_gate.py 2>&1 | tee remaining-release-core-quality.log
-          git checkout HEAD -- .github/workflows/ci.yml
-
-      - name: Commit, rebase, revalidate and push code
-        shell: bash
-        run: |
-          set -o pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "test: cover remaining release-core paths"
-          for attempt in 1 2 3; do
-            git fetch origin main
-            git rebase origin/main
-            git checkout a9f0eb36bd9bf8b89f2cc1e64238198083e2f8ad -- .github/workflows/ci.yml
-            python scripts/quality_gate.py 2>&1 | tee "remaining-release-core-rebased-${attempt}.log"
-            git checkout HEAD -- .github/workflows/ci.yml
-            if git push origin HEAD:main; then
-              exit 0
-            fi
-            sleep $((attempt * 2))
-          done
-          exit 1
-
-      - name: Publish final status
-        if: always()
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-          JOB_STATUS: ${{ job.status }}
-        run: |
-          state=failure
-          description='Remaining release-core path tests failed'
-          if [ "$JOB_STATUS" = 'success' ]; then
-            state=success
-            description='Remaining release-core path tests passed'
-          fi
-          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
-            -f state="$state" \
-            -f context=tsao-dft/release-core-remaining \
-            -f description="$description" \
-            -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-
-      - name: Upload diagnostics
-        if: failure()
+      - name: Upload supply-chain evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: remaining-release-core-${{ github.sha }}
-          path: remaining-release-core-*.log
-          if-no-files-found: warn
-          retention-days: 14
+          name: supply-chain-${{ github.sha }}
+          path: |
+            pip-audit-runtime.json
+            pip-audit-development.json
+            pip-audit-locked.json
+            sbom.cdx.json
+          if-no-files-found: error
+          retention-days: 30
+
+  codeql:
+    name: CodeQL Python analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@7211b7c8077ea37d8641b6271f6a365a22a5fbfa # v4.36.0
+        with:
+          languages: python
+          queries: security-extended
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@7211b7c8077ea37d8641b6271f6a365a22a5fbfa # v4.36.0
+        with:
+          category: "/language:python"

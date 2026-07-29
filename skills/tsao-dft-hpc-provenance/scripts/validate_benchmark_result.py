@@ -12,7 +12,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from import_benchmark_evidence import import_with_schema  # noqa: E402
+from import_benchmark_evidence import import_with_schema  # noqa: E402 -- standalone Skill import contract
 
 
 def main() -> int:

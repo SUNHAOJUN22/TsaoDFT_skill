@@ -13,8 +13,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from performance_evidence import canonical_json, import_evidence, load_records  # noqa: E402
-from trust_boundary import load_json, validate_record_schema  # noqa: E402
+from performance_evidence import canonical_json, import_evidence, load_records  # noqa: E402 -- standalone Skill import contract
+from trust_boundary import load_json, validate_record_schema  # noqa: E402 -- standalone Skill import contract
 
 
 def import_with_schema(

@@ -433,12 +433,14 @@ class ReleaseCoreCoverageTests(unittest.TestCase):
             root_path.write_text(json.dumps(original, sort_keys=True, indent=2) + "\n", encoding="utf-8")
             self.assertFalse(self.trust.verify_content_addressed_bundle(bundle)["ok"])
 
-        with tempfile.TemporaryDirectory() as temporary:
+        with (
+            tempfile.TemporaryDirectory() as temporary,
+            patch.object(self.trust.os, "replace", side_effect=OSError("replace failed")),
+            self.assertRaises(OSError),
+        ):
             parent = Path(temporary)
-            with patch.object(self.trust.os, "replace", side_effect=OSError("replace failed")):
-                with self.assertRaises(OSError):
-                    self.trust.publish_content_addressed_bundle(parent, [self.record()], {}, self.policy, review, {})
-            self.assertFalse(any(parent.iterdir()))
+            self.trust.publish_content_addressed_bundle(parent, [self.record()], {}, self.policy, review, {})
+        self.assertFalse(any(parent.iterdir()))
 
     def parser_file(self, text: str, name: str = "out.log") -> tuple[tempfile.TemporaryDirectory[str], Path]:
         temporary = tempfile.TemporaryDirectory()
@@ -971,23 +973,31 @@ class ReleaseCoreCoverageTests(unittest.TestCase):
             valid.write_text(yaml.safe_dump(self.base_manifest()), encoding="utf-8")
             generated = root / "job.sh"
             stdout = io.StringIO()
-            with patch.object(sys, "argv", ["generate_job_script.py", str(valid), "--out", str(generated)]):
-                with redirect_stdout(stdout):
-                    self.assertEqual(self.generator.main(), 0)
+            with (
+                patch.object(sys, "argv", ["generate_job_script.py", str(valid), "--out", str(generated)]),
+                redirect_stdout(stdout),
+            ):
+                self.assertEqual(self.generator.main(), 0)
             self.assertTrue(generated.is_file())
 
             invalid = root / "invalid.yaml"
             invalid.write_text("- bad\n", encoding="utf-8")
-            with patch.object(sys, "argv", ["generate_job_script.py", str(invalid), "--out", str(generated)]):
-                with redirect_stdout(io.StringIO()):
-                    self.assertEqual(self.generator.main(), 1)
+            with (
+                patch.object(sys, "argv", ["generate_job_script.py", str(invalid), "--out", str(generated)]),
+                redirect_stdout(io.StringIO()),
+            ):
+                self.assertEqual(self.generator.main(), 1)
 
-            with patch.object(sys, "argv", ["validate_hpc_manifest.py", str(valid)]):
-                with redirect_stdout(io.StringIO()):
-                    self.assertEqual(self.validator.main(), 0)
-            with patch.object(sys, "argv", ["validate_hpc_manifest.py", str(invalid)]):
-                with redirect_stdout(io.StringIO()):
-                    self.assertEqual(self.validator.main(), 1)
+            with (
+                patch.object(sys, "argv", ["validate_hpc_manifest.py", str(valid)]),
+                redirect_stdout(io.StringIO()),
+            ):
+                self.assertEqual(self.validator.main(), 0)
+            with (
+                patch.object(sys, "argv", ["validate_hpc_manifest.py", str(invalid)]),
+                redirect_stdout(io.StringIO()),
+            ):
+                self.assertEqual(self.validator.main(), 1)
 
 
 if __name__ == "__main__":

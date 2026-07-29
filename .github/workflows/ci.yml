@@ -1,4 +1,4 @@
-name: One-shot permanent Ruff repair
+name: One-shot permanent typing repair
 
 on:
   push:
@@ -9,12 +9,12 @@ permissions:
   statuses: write
 
 concurrency:
-  group: tsao-permanent-ruff-repair
+  group: tsao-permanent-typing-repair
   cancel-in-progress: false
 
 jobs:
   repair:
-    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: finalize permanent Ruff repair' }}"
+    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: repair trust typing' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -28,8 +28,8 @@ jobs:
         run: |
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
             -f state=pending \
-            -f context=tsao-dft/ruff-repair \
-            -f description="Exact Ruff repair and full gate running" \
+            -f context=tsao-dft/typing-repair \
+            -f description="Trust typing repair and full gate running" \
             -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
       - name: Checkout full history
@@ -53,12 +53,20 @@ jobs:
           python -m pip install -c constraints/py312.txt -r requirements-dev.txt
           python -m pip check
 
-      - name: Apply reviewed SIM108 and exact Ruff repair
+      - name: Apply reviewed typing and Ruff repairs
         run: |
           python - <<'PY'
           from pathlib import Path
-          path = Path('skills/tsao-dft-hpc-provenance/scripts/inspect_execution_environment.py')
-          text = path.read_text(encoding='utf-8')
+
+          def replace_once(path_text: str, old: str, new: str) -> None:
+              path = Path(path_text)
+              text = path.read_text(encoding='utf-8')
+              if old not in text:
+                  raise SystemExit(f'reviewed target not found: {path_text}: {old[:60]!r}')
+              path.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          inventory = Path('skills/tsao-dft-hpc-provenance/scripts/inspect_execution_environment.py')
+          text = inventory.read_text(encoding='utf-8')
           start = text.index('    if errors:\n', text.index('def main() -> int:'))
           end = text.index('    rendered = (\n', start)
           block = text[start:end]
@@ -70,7 +78,73 @@ jobs:
               else {"ok": True, "inventory": report}
           )
           '''
-          path.write_text(text[:start] + replacement + text[end:], encoding='utf-8')
+          inventory.write_text(text[:start] + replacement + text[end:], encoding='utf-8')
+
+          replace_once(
+              'skills/tsao-dft-hpc-provenance/scripts/engine_parser_contract.py',
+              '        vector = []\n',
+              '        vector: list[float] = []\n',
+          )
+          replace_once(
+              'skills/tsao-dft-hpc-provenance/scripts/shell_contract.py',
+              '''    try:
+              signature = base64.b64decode(attestation.get("signature"), validate=True)
+              key = serialization.load_pem_public_key(public_key_pem)
+              if not isinstance(key, Ed25519PublicKey):
+                  raise ValueError("review key must be Ed25519")
+              key.verify(signature, canonical_json(unsigned).encode("utf-8"))
+          ''',
+              '''    try:
+              signature_value = attestation.get("signature")
+              if not isinstance(signature_value, str):
+                  raise ValueError("attestation signature must be base64 text")
+              signature = base64.b64decode(signature_value, validate=True)
+              public_key = serialization.load_pem_public_key(public_key_pem)
+              if not isinstance(public_key, Ed25519PublicKey):
+                  raise ValueError("review key must be Ed25519")
+              public_key.verify(signature, canonical_json(unsigned).encode("utf-8"))
+          ''',
+          )
+          replace_once(
+              'skills/tsao-dft-hpc-provenance/scripts/validate_hpc_manifest.py',
+              '''    if not isinstance(loaded, dict):
+              errors, warnings = ["manifest root must be a mapping"], []
+          else:
+          ''',
+              '''    if not isinstance(loaded, dict):
+              errors: list[str] = ["manifest root must be a mapping"]
+              warnings: list[str] = []
+          else:
+          ''',
+          )
+          replace_once(
+              'skills/tsao-dft-hpc-provenance/tests/test_engine_parser_contract.py',
+              'class EngineParserContractTests(unittest.TestCase):\n',
+              'class EngineParserContractTests(unittest.TestCase):\n    core: Any\n    schema: dict[str, Any]\n\n',
+          )
+          replace_once(
+              'skills/tsao-dft-hpc-provenance/tests/test_benchmark_bridge.py',
+              'class BenchmarkBridgeTests(unittest.TestCase):\n',
+              'class BenchmarkBridgeTests(unittest.TestCase):\n    bridge: Any\n    parser: Any\n\n',
+          )
+          replace_once(
+              'skills/tsao-dft-hpc-provenance/tests/test_shell_trust_boundary.py',
+              'class ShellTrustBoundaryTests(unittest.TestCase):\n',
+              'class ShellTrustBoundaryTests(unittest.TestCase):\n    validator: Any\n    generator: Any\n    base: dict[str, Any]\n\n',
+          )
+          replace_once(
+              'skills/tsao-dft-hpc-provenance/tests/test_evidence_trust_boundary.py',
+              'class EvidenceTrustBoundaryTests(unittest.TestCase):\n',
+              '''class EvidenceTrustBoundaryTests(unittest.TestCase):
+              trust: Any
+              shell: Any
+              performance: Any
+              result_schema: dict[str, Any]
+              policy_schema: dict[str, Any]
+              policy: dict[str, Any]
+
+          ''',
+          )
           PY
           python -m ruff check --fix .
           python -m ruff format .
@@ -81,7 +155,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python scripts/quality_gate.py 2>&1 | tee permanent-ruff-repair-quality.log
+          python scripts/quality_gate.py 2>&1 | tee permanent-typing-repair-quality.log
 
       - name: Commit and push net repair
         shell: bash
@@ -90,11 +164,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "style: normalize trust and autotuning code"
+          git commit -m "fix: close trust typing and formatting gates"
           for attempt in 1 2 3; do
             git fetch origin main
             git rebase origin/main
-            python scripts/quality_gate.py 2>&1 | tee "permanent-ruff-repair-rebased-${attempt}.log"
+            python scripts/quality_gate.py 2>&1 | tee "permanent-typing-repair-rebased-${attempt}.log"
             if git push origin HEAD:main; then
               exit 0
             fi
@@ -110,14 +184,14 @@ jobs:
           JOB_STATUS: ${{ job.status }}
         run: |
           state=failure
-          description='Exact Ruff repair or full gate failed'
+          description='Trust typing repair or full gate failed'
           if [ "$JOB_STATUS" = 'success' ]; then
             state=success
-            description='Exact Ruff repair and full gate passed'
+            description='Trust typing repair and full gate passed'
           fi
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
             -f state="$state" \
-            -f context=tsao-dft/ruff-repair \
+            -f context=tsao-dft/typing-repair \
             -f description="$description" \
             -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
 
@@ -125,7 +199,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: permanent-ruff-repair-${{ github.sha }}
-          path: permanent-ruff-repair-*.log
+          name: permanent-typing-repair-${{ github.sha }}
+          path: permanent-typing-repair-*.log
           if-no-files-found: warn
           retention-days: 14

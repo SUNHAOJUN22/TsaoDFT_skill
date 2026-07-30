@@ -152,9 +152,7 @@ class ReleaseAutotuningEdgeCoverageTests(unittest.TestCase):
         self.assertGreaterEqual(len(memory_rejections), 2)
 
         over = copy.deepcopy(candidate)
-        over["resources"].update(
-            {"tasks_per_node": 8, "cpus_per_task": 8, "gpus_per_node": 3, "ranks_per_gpu": 2}
-        )
+        over["resources"].update({"tasks_per_node": 8, "cpus_per_task": 8, "gpus_per_node": 3, "ranks_per_gpu": 2})
         layout_errors = self.autotune.valid_layout(self.autotuning_profile(), over)
         self.assertGreaterEqual(len(layout_errors), 4)
 
@@ -172,9 +170,7 @@ class ReleaseAutotuningEdgeCoverageTests(unittest.TestCase):
         self.assertTrue(self.autotune.vasp_candidates(vasp))
 
         qe = self.autotuning_profile("quantum-espresso")
-        qe["tuning"].update(
-            {"task_groups": [3], "images": [2], "pools": [3], "diagonalization": ["cg"]}
-        )
+        qe["tuning"].update({"task_groups": [3], "images": [2], "pools": [3], "diagonalization": ["cg"]})
         self.assertIsInstance(self.autotune.qe_candidates(qe), list)
 
         cp2k = self.autotuning_profile("cp2k", "intel", 2)
@@ -198,15 +194,10 @@ class ReleaseAutotuningEdgeCoverageTests(unittest.TestCase):
             ("apple", "metal"),
         ):
             ml = self.autotuning_profile("ml-surrogate", vendor, 1)
-            self.assertTrue(
-                any(item["backend"] == expected for item in self.autotune.ml_candidates(ml))
-            )
+            self.assertTrue(any(item["backend"] == expected for item in self.autotune.ml_candidates(ml)))
         unknown_ml = self.autotuning_profile("ml-surrogate", "unknown", 1)
         self.assertTrue(
-            any(
-                item["tuning"]["runtime"] == "framework-native"
-                for item in self.autotune.ml_candidates(unknown_ml)
-            )
+            any(item["tuning"]["runtime"] == "framework-native" for item in self.autotune.ml_candidates(unknown_ml))
         )
 
         invalid = self.autotune.generate({})

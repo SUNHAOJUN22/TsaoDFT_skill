@@ -26,12 +26,8 @@ class ReleasePerformanceEvidenceEdgeCoverageTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        core_module = load_module(
-            ROOT / "scripts/performance_evidence.py", "release_performance_edges"
-        )
-        support_module = load_module(
-            ROOT / "tests/test_performance_evidence.py", "release_performance_support"
-        )
+        core_module = load_module(ROOT / "scripts/performance_evidence.py", "release_performance_edges")
+        support_module = load_module(ROOT / "tests/test_performance_evidence.py", "release_performance_support")
         support_module.PerformanceEvidenceTests.setUpClass()
         cls.core = core_module
         cls.policy = support_module.PerformanceEvidenceTests.policy
@@ -50,17 +46,11 @@ class ReleasePerformanceEvidenceEdgeCoverageTests(unittest.TestCase):
         self.assertEqual(self.core.require_mapping([], "root", errors), {})
         self.assertEqual(self.core.require_text({}, "name", "root", errors), "")
         self.assertEqual(self.core.require_number({}, "x", "root", errors), 0.0)
-        self.assertEqual(
-            self.core.require_number({"x": "bad"}, "x", "root", errors), 0.0
-        )
+        self.assertEqual(self.core.require_number({"x": "bad"}, "x", "root", errors), 0.0)
         self.core.require_number({"x": float("inf")}, "x", "root", errors)
-        self.core.require_number(
-            {"x": 0}, "x", "root", errors, minimum=0, exclusive=True
-        )
+        self.core.require_number({"x": 0}, "x", "root", errors, minimum=0, exclusive=True)
         self.assertEqual(self.core.require_integer({}, "n", "root", errors), 0)
-        self.assertEqual(
-            self.core.require_integer({"n": "bad"}, "n", "root", errors), 0
-        )
+        self.assertEqual(self.core.require_integer({"n": "bad"}, "n", "root", errors), 0)
         self.core.require_integer({"n": -1}, "n", "root", errors)
         self.assertGreaterEqual(len(errors), 9)
 
@@ -116,9 +106,7 @@ class ReleasePerformanceEvidenceEdgeCoverageTests(unittest.TestCase):
                 {"path": "../escape.out", "sha256": "0" * 64},
             ]
         }
-        artifacts, artifact_errors = self.core.verify_artifacts(
-            record, self.artifact_root
-        )
+        artifacts, artifact_errors = self.core.verify_artifacts(record, self.artifact_root)
         self.assertEqual(len(artifacts), 3)
         self.assertGreaterEqual(len(artifact_errors), 4)
 
@@ -151,13 +139,8 @@ class ReleasePerformanceEvidenceEdgeCoverageTests(unittest.TestCase):
             self.core.parse_optional_metric("sacct", "header\n")["status"],
             "NOT_AVAILABLE",
         )
-        sacct = (
-            "JobID|State|ElapsedRaw|TotalCPU|MaxRSS\n"
-            "1|COMPLETED|10|00:00:05|1G\n"
-        )
-        self.assertEqual(
-            self.core.parse_optional_metric("sacct", sacct)["wall_time_s"], 10.0
-        )
+        sacct = "JobID|State|ElapsedRaw|TotalCPU|MaxRSS\n1|COMPLETED|10|00:00:05|1G\n"
+        self.assertEqual(self.core.parse_optional_metric("sacct", sacct)["wall_time_s"], 10.0)
         self.assertEqual(
             self.core.parse_optional_metric("time-v", "")["status"],
             "NOT_AVAILABLE",
@@ -170,17 +153,13 @@ class ReleasePerformanceEvidenceEdgeCoverageTests(unittest.TestCase):
             "File system inputs: 3\n"
             "File system outputs: 4\n"
         )
-        self.assertEqual(
-            self.core.parse_optional_metric("time-v", time_v)["cpu_time_s"], 3.0
-        )
+        self.assertEqual(self.core.parse_optional_metric("time-v", time_v)["cpu_time_s"], 3.0)
         self.assertEqual(
             self.core.parse_optional_metric("nvidia-smi", "")["status"],
             "NOT_AVAILABLE",
         )
         self.assertEqual(
-            self.core.parse_optional_metric(
-                "nvidia-smi", "H100,GPU-1,0000:01:00.0,590,80 GiB,99\n"
-            )["status"],
+            self.core.parse_optional_metric("nvidia-smi", "H100,GPU-1,0000:01:00.0,590,80 GiB,99\n")["status"],
             "AVAILABLE",
         )
         self.assertEqual(
@@ -188,9 +167,7 @@ class ReleasePerformanceEvidenceEdgeCoverageTests(unittest.TestCase):
             "NOT_AVAILABLE",
         )
         self.assertEqual(
-            self.core.parse_optional_metric("engine-parser", '{"ok": true}')[
-                "status"
-            ],
+            self.core.parse_optional_metric("engine-parser", '{"ok": true}')["status"],
             "AVAILABLE",
         )
         with self.assertRaises(ValueError):
@@ -208,41 +185,21 @@ class ReleasePerformanceEvidenceEdgeCoverageTests(unittest.TestCase):
         self.assertEqual(self.core.percentile([1.0], 0.5), 1.0)
         self.assertEqual(self.core.percentile([0.0, 10.0], 0.25), 2.5)
         self.assertEqual(self.core.numeric_summary([], 3.5)["count"], 0)
-        self.assertEqual(
-            self.core.numeric_summary([1.0, 1.0, 1.0], 3.5)["outlier_count"], 0
-        )
-        self.assertGreaterEqual(
-            self.core.numeric_summary([1.0, 2.0, 100.0], 3.5)["outlier_count"], 1
-        )
+        self.assertEqual(self.core.numeric_summary([1.0, 1.0, 1.0], 3.5)["outlier_count"], 0)
+        self.assertGreaterEqual(self.core.numeric_summary([1.0, 2.0, 100.0], 3.5)["outlier_count"], 1)
         self.assertIsNone(self.core.median_vector([], "forces_ev_per_angstrom"))
         incompatible = [
-            {
-                "scientific": {
-                    "results": {"forces_ev_per_angstrom": [0.0]}
-                }
-            },
-            {
-                "scientific": {
-                    "results": {"forces_ev_per_angstrom": [0.0, 1.0]}
-                }
-            },
+            {"scientific": {"results": {"forces_ev_per_angstrom": [0.0]}}},
+            {"scientific": {"results": {"forces_ev_per_angstrom": [0.0, 1.0]}}},
         ]
-        self.assertIsNone(
-            self.core.median_vector(incompatible, "forces_ev_per_angstrom")
-        )
+        self.assertIsNone(self.core.median_vector(incompatible, "forces_ev_per_angstrom"))
         self.assertEqual(self.core.maximum_vector_difference(None, None), 0.0)
-        self.assertIsNone(
-            self.core.maximum_vector_difference([1.0], [1.0, 2.0])
-        )
+        self.assertIsNone(self.core.maximum_vector_difference([1.0], [1.0, 2.0]))
         self.assertEqual(self.core.maximum_vector_difference([], []), 0.0)
-        self.assertEqual(
-            self.core.maximum_vector_difference([1.0], [3.0]), 2.0
-        )
+        self.assertEqual(self.core.maximum_vector_difference([1.0], [3.0]), 2.0)
 
         references = self.fixture.validated(self.fixture.reference_records())
-        candidates = self.fixture.validated(
-            self.fixture.gpu_records(candidate="gpu")
-        )
+        candidates = self.fixture.validated(self.fixture.gpu_records(candidate="gpu"))
         broken = copy.deepcopy(candidates)
         broken[0]["scientific"]["method_fingerprint_id"] = "OTHER"
         broken[0]["scientific"]["results"].update(
@@ -253,15 +210,11 @@ class ReleasePerformanceEvidenceEdgeCoverageTests(unittest.TestCase):
                 "properties": {},
             }
         )
-        equivalence = self.core.numerical_equivalence(
-            broken, references, self.policy
-        )
+        equivalence = self.core.numerical_equivalence(broken, references, self.policy)
         self.assertEqual(equivalence["status"], "FAIL")
         self.assertGreaterEqual(len(equivalence["reasons"]), 4)
 
-        summary = self.core.compare_evidence(
-            [*references, *candidates], self.policy
-        )
+        summary = self.core.compare_evidence([*references, *candidates], self.policy)
         base = copy.deepcopy(summary["candidates"]["gpu"])
         base.update(
             {
@@ -278,50 +231,38 @@ class ReleasePerformanceEvidenceEdgeCoverageTests(unittest.TestCase):
         )
         approved = self.fixture.approved_review()
         self.assertEqual(
-            self.core.candidate_qualification_status(
-                base, "FAIL", self.policy, {}
-            )[0],
+            self.core.candidate_qualification_status(base, "FAIL", self.policy, {})[0],
             "REFERENCE_MISSING",
         )
 
         changed = copy.deepcopy(base)
         changed["build_identity_consistent"] = False
         self.assertEqual(
-            self.core.candidate_qualification_status(
-                changed, "PASS", self.policy, approved
-            )[0],
+            self.core.candidate_qualification_status(changed, "PASS", self.policy, approved)[0],
             "BUILD_IDENTITY_MISSING",
         )
         changed = copy.deepcopy(base)
         changed["hardware_identity_consistent"] = False
         self.assertEqual(
-            self.core.candidate_qualification_status(
-                changed, "PASS", self.policy, approved
-            )[0],
+            self.core.candidate_qualification_status(changed, "PASS", self.policy, approved)[0],
             "HARDWARE_IDENTITY_MISSING",
         )
         changed = copy.deepcopy(base)
         changed["all_artifacts_verified"] = False
         self.assertEqual(
-            self.core.candidate_qualification_status(
-                changed, "PASS", self.policy, approved
-            )[0],
+            self.core.candidate_qualification_status(changed, "PASS", self.policy, approved)[0],
             "ARTIFACT_HASH_MISMATCH",
         )
         changed = copy.deepcopy(base)
         changed["minimum_repeats_pass"] = False
         self.assertEqual(
-            self.core.candidate_qualification_status(
-                changed, "PASS", self.policy, approved
-            )[0],
+            self.core.candidate_qualification_status(changed, "PASS", self.policy, approved)[0],
             "INSUFFICIENT_REPEATS",
         )
         changed = copy.deepcopy(base)
         changed["parser_accepted_runs"] = 2
         self.assertEqual(
-            self.core.candidate_qualification_status(
-                changed, "PASS", self.policy, approved
-            )[0],
+            self.core.candidate_qualification_status(changed, "PASS", self.policy, approved)[0],
             "PARSER_NOT_ACCEPTED",
         )
         changed = copy.deepcopy(base)
@@ -330,31 +271,23 @@ class ReleasePerformanceEvidenceEdgeCoverageTests(unittest.TestCase):
             "reasons": ["bad"],
         }
         self.assertEqual(
-            self.core.candidate_qualification_status(
-                changed, "PASS", self.policy, approved
-            )[0],
+            self.core.candidate_qualification_status(changed, "PASS", self.policy, approved)[0],
             "NUMERICAL_MISMATCH",
         )
         changed = copy.deepcopy(base)
         changed["cpu_to_candidate_speedup"] = 1.0
         self.assertEqual(
-            self.core.candidate_qualification_status(
-                changed, "PASS", self.policy, approved
-            )[0],
+            self.core.candidate_qualification_status(changed, "PASS", self.policy, approved)[0],
             "PERFORMANCE_NOT_IMPROVED",
         )
         changed = copy.deepcopy(base)
         changed["all_sources_real_engine"] = False
         self.assertEqual(
-            self.core.candidate_qualification_status(
-                changed, "PASS", self.policy, {}
-            )[0],
+            self.core.candidate_qualification_status(changed, "PASS", self.policy, {})[0],
             "L2_ONLY",
         )
         self.assertEqual(
-            self.core.candidate_qualification_status(
-                base, "PASS", self.policy, approved
-            )[0],
+            self.core.candidate_qualification_status(base, "PASS", self.policy, approved)[0],
             "QUALIFIED_FOR_SCOPED_L3_PERFORMANCE_EVIDENCE",
         )
 
@@ -375,9 +308,7 @@ class ReleasePerformanceEvidenceEdgeCoverageTests(unittest.TestCase):
             ),
             self.assertRaises(ValueError),
         ):
-            self.core.qualify_evidence(
-                summary, self.policy, approved, "a" * 64
-            )
+            self.core.qualify_evidence(summary, self.policy, approved, "a" * 64)
 
 
 if __name__ == "__main__":

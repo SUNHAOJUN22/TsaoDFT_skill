@@ -68,11 +68,18 @@ routes:
     triggers:
     - benchmark result
     - real benchmark evidence
+    - executable schema
+    - parser contract
+    - parser to benchmark bridge
     - numerical equivalence
     - speedup
     - strong scaling efficiency
     - artifact hash
-    - performance evidence bundle
+    - content addressed evidence bundle
+    - evidence root
+    - signed review
+    - Ed25519 attestation
+    - bundle verification
     - L3 performance qualification
     - sacct
     - nvidia-smi
@@ -88,6 +95,8 @@ routes:
     - Slurm
     - PBS
     - job script
+    - structured argv
+    - manifest approval
     - resources
     - walltime
     - srun binding
@@ -123,6 +132,8 @@ routes:
     - build fingerprint
     - GPU UUID
     - evidence bundle
+    - evidence root SHA-256
+    - independent review
     load:
     - references/provenance.md
     - references/security.md

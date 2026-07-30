@@ -21,6 +21,7 @@ class PermanentCIContractTests(unittest.TestCase):
         self.assertEqual(data["permissions"], {"contents": "read"})
         self.assertEqual(set(data["jobs"]), {"quality-gate", "supply-chain", "codeql"})
         self.assertEqual(data["jobs"]["quality-gate"]["timeout-minutes"], 25)
+        self.assertEqual(data["jobs"]["supply-chain"]["timeout-minutes"], 25)
         self.assertFalse(data["jobs"]["quality-gate"]["strategy"]["fail-fast"])
         self.assertIn("python scripts/quality_gate.py", text)
         self.assertIn("pip_audit", text)

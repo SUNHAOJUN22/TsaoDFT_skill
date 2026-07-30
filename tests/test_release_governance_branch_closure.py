@@ -183,10 +183,13 @@ class ReleaseGovernanceBranchClosureTests(unittest.TestCase):
         self.assertTrue(any("unexplained" in item for item in failures))
         self.assertTrue(any("stale" in item for item in failures))
 
-        for json_output, validation, expected in (
+        validation_cases: tuple[
+            tuple[bool, tuple[list[str], list[dict[str, Any]]], int], ...
+        ] = (
             (True, ([], []), 0),
             (False, (["bad"], []), 1),
-        ):
+        )
+        for json_output, validation, expected in validation_cases:
             argv = ["run_bandit.py", *(["--json"] if json_output else [])]
             with (
                 patch.object(sys, "argv", argv),

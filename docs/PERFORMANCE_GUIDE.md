@@ -1,164 +1,153 @@
-# Compute Efficiency Guide
+# Compute Efficiency and Performance Evidence Guide
 
-This guide separates **repository software overhead**, **scheduler throughput** and **electronic-structure kernel cost**. A faster parser cannot make an unconverged calculation acceptable, and more ranks or threads do not guarantee lower wall time.
+This guide separates **repository overhead**, **scheduler throughput** and **electronic-structure kernel cost**. Faster parsing, more ranks or a detected GPU never make an unconverged or scientifically incompatible calculation acceptable.
 
 ## Implemented repository optimizations
 
 ### Large-output parsing
 
-VASP, Quantum ESPRESSO and CP2K output adapters use read-only memory maps and bytes patterns. They retain selected last values and bounded terminal blocks rather than decoding entire outputs and building complete match lists.
-
-The Gaussian adapter remains on its established decoded-text implementation. A lower-retention prototype reduced Python allocation on a synthetic rich log, but the wall-time gain was modest and the shared-context compatibility risk was not justified for this release.
+VASP, Quantum ESPRESSO and CP2K selected-field adapters use read-only memory maps and bounded terminal evidence scans. The Gaussian adapter retains its established decoded-text implementation. Parser optimisation never changes the scientific acceptance boundary.
 
 ### Content hashing
 
-Provenance and structure files are hashed in 1 MiB chunks. The digest remains ordinary SHA-256 and is byte-identical to the former `read_bytes()` implementation.
-
-Large DFT-labelled datasets preserve the exact historical digest of `json.dumps(rows, sort_keys=True)`, but serialize the canonical list in bounded 256-row batches. Small datasets retain the faster one-shot path.
+Provenance, structures and artifacts are hashed in 1 MiB chunks with ordinary SHA-256. Large canonical datasets use bounded serialization while preserving the historical digest.
 
 ### Linear algebra
 
-The NumPy ridge baseline selects the smaller regularized system:
+The NumPy ridge baseline selects the smaller regularised system: primal for non-wide matrices, dual for wide matrices and `numpy.linalg.lstsq` for `alpha = 0`. It rejects NaN/Inf and records solver, dimensions and constant features.
 
-- **primal** for matrices that are not wider than the training set;
-- **dual** for wide feature matrices;
-- `numpy.linalg.lstsq` when `alpha = 0`.
+### Homogeneous campaigns
 
-It rejects NaN/Inf, records requested/selected solver, solve dimension, data shape and constant features. A condition-number SVD is not performed automatically because it can duplicate the dominant solve cost.
+`generate_job_array.py` writes an approval-gated Slurm array plus a streamed JSONL task table. It never submits the result. Use arrays only for independent tasks with compatible resources and method policy.
 
-### Homogeneous Slurm campaigns
+### Oversubscription and topology
 
-`generate_job_array.py` produces:
+The HPC validator checks OpenMP/BLAS thread variables, `tasks_per_node × cpus_per_task`, GPU count, ranks per GPU, oversubscription approval, backend/vendor compatibility and scheduler-owned device visibility.
 
-1. one approval-gated Slurm array script;
-2. one JSONL task table with task ID, work directory and shell-quoted engine command.
+## Structured execution boundary
 
-`max_concurrent` becomes the Slurm `%` array throttle. The task table is written incrementally. This reduces file and scheduler-record scale; it does not promise faster local YAML/script generation or faster DFT kernels.
+Formal Manifest commands are argv lists. Executable and arguments are quoted separately. Scheduler job/partition/queue fields, environment names, module/source entries, work directories and scratch paths are validated. Raw command fields, control characters, header injection and path escape fail closed.
 
-Example:
+Execution approval is not a string flag. An approved Manifest requires an Ed25519 attestation bound to:
 
-```bash
-python skills/tsao-dft-hpc-provenance/scripts/generate_job_array.py \
-  skills/tsao-dft-hpc-provenance/templates/slurm-array-campaign.yaml \
-  --script campaign.sh \
-  --tasks campaign.tasks.jsonl
-```
+- Manifest SHA-256;
+- benchmark plan ID;
+- candidate ID;
+- method fingerprint digest;
+- approver identity, scope and time window;
+- verified public-key fingerprint and signature.
 
-The generator never submits the result. Pending or rejected approval inserts a runtime `exit 64` guard.
+The generator never submits a job or executes a DFT engine.
 
-### Oversubscription guard
+## GPU, native-code and edge planning
 
-`validate_hpc_manifest.py` checks common thread variables against `resources.cpus_per_task`:
+`plan_acceleration.py` creates a deterministic compatibility and benchmark plan for Gaussian, VASP, Quantum ESPRESSO, CP2K and explicit native integrations across workstation, HPC and edge targets.
 
-- `OMP_NUM_THREADS`
-- `OPENBLAS_NUM_THREADS`
-- `MKL_NUM_THREADS`
-- `BLIS_NUM_THREADS`
-- `VECLIB_MAXIMUM_THREADS`
-- `NUMEXPR_NUM_THREADS`
-- `NUMEXPR_MAX_THREADS`
-
-When `cpus_per_node` is provided, `tasks_per_node × cpus_per_task` may not exceed it. The acceleration contract additionally checks `tasks_per_node = gpus_per_node × ranks_per_gpu`, requires explicit GPU-oversubscription approval and rejects incompatible backend/vendor pairs.
-
-### GPU, native-code and edge acceleration planner
-
-`plan_acceleration.py` converts an explicit YAML profile into a deterministic compatibility and benchmark plan. It covers Gaussian, VASP, Quantum ESPRESSO, CP2K and generic native integrations across workstation, HPC and edge targets.
-
-```bash
-python skills/tsao-dft-hpc-provenance/scripts/plan_acceleration.py \
-  skills/tsao-dft-hpc-provenance/templates/acceleration-profile.yaml \
-  --out acceleration-plan.json
-```
-
-The report separates four routes:
+It distinguishes:
 
 1. engine-native GPU builds;
 2. CPU MPI/OpenMP execution;
-3. CUDA-accelerated atomistic ML surrogates;
-4. edge orchestration or validated edge inference with remote production DFT.
+3. validated atomistic-ML surrogates;
+4. edge orchestration/inference with remote production DFT.
 
-It evaluates cuBLAS, cuSOLVER, cuSOLVERMp, cuFFT, cuFFTMp, cuSPARSE, NCCL, NVSHMEM, cuTENSOR, cuEquivariance and CUTLASS without treating any library as a universal drop-in switch. It records initial MPI-rank/GPU mapping, build fingerprint requirements, CPU/native boundaries, benchmark metrics, mixed-precision warnings and explicit non-claims.
+CUDA-X, ROCm, oneAPI, Metal and portability libraries are evaluated by workload and integration boundary, never as universal drop-in switches. Python remains on the Manifest, validation, scheduling, provenance and experiment-control plane. Only profiled numerical hotspots should move to a native or accelerator backend, with a deterministic CPU fallback.
 
-The planner is an L2 validated adapter. It does not modify or launch licensed engines, and its output is L1 planning evidence until real target-environment measurements are attached.
+## Benchmark materialisation
 
-### Bound acceleration benchmark materialization
+`materialize_acceleration_campaign.py` combines a matching base Manifest and acceleration profile into:
 
-`materialize_acceleration_campaign.py` converts a matching base Manifest and acceleration profile into reproducible, approval-gated benchmark artifacts:
+- a reviewed accelerated Manifest;
+- an FP64 CPU scientific reference;
+- declared GPU scaling candidates;
+- a benchmark matrix and plan.
 
-```bash
-python skills/tsao-dft-hpc-provenance/scripts/materialize_acceleration_campaign.py \
-  skills/tsao-dft-hpc-provenance/templates/vasp-gpu-hpc-manifest.yaml \
-  skills/tsao-dft-hpc-provenance/templates/acceleration-profile.yaml \
-  --manifest-out build/vasp-h100.yaml \
-  --matrix-out build/benchmark-matrix.csv \
-  --candidate-dir build/candidates \
-  --plan-out build/acceleration-plan.json
+Every candidate is reset to `approval: pending`. The tool writes files only.
+
+## Executable evidence contracts
+
+The evidence pipeline executes these versioned contracts:
+
+- `benchmark-result.schema.json`;
+- `performance-qualification-policy.schema.json`;
+- `engine-parser-result.schema.json`;
+- approval/review attestation Schemas.
+
+Schema validation precedes semantic validation. Unknown, malformed or incompatible formal records fail before qualification.
+
+A qualification run accepts one benchmark plan and isolates candidates by scientific identity, engine build, hardware/driver and topology. CPU reference and candidates must belong to the same plan.
+
+## Unified Parser and bridge layer
+
+Gaussian, VASP, Quantum ESPRESSO and CP2K share a fail-closed Parser result contract. Fatal or final failure takes precedence over an earlier success marker. Missing files return structured failures. Parser acceptance never means scientific acceptance.
+
+Four bridge CLIs combine Parser records with Manifest, method fingerprint, runtime, scheduler metrics, GPU inventory and artifact hashes. Missing fields remain explicit and block formal qualification.
+
+## Numerical-equivalence-first performance
+
+Effective speedup is calculated only after matching:
+
+- plan, engine/version and build;
+- input SHA-256 and method fingerprint;
+- model chemistry, corrections and convergence;
+- observable set and Parser acceptance;
+- energy, force, stress and declared-property tolerances.
+
+The Policy requires repeated successful runs and uses medians, quartiles, IQR, MAD, outlier detection, scaling efficiency, GPU-hours, CPU-core-hours, memory, SCF, I/O and optional energy-to-solution. Failed attempts are retained.
+
+## Signed review and content-addressed publication
+
+The prequalification payload is hashed and independently reviewed. The review must be an Ed25519-signed attestation binding:
+
+- reviewer identity and attestation ID;
+- Policy ID, benchmark plan and candidates;
+- evidence-root SHA-256;
+- decision, scope, issue and expiry times;
+- key fingerprint and verified signature.
+
+Formal publication occurs through a staging directory and atomic rename:
+
+```text
+evidence-<root_sha256>/
+  records.json
+  benchmark-summary.json
+  policy.json
+  review-attestation.json
+  qualification-report.json
+  evidence-root.json
 ```
 
-The default profile produces an FP64 CPU scientific reference and 1/2/4-GPU candidates. It preserves engine identity, scientific input, method fingerprint and convergence policy; calculates tasks and CPUs from `gpus_per_node`, `ranks_per_gpu` and `cpus_per_gpu`; writes one candidate Manifest per matrix row; and forces every candidate to `approval: pending`. It never calls `sbatch`, `qsub`, `srun` or the DFT engine.
+`evidence-root.json` covers every formal file by digest and size. Directory/root mismatch, missing/extra file, digest/size mismatch, collision and partial publication fail closed. `verify_evidence_bundle.py` performs independent verification.
 
-For Slurm, `launcher: auto` generates a reviewed `srun` step with total ranks, ranks per node, CPUs per task, bad-exit propagation and declared CPU/GPU binding. One-rank-per-GPU layouts request one GPU per task. The script leaves device visibility to the scheduler rather than exporting a fixed `CUDA_VISIBLE_DEVICES`.
-
-When runtime capture is enabled, the generated script records profile/build/benchmark IDs, scheduler job/node/local-rank fields, visible-device variables and NVIDIA GPU name, UUID, PCI bus, driver and memory where `nvidia-smi` is available. These fields are provenance, not a performance result.
-
-## Real benchmark evidence and scoped qualification
-
-The acceleration campaign is only a plan until real outputs are supplied. `validate_benchmark_result.py`, `import_benchmark_evidence.py`, `compare_acceleration_results.py` and `qualify_performance_evidence.py` implement a deterministic evidence pipeline without launching an engine.
-
-The pipeline verifies engine/build/site/hardware identity, input and method hashes, parser acceptance and artifact SHA-256. It requires numerical equivalence before speedup, uses medians across the policy repeat count, retains failed runs and writes a five-file immutable evidence bundle. Optional metric adapters parse supplied scheduler/device/profiler summaries and return `NOT_AVAILABLE` when absent.
-
-Qualification states include `REFERENCE_MISSING`, `INSUFFICIENT_REPEATS`, `PARSER_NOT_ACCEPTED`, `NUMERICAL_MISMATCH`, `ARTIFACT_HASH_MISMATCH`, `PERFORMANCE_NOT_IMPROVED`, `L2_ONLY` and `QUALIFIED_FOR_SCOPED_L3_PERFORMANCE_EVIDENCE`. The final state is eligibility for an explicit scoped review, not automatic public L3 promotion.
-
-## Reproducible microbenchmark
+## Commands
 
 ```bash
-python scripts/benchmark_performance.py \
-  --baseline-commit 27745b74c4bc1521a47e6d74c4795cce477460bb \
-  --out performance-results.json
+python skills/tsao-dft-hpc-provenance/scripts/validate_benchmark_result.py \
+  results/*.yaml \
+  --schema skills/tsao-dft-hpc-provenance/templates/benchmark-result.schema.json \
+  --artifact-root run-artifacts
+
+python skills/tsao-dft-hpc-provenance/scripts/qualify_performance_evidence.py \
+  results/* \
+  --result-schema skills/tsao-dft-hpc-provenance/templates/benchmark-result.schema.json \
+  --policy skills/tsao-dft-hpc-provenance/templates/performance-qualification-policy.yaml \
+  --policy-schema skills/tsao-dft-hpc-provenance/templates/performance-qualification-policy.schema.json \
+  --artifact-root run-artifacts \
+  --review signed-review-attestation.json \
+  --review-public-key reviewer-ed25519-public.pem \
+  --out-parent build/performance-evidence
+
+python skills/tsao-dft-hpc-provenance/scripts/verify_evidence_bundle.py \
+  build/performance-evidence/evidence-<root_sha256>
 ```
 
-Use `--quick` for a smaller smoke run. The script uses synthetic fixtures, medians after warm-up and `tracemalloc`; it never launches a DFT engine. See [`PERFORMANCE_AUDIT.md`](PERFORMANCE_AUDIT.md) for the measured revision results and rejected candidates.
+## Qualification boundary
 
-## Target-environment guidance
+`QUALIFIED_FOR_SCOPED_L3_PERFORMANCE_EVIDENCE` means a bounded evidence package passed eligibility rules. It does not change the public capability level.
 
-### Keep Python on the control plane
+Public HPC L3 requires generic execution evidence plus the complete acceleration contract: exact build/hardware/site identity, repeated real-engine runs, numerical/Parser/performance passes, artifact/bundle/root SHA-256 values, signed review identity/scope/signature verification, independent approval and explicit capability registration.
 
-Python remains appropriate for schemas, validation, provenance, scheduling, campaign logic, result parsing and experiment control. Rewriting these paths in C++ usually shifts maintenance cost without accelerating an external SCF kernel.
-
-Move code only after profiling identifies a numerical hotspot. Use vectorized NumPy first, then a measured GPU array/framework backend or a compiled C++/Fortran/CUDA/OpenACC kernel. Bind native code through a narrow C ABI, pybind11/nanobind interface or versioned file/JSON subprocess contract, and retain a deterministic CPU fallback.
-
-### Avoid nested parallelism
-
-Treat the product of scheduler tasks, OpenMP threads and BLAS/FFT internal threads as an allocation contract. Do not add a Python process pool around an already MPI/BLAS-parallel engine unless the site configuration explicitly supports that nesting.
-
-### Use arrays for independent homogeneous calculations
-
-Use a Slurm array when tasks share resources, software environment and method policy but differ by input/workdir/output. Use a workflow DAG when tasks have dependencies or materially different resources.
-
-### Reuse only compatible state
-
-Checkpoint, charge-density and wavefunction reuse can save major work, but compatibility must include engine/version, method fingerprint, geometry policy, basis/pseudopotential and relevant parallel/restart semantics. A changed scientific model creates a new lineage.
-
-### Prevent duplicate calculations
-
-ASE database `reserve()` and AiiDA content-based caching illustrate safe coordination patterns. Any future TsaoDFT cache must include full content and method/environment provenance; no implicit cache is currently enabled.
-
-### Tune engines empirically
-
-- VASP: use the supported OpenACC GPU build where applicable; start from one MPI rank per GPU and `NCORE=1`, then benchmark `KPAR`, `NSIM`, ranks and OpenMP threads for the actual model.
-- Quantum ESPRESSO: use a versioned GPU-enabled build and benchmark pools, images, task groups, diagonalization, MPI ranks, OpenMP threads and restart layout.
-- CP2K: use the target-specific accelerator build and benchmark MPI/OpenMP balance, DBCSR/GRID/DBM/PW paths, ELPA/SPLA/COSMA choices and wavefunction restart behavior.
-- Gaussian: use only vendor-supported accelerator features; never inject or redistribute CUDA libraries into a licensed binary.
-- Stage I/O-heavy work on approved scratch and record high-water memory, wall time, CPU/GPU efficiency, host/device memory and output volume.
-
-### Treat CUDA-X by workload, not by brand name
-
-- cuEquivariance belongs to equivariant atomistic ML training or inference, not a Kohn-Sham SCF loop.
-- cuTENSOR belongs to measured tensor contractions or explicit native integrations, not an arbitrary packaged DFT executable.
-- cuSOLVERMp and cuFFTMp require explicit distributed designs and one-process-per-GPU style mappings appropriate to their APIs.
-- NCCL and NVSHMEM help only when the selected engine, MPI stack and communication path support them.
-- CUTLASS is a bespoke-kernel tool and should follow profiling, not precede it.
+The current public state remains `L2_VALIDATED_ADAPTER`.
 
 ## Non-claims
 
-The repository does not claim universal speedups for Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, Cantera or any HPC installation. Only measurements from the legal target environment can establish an L3 performance result.
+The repository does not claim universal speedups or legal execution coverage for Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD, Cantera or any HPC installation. Only measurements from a legal target environment can establish a scoped L3 result.

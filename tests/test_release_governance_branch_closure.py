@@ -127,17 +127,23 @@ class ReleaseGovernanceBranchClosureTests(unittest.TestCase):
             self.assertEqual(findings, [{"test_id": "B1"}])
             self.assertEqual(output, "outerr")
 
-            with patch.object(
-                self.bandit.subprocess,
-                "run",
-                side_effect=completed_with({"results": {}}, create_report=True),
-            ), self.assertRaises(RuntimeError):
+            with (
+                patch.object(
+                    self.bandit.subprocess,
+                    "run",
+                    side_effect=completed_with({"results": {}}, create_report=True),
+                ),
+                self.assertRaises(RuntimeError),
+            ):
                 self.bandit.run_bandit()
-            with patch.object(
-                self.bandit.subprocess,
-                "run",
-                side_effect=completed_with({}, create_report=False),
-            ), self.assertRaises(RuntimeError):
+            with (
+                patch.object(
+                    self.bandit.subprocess,
+                    "run",
+                    side_effect=completed_with({}, create_report=False),
+                ),
+                self.assertRaises(RuntimeError),
+            ):
                 self.bandit.run_bandit()
 
         findings = [
@@ -181,7 +187,7 @@ class ReleaseGovernanceBranchClosureTests(unittest.TestCase):
             (True, ([], []), 0),
             (False, (["bad"], []), 1),
         ):
-            argv = ["run_bandit.py", *( ["--json"] if json_output else [])]
+            argv = ["run_bandit.py", *(["--json"] if json_output else [])]
             with (
                 patch.object(sys, "argv", argv),
                 patch.object(self.bandit, "validate", return_value=validation),
@@ -206,7 +212,7 @@ class ReleaseGovernanceBranchClosureTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             target = root / "target.md"
-            target.write_text("# Heading\n# Heading\n<a id=\"explicit\"></a>\n", encoding="utf-8")
+            target.write_text('# Heading\n# Heading\n<a id="explicit"></a>\n', encoding="utf-8")
             self.assertEqual(
                 self.links.markdown_anchors(target),
                 {"heading", "heading-1", "explicit"},
@@ -243,7 +249,7 @@ class ReleaseGovernanceBranchClosureTests(unittest.TestCase):
             (True, ([], [{"source": "README.md", "target": "x"}], 1), 0),
             (False, (["bad"], [], 0), 1),
         ):
-            argv = ["validate_readme_links.py", *( ["--json"] if json_output else [])]
+            argv = ["validate_readme_links.py", *(["--json"] if json_output else [])]
             with (
                 patch.object(sys, "argv", argv),
                 patch.object(self.links, "validate", return_value=result),
@@ -296,10 +302,13 @@ class ReleaseGovernanceBranchClosureTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             manifest_path, manifest = self.write_ai_fixture(root)
-            with patch.object(self.ai, "ROOT", root), patch.object(
-                self.ai,
-                "README_NAMES",
-                ("README.md", "README_EN.md"),
+            with (
+                patch.object(self.ai, "ROOT", root),
+                patch.object(
+                    self.ai,
+                    "README_NAMES",
+                    ("README.md", "README_EN.md"),
+                ),
             ):
                 self.assertEqual(self.ai.validate(manifest_path), [])
 
@@ -384,7 +393,13 @@ class ReleaseGovernanceBranchClosureTests(unittest.TestCase):
                 "L3_EXECUTION_TESTED",
             ],
             "l3_required_evidence": ["engine", "version", "site", "run_id", "artifact_sha256"],
-            "forbidden_claim_phrases": ["forbidden-one", "forbidden-two", "forbidden-three", "forbidden-four", "forbidden-five"],
+            "forbidden_claim_phrases": [
+                "forbidden-one",
+                "forbidden-two",
+                "forbidden-three",
+                "forbidden-four",
+                "forbidden-five",
+            ],
         }
         capability = {
             "release": "1.0",
@@ -490,7 +505,7 @@ class ReleaseGovernanceBranchClosureTests(unittest.TestCase):
             self.assertTrue(self.claims.validate(root))
 
         for json_output, failures, expected in ((True, [], 0), (False, ["bad"], 1)):
-            argv = ["validate_capability_claims.py", *( ["--json"] if json_output else [])]
+            argv = ["validate_capability_claims.py", *(["--json"] if json_output else [])]
             with (
                 patch.object(sys, "argv", argv),
                 patch.object(self.claims, "validate", return_value=failures),

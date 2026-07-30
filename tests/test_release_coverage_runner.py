@@ -302,6 +302,8 @@ class ReleaseCoverageRunnerTests(unittest.TestCase):
                 [
                     "run_coverage.py",
                     "--json",
+                    "--report",
+                    str(Path(tempfile.gettempdir()) / "core-fail.json"),
                     "--total-statement",
                     "0",
                     "--total-branch",

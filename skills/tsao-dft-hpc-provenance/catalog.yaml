@@ -26,6 +26,7 @@ engine_ids:
 - E032
 applies_to:
 - Gaussian/periodic DFT HPC
+- structured-argv Slurm/PBS/local execution contracts
 - NVIDIA CUDA-X and OpenACC acceleration planning
 - AMD ROCm/HIP acceleration planning
 - Intel oneAPI/SYCL and Apple Metal acceleration planning
@@ -33,23 +34,32 @@ applies_to:
 - Python Array API and DLPack interoperability
 - edge orchestration and validated surrogate inference
 - benchmark candidate materialization
+- executable benchmark and Parser Schemas
+- Gaussian/VASP/QE/CP2K unified Parser state contracts
+- deterministic Parser-to-benchmark evidence bridges
 - real benchmark evidence import and validation
 - numerical-equivalence-first performance comparison
-- immutable performance evidence bundles
-- scoped L3 performance qualification
+- Ed25519-signed independent review
+- atomic content-addressed performance evidence bundles
+- evidence-root verification
+- scoped L3 performance eligibility
 - batch campaigns
 - provenance and restart
 - scientific CI
 not_for:
 - silent job submission
+- raw shell commands from formal manifests
+- unsigned approval or review
 - scientific method selection
 - redistribution or patching of licensed software
 - unmeasured universal speedup claims
 - automatic public L3 capability promotion
 version: 0.4.0-alpha.1
-implementation_status: implemented_generation_validation
+implementation_status: implemented_generation_validation_and_signed_evidence_qualification
 support_level: L2_VALIDATED_ADAPTER
 external_requirements:
-- real accelerator, engine build and site required for L3
-- immutable real-engine artifacts and independent review required for scoped L3 performance evidence
+- real accelerator, versioned engine build and site required for L3
+- immutable content-addressed real-engine artifacts required for scoped L3 evidence
+- Ed25519-signed independent review bound to policy, plan, candidates and evidence root
+- explicit public capability registration after scoped qualification
 orchestrated_by: tsao-dft-suite

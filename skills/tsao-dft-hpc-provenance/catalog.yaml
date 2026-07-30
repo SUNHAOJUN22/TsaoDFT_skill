@@ -26,6 +26,8 @@ engine_ids:
 - E032
 applies_to:
 - Gaussian/periodic DFT HPC
+- non-invoking hardware and environment inventory
+- science-identity-locked automatic-tuning candidate generation
 - structured-argv Slurm/PBS/local execution contracts
 - NVIDIA CUDA-X and OpenACC acceleration planning
 - AMD ROCm/HIP acceleration planning
@@ -48,8 +50,10 @@ applies_to:
 - scientific CI
 not_for:
 - silent job submission
+- external engine invocation by inventory or automatic-tuning tools
 - raw shell commands from formal manifests
 - unsigned approval or review
+- secret environment value collection
 - scientific method selection
 - redistribution or patching of licensed software
 - unmeasured universal speedup claims

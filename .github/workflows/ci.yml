@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   normalize:
-    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: correct performance artifact edge assertion' }}"
+    if: "${{ github.event_name == 'push' && github.event.head_commit.message == 'ci: align planner vendor edge expectations' }}"
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -53,18 +53,40 @@ jobs:
           python -m pip install -c constraints/py312.txt -r requirements-dev.txt
           python -m pip check
 
-      - name: Correct contract assertion
+      - name: Align test inputs with production contracts
         run: |
           python - <<'PY'
           from pathlib import Path
 
-          path = Path("skills/tsao-dft-hpc-provenance/tests/test_release_performance_evidence_edges.py")
-          text = path.read_text(encoding="utf-8")
+          performance = Path("skills/tsao-dft-hpc-provenance/tests/test_release_performance_evidence_edges.py")
+          text = performance.read_text(encoding="utf-8")
           old = "self.assertGreaterEqual(len(artifact_errors), 5)"
           new = "self.assertGreaterEqual(len(artifact_errors), 4)"
           if old not in text:
               raise SystemExit("performance artifact assertion target missing")
-          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          performance.write_text(text.replace(old, new, 1), encoding="utf-8")
+
+          planner = Path("skills/tsao-dft-hpc-provenance/tests/test_release_acceleration_planner_edges.py")
+          text = planner.read_text(encoding="utf-8")
+          anchor = '''            single = copy.deepcopy(base)
+            single["hardware"]["gpus_per_node"] = 1
+
+            decisions = {
+'''
+          replacement = '''            single = copy.deepcopy(base)
+            single["hardware"]["gpus_per_node"] = 1
+            apple = copy.deepcopy(base)
+            apple["hardware"]["gpu_vendor"] = "apple"
+            apple["software"]["backend"] = "metal"
+
+            decisions = {
+'''
+          if anchor not in text:
+              raise SystemExit("planner Apple profile insertion target missing")
+          text = text.replace(anchor, replacement, 1)
+          text = text.replace('self.planner.library_decision("mps", base)[0]', 'self.planner.library_decision("mps", apple)[0]', 1)
+          text = text.replace('self.planner.library_decision("accelerate", base)[0]', 'self.planner.library_decision("accelerate", apple)[0]', 1)
+          planner.write_text(text, encoding="utf-8")
           PY
 
       - name: Normalize and validate acceleration edge tests

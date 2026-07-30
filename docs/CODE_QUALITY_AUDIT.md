@@ -1,125 +1,116 @@
 # Code Quality and Test Audit
 
-Date: 2026-07-28  
+Date: 2026-07-30  
 Branch: `main`  
-Validated source commit before documentation sync: `8cfcb7f965d591d9340805977e4fb49703811d96`  
-GitHub Actions run: `30384282686`
+Code qualification source commit before documentation closure: `3f43bb8266dd3e218b3df6f0e48d7f4861113908`  
+Code qualification GitHub Actions run: `30557385623`
 
 ## Evidence rule
 
-A passing parser, fixture, static analysis, scheduler test or acceleration campaign materializer is engineering evidence, not proof of scientific correctness, legal real-engine execution or measured speedup. Unsupported or account-level facts remain `UNKNOWN` / `NOT VERIFIED`.
+A passing parser, fixture, static-analysis stage, scheduler test or acceleration materializer is engineering evidence. It is not proof of scientific correctness, legal real-engine execution or measured speedup. Unavailable account-level and external-site facts remain `NOT VERIFIED`.
 
-## Scope reviewed
+## Audited scope
 
-- every permanent GitHub Actions job, permission, trigger and failure-log path;
-- `scripts/quality_gate.py`, `scripts/run_all_tests.py` and all root validators;
-- all root tests and all eight per-Skill test suites;
-- installer copy, symlink, force, backup and uninstall paths;
-- subprocess, deletion, path, XML/YAML, random seed, timeout and serialization behavior;
-- runtime/development ranges and Python 3.10/3.12/3.13 exact constraints;
-- capability, support-level, Agent-eval, prompt-injection and scientific-claim contracts;
-- README, visual, asset, link, governance, packaging and supply-chain evidence;
-- GPU/CUDA-X/native-code/edge planning decisions, deterministic output and invalid-profile handling;
-- acceleration Manifest topology, Slurm binding, runtime GPU identity and benchmark-candidate materialization.
+- the single permanent GitHub Actions workflow and all 21 quality stages;
+- root validators, installers, coverage/type/security wrappers and all eight Skills;
+- structured HPC execution generation and Manifest approval binding;
+- executable benchmark, Policy, Parser and attestation Schemas;
+- signed review, content-addressed evidence and qualification state handling;
+- four engine Parser state machines and Parser-to-benchmark bridges;
+- installer rollback, ownership and concurrency behavior;
+- capability/public-claim boundaries and L2/L3 separation;
+- 325 tests across nine isolated suites.
 
-## Closed findings
+## Closed P0/P1 findings
 
-### Dependency and resolver drift
+### Shell and scheduler trust boundary
 
-`requirements.txt`, `requirements-dev.txt`, `pyproject.toml`, `VERSION`, Python floor and Ruff target are cross-checked offline. Exact reviewed constraints lock every CI environment and are validated for provenance, direct dependency coverage, uniqueness and exact pins.
+Manifest commands now use structured argv. Executables and arguments are quoted individually. Job identifiers, scheduler fields, environment names, module/source fields and working paths are validated. Raw command fields and unsafe shell forms are rejected on the formal evidence path.
 
-### Quality-stage hangs and false JSON
+### Approval and independent review
 
-Every quality stage has an explicit timeout; the test stage has a larger bound. Timeout returns code 124 with a deterministic record. `--json` captures child output and emits one machine-readable document.
+Execution approval is bound to the Manifest SHA-256, benchmark plan, candidate and method fingerprint. Review attestations use Ed25519 verification with reviewer identity, scope, issue/expiry time, key fingerprint and evidence binding. A plain `status: approved` field is not sufficient.
 
-### CI false failures
+### Atomic content-addressed evidence
 
-Native GitHub Actions jobs remain the blocking authority. Compatibility statuses retry and use `continue-on-error`. Failure logs upload only for a real gate failure. Each matrix job installs against its matching constraint and runs `pip check`.
+Formal evidence is written to staging, fully verified and atomically renamed to `evidence-<root_sha256>`. The root Manifest covers records, summary, Policy, review, qualification and file digests. Missing, altered or extra files, wrong directory identity, digest/size mismatch and failed publication all fail closed.
 
-### Static quality and security
+### Executable Schema and Policy
 
-- Ruff lint and formatter are blocking;
-- mypy covers 18 isolated module spaces;
-- Bandit scans production sources against exact reviewed allowances;
-- all Python files compile during strict repository audit;
-- `defusedxml` replaces unsafe SVG/XML parsers;
-- high-confidence secret patterns and secret-bearing filenames are rejected;
-- all reusable Actions are pinned to complete commit SHAs.
+Draft 2020-12 validation runs before semantic validation. Integer/date/enumeration/unknown-field rules are enforced. The performance Policy is executable rather than descriptive: repeats, real-source, artifact, numerical-equivalence, performance, review and scaling requirements are consumed by code.
 
-### Installer safety
+### Benchmark isolation
 
-The installer proves ownership through records and content hashes before replacement or uninstall. It refuses foreign directories, root/home targets, changed symlinks and modified copies without an explicit backup/removal decision. Copy installation is staged and atomically replaced.
+A formal comparison accepts one benchmark plan. Candidate aggregation is separated by scientific, build, hardware and topology identity. CPU references must belong to the same plan. Invalid records cannot produce a qualified status.
 
-### Agent and scientific integrity
+### Unified engine Parser contract
 
-Deterministic policy evals cover routing, ambiguity, multi-Skill conflicts, profile isolation, prompt injection, unauthorized tools, destructive actions, support escalation, fabrication, provenance loss, recovery, idempotency and version stability. Live-model execution remains `NOT_VERIFIED`.
+Gaussian, VASP, Quantum ESPRESSO and CP2K emit a versioned common contract. Fatal markers and final-stage failure take precedence over earlier success markers. Missing outputs produce structured failures. Scientific acceptance remains pending and separate from Parser acceptance.
 
-The capability validator prevents public unsupported claims and requires immutable engine/version/site/run/artifact evidence for any L3 declaration. GPU allocation, CUDA-X selection, generated plans, bound job scripts and pending benchmark candidates remain below L3 until real engine/build/hardware measurements exist.
+### Parser-to-evidence bridge
 
-### Acceleration planner and execution-chain quality
+Deterministic bridges combine Parser result, Manifest, method fingerprint, runtime provenance, scheduler metrics, GPU inventory and artifact hashes. Missing data is recorded in `missing_fields`; it is never replaced with fabricated values.
 
-The acceleration layer now:
+### Installer transaction
 
-- validates engine, execution stage, target class, GPU vendor/topology, precision policy and requested acceleration libraries;
-- distinguishes engine-native GPU builds, CPU MPI/OpenMP, atomistic-ML surrogate and edge-orchestrated routes;
-- records explicit `recommended`, `benchmark`, `engine-build`, `not-drop-in` and `not-applicable` decisions;
-- validates backend/vendor compatibility, `ranks_per_gpu`, GPU-oversubscription approval and `tasks_per_node` consistency;
-- requires acceleration profile, native build-fingerprint and benchmark-plan identifiers;
-- generates Slurm `srun` CPU/GPU binding while leaving visible-device assignment to the scheduler;
-- captures rank identity, visible-device mapping, GPU UUID, PCI bus, driver and device memory when NVIDIA tooling is available;
-- materializes an FP64 CPU reference and declared GPU scaling candidates;
-- resets every generated candidate to `approval: pending` and never submits a job;
-- keeps Python on the control plane and native code behind tested, narrow interfaces with a CPU fallback;
-- produces deterministic reports and files from the same reviewed inputs.
+Destination, backup and ownership marker are treated as a recoverable transaction. Marker failure restores the previous destination. Concurrent installation attempts are rejected by a lock.
 
-Twenty-one acceleration-planning/bound-execution tests and 29 real-evidence tests cover the full planning-to-qualification chain. The repository baseline is 177 tests across nine non-empty suites.
+## Static quality and security
 
-### Real benchmark evidence and qualification quality
+- Ruff lint and formatting: blocking;
+- ordinary mypy: 18 isolated targets;
+- strict mypy: `shell_contract.py`, `trust_boundary.py`, `engine_parser_contract.py`, `benchmark_bridge.py`;
+- Bandit: production sources with exact reviewed allowances;
+- CodeQL Python `security-extended`: hosted blocking job;
+- secret, ignore-marker, XML/YAML, governance and repository-shape validators: blocking;
+- runtime, development and locked-environment `pip-audit`: PASS;
+- locked CycloneDX JSON SBOM: generated and uploaded.
 
-The evidence layer validates multi-format imports, real artifact hashes, run identity, parser acceptance, build/hardware consistency and numerical equivalence before speedup. Formal summaries use robust repeated-run statistics, preserve failures and ignore user-supplied L3 labels. Qualification output is scoped evidence eligibility only; public capability state remains unchanged until separate review and registration.
+## Coverage result
 
-## Final quality gate
+- entire repository statement coverage: **92.48%**;
+- entire repository branch coverage: **80.18%**;
+- six trust/execution core modules: **100% statement**;
+- core branch coverage: **98.53%–100%**.
+
+The coverage runner measures subprocess-launched tests and CLIs, combines all nine suites and publishes a machine-readable artifact for every Python matrix job.
+
+## Test result
+
+- suites: 9;
+- tests: 325;
+- failed suites: 0.
+
+Distribution: root 99; suite 4; researcher 32; structure 5; periodic 11; ML 16; HPC 148; kinetics 5; catalysis 5.
+
+## Permanent quality sequence
 
 ```text
-versioned demo assets
-→ dependency and version contract
-→ cross-version exact CI constraints
-→ repository-only packaging model
-→ DFT catalog
-→ Agent eval contracts
-→ governance and workflow policy
-→ capability and scientific-claim boundaries
-→ high-confidence secret patterns
-→ explained ignore markers
-→ governed AI cover
-→ bilingual README visuals
-→ offline local links
-→ Ruff lint
-→ Ruff formatting
-→ isolated mypy type checks
-→ Bandit production audit
+assets and contracts
+→ governance, capability and security validators
+→ Ruff lint and format
+→ isolated mypy
+→ trust-boundary strict mypy
+→ statement/branch coverage
+→ Bandit
 → strict repository audit
-→ all non-empty test suites
+→ all unittest suites
 ```
 
-## Acceptance result
+## Capability boundary
 
-- Python 3.10 hosted gate: PASS;
-- Python 3.12 hosted gate: PASS;
-- Python 3.13 hosted gate: PASS;
-- Ruff lint and formatting: PASS;
-- isolated mypy checks across 18 targets: PASS;
-- Bandit production audit: PASS;
-- strict repository audit: PASS;
-- CodeQL `security-extended`: PASS;
-- runtime/development/locked `pip-audit`: PASS;
-- locked CycloneDX SBOM: PASS;
-- tests: 177 across nine non-empty suites, zero failed suites;
-- one permanent workflow: `.github/workflows/ci.yml`;
-- no branch or pull request created.
+The root validator now checks both:
 
-## Remaining limits
+1. generic L3 execution evidence; and
+2. the complete signed acceleration L3 contract for repositories declaring HPC acceleration capability.
 
-- GitHub account-level branch protection, signed commits, secret scanning, push protection, Dependabot alerts and private reporting are `NOT VERIFIED` through the available App.
-- Real-engine/site/GPU execution and live-model Agent eval traces remain external and must not be inferred from repository tests.
-- The main-only policy is a deliberate review-separation exception.
+Future HPC L3 registration requires build/hardware/site identity, repeated real-engine runs, artifact and evidence-root SHA-256, CPU reference, numerical/parser/performance passes, review attestation identity/scope/signature verification and independent approval. Non-L3 capabilities may not carry execution evidence.
+
+The current public state remains `L2_VALIDATED_ADAPTER`.
+
+## Remaining external limits
+
+- legal real-engine/site/GPU execution and measured performance remain external;
+- live-model Agent traces remain `NOT VERIFIED`;
+- branch protection, signed commits, account secret scanning/push protection, Dependabot alert state and private reporting remain `NOT VERIFIED` through the available App;
+- the user-required main-only policy remains a deliberate review-separation exception.

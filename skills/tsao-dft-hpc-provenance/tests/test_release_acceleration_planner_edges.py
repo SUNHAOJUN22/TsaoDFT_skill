@@ -101,6 +101,9 @@ class ReleaseAccelerationPlannerEdgeCoverageTests(unittest.TestCase):
         custom["software"]["engine_gpu_build"] = False
         single = copy.deepcopy(base)
         single["hardware"]["gpus_per_node"] = 1
+        apple = copy.deepcopy(base)
+        apple["hardware"]["gpu_vendor"] = "apple"
+        apple["software"]["backend"] = "metal"
 
         decisions = {
             "vendor": self.planner.library_decision("rocblas", base)[0],
@@ -111,7 +114,7 @@ class ReleaseAccelerationPlannerEdgeCoverageTests(unittest.TestCase):
             "equivariant": self.planner.library_decision("cuequivariance", ml)[0],
             "edge-inference": self.planner.library_decision("tensorrt", edge_ml)[0],
             "mps-no": self.planner.library_decision("mps", base)[0],
-            "accelerate": self.planner.library_decision("accelerate", base)[0],
+            "accelerate": self.planner.library_decision("accelerate", apple)[0],
             "tensor-no": self.planner.library_decision("cutensor", base)[0],
             "tensor-yes": self.planner.library_decision("cutensor", ml)[0],
             "native-no": self.planner.library_decision("cusolvermp", base)[0],

@@ -259,7 +259,7 @@ class ReleaseGovernanceBranchClosureTests(unittest.TestCase):
                 self.assertEqual(self.links.main(), expected)
 
     def write_ai_fixture(self, root: Path) -> tuple[Path, dict[str, Any]]:
-        (root / "assets" / "ai" / "hero").mkdir(parents=True)
+        (root / "assets" / "ai" / "hero").mkdir(parents=True, exist_ok=True)
         (root / "assets" / "ai").mkdir(parents=True, exist_ok=True)
         (root / "VERSION").write_text("1.0\n", encoding="utf-8")
         cover = root / "assets" / "ai" / "hero" / "cover.svg"

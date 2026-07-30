@@ -34,6 +34,7 @@ class PermanentCIContractTests(unittest.TestCase):
         )
         self.assertFalse(data["jobs"]["quality-gate"]["strategy"]["fail-fast"])
         self.assertIn("python scripts/quality_gate.py", text)
+        self.assertIn("coverage-report.json", text)
         self.assertIn("pip_audit", text)
         self.assertIn("cyclonedx-json", text)
         self.assertIn("security-extended", text)

@@ -128,7 +128,7 @@ class ReleaseAccelerationPlannerEdgeCoverageTests(unittest.TestCase):
         self.assertEqual(decisions["kokkos-yes"], "benchmark")
         self.assertEqual(decisions["equivariant"], "recommended")
         self.assertEqual(decisions["edge-inference"], "recommended")
-        self.assertEqual(decisions["mps-no"], "not-drop-in")
+        self.assertEqual(decisions["mps-no"], "not-applicable")
         self.assertEqual(decisions["accelerate"], "recommended-host")
         self.assertEqual(decisions["tensor-no"], "not-drop-in")
         self.assertEqual(decisions["tensor-yes"], "benchmark")

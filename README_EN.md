@@ -12,8 +12,9 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-177%20passing-16A34A" alt="177 tests passing">
-  <img src="https://img.shields.io/badge/support-L0%E2%80%93L3-6D5DFB" alt="Support levels L0 to L3">
+  <img src="https://img.shields.io/badge/tests-325%20passing-16A34A" alt="325 tests passing">
+  <img src="https://img.shields.io/badge/coverage-92.48%25%20stmt%20%7C%2080.18%25%20branch-16A34A" alt="92.48 percent statement and 80.18 percent branch coverage">
+  <img src="https://img.shields.io/badge/public%20support-L2_VALIDATED_ADAPTER-6D5DFB" alt="Public support L2 validated adapter">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
 
@@ -68,7 +69,7 @@ Every state transition must answer:
 | [`tsao-periodic-dft-materials`](skills/tsao-periodic-dft-materials/) | VASP, Quantum ESPRESSO and CP2K, including surfaces/defects, bands/DOS, NEB and convergence | Does not distribute POTCAR, pseudopotentials or restricted databases; incompatible energies cannot be mixed |
 | [`tsao-dft-ml-active-learning`](skills/tsao-dft-ml-active-learning/) | DFT-label audit, leakage prevention, applicability domain, uncertainty, active learning and inverse design | High R², SHAP or acquisition score does not prove mechanism, causality or synthesizability |
 | [`tsao-dft-kinetics-multiscale`](skills/tsao-dft-kinetics-multiscale/) | Eyring/TST, reaction networks, detailed balance, uncertainty, microkinetics and reactor handoff | Consumes only data with explicit and accepted standard/reference states |
-| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | Local/Slurm/PBS execution, GPU planning/binding, candidate generation, real-result import, numerical equivalence, evidence bundles and scoped L3 qualification | GPU allocation, a fastest single run, a self-reported L3 label or scheduler completion proves neither speedup nor scientific acceptance |
+| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | Local/Slurm/PBS execution, structured argv, GPU planning and binding, hardware inventory, automatic-tuning candidates, unified parsers, real-result import, numerical equivalence, signed review and content-addressed evidence | GPU allocation, a fastest run, a self-reported L3 label, scheduler completion or synthetic fixtures prove neither real execution nor measured acceleration |
 | [`tsao-dft-catalysis-profile`](skills/tsao-dft-catalysis-profile/) | DCS/MCSOMe/DMOS, Si–O/Si–C, Ti/TEA, Ziegler–Natta and polyolefin catalysis | Scoped profile; never auto-applied to unrelated catalysis |
 
 ## Scientific figures: conceptual identity and deterministic evidence stay separate
@@ -97,7 +98,7 @@ The visual system follows UI/UX Pro Max product classification, Pattern, Style, 
 | `L2_VALIDATED_ADAPTER` | Deterministic preflight/parser/validator plus repository tests | May report adapter validation, not real-engine regression |
 | `L3_EXECUTION_TESTED` | L2 plus immutable evidence from the real engine, version and site | May report real execution only within the documented scope |
 
-Gaussian, VASP, Quantum ESPRESSO and CP2K currently expose selected-field **L2 adapters**. TsaoDFT does not claim L3 without legal real-engine regression evidence. The machine-readable claim boundary is in [`docs/SCIENTIFIC_CLAIM_POLICY.yaml`](docs/SCIENTIFIC_CLAIM_POLICY.yaml).
+Gaussian, VASP, Quantum ESPRESSO and CP2K currently expose selected-field **L2 adapters**. The public capability remains `L2_VALIDATED_ADAPTER`. `QUALIFIED_FOR_SCOPED_L3_PERFORMANCE_EVIDENCE` means only that a particular bundle is eligible for scoped L3 review; it never changes the public capability registry automatically. The machine-readable boundary is in [`docs/SCIENTIFIC_CLAIM_POLICY.yaml`](docs/SCIENTIFIC_CLAIM_POLICY.yaml).
 
 ## Quick start
 
@@ -127,11 +128,11 @@ python scripts/install.py \
   --skill all
 ```
 
-Production execution still requires legally configured engines, licences, pseudopotentials or basis libraries, a site guide and user authorisation.
+The installer uses ownership markers, atomic staging/replacement, failure rollback and a concurrent-install lock. Production execution still requires legally configured engines, licences, pseudopotentials or basis libraries, a site guide and user authorisation.
 
 ## GPU, parallel and edge acceleration entry point
 
-First generate the compatibility and library-applicability plan:
+First perform non-invoking hardware/software inventory. Missing tools must report `NOT_AVAILABLE`; inventory must not fabricate zero values or expose environment-variable contents. Then generate a compatibility and library-applicability plan:
 
 ```bash
 python skills/tsao-dft-hpc-provenance/scripts/plan_acceleration.py \
@@ -139,7 +140,7 @@ python skills/tsao-dft-hpc-provenance/scripts/plan_acceleration.py \
   --out acceleration-plan.json
 ```
 
-Then materialize a matching VASP base Manifest and acceleration Profile into approval-gated benchmark candidates:
+Materialize a matching VASP base Manifest and acceleration Profile into approval-gated benchmark candidates:
 
 ```bash
 python skills/tsao-dft-hpc-provenance/scripts/materialize_acceleration_campaign.py \
@@ -151,7 +152,9 @@ python skills/tsao-dft-hpc-provenance/scripts/materialize_acceleration_campaign.
   --plan-out build/acceleration-plan.json
 ```
 
-The materializer creates an FP64 CPU scientific reference, 1/2/4-GPU candidates, a CSV benchmark matrix and one YAML Manifest per candidate. Every candidate is forced to `approval: pending`; the tool writes files and never submits a job. Generated Slurm steps may use explicit `srun` CPU/GPU binding and record rank, visible devices, GPU UUID, PCI bus, driver, build fingerprint and benchmark-plan identity, but those records are still not measured speedup evidence.
+The materializer creates an FP64 CPU scientific reference, 1/2/4-GPU candidates, a CSV benchmark matrix and one YAML Manifest per candidate. Every candidate is forced to `approval: pending`; the tool writes files and never submits a job. Formal executable, launcher, preflight and parser commands use structured argv; executable and arguments are quoted individually, while scheduler headers, paths, environment names and module/source entries are validated. Generated Slurm steps may record runtime identity and explicit CPU/GPU binding, but those records are not measured speedup evidence.
+
+Gaussian, VASP, Quantum ESPRESSO and CP2K outputs first enter a common versioned parser state machine. Parser-to-benchmark bridges then bind parser evidence to the Manifest, method fingerprint, runtime, scheduler, GPU and artifact hashes. Fatal or final failure takes precedence over earlier success markers, and missing fields remain explicit rather than fabricated.
 
 After real runs finish, import and qualify the evidence:
 
@@ -166,7 +169,9 @@ python skills/tsao-dft-hpc-provenance/scripts/qualify_performance_evidence.py \
   --out-dir build/performance-evidence
 ```
 
-Import supports JSON, YAML, JSONL and dotted-field CSV. Effective speedup is calculated only after input hash, method fingerprint, model, convergence, parser, energy, force, stress and property tolerances pass. Formal statistics use the median of at least three successful repeats and retain failed attempts. `QUALIFIED_FOR_SCOPED_L3_PERFORMANCE_EVIDENCE` means that a bundle is eligible for scoped L3 review; it never changes the public capability level automatically.
+Import supports JSON, YAML, JSONL and dotted-field CSV, and formal comparison accepts exactly one benchmark plan. Effective speedup is calculated only after Schema, input hash, method/model/convergence, build/hardware topology, parser, artifact, energy, force, stress and property gates pass. Formal statistics use the median of at least three successful repeats and retain failed attempts.
+
+The independent review attestation must use Ed25519 and bind policy, benchmark plan, candidate scope and `evidence_root_sha256`. Formal evidence is fully verified in staging and atomically published as a content-addressed Bundle; missing, extra, altered, digest/size-mismatched or root/directory-mismatched content fails closed. Fixtures, parser tests, Schema tests and synthetic data are not real-engine or real-site evidence.
 
 Core rule: **keep Python on the manifest, validation, scheduling, provenance and experiment-control plane; migrate only profiled numerical hotspots to C++/Fortran/CUDA/OpenACC or a portability backend.** Edge devices should preferentially run structure checks, preprocessing, queue control and validated surrogate inference, while production DFT normally returns to a workstation or HPC system.
 
@@ -178,7 +183,7 @@ python -m pip check
 python scripts/quality_gate.py
 ```
 
-Current baseline: **177 unit tests, 9 isolated suites, 0 failed suites**. Every quality stage has an explicit timeout, and `--json` is safe for machine parsing. Gate order:
+Current code-qualification baseline: **325 unit tests, 9 isolated suites, 0 failed suites; repository statement coverage 92.48% and branch coverage 80.18%**. All six evidence-trust/HPC core modules have 100% statement coverage and 98.53%–100% branch coverage. Every quality stage has an explicit timeout, and `--json` is safe for machine parsing.
 
 ```text
 versioned demo assets
@@ -197,12 +202,14 @@ versioned demo assets
 → Ruff lint
 → Ruff formatting
 → isolated mypy type checks
+→ trust-boundary strict mypy
+→ statement and branch coverage
 → Bandit production audit
 → strict repository audit
 → all non-empty test suites
 ```
 
-GitHub Actions runs separate Python 3.10 / 3.12 / 3.13 constraint snapshots and re-runs weekly CodeQL `security-extended`, runtime/development/locked-environment `pip-audit`, and a locked CycloneDX JSON SBOM build. Constraint refreshes must use the reviewed snapshot procedure rather than silent manual drift.
+GitHub Actions runs separate Python 3.10 / 3.12 / 3.13 constraint snapshots, CodeQL `security-extended`, runtime/development/locked-environment `pip-audit`, and a locked CycloneDX JSON SBOM build. `.github/workflows/ci.yml` is the only permanent workflow. Constraint refreshes must use the reviewed snapshot procedure rather than silent manual drift.
 
 Engineering audit, supply-chain policy, Agent security and performance boundaries:
 
@@ -223,8 +230,8 @@ This repository:
 - does not bypass licences, site policy or software access controls;
 - never presents conceptual AI imagery as an orbital, ESP, band structure, free-energy profile, transition state, mechanism or experiment;
 - never equates normal termination, scheduler completion, model score or attractive graphics with scientific acceptance;
-- never equates GPU allocation, a CUDA-X dependency, planner output or candidate benchmark files with measured acceleration;
-- never claims `L3_EXECUTION_TESTED` without immutable real-engine evidence.
+- never equates GPU allocation, CUDA-X dependencies, planner output, hosted fixtures, parser tests or candidate benchmark files with real-engine execution or measured acceleration;
+- never claims `L3_EXECUTION_TESTED` without real engine/version/build/site/hardware evidence, repeated runs, numerical equivalence, artifact and evidence-root SHA-256, Ed25519 independent review and explicit capability registration.
 
 ## Documentation map
 
@@ -234,14 +241,14 @@ This repository:
 | [`docs/ENGINE_SUPPORT_MATRIX.md`](docs/ENGINE_SUPPORT_MATRIX.md) | Engine coverage and support levels |
 | [`docs/CAPABILITY_STATUS.yaml`](docs/CAPABILITY_STATUS.yaml) | Machine-readable capability status |
 | [`docs/SCIENTIFIC_BOUNDARIES.md`](docs/SCIENTIFIC_BOUNDARIES.md) | Scientific boundaries and non-claims |
-| [`docs/SCIENTIFIC_CLAIM_POLICY.yaml`](docs/SCIENTIFIC_CLAIM_POLICY.yaml) | Machine-readable claim-strength and L3 evidence contract |
+| [`docs/SCIENTIFIC_CLAIM_POLICY.yaml`](docs/SCIENTIFIC_CLAIM_POLICY.yaml) | Machine-readable claim strength, signed L3 evidence contract and public-level boundary |
 | [`docs/CROSS_SKILL_HANDOFF.md`](docs/CROSS_SKILL_HANDOFF.md) | Cross-Skill handoff contract |
 | [`docs/REPOSITORY_FULL_AUDIT.md`](docs/REPOSITORY_FULL_AUDIT.md) | Full repository security, supply-chain and Agent Skill audit |
-| [`docs/CODE_QUALITY_AUDIT.md`](docs/CODE_QUALITY_AUDIT.md) | Repository-wide code, test and CI audit |
+| [`docs/CODE_QUALITY_AUDIT.md`](docs/CODE_QUALITY_AUDIT.md) | Repository-wide code, test, coverage and CI audit |
 | [`docs/SUPPLY_CHAIN_POLICY.md`](docs/SUPPLY_CHAIN_POLICY.md) | Dependency locking, vulnerability audit, SBOM and release policy |
 | [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md) | AI-image governance |
 | [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md) | README visual design system |
-| [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md) | Compute, GPU, native-code and edge acceleration boundaries |
-| [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) | Test, visual and engineering gates |
+| [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md) | Compute, GPU, native-code, hardware-inventory, auto-tuning and evidence boundaries |
+| [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) | Test, coverage, visual and engineering gates |
 
 Repository policy: **work directly on `main`; do not create feature, fix or temporary branches. Use Tags / Releases for publication snapshots.**

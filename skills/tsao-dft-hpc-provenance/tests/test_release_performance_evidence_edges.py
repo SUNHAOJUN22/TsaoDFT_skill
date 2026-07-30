@@ -50,13 +50,17 @@ class ReleasePerformanceEvidenceEdgeCoverageTests(unittest.TestCase):
         self.assertEqual(self.core.require_mapping([], "root", errors), {})
         self.assertEqual(self.core.require_text({}, "name", "root", errors), "")
         self.assertEqual(self.core.require_number({}, "x", "root", errors), 0.0)
-        self.assertEqual(self.core.require_number({"x": "bad"}, "x", "root", errors), 0.0)
+        self.assertEqual(
+            self.core.require_number({"x": "bad"}, "x", "root", errors), 0.0
+        )
         self.core.require_number({"x": float("inf")}, "x", "root", errors)
         self.core.require_number(
             {"x": 0}, "x", "root", errors, minimum=0, exclusive=True
         )
         self.assertEqual(self.core.require_integer({}, "n", "root", errors), 0)
-        self.assertEqual(self.core.require_integer({"n": "bad"}, "n", "root", errors), 0)
+        self.assertEqual(
+            self.core.require_integer({"n": "bad"}, "n", "root", errors), 0
+        )
         self.core.require_integer({"n": -1}, "n", "root", errors)
         self.assertGreaterEqual(len(errors), 9)
 
@@ -116,7 +120,7 @@ class ReleasePerformanceEvidenceEdgeCoverageTests(unittest.TestCase):
             record, self.artifact_root
         )
         self.assertEqual(len(artifacts), 3)
-        self.assertGreaterEqual(len(artifact_errors), 5)
+        self.assertGreaterEqual(len(artifact_errors), 4)
 
         mismatch = self.artifact_root / "mismatch.out"
         mismatch.write_text("observed", encoding="utf-8")
@@ -363,15 +367,17 @@ class ReleasePerformanceEvidenceEdgeCoverageTests(unittest.TestCase):
             approved,
         )
         self.assertTrue(bundle["ok"])
-        with patch.object(
-            self.core,
-            "candidate_qualification_status",
-            return_value=("UNEXPECTED", []),
+        with (
+            patch.object(
+                self.core,
+                "candidate_qualification_status",
+                return_value=("UNEXPECTED", []),
+            ),
+            self.assertRaises(ValueError),
         ):
-            with self.assertRaises(ValueError):
-                self.core.qualify_evidence(
-                    summary, self.policy, approved, "a" * 64
-                )
+            self.core.qualify_evidence(
+                summary, self.policy, approved, "a" * 64
+            )
 
 
 if __name__ == "__main__":

@@ -19,6 +19,7 @@ class PermanentCIContractTests(unittest.TestCase):
         data = yaml.safe_load(text)
         self.assertEqual(data["name"], "TsaoDFT quality and security gates")
         self.assertEqual(data["permissions"], {"contents": "read"})
+        self.assertEqual(data["concurrency"]["cancel-in-progress"], True)
         self.assertEqual(set(data["jobs"]), {"quality-gate", "supply-chain", "codeql"})
         self.assertEqual(data["jobs"]["quality-gate"]["timeout-minutes"], 25)
         self.assertEqual(data["jobs"]["supply-chain"]["timeout-minutes"], 25)

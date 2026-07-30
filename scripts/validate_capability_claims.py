@@ -15,6 +15,30 @@ ROOT = Path(__file__).resolve().parents[1]
 CAPABILITY_PATH = ROOT / "docs" / "CAPABILITY_STATUS.yaml"
 POLICY_PATH = ROOT / "docs" / "SCIENTIFIC_CLAIM_POLICY.yaml"
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+SUPPORT_LEVELS = {"L0_REFERENCE", "L1_HANDOFF", "L2_VALIDATED_ADAPTER", "L3_EXECUTION_TESTED"}
+GENERIC_L3_REQUIRED = {"engine", "version", "site", "run_id", "artifact_sha256"}
+ACCELERATION_L3_REQUIRED = {
+    "engine",
+    "engine_version",
+    "build_fingerprint",
+    "site",
+    "hardware_fingerprint",
+    "run_ids",
+    "artifact_sha256",
+    "cpu_reference",
+    "minimum_repeats",
+    "numerical_equivalence_pass",
+    "parser_acceptance_pass",
+    "performance_policy_pass",
+    "evidence_bundle_sha256",
+    "evidence_root_sha256",
+    "review_attestation_id",
+    "reviewer_identity",
+    "review_scope",
+    "review_signature_algorithm",
+    "review_signature_verified",
+    "independent_review_approved",
+}
 
 
 def load_mapping(path: Path) -> tuple[dict[str, Any] | None, str | None]:
@@ -25,6 +49,16 @@ def load_mapping(path: Path) -> tuple[dict[str, Any] | None, str | None]:
     if not isinstance(data, dict):
         return None, f"{path.name} root must be a mapping"
     return data, None
+
+
+def string_set(value: Any) -> set[str]:
+    return set(value) if isinstance(value, list) and all(isinstance(item, str) for item in value) else set()
+
+
+def validate_digest(evidence: dict[str, Any], field: str, prefix: str, failures: list[str]) -> None:
+    digest = evidence.get(field)
+    if not isinstance(digest, str) or SHA256_RE.fullmatch(digest) is None:
+        failures.append(f"{prefix} {field} must be 64 lowercase hexadecimal characters")
 
 
 def validate(root: Path = ROOT) -> list[str]:
@@ -44,20 +78,26 @@ def validate(root: Path = ROOT) -> list[str]:
         if release and data.get("release") != release:
             failures.append(f"{name} release does not match VERSION")
 
-    levels = policy.get("support_levels")
-    allowed_levels = (
-        set(levels) if isinstance(levels, list) and all(isinstance(item, str) for item in levels) else set()
-    )
-    if allowed_levels != {"L0_REFERENCE", "L1_HANDOFF", "L2_VALIDATED_ADAPTER", "L3_EXECUTION_TESTED"}:
+    allowed_levels = string_set(policy.get("support_levels"))
+    if allowed_levels != SUPPORT_LEVELS:
         failures.append("scientific claim policy must define the exact L0-L3 support levels")
-    evidence_fields = policy.get("l3_required_evidence")
-    required_evidence = (
-        set(evidence_fields)
-        if isinstance(evidence_fields, list) and all(isinstance(item, str) for item in evidence_fields)
-        else set()
-    )
-    if required_evidence != {"engine", "version", "site", "run_id", "artifact_sha256"}:
+
+    required_evidence = string_set(policy.get("l3_required_evidence"))
+    if required_evidence != GENERIC_L3_REQUIRED:
         failures.append("scientific claim policy has an incomplete L3 evidence contract")
+
+    acceleration_required = string_set(policy.get("acceleration_l3_required_evidence"))
+    if acceleration_required != ACCELERATION_L3_REQUIRED:
+        failures.append("scientific claim policy has an incomplete signed acceleration L3 evidence contract")
+
+    boundaries = string_set(policy.get("required_boundaries"))
+    for required_boundary in (
+        "signed review attestation must bind policy plan candidates and evidence root",
+        "content addressed evidence root must verify every formal bundle file",
+        "scoped L3 performance eligibility does not automatically change the public capability level",
+    ):
+        if required_boundary not in boundaries:
+            failures.append(f"scientific claim policy is missing required boundary: {required_boundary}")
 
     entries = capability.get("capabilities")
     if not isinstance(entries, list) or not entries:
@@ -91,6 +131,7 @@ def validate(root: Path = ROOT) -> list[str]:
             failures.append(f"{prefix} skill must be a non-empty string")
 
         execution_evidence = entry.get("execution_evidence")
+        acceleration_evidence = entry.get("acceleration_execution_evidence")
         if level == "L3_EXECUTION_TESTED":
             if not isinstance(execution_evidence, dict):
                 failures.append(f"{prefix} L3 capability lacks execution_evidence")
@@ -98,11 +139,26 @@ def validate(root: Path = ROOT) -> list[str]:
                 missing = required_evidence - set(execution_evidence)
                 if missing:
                     failures.append(f"{prefix} L3 execution_evidence missing fields: {sorted(missing)}")
-                digest = execution_evidence.get("artifact_sha256")
-                if not isinstance(digest, str) or SHA256_RE.fullmatch(digest) is None:
-                    failures.append(f"{prefix} L3 artifact_sha256 must be 64 lowercase hexadecimal characters")
-        elif execution_evidence is not None:
-            failures.append(f"{prefix} non-L3 capability must not carry execution_evidence")
+                validate_digest(execution_evidence, "artifact_sha256", f"{prefix} L3", failures)
+
+            if identifier == "hpc":
+                if not isinstance(acceleration_evidence, dict):
+                    failures.append(f"{prefix} HPC L3 capability lacks acceleration_execution_evidence")
+                else:
+                    missing = acceleration_required - set(acceleration_evidence)
+                    if missing:
+                        failures.append(f"{prefix} acceleration_execution_evidence missing fields: {sorted(missing)}")
+                    for field in ("artifact_sha256", "evidence_bundle_sha256", "evidence_root_sha256"):
+                        validate_digest(acceleration_evidence, field, f"{prefix} acceleration L3", failures)
+                    if acceleration_evidence.get("review_signature_verified") is not True:
+                        failures.append(f"{prefix} acceleration L3 review_signature_verified must be true")
+                    if acceleration_evidence.get("independent_review_approved") is not True:
+                        failures.append(f"{prefix} acceleration L3 independent_review_approved must be true")
+        else:
+            if execution_evidence is not None:
+                failures.append(f"{prefix} non-L3 capability must not carry execution_evidence")
+            if acceleration_evidence is not None:
+                failures.append(f"{prefix} non-L3 capability must not carry acceleration_execution_evidence")
 
     forbidden = policy.get("forbidden_claim_phrases")
     forbidden_phrases = (

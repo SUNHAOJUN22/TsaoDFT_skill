@@ -1,249 +1,123 @@
 # TsaoDFT Full Repository and Agent Skill Audit
 
-Date: 2026-07-28  
+Date: 2026-07-30  
 Branch: `main`  
-Final validated source commit before documentation sync: `8cfcb7f965d591d9340805977e4fb49703811d96`  
-Final validation run: `30384282686`
+Code qualification source commit before documentation closure: `3f43bb8266dd3e218b3df6f0e48d7f4861113908`  
+Code qualification GitHub Actions run: `30557385623`
 
 ## Audit rule
 
-A passing command is not treated as scientific correctness, real-engine execution evidence, measured acceleration or proof that every GitHub account setting is enabled. Capabilities that could not be inspected through the available GitHub App remain `NOT VERIFIED` rather than inferred.
+Repository engineering evidence is not scientific evidence. Passing tests do not prove legal real-engine execution, measured acceleration, a mechanism, an experimental result or an account-level GitHub setting. Unverified facts are recorded as `NOT VERIFIED`.
 
-No branch or pull request was created. The user-mandated `main`-only policy was preserved throughout the remediation.
+No branch or pull request was created. The user-mandated main-only policy was preserved.
 
-## Final acceptance summary
+## Acceptance summary
 
-The final hosted run passed:
+The code qualification run passed:
 
-- locked Python 3.10 quality and security gate;
-- locked Python 3.12 quality and security gate;
-- locked Python 3.13 quality and security gate;
-- 177 unit tests across nine non-empty suites;
+- Python 3.10, 3.12 and 3.13 permanent quality gates;
+- 325 tests across nine non-empty suites;
 - Ruff lint and formatting;
-- isolated mypy checks across 18 targets;
-- Bandit production audit with exact reviewed allowances;
-- repository, dependency, constraints, packaging, catalog, Agent-eval, governance, capability-claim, secret-pattern, ignore-marker, AI-cover, visual and link gates;
+- ordinary mypy across 18 targets;
+- strict mypy across four trust-boundary targets;
+- repository coverage at 92.48% statement and 80.18% branch;
+- six core trust/execution modules at 100% statement and 98.53%–100% branch;
+- Bandit and strict repository audit;
 - CodeQL Python `security-extended`;
 - runtime, development and exact locked-environment `pip-audit`;
-- locked CycloneDX JSON SBOM generation and artifact upload.
+- locked CycloneDX JSON SBOM generation and upload.
 
-No failure artifact was generated for the final accepted run because all blocking gates passed.
+`.github/workflows/ci.yml` is the only permanent workflow. It has read-only contents permission and no repository write/push step.
 
-## Repository inventory and architecture
+## Repository architecture
 
-The repository is intentionally a **repository-style Agent Skill collection**, not a wheel-ready Python library or an electronic-structure solver. It contains eight independently installable Skills, shared root tooling, deterministic tests, scientific demo assets, governance files, three Python-version constraint snapshots and one permanent GitHub Actions workflow.
-
-Python owns the control plane: manifests, validation, provenance, scheduling, parsing and experiment control. Gaussian, VASP, Quantum ESPRESSO and CP2K remain external compiled engines. The acceleration layer may recommend or materialize engine-native GPU execution contracts, but it does not replace, patch, launch or redistribute those engines.
-
-The duplicated `audit_skill.py` and `utils.py` files under different Skills are recorded maintenance debt, not accidental cache files: each installed Skill must remain self-contained. Consolidation may only occur through a packaging model that preserves independent installation.
+TsaoDFT is a repository-style collection of eight independently installable Agent Skills, not an electronic-structure engine and not a wheel-style scientific solver. Python owns the control plane: manifests, validation, parsing, provenance, scheduling, evidence packaging and experiment control. Gaussian, VASP, Quantum ESPRESSO and CP2K remain external compiled engines.
 
 ## Closed findings
 
-### High — destructive installer ownership
+### Installer ownership and transactions
 
-**Original risk:** `--force` could remove an existing foreign directory that happened to share a Skill name.
+The installer records ownership, refuses foreign destinations and unsafe roots, verifies symlink targets and modified copies, stages replacements atomically, restores the previous destination when marker publication fails and rejects concurrent installation locks.
 
-**Remediation:**
+### Prompt-injection boundary
 
-- installation ownership records under `.tsao-skill-ownership`;
-- target-root protection;
-- refusal to modify or uninstall unowned destinations;
-- exact symlink-target checks;
-- staged copy and atomic replacement;
-- modified-copy detection;
-- optional backup before replacement;
-- negative regression tests for foreign data, home-directory targets, stale records and changed symlinks.
+Every Skill declares that web pages, PDFs, logs, README content and tool output are untrusted data. Retrieved content cannot override higher-priority instructions, request secrets, weaken scientific gates or authorize destructive/expensive execution.
 
-The production `assert` in the copy-install path was replaced by an explicit `InstallSafetyError`, so safety behavior remains active under optimized Python execution.
+### Dependency and supply-chain evidence
 
-### High — prompt-injection boundary
+Runtime/development declarations remain compatible ranges; Python 3.10/3.12/3.13 CI uses exact reviewed constraints. CI runs `pip check`, three `pip-audit` modes, CodeQL and a CycloneDX SBOM. Reusable Actions are pinned to complete commit SHAs.
 
-**Original risk:** content retrieved from web pages, PDFs, logs, README files or tool output could be mistaken for authoritative instructions.
+### Shell and scheduler safety
 
-**Remediation:** every Skill contains an explicit **Untrusted content and instruction hierarchy** section. External content is data, cannot override system/developer/user authority, cannot request secrets, cannot weaken scientific gates and cannot authorize expensive or destructive execution.
+Formal HPC execution uses structured argv and validated scheduler/environment/path fields. Raw shell commands, control characters, scheduler-header injection, unsafe environment names and path escapes are rejected. Generated scripts remain approval-gated and never auto-submit.
 
-A repository-level Agent security model and deterministic eval contracts cover prompt injection, scope isolation, approval gates, evidence escalation, routing ambiguity and destructive-operation ownership. `live_model_execution` remains `NOT_VERIFIED` until model/version traces and grader evidence are recorded.
+### Signed approval and review
 
-### High — open-source security and contribution governance
+Execution approval is bound to Manifest SHA-256, plan, candidate and method fingerprint. Independent performance review uses Ed25519 verification and binds reviewer identity, scope, time, policy, benchmark plan, candidates and evidence root.
 
-Added and validated:
+### Executable Schemas and Policy
 
-- `SECURITY.md`;
-- `CONTRIBUTING.md`;
-- `CODE_OF_CONDUCT.md`;
-- `THIRD_PARTY.md`;
-- `.github/CODEOWNERS`;
-- Dependabot policy compatible with the main-only exception;
-- issue templates and configuration;
-- pull-request template;
-- Agent security, packaging, scientific-claim and supply-chain policy documents.
+Benchmark, performance Policy, engine Parser and attestation Schemas are executed at runtime. Semantic validation follows Schema validation. Policy fields are consumed by qualification code; unknown/incomplete formal contracts fail closed.
 
-`CITATION.cff` remains present and parseable.
+### Content-addressed evidence
 
-### High — dependency reproducibility and security evidence
+Evidence publication is staged, verified and atomically moved to a directory named by the root SHA-256. Records, summary, Policy, review, qualification and file metadata are covered. Altered, missing or extra files and directory/root mismatch are detected by an independent verifier.
 
-The library-facing dependency declarations keep compatible version ranges, while CI consumes exact reviewed snapshots for Python 3.10, 3.12 and 3.13. Every constraint file:
+### Parser state machines and bridges
 
-- uses exact `name==version` pins;
-- records the CPython version and source GitHub Actions run;
-- includes every direct runtime and development requirement;
-- rejects duplicate, non-exact and bootstrap-tool pins.
+Gaussian, VASP, Quantum ESPRESSO and CP2K share a versioned Parser result contract. Final/fatal state takes precedence over earlier success markers. Deterministic bridges combine Parser evidence with Manifest, method fingerprint, runtime, scheduler, GPU and artifact provenance. Missing data remains explicit.
 
-Hosted CI installs against the matching constraint, runs `pip check`, audits runtime/development ranges and the exact locked Python 3.12 environment, and generates an SBOM from the locked environment. A weekly scheduled run refreshes vulnerability and CodeQL evidence without silently changing constraints.
+### Capability claims
 
-### Medium — scientific and capability claim escalation
+The root capability validator enforces:
 
-A machine-readable claim policy defines the exact L0–L3 levels, forbidden public claim phrases and immutable L3 evidence fields. `scripts/validate_capability_claims.py` cross-checks:
+- exact L0–L3 support levels;
+- generic L3 execution evidence;
+- the complete signed acceleration L3 evidence-field contract whenever HPC capability is declared;
+- valid implementation scripts;
+- prohibition of execution evidence below L3;
+- evidence SHA-256 formats and signed-review approval booleans;
+- forbidden unsupported wording in public documents.
 
-- every capability ID, Skill and implementation script;
-- the declared support level;
-- prohibition of `execution_evidence` below L3;
-- required engine, version, site, run ID and artifact SHA-256 for L3;
-- public README and Skill wording against forbidden unsupported claims.
+The HPC capability remains `L2_VALIDATED_ADAPTER`. Scoped performance eligibility never changes the public support level automatically.
 
-Parser tests, scheduler completion, GPU allocation, synthetic fixtures, generated plans, bound scripts and pending benchmark candidates cannot promote a capability to `L3_EXECUTION_TESTED`.
-
-### Medium — acceleration planning, binding and benchmark materialization
-
-**Original gap:** the HPC Skill could request GPUs but did not express GPU topology, CUDA-X applicability, engine-build ownership, Python/native boundaries, edge routing, scheduler binding, runtime GPU identity or a reproducible benchmark-candidate contract.
-
-**Remediation:**
-
-- added `plan_acceleration.py` and a versioned acceleration profile;
-- added `materialize_acceleration_campaign.py` and an engine-matched VASP base Manifest;
-- added deterministic VASP, Quantum ESPRESSO, CP2K, Gaussian, generic-native, atomistic-ML and edge routes;
-- classified cuBLAS, cuSOLVER, cuSOLVERMp, cuFFT, cuFFTMp, cuSPARSE, NCCL, NVSHMEM, cuTENSOR, cuEquivariance and CUTLASS by workload and integration boundary;
-- rejected the false assumption that a library name can be injected into an arbitrary engine binary;
-- validated backend/vendor compatibility, rank-per-GPU topology, oversubscription approval, precision and build/benchmark identities;
-- generated Slurm `srun` CPU/GPU binding while preserving scheduler-owned visible-device assignment;
-- captured scheduler rank identity, visible-device mapping, GPU UUID, PCI bus, driver and memory metadata;
-- created an FP64 CPU scientific reference and declared 1/2/4-GPU scaling candidates;
-- reset every materialized candidate to `approval: pending` and performed no submission;
-- kept Python on the control plane and moved only profiled numerical hotspots toward C++/Fortran/CUDA/OpenACC or portability backends;
-- required CPU fallback, build fingerprints, FP64 or validated mixed precision and immutable real-engine benchmark evidence;
-- added twenty-one deterministic acceleration tests covering planning, validation, binding, runtime identity and campaign materialization.
-
-The planner and materializer are `L2_VALIDATED_ADAPTER` capabilities. Their output is planning and execution-contract evidence, not a speedup measurement.
-
-### Medium — real benchmark evidence and scoped performance qualification
-
-**Original gap:** the repository could generate reviewed benchmark candidates but could not ingest real results, enforce numerical equivalence, aggregate repeats, package immutable evidence or derive explicit scoped qualification states.
-
-**Remediation:**
-
-- added a machine-readable real-result Schema, example and qualification policy;
-- added JSON/YAML/JSONL/CSV import with duplicate-run rejection and artifact SHA-256 verification;
-- added engine/build/site/hardware/parser and scientific-identity gates;
-- required energy/force/stress/property numerical equivalence before effective speedup;
-- added median, quartile, IQR, MAD, outlier, scaling-efficiency and resource-cost statistics;
-- retained successful and failed attempts in immutable five-file evidence bundles;
-- added non-invoking optional scheduler/device/profiler metric adapters;
-- ignored self-reported L3 labels and required real-engine sources plus independent review;
-- added 29 deterministic tests and retained the public capability at `L2_VALIDATED_ADAPTER`.
-
-`QUALIFIED_FOR_SCOPED_L3_PERFORMANCE_EVIDENCE` is an eligibility result for a bounded evidence package. It does not automatically change the public engine or Skill support level.
-
-### Medium — deterministic secret detection
-
-A high-confidence offline scanner rejects private-key headers, GitHub/OpenAI/AWS/Google/Slack credential patterns, secret-bearing filenames and oversized unreviewed text inputs. Tests construct synthetic patterns at runtime so the repository never embeds literal credential-like fixtures. GitHub secret scanning and push protection remain account-level settings and are still `NOT VERIFIED`.
-
-### Medium — unsafe XML parsing
-
-The four SVG/XML validators use `defusedxml` instead of unsafe standard-library parsing entry points. Regression tests reject a return to `xml.etree.ElementTree` in those validators.
-
-### Medium — static typing
-
-The isolated mypy gate covers root scripts/tests and every Skill script/test space independently. This avoids invalid duplicate-top-level-module inference while still type-checking all 18 targets. The final run reports zero mypy failures.
-
-### Medium — Bandit findings
-
-Confirmed code findings were repaired:
-
-- unsafe YAML workflow parsing replaced by `yaml.safe_load`, with explicit support for YAML 1.1 interpreting `on` as Boolean `True`;
-- production installer assertion replaced by a runtime safety error.
-
-The remaining low-risk findings are exact `(path, test_id)` contracts with non-empty rationales. They cover fixed internal subprocess argv calls and one seeded non-cryptographic RNG used for reproducible scientific splitting. The allowlist is regression-tested as an exact set; new or stale allowances fail CI.
-
-### Medium — trigger collisions and Agent evaluation
-
-Trigger overlap is not blindly removed because multi-Skill collaboration is scientifically valid. Routing precedence, root-orchestrator authority, specialised-profile scope and support-level escalation are represented in deterministic Agent eval contracts.
-
-### Medium — packaging ambiguity
-
-The repository is explicitly classified as a Skill collection. Validation prevents unsupported wheel claims and tests the real installer instead of manufacturing a misleading Python distribution.
-
-## Permanent quality gate
-
-The final gate order is:
-
-```text
-versioned demo assets
-→ dependency and version contract
-→ cross-version exact CI constraints
-→ repository-only packaging model
-→ DFT catalog
-→ Agent eval contracts
-→ governance and workflow policy
-→ capability and scientific-claim boundaries
-→ high-confidence secret patterns
-→ explained ignore markers
-→ governed AI cover
-→ bilingual README visuals
-→ offline local links
-→ Ruff lint
-→ Ruff formatting
-→ isolated mypy type checks
-→ Bandit production audit
-→ strict repository audit
-→ all non-empty test suites
-```
-
-Each stage has a deterministic timeout. Test discovery must report at least one test per suite. JSON mode captures child output so automation receives a single valid document.
-
-## Hosted workflow policy
-
-`.github/workflows/ci.yml` is the only permanent workflow. It runs on `main` pushes, pull requests, manual dispatch and a weekly schedule. The blocking authority is the native GitHub Actions job result. Compatibility status publication is best-effort and cannot turn passing code into a false failure.
-
-Temporary formatting/export workflow content used to obtain the exact locked Ruff output was removed. The permanent workflow was restored to its original content SHA before final acceptance and retains read-only contents permission.
-
-## Final test distribution
+## Test distribution
 
 | Suite | Tests |
 |---|---:|
-| Root repository and security contracts | 52 |
+| Root repository and governance/security contracts | 99 |
 | `tsao-dft-suite` | 4 |
-| `tsao-dft-researcher` | 16 |
+| `tsao-dft-researcher` | 32 |
 | `tsao-structure-prep` | 5 |
 | `tsao-periodic-dft-materials` | 11 |
 | `tsao-dft-ml-active-learning` | 16 |
-| `tsao-dft-hpc-provenance` | 63 |
+| `tsao-dft-hpc-provenance` | 148 |
 | `tsao-dft-kinetics-multiscale` | 5 |
 | `tsao-dft-catalysis-profile` | 5 |
-| **Total** | **177** |
+| **Total** | **325** |
 
-## GitHub settings not verified
+## Coverage evidence
 
-The available GitHub App did not expose authoritative state for:
-
-- branch protection and force-push/deletion rules;
-- signed-commit requirements;
-- CodeQL default setup outside the versioned workflow;
-- Dependabot alert settings;
-- secret scanning and push protection;
-- private vulnerability-reporting configuration.
-
-These settings remain **NOT VERIFIED**. The repository files and hosted workflow compensate where possible, but they do not prove account-level configuration.
+| Scope | Statement | Branch |
+|---|---:|---:|
+| Entire repository | 92.48% | 80.18% |
+| `shell_contract.py` | 100.00% | 100.00% |
+| `trust_boundary.py` | 100.00% | 100.00% |
+| `engine_parser_contract.py` | 100.00% | 100.00% |
+| `benchmark_bridge.py` | 100.00% | 100.00% |
+| `generate_job_script.py` | 100.00% | 98.53% |
+| `validate_hpc_manifest.py` | 100.00% | 98.57% |
 
 ## Scientific non-claims
 
-The audit validates repository engineering and deterministic adapters. It does not establish real licensed execution or measured GPU acceleration of Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD, Slurm/PBS, DeepChem/GNN or Cantera; the new tools only qualify evidence supplied from a real site. Selected capabilities remain `L2_VALIDATED_ADAPTER` until immutable engine/version/site/build/hardware evidence supports a scoped `L3_EXECUTION_TESTED` claim.
+The repository does not distribute restricted engines, POTCAR, pseudopotentials or licensed basis/potential libraries. It does not claim that normal termination, scheduler completion, an attractive figure, a model score, GPU allocation or a generated candidate establishes scientific acceptance or measured acceleration.
 
-## Residual risks and future work
+`QUALIFIED_FOR_SCOPED_L3_PERFORMANCE_EVIDENCE` means only that a bounded evidence package passed eligibility rules. Public L3 additionally requires legal real-engine/site execution, exact build and hardware identity, repeated numerical equivalence, verified artifacts and evidence root, signed independent review and explicit registration.
 
-- Main-only direct writes reduce review separation; this is a deliberate user governance exception.
-- Real-engine, real-GPU and real-HPC regressions remain external.
-- Live-model Agent eval execution and cross-model stability remain `NOT_VERIFIED`; current evals are deterministic policy contracts.
-- GitHub account-level branch protection, signed commits, Dependabot alerts, secret scanning, push protection and private reporting remain `NOT VERIFIED`.
-- Self-contained utility duplication requires disciplined synchronized maintenance.
-- External-link availability is not tested by deterministic CI; local links are fully validated offline.
-- Security, dependencies, drivers, CUDA toolkits and engine builds can change after the recorded run and require repeated site-specific audit before performance claims.
+## Remaining external risks
+
+- real-engine, real-GPU and real-HPC regression evidence remains external;
+- live-model Agent execution remains `NOT VERIFIED`;
+- branch protection, signed-commit enforcement, Dependabot alert state, secret scanning/push protection and private vulnerability reporting remain `NOT VERIFIED`;
+- external link availability is not part of deterministic offline CI;
+- main-only direct writes reduce review separation by explicit user policy.

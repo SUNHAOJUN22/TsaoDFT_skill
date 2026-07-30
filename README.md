@@ -31,7 +31,7 @@
 <td width="25%" valign="top"><strong>DFT-first</strong><br><sub>研究问题先落到结构、方法指纹、参考态与验收条件，再进入执行。</sub></td>
 <td width="25%" valign="top"><strong>Evidence graph</strong><br><sub>计算、产物、图件和论文主张之间建立显式 support edge，失败尝试也保留。</sub></td>
 <td width="25%" valign="top"><strong>Multi-engine</strong><br><sub>分子侧覆盖 Gaussian / Multiwfn / VMD；周期侧覆盖 VASP / QE / CP2K。</sub></td>
-<td width="25%" valign="top"><strong>Scale with provenance</strong><br><sub>CPU/GPU、CUDA-X、ML、动力学和 HPC 只能消费已验收证据，不能绕过科学边界。</sub></td>
+<td width="25%" valign="top"><strong>Scale with provenance</strong><br><sub>CPU/GPU、加速库、ML、动力学和 HPC 只能消费已验收证据，不能绕过科学边界。</sub></td>
 </tr>
 </table>
 
@@ -69,7 +69,7 @@ planned
 | [`tsao-periodic-dft-materials`](skills/tsao-periodic-dft-materials/) | VASP、Quantum ESPRESSO、CP2K，表面/缺陷、能带/DOS、NEB 与收敛 | 不分发 POTCAR、赝势或受限数据库；不混用不兼容能量 |
 | [`tsao-dft-ml-active-learning`](skills/tsao-dft-ml-active-learning/) | DFT 标签审计、数据泄漏防护、适用域、不确定度、主动学习与反向设计 | 高 R²、SHAP 或 acquisition score 不是机理、因果或可合成性证据 |
 | [`tsao-dft-kinetics-multiscale`](skills/tsao-dft-kinetics-multiscale/) | Eyring/TST、反应网络、详细平衡、误差传播、微观动力学与反应器交接 | 只消费标准态、参考态和热化学校验通过的数据 |
-| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | 本地/Slurm/PBS、结构化 argv、GPU/CUDA-X 规划、硬件盘点、自动调优候选、统一 Parser、真实基准导入、数值等价性、签名审查与内容寻址证据包 | GPU 分配、最快单次运行、自报 L3、调度成功或合成 fixture 都不等于真实加速和科学验收 |
+| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | 本地/Slurm/PBS、结构化 argv、硬件盘点、自动调优候选、GPU规划、统一Parser、真实基准、签名审查和内容寻址证据 | GPU分配、最快单次运行、自报L3、调度成功或合成fixture都不等于真实加速和科学验收 |
 | [`tsao-dft-catalysis-profile`](skills/tsao-dft-catalysis-profile/) | DCS/MCSOMe/DMOS、Si–O/Si–C、Ti/TEA、Ziegler–Natta 与聚烯烃催化 | 专用 Profile，不自动外推到无关体系 |
 
 ## 科研图件：概念视觉与确定性证据分轨
@@ -87,30 +87,24 @@ planned
 </tr>
 </table>
 
-视觉体系遵循 UI/UX Pro Max 的产品分类、Pattern、Style、Colors、Typography、Density、Anti-pattern 和 Accessibility 流程，完整记录见 [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md)。AI 图治理见 [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md)。
+视觉体系记录见 [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md)，AI 图治理见 [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md)。
 
 ## 支持等级
 
-| 等级 | 含义 | 可以写进论文或报告吗 |
+| 等级 | 含义 | 报告边界 |
 |---|---|---|
 | `L0_REFERENCE` | 方法、边界和参考说明 | 只能作为方法参考 |
 | `L1_HANDOFF` | 能生成结构化 Manifest 或下游交接文件 | 需下游验证 |
-| `L2_VALIDATED_ADAPTER` | 有确定性预检、解析、验证脚本和仓库测试 | 可报告“适配器已验证”，不能声称真实引擎已回归 |
-| `L3_EXECUTION_TESTED` | L2 + 真实引擎、版本、场站和不可变回归证据 | 可在明确范围内报告真实执行覆盖 |
+| `L2_VALIDATED_ADAPTER` | 有确定性预检、Parser、验证脚本和仓库测试 | 可报告“适配器已验证”，不能声称真实引擎已回归 |
+| `L3_EXECUTION_TESTED` | L2 + 真实引擎、版本、构建、场站、硬件和不可变回归证据 | 只能在记录的明确范围内报告真实执行覆盖 |
 
-Gaussian、VASP、Quantum ESPRESSO 和 CP2K 当前提供选定字段的 **L2 适配器**。公开能力等级仍为 `L2_VALIDATED_ADAPTER`。`QUALIFIED_FOR_SCOPED_L3_PERFORMANCE_EVIDENCE` 只表示某个证据包具备 scoped L3 审查资格，绝不自动改变公开能力登记。机器可读主张边界见 [`docs/SCIENTIFIC_CLAIM_POLICY.yaml`](docs/SCIENTIFIC_CLAIM_POLICY.yaml)。
+Gaussian、VASP、Quantum ESPRESSO 和 CP2K 当前提供选定字段的 **L2 适配器**。公开能力等级仍为 `L2_VALIDATED_ADAPTER`。`QUALIFIED_FOR_SCOPED_L3_PERFORMANCE_EVIDENCE` 只表示某个证据包具备审查资格，绝不自动改变公开能力登记。机器可读边界见 [`docs/SCIENTIFIC_CLAIM_POLICY.yaml`](docs/SCIENTIFIC_CLAIM_POLICY.yaml)。
 
 ## 快速开始
 
-列出可安装 Skills：
-
 ```bash
 python scripts/install.py --list
-```
 
-先做无写入验证：
-
-```bash
 python scripts/install.py \
   --agent codex \
   --scope user \
@@ -128,21 +122,20 @@ python scripts/install.py \
   --skill all
 ```
 
-安装器使用所有权 marker、原子暂存/替换、失败回滚和并发锁；真实生产计算仍需用户合法配置引擎、许可证、赝势/基组、场站指南和执行权限。
+安装器使用所有权marker、原子暂存/替换、失败回滚和并发锁。真实生产计算仍需用户合法配置引擎、许可证、赝势/基组、场站指南和执行权限。
 
-## GPU、并行与边缘加速入口
+## GPU、并行与证据资格入口
 
-先进行无外部引擎调用的硬件/软件环境盘点，缺失工具必须报告 `NOT_AVAILABLE`，不得伪造零值或泄露环境变量内容。随后可生成兼容性和库适用性规划：
+先做无外部引擎调用的环境盘点，再生成加速规划与待审批候选：
 
 ```bash
 python skills/tsao-dft-hpc-provenance/scripts/plan_acceleration.py \
+  --inspect-environment --out build/acceleration-environment.json
+
+python skills/tsao-dft-hpc-provenance/scripts/plan_acceleration.py \
   skills/tsao-dft-hpc-provenance/templates/acceleration-profile.yaml \
-  --out acceleration-plan.json
-```
+  --out build/acceleration-plan.json
 
-再将匹配的 VASP 基础 Manifest 与加速 Profile 物化为受审批约束的基准候选：
-
-```bash
 python skills/tsao-dft-hpc-provenance/scripts/materialize_acceleration_campaign.py \
   skills/tsao-dft-hpc-provenance/templates/vasp-gpu-hpc-manifest.yaml \
   skills/tsao-dft-hpc-provenance/templates/acceleration-profile.yaml \
@@ -152,28 +145,34 @@ python skills/tsao-dft-hpc-provenance/scripts/materialize_acceleration_campaign.
   --plan-out build/acceleration-plan.json
 ```
 
-物化器会生成 FP64 CPU 科学参考、1/2/4 GPU 候选、CSV 基准矩阵和逐候选 YAML。每个候选都强制为 `approval: pending`；工具只写文件，不提交作业。正式命令、launcher、preflight 和 Parser 使用结构化 argv；可执行文件与参数逐项引用，调度器头字段、路径、环境变量名和模块/source 项均经过验证。Slurm 脚本可生成显式 `srun` CPU/GPU 绑定并记录运行时身份，但这些记录仍不是实测加速结论。
+所有候选强制为 `approval: pending`；工具只写文件，不提交作业。正式命令、launcher、preflight和Parser使用结构化argv；调度器字段、路径、环境变量名和模块/source项均经过验证。审批必须绑定Manifest哈希、计划、候选和方法指纹。
 
-Gaussian、VASP、Quantum ESPRESSO 和 CP2K 输出先进入统一的版本化 Parser 状态机，再由 Parser→benchmark bridge 绑定 Manifest、方法指纹、运行时、调度器、GPU 与 artifact 哈希。致命或最终失败状态优先于早期成功标记；缺失字段保持显式，不得补造。
+Gaussian、VASP、Quantum ESPRESSO和CP2K输出进入统一Parser状态机，再由桥接器绑定Manifest、方法指纹、运行时、调度器、GPU和artifact哈希。最终或致命失败优先于早期成功标记；缺失字段保持显式。
 
-真实运行完成后，再导入并资格化证据：
+真实运行完成后，通过可执行Schema、签名review和内容寻址输出资格化：
 
 ```bash
 python skills/tsao-dft-hpc-provenance/scripts/import_benchmark_evidence.py \
-  results/* --artifact-root run-artifacts --out build/evidence.jsonl
+  results/* \
+  --schema skills/tsao-dft-hpc-provenance/templates/benchmark-result.schema.json \
+  --artifact-root run-artifacts \
+  --out build/evidence.jsonl
 
 python skills/tsao-dft-hpc-provenance/scripts/qualify_performance_evidence.py \
-  build/evidence.jsonl \
+  results/* \
+  --result-schema skills/tsao-dft-hpc-provenance/templates/benchmark-result.schema.json \
   --policy skills/tsao-dft-hpc-provenance/templates/performance-qualification-policy.yaml \
-  --artifact-root run-artifacts --review approved-review.yaml \
-  --out-dir build/performance-evidence
+  --policy-schema skills/tsao-dft-hpc-provenance/templates/performance-qualification-policy.schema.json \
+  --artifact-root run-artifacts \
+  --review signed-review-attestation.json \
+  --review-public-key reviewer-ed25519-public.pem \
+  --out-parent build/performance-evidence
+
+python skills/tsao-dft-hpc-provenance/scripts/verify_evidence_bundle.py \
+  build/performance-evidence/evidence-<root_sha256>
 ```
 
-结果导入支持 JSON、YAML、JSONL 和带点号字段的 CSV；正式比较只允许一个 benchmark plan。在计算有效加速比之前，必须通过 Schema、输入哈希、方法/模型/收敛、构建/硬件拓扑、Parser、artifact、能量、力、应力和属性容差。正式统计使用至少 3 次成功重复的中位数，并保留失败尝试。
-
-独立 review attestation 必须采用 Ed25519 签名并绑定 policy、benchmark plan、candidate 范围和 `evidence_root_sha256`。正式证据在暂存目录完整校验后原子发布为内容寻址 Bundle；缺失、额外、篡改、摘要/大小不匹配或目录根不一致均失败关闭。fixture、Parser 测试、Schema 测试和合成数据不能写成真实引擎或真实场站证据。
-
-核心原则：**Python 保留在清单、验证、调度、溯源和实验控制层；只有经过 profiling 证明的数值热点才迁移到 C++/Fortran/CUDA/OpenACC 或可移植后端。** 边缘设备优先执行结构检查、预处理、队列控制和已验证代理模型推理，生产 DFT 默认回传工作站或 HPC。
+正式比较只允许一个benchmark plan。在计算有效加速比前，必须通过Schema、输入、方法、构建、硬件、拓扑、Parser和数值等价性。review必须采用Ed25519签名并绑定Policy、计划、候选与证据根。证据目录在暂存校验后原子发布；缺失、额外、篡改、摘要/大小不匹配或目录根不一致均失败关闭。
 
 ## 工程质量与一键验收
 
@@ -183,55 +182,39 @@ python -m pip check
 python scripts/quality_gate.py
 ```
 
-当前代码资格基线：**325 项单元测试、9 个隔离套件、0 个失败套件；全仓库 statement coverage 92.48%，branch coverage 80.18%**。六个 evidence trust / HPC 核心模块均为 100% statement coverage，branch coverage 为 98.53%–100%。每个质量阶段都有明确超时，`--json` 输出可直接供机器解析。
+当前代码资格基线：**325项单元测试、9个隔离套件、0个失败套件；全仓库92.48% statement / 80.18% branch coverage。** 六个信任/执行核心模块均为100%语句覆盖，分支覆盖为98.53%–100%。
 
 ```text
-versioned demo assets
-→ dependency and version contract
-→ cross-version exact CI constraints
-→ repository-only packaging model
-→ DFT catalog
-→ Agent eval contracts
-→ governance and workflow policy
-→ capability and scientific-claim boundaries
-→ high-confidence secret patterns
-→ explained ignore markers
-→ governed AI cover
-→ bilingual README visuals
-→ offline local links
-→ Ruff lint
-→ Ruff formatting
-→ isolated mypy type checks
-→ trust-boundary strict mypy
+assets and contracts
+→ governance, capability and security validators
+→ Ruff lint and formatting
+→ isolated mypy (18 targets)
+→ trust-boundary strict mypy (4 targets)
 → statement and branch coverage
-→ Bandit production audit
+→ Bandit
 → strict repository audit
-→ all non-empty test suites
+→ all 9 unittest suites
 ```
 
-GitHub Actions 以 Python 3.10 / 3.12 / 3.13 的独立约束快照运行，并执行 CodeQL `security-extended`、运行时/开发/锁定环境 `pip-audit`，生成锁定环境 CycloneDX JSON SBOM。`.github/workflows/ci.yml` 是唯一永久 workflow；约束更新必须通过审查后的快照流程，不能手工静默漂移。
+GitHub Actions在Python 3.10 / 3.12 / 3.13上运行同一永久质量门，并执行CodeQL `security-extended`、三层`pip-audit`和CycloneDX JSON SBOM。`.github/workflows/ci.yml`是唯一永久workflow，具有只读contents权限且不包含代码推送步骤。
 
-工程审计、供应链、安全模型与性能边界见：
+工程审计见：
 
 - [`docs/REPOSITORY_FULL_AUDIT.md`](docs/REPOSITORY_FULL_AUDIT.md)
 - [`docs/CODE_QUALITY_AUDIT.md`](docs/CODE_QUALITY_AUDIT.md)
-- [`docs/AGENT_SECURITY_MODEL.md`](docs/AGENT_SECURITY_MODEL.md)
-- [`docs/SUPPLY_CHAIN_POLICY.md`](docs/SUPPLY_CHAIN_POLICY.md)
-- [`docs/SCIENTIFIC_CLAIM_POLICY.yaml`](docs/SCIENTIFIC_CLAIM_POLICY.yaml)
-- [`docs/PERFORMANCE_AUDIT.md`](docs/PERFORMANCE_AUDIT.md)
-- [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md)
 - [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md)
+- [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md)
+- [`docs/SCIENTIFIC_CLAIM_POLICY.yaml`](docs/SCIENTIFIC_CLAIM_POLICY.yaml)
 
 ## 科学边界
 
 本仓库：
 
-- 不分发 Gaussian、VASP、Quantum ESPRESSO、CP2K、Multiwfn、VMD、POTCAR、赝势或受限基组/势函数库；
-- 不绕过许可证、场站规定或软件访问控制；
-- 不把 AI 概念图描述为轨道、ESP、能带、自由能、过渡态、机理或实验结果；
-- 不把正常终止、调度成功、模型分数或漂亮图形直接等同于科学接受；
-- 不把 GPU 分配、CUDA-X 依赖、规划器输出、托管 fixture、Parser 测试或候选基准文件直接等同于真实引擎执行或真实加速；
-- 不在缺少真实引擎、版本、构建、场站、硬件、重复运行、数值等价性、artifact/evidence-root SHA-256、Ed25519 独立审查和显式登记时宣称 `L3_EXECUTION_TESTED`。
+- 不分发或绕过任何受限引擎、许可证、POTCAR、赝势或基组/势函数库；
+- 不把AI概念图描述为计算或实验结果；
+- 不把正常终止、调度成功、模型分数、漂亮图形、GPU分配或托管fixture等同于科学接受；
+- 不接受普通`approved`字段代替签名审批；
+- 不在缺少真实引擎、构建、硬件、重复运行、内容寻址证据根、签名独立审查和显式注册时宣称 `L3_EXECUTION_TESTED`。
 
 ## 文档地图
 
@@ -241,14 +224,13 @@ GitHub Actions 以 Python 3.10 / 3.12 / 3.13 的独立约束快照运行，并�
 | [`docs/ENGINE_SUPPORT_MATRIX.md`](docs/ENGINE_SUPPORT_MATRIX.md) | 引擎覆盖与支持等级 |
 | [`docs/CAPABILITY_STATUS.yaml`](docs/CAPABILITY_STATUS.yaml) | 机器可读能力状态 |
 | [`docs/SCIENTIFIC_BOUNDARIES.md`](docs/SCIENTIFIC_BOUNDARIES.md) | 科学边界与非主张 |
-| [`docs/SCIENTIFIC_CLAIM_POLICY.yaml`](docs/SCIENTIFIC_CLAIM_POLICY.yaml) | 机器可读主张强度、签名 L3 证据合同与公开等级边界 |
-| [`docs/CROSS_SKILL_HANDOFF.md`](docs/CROSS_SKILL_HANDOFF.md) | 跨 Skill 交接合同 |
-| [`docs/REPOSITORY_FULL_AUDIT.md`](docs/REPOSITORY_FULL_AUDIT.md) | 全仓库安全、供应链与 Agent Skill 审计 |
-| [`docs/CODE_QUALITY_AUDIT.md`](docs/CODE_QUALITY_AUDIT.md) | 全仓库代码、测试、覆盖率与 CI 审计 |
-| [`docs/SUPPLY_CHAIN_POLICY.md`](docs/SUPPLY_CHAIN_POLICY.md) | 依赖锁定、漏洞审计、SBOM 与发布策略 |
-| [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md) | AI 图像治理 |
-| [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md) | README 视觉设计系统 |
-| [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md) | 计算、GPU、原生代码、硬件盘点、自动调优与证据边界 |
-| [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) | 测试、覆盖率、图件与工程验收 |
+| [`docs/SCIENTIFIC_CLAIM_POLICY.yaml`](docs/SCIENTIFIC_CLAIM_POLICY.yaml) | 通用与加速L3证据合同 |
+| [`docs/CROSS_SKILL_HANDOFF.md`](docs/CROSS_SKILL_HANDOFF.md) | 跨Skill交接合同 |
+| [`docs/REPOSITORY_FULL_AUDIT.md`](docs/REPOSITORY_FULL_AUDIT.md) | 全仓库安全、供应链与Agent Skill审计 |
+| [`docs/CODE_QUALITY_AUDIT.md`](docs/CODE_QUALITY_AUDIT.md) | 代码、测试、coverage与CI审计 |
+| [`docs/SUPPLY_CHAIN_POLICY.md`](docs/SUPPLY_CHAIN_POLICY.md) | 依赖锁定、漏洞审计、SBOM与发布策略 |
+| [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md) | AI图像治理 |
+| [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md) | 执行、加速与签名证据边界 |
+| [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) | 测试和工程验收 |
 
-仓库策略：**只在 `main` 工作，不创建功能、修复或临时分支；发布快照使用 Tag / Release。**
+仓库策略：**只在 `main` 工作，不创建功能、修复或临时分支；发布快照使用Tag / Release。**

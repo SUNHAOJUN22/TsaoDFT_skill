@@ -39,6 +39,35 @@ Execution approval is not a string flag. An approved Manifest requires an Ed2551
 
 The generator never submits a job or executes a DFT engine.
 
+## Hardware inventory and bounded automatic tuning
+
+`plan_acceleration.py --inspect-environment` performs a non-invoking environment and hardware inventory. It records only bounded availability and identity facts for CPU architecture, MPI/OpenMP, accelerator runtimes and visible devices. It never launches Gaussian, VASP, Quantum ESPRESSO or CP2K, never returns secret environment values and represents unavailable optional tools as `NOT_AVAILABLE` rather than fabricated zero values.
+
+`generate_autotuning_candidates.py` consumes an explicit profile containing scientific identity, workload estimates, declared hardware capacity, policy limits and tuning ranges. It deterministically generates a bounded candidate set while enforcing:
+
+- immutable input SHA-256, method fingerprint and convergence-policy identity;
+- a required FP64 CPU scientific reference;
+- engine and GPU-vendor compatibility;
+- CPU, GPU, memory, topology and oversubscription limits;
+- a configured maximum candidate count;
+- `approval: pending` for every generated candidate.
+
+The candidate generator writes planning artifacts only. It does not submit a scheduler job, invoke an external engine, measure performance or promote a capability.
+
+Example:
+
+```bash
+python skills/tsao-dft-hpc-provenance/scripts/plan_acceleration.py \
+  --inspect-environment \
+  --out build/hardware-inventory.json
+
+python skills/tsao-dft-hpc-provenance/scripts/generate_autotuning_candidates.py \
+  autotuning-profile.yaml \
+  --out build/autotuning-candidates.json
+```
+
+Inventory and candidate output remain L1 planning evidence until legal target-environment execution, Parser acceptance, numerical equivalence, artifact verification and independent review are attached.
+
 ## GPU, native-code and edge planning
 
 `plan_acceleration.py` creates a deterministic compatibility and benchmark plan for Gaussian, VASP, Quantum ESPRESSO, CP2K and explicit native integrations across workstation, HPC and edge targets.

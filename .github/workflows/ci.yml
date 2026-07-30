@@ -59,25 +59,6 @@ jobs:
           python -m pip install -c "${{ matrix.constraint }}" -r requirements-dev.txt
           python -m pip check
 
-      - name: Normalize acceleration evidence tests in checkout
-        run: |
-          python -m ruff format \
-            skills/tsao-dft-hpc-provenance/tests/test_release_acceleration_planner_edges.py \
-            skills/tsao-dft-hpc-provenance/tests/test_release_autotuning_edges.py \
-            skills/tsao-dft-hpc-provenance/tests/test_release_performance_evidence_edges.py
-
-      - name: Upload normalized test sources
-        if: matrix.python-version == '3.12'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: normalized-test-sources-${{ github.sha }}
-          path: |
-            skills/tsao-dft-hpc-provenance/tests/test_release_acceleration_planner_edges.py
-            skills/tsao-dft-hpc-provenance/tests/test_release_autotuning_edges.py
-            skills/tsao-dft-hpc-provenance/tests/test_release_performance_evidence_edges.py
-          if-no-files-found: error
-          retention-days: 7
-
       - name: Capture complete quality gate
         id: gate
         shell: bash

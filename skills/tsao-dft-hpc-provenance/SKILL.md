@@ -1,6 +1,6 @@
 ---
 name: tsao-dft-hpc-provenance
-description: "Prepare and audit local, Slurm, PBS and cloud/HPC computational-chemistry execution: environment inspection, dependency checks, cross-vendor CPU/GPU and native-code acceleration planning, resource estimates, structured-argv job scripts, benchmark campaigns, real-result evidence import, numerical-equivalence-first comparison, signed review, content-addressed scoped L3 performance qualification, batch DAGs, monitoring, failure classification, checkpoint/restart policy, provenance, reproducibility and scientific CI."
+description: "Prepare and audit local, Slurm, PBS and cloud/HPC computational-chemistry execution: non-invoking hardware/environment inventory, dependency checks, cross-vendor CPU/GPU and native-code acceleration planning, bounded automatic-tuning candidate generation, resource estimates, structured-argv job scripts, benchmark campaigns, real-result evidence import, numerical-equivalence-first comparison, signed review, content-addressed scoped L3 performance qualification, batch DAGs, monitoring, failure classification, checkpoint/restart policy, provenance, reproducibility and scientific CI."
 license: MIT
 compatibility: Python 3.10+ and PyYAML. Slurm, PBS, CUDA-X/OpenACC, ROCm/HIP, oneAPI/SYCL, Metal/MPS, OpenMP offload, Kokkos, MPI, containers, AiiDA, Snakemake and Nextflow are optional external systems.
 metadata: {"version": "0.4.0-alpha.1", "author": "SUNHAOJUN22", "repository": "https://github.com/SUNHAOJUN22/TsaoDFT_skill"}
@@ -13,24 +13,26 @@ This Skill owns execution mechanics and performance evidence handling, not scien
 ## Workflow
 
 1. Read a site guide or inspect the named target; never scan unrelated filesystems.
-2. Record executable/module/container, version, scheduler, scratch, CPU architecture, MPI/OpenMP/GPU topology and accelerator runtime without returning secret values.
+2. Run only non-invoking inventory for executable/module/container availability, version, scheduler, scratch, CPU architecture, MPI/OpenMP/GPU topology and accelerator runtime; do not expose secret values or invent missing metrics.
 3. Select an engine-native, portable-native, ML-surrogate, edge-inference or CPU-reference route only after identifying the measured bottleneck.
-4. Reject incompatible backend/vendor/library combinations before campaign materialization.
-5. Materialize a reviewed profile into a base Manifest, CPU reference, accelerator candidates and matrix; every generated candidate remains `pending`.
-6. Estimate CPU/GPU hours, memory, wall time, transfer and storage before production submission.
-7. Generate scripts only from a validated structured-argv Manifest. Submission, cancellation and destructive cleanup require explicit user instruction.
-8. Bind any execution approval to the Manifest SHA-256, plan, candidate and method fingerprint.
-9. Import supplied real-engine records through executable Schemas and verify method, artifact, Parser, build, hardware and plan identity.
-10. Require numerical equivalence before calculating effective speedup; retain failed and successful attempts.
-11. Build a prequalification root and verify an Ed25519-signed independent review bound to Policy, plan, candidates and evidence root.
-12. Publish the formal evidence directory atomically under `evidence-<root_sha256>` and independently verify every file.
-13. Promote a public capability only through separate explicit registration; scoped eligibility never changes the public level automatically.
+4. When automatic tuning is requested, generate a bounded deterministic candidate set with `generate_autotuning_candidates.py`; preserve scientific identity, require an FP64 CPU reference and keep every candidate `pending`.
+5. Reject incompatible backend/vendor/library, memory, topology, oversubscription and policy combinations before campaign materialization.
+6. Materialize a reviewed profile into a base Manifest, CPU reference, accelerator candidates and matrix; every generated candidate remains `pending`.
+7. Estimate CPU/GPU hours, memory, wall time, transfer and storage before production submission.
+8. Generate scripts only from a validated structured-argv Manifest. Submission, cancellation and destructive cleanup require explicit user instruction.
+9. Bind any execution approval to the Manifest SHA-256, plan, candidate and method fingerprint.
+10. Import supplied real-engine records through executable Schemas and verify method, artifact, Parser, build, hardware and plan identity.
+11. Require numerical equivalence before calculating effective speedup; retain failed and successful attempts.
+12. Build a prequalification root and verify an Ed25519-signed independent review bound to Policy, plan, candidates and evidence root.
+13. Publish the formal evidence directory atomically under `evidence-<root_sha256>` and independently verify every file.
+14. Promote a public capability only through separate explicit registration; scoped eligibility never changes the public level automatically.
 
 ## Routes
 
 | Need | Route |
 |---|---|
-| Environment, modules, dependencies and non-invoking inventory | `environment` |
+| Environment, modules, dependencies and non-invoking hardware inventory | `environment` |
+| Bounded deterministic automatic-tuning candidates | `autotuning` |
 | CPU/GPU, CUDA-X, ROCm, SYCL, Metal, portable-native and edge acceleration plan | `acceleration` |
 | Real benchmark import, numerical equivalence, signed review and scoped L3 eligibility | `performance_evidence` |
 | Slurm/PBS/local structured-argv job script | `job_script` |
@@ -41,10 +43,12 @@ This Skill owns execution mechanics and performance evidence handling, not scien
 ## Hard Guardrails
 
 - Never submit merely because an input exists. Pending or rejected scripts terminate before the engine command.
-- Every materialized candidate is reset to `pending`, including candidates derived from an approved base Manifest.
+- Every materialized or automatically tuned candidate is reset to `pending`, including candidates derived from an approved base Manifest.
 - Raw Manifest shell command fields are not accepted on the formal path. Commands are argv lists whose arguments are quoted separately.
 - Scheduler headers, identifiers, environment names, modules, source files and working paths must pass validation.
 - An `approved` string is not approval. Formal execution and performance review require bound attestations.
+- Hardware inventory is non-invoking and bounded. Missing tools return `NOT_AVAILABLE`; environment values, credentials and unrelated filesystem contents are never reported.
+- Automatic tuning preserves input SHA-256, method fingerprint and convergence-policy identity, requires an FP64 CPU reference, enforces the configured candidate cap and never runs a candidate.
 - Never auto-increase cost or wall time without logging the reason and obtaining approval when material.
 - Restart only from compatible checkpoints; changing method or geometry policy creates a new lineage.
 - Do not hide failed attempts. Keep every attempt, error signature and fix.
@@ -62,7 +66,8 @@ This Skill owns execution mechanics and performance evidence handling, not scien
 - structured-argv Gaussian/VASP/QE/CP2K job-script generation;
 - scheduler/environment/path injection rejection;
 - Manifest-bound execution approval;
-- site-profile validation and non-invoking environment inventory;
+- site-profile validation and non-invoking environment/hardware inventory;
+- science-identity-locked automatic-tuning candidates with FP64 reference, memory/topology checks, deterministic truncation and pending approval;
 - CPU/GPU allocation estimates and Slurm CPU/GPU binding;
 - NVIDIA, AMD, Intel and Apple route validation plus portable native contracts;
 - benchmark-result, Policy, Parser-result and attestation Schemas;
@@ -81,7 +86,11 @@ This Skill owns execution mechanics and performance evidence handling, not scien
 
 ```bash
 python skills/tsao-dft-hpc-provenance/scripts/plan_acceleration.py \
-  --inspect-environment --out build/acceleration-environment.json
+  --inspect-environment --out build/hardware-inventory.json
+
+python skills/tsao-dft-hpc-provenance/scripts/generate_autotuning_candidates.py \
+  autotuning-profile.yaml \
+  --out build/autotuning-candidates.json
 
 python skills/tsao-dft-hpc-provenance/scripts/validate_benchmark_result.py \
   results/*.yaml \

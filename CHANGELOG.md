@@ -5,8 +5,8 @@
 - Integrated the permanent quality-gate sequence `Ruff lint → Ruff format → isolated mypy → trust-boundary strict mypy → statement/branch coverage → Bandit → strict repository audit → all unittest suites`.
 - Added permanent `mypy --strict` validation for `shell_contract.py`, `trust_boundary.py`, `engine_parser_contract.py` and `benchmark_bridge.py` without widening `Any`, excluding files or adding unexplained suppressions.
 - Added a blocking repository coverage gate with defaults of at least 90% statement and 80% branch coverage, plus 100% statement and at least 95% branch coverage for the six trust/HPC core modules.
-- Closed the hosted coverage baseline at 92.48% statement and 80.10% branch coverage; the six core modules are all at 100% statement coverage and between 98.53% and 100% branch coverage.
-- Expanded the deterministic baseline to 321 tests across nine non-empty suites with zero failed suites: root 95, suite 4, researcher 32, structure preparation 5, periodic materials 11, ML active learning 16, HPC provenance 148, kinetics 5 and catalysis profile 5.
+- Closed the hosted coverage baseline at 92.48% statement and 80.18% branch coverage; the six core modules are all at 100% statement coverage and between 98.53% and 100% branch coverage.
+- Expanded the deterministic baseline to 325 tests across nine non-empty suites with zero failed suites: root 99, suite 4, researcher 32, structure preparation 5, periodic materials 11, ML active learning 16, HPC provenance 148, kinetics 5 and catalysis profile 5.
 - Hardened structured argv, shell metacharacter, scheduler-header, path, module, environment and launcher trust boundaries; generated scripts remain approval-gated and never submit automatically.
 - Added executable Schema-first benchmark validation, field-by-field policy enforcement, one-plan isolation, scientific/build/topology identity binding and content-addressed evidence bundles with tamper detection.
 - Added Ed25519 independent-review attestations bound to policy, benchmark plan, candidate scope and `evidence_root_sha256`; unsigned, expired, forged, scope-mismatched or digest-mismatched reviews are rejected.

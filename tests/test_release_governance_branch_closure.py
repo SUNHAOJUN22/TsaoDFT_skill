@@ -183,9 +183,7 @@ class ReleaseGovernanceBranchClosureTests(unittest.TestCase):
         self.assertTrue(any("unexplained" in item for item in failures))
         self.assertTrue(any("stale" in item for item in failures))
 
-        validation_cases: tuple[
-            tuple[bool, tuple[list[str], list[dict[str, Any]]], int], ...
-        ] = (
+        validation_cases: tuple[tuple[bool, tuple[list[str], list[dict[str, Any]]], int], ...] = (
             (True, ([], []), 0),
             (False, (["bad"], []), 1),
         )

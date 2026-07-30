@@ -39,6 +39,11 @@ ACCELERATION_L3_REQUIRED = {
     "review_signature_verified",
     "independent_review_approved",
 }
+ACCELERATION_BOUNDARIES = {
+    "signed review attestation must bind policy plan candidates and evidence root",
+    "content addressed evidence root must verify every formal bundle file",
+    "scoped L3 performance eligibility does not automatically change the public capability level",
+}
 
 
 def load_mapping(path: Path) -> tuple[dict[str, Any] | None, str | None]:
@@ -86,22 +91,22 @@ def validate(root: Path = ROOT) -> list[str]:
     if required_evidence != GENERIC_L3_REQUIRED:
         failures.append("scientific claim policy has an incomplete L3 evidence contract")
 
-    acceleration_required = string_set(policy.get("acceleration_l3_required_evidence"))
-    if acceleration_required != ACCELERATION_L3_REQUIRED:
-        failures.append("scientific claim policy has an incomplete signed acceleration L3 evidence contract")
-
-    boundaries = string_set(policy.get("required_boundaries"))
-    for required_boundary in (
-        "signed review attestation must bind policy plan candidates and evidence root",
-        "content addressed evidence root must verify every formal bundle file",
-        "scoped L3 performance eligibility does not automatically change the public capability level",
-    ):
-        if required_boundary not in boundaries:
-            failures.append(f"scientific claim policy is missing required boundary: {required_boundary}")
-
     entries = capability.get("capabilities")
     if not isinstance(entries, list) or not entries:
         return [*failures, "CAPABILITY_STATUS capabilities must be a non-empty list"]
+    has_hpc = any(isinstance(entry, dict) and entry.get("id") == "hpc" for entry in entries)
+    acceleration_declared = policy.get("acceleration_l3_required_evidence") is not None
+    acceleration_contract_required = has_hpc or acceleration_declared
+    acceleration_required = string_set(policy.get("acceleration_l3_required_evidence"))
+    if acceleration_contract_required and acceleration_required != ACCELERATION_L3_REQUIRED:
+        failures.append("scientific claim policy has an incomplete signed acceleration L3 evidence contract")
+
+    boundaries = string_set(policy.get("required_boundaries"))
+    if acceleration_contract_required:
+        for required_boundary in sorted(ACCELERATION_BOUNDARIES):
+            if required_boundary not in boundaries:
+                failures.append(f"scientific claim policy is missing required boundary: {required_boundary}")
+
     identifiers: set[str] = set()
     for index, entry in enumerate(entries):
         prefix = f"capability[{index}]"

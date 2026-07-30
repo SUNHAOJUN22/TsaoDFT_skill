@@ -1,13 +1,25 @@
 # Changelog
 
-## Unreleased — compute efficiency, README visual, CI and repository hardening
+## Unreleased — compute efficiency, evidence trust boundary, parser contracts and release qualification
 
+- Integrated the permanent quality-gate sequence `Ruff lint → Ruff format → isolated mypy → trust-boundary strict mypy → statement/branch coverage → Bandit → strict repository audit → all unittest suites`.
+- Added permanent `mypy --strict` validation for `shell_contract.py`, `trust_boundary.py`, `engine_parser_contract.py` and `benchmark_bridge.py` without widening `Any`, excluding files or adding unexplained suppressions.
+- Added a blocking repository coverage gate with defaults of at least 90% statement and 80% branch coverage, plus 100% statement and at least 95% branch coverage for the six trust/HPC core modules.
+- Closed the hosted coverage baseline at 92.48% statement and 80.10% branch coverage; the six core modules are all at 100% statement coverage and between 98.53% and 100% branch coverage.
+- Expanded the deterministic baseline to 321 tests across nine non-empty suites with zero failed suites: root 95, suite 4, researcher 32, structure preparation 5, periodic materials 11, ML active learning 16, HPC provenance 148, kinetics 5 and catalysis profile 5.
+- Hardened structured argv, shell metacharacter, scheduler-header, path, module, environment and launcher trust boundaries; generated scripts remain approval-gated and never submit automatically.
+- Added executable Schema-first benchmark validation, field-by-field policy enforcement, one-plan isolation, scientific/build/topology identity binding and content-addressed evidence bundles with tamper detection.
+- Added Ed25519 independent-review attestations bound to policy, benchmark plan, candidate scope and `evidence_root_sha256`; unsigned, expired, forged, scope-mismatched or digest-mismatched reviews are rejected.
+- Unified Gaussian, VASP, Quantum ESPRESSO and CP2K parser outcomes into one structured state contract and added deterministic parser-to-benchmark bridge coverage.
+- Added non-invoking hardware inventory and automatic-tuning candidate generation while preserving scientific identity, approval and no-submission boundaries.
+- Added installer transaction rollback, ownership protection and concurrent installation locking tests.
+- Kept the public capability level at `L2_VALIDATED_ADAPTER`; scoped L3 evidence eligibility never changes the public registry automatically.
+- Confirmed `.github/workflows/ci.yml` as the only permanent workflow and prohibited migration helpers, one-time repair workflows, payloads, triggers, patch scripts, probes, caches and coverage data from the tracked repository.
 - Added a versioned real-benchmark result Schema, example record and performance-qualification policy covering engine/build/runtime, CPU/GPU identity, scheduler/site, method fingerprints, artifacts, scientific observables and performance metrics.
 - Added deterministic JSON/YAML/JSONL/CSV evidence import, artifact SHA-256 verification, duplicate-run rejection, parser/build/hardware identity checks and optional non-invoking `sacct`, GNU `time -v`, NVIDIA, ROCm, Intel, Nsight and engine-parser adapters.
 - Added numerical-equivalence-first comparison for input, method, model, convergence, energy, forces, stress and declared properties before any effective speedup is calculated.
 - Added median/min/max/quartile/IQR/MAD/outlier statistics, CPU-to-GPU and single-to-multi-GPU speedups, strong-scaling efficiency, GPU-hours, CPU-core-hours, memory, SCF, I/O and optional energy-to-solution summaries.
 - Added immutable benchmark evidence bundles and scoped L3 qualification states while ignoring self-reported support levels and prohibiting automatic public capability promotion.
-- Expanded the deterministic baseline to 177 tests across nine suites; the HPC suite now contains 63 tests, including 29 real-evidence, negative-status, import, metric-adapter and immutable-bundle tests.
 - Added an evidence-bounded DFT acceleration planner for workstation, HPC and edge targets, with deterministic routes for VASP, Quantum ESPRESSO, CP2K, Gaussian, atomistic ML surrogates and custom native kernels.
 - Added explicit applicability decisions for cuBLAS, cuSOLVER, cuSOLVERMp, cuFFT, cuFFTMp, cuSPARSE, NCCL, NVSHMEM, cuTENSOR, cuEquivariance and CUTLASS instead of treating CUDA-X names as universal drop-in acceleration switches.
 - Defined the Python control-plane and C++/Fortran/CUDA/OpenACC native-kernel boundary, CPU fallback, mixed-precision validation, MPI-rank/GPU mapping, edge orchestration and immutable real-engine benchmark requirements.
@@ -15,13 +27,12 @@
 - Added Slurm `srun` generation with explicit CPU/GPU binding, one-GPU-per-task allocation for one-rank-per-GPU layouts, bad-exit propagation and scheduler-owned device visibility.
 - Added runtime acceleration provenance for scheduler rank identity, visible-device mapping, NVIDIA GPU UUID, PCI bus ID, driver version, memory, acceleration profile, build fingerprint and benchmark-plan identity.
 - Added deterministic acceleration campaign materialization that combines a matching engine Manifest and profile into an accelerated Manifest, an FP64 CPU reference, GPU scaling candidates and a CSV matrix; every candidate remains `pending` and no submission is performed.
-- Preserved the earlier 148-test acceleration-planning and bound-execution baseline before adding the real-evidence qualification layer.
 - Closed the extended hardening pass with exact Python 3.10/3.12/3.13 constraints, weekly hosted security runs, locked-environment `pip-audit`, locked CycloneDX SBOM, capability-claim enforcement and deterministic secret-pattern checks.
-- Closed the full repository audit with hosted green runs on Python 3.10, 3.12 and 3.13, CodeQL `security-extended`, runtime/development/locked `pip-audit`, CycloneDX SBOM generation, isolated mypy and Bandit.
+- Closed the full repository audit with hosted green runs on Python 3.10, 3.12 and 3.13, CodeQL `security-extended`, runtime/development/locked `pip-audit`, CycloneDX SBOM generation, isolated mypy, strict mypy, coverage and Bandit.
 - Replaced unsafe workflow YAML loading with `yaml.safe_load` while handling YAML 1.1's Boolean interpretation of `on`, and replaced the production installer assertion with an explicit safety error.
 - Converted the Bandit exception list into an exact reviewed `(path, test_id)` contract with substantive reasons; new, duplicate or stale entries fail regression tests.
 - Completed a tracked-file, code, Skill, installer, governance, dependency, packaging and supply-chain audit with evidence recorded in `docs/REPOSITORY_FULL_AUDIT.md`.
-- Rebuilt the installer around explicit ownership records, atomic staged copies, foreign-directory refusal, modified-install protection, safe backups and symlink-target verification.
+- Rebuilt the installer around explicit ownership records, atomic staged copies, foreign-directory refusal, modified-install protection, safe backups, symlink-target verification, rollback and concurrent locking.
 - Added explicit untrusted-content and prompt-injection boundaries to all eight Skills plus `docs/AGENT_SECURITY_MODEL.md`.
 - Added 13 versioned positive/adversarial Agent eval contracts and deterministic schema graders while retaining live cross-model execution as `NOT_VERIFIED`.
 - Replaced standard-library SVG parsing with `defusedxml` and added permanent mypy and Bandit gates with exact low-risk justifications.
@@ -34,8 +45,7 @@
 - Kept native GitHub Actions matrix jobs as the only blocking CI authority, added `pip check`, and changed compatibility status summaries to retried best-effort observability that cannot fail a passing job.
 - Added `docs/CODE_QUALITY_AUDIT.md` with the repository-wide analysis, findings, remediation and acceptance criteria.
 - Rebuilt the governed cover as `uiux_pro_v8_hero_evidence_bento`, using fresh AI-generated visual direction beneath deterministic vector typography, capability cards, workflow gates and evidence bento.
-- Rewrote both README files from first principles around a Hero-Centric + Trust & Authority structure: 30-second positioning, evidence workflow, eight-Skill map, curated deterministic figures, support levels, quick start, quality gate and scientific boundaries.
-- Updated both README files with the executable acceleration entry point, test baseline and the same GPU/CUDA-X/native-code/edge scientific boundaries.
+- Rewrote both README files around a Hero-Centric + Trust & Authority structure: 30-second positioning, evidence workflow, eight-Skill map, curated deterministic figures, support levels, quick start, quality gate and scientific boundaries.
 - Updated the UI/UX Pro Max design-system record, generation provenance and AI manifest; verified the 1600×900 cover at full and half README widths.
 - Regenerated all eight deterministic SVG demonstrations as high-contrast dark evidence dashboards with fixed dimensions, accessible titles/descriptions and visible synthetic-data labels.
 - Added a second performance-audit pass with chunked file hashes, bounded canonical dataset hashing, Slurm-array compaction and reproducible baseline microbenchmarks.

@@ -1,7 +1,6 @@
 schema_version: '1.0'
 release: 0.4.0-alpha.1
-policy: A capability is implemented only when its scripts and tests are listed. Mentions
-  without adapters remain reference/handoff support.
+policy: A capability is implemented only when its scripts and tests are listed. Mentions without adapters remain reference/handoff support.
 capabilities:
 - id: orchestration
   skill: tsao-dft-suite
@@ -90,9 +89,13 @@ capabilities:
   - DeepChem/RDKit/GNN frameworks optional
 - id: hpc
   skill: tsao-dft-hpc-provenance
-  status: implemented_generation_validation
+  status: implemented_generation_validation_and_signed_evidence_qualification
   support_level: L2_VALIDATED_ADAPTER
   scripts:
+  - shell_contract.py
+  - trust_boundary.py
+  - engine_parser_contract.py
+  - benchmark_bridge.py
   - generate_job_script.py
   - generate_job_array.py
   - validate_hpc_manifest.py
@@ -105,12 +108,19 @@ capabilities:
   - import_benchmark_evidence.py
   - compare_acceleration_results.py
   - qualify_performance_evidence.py
+  - verify_evidence_bundle.py
   - collect_optional_metrics.py
   - performance_evidence.py
+  - build_benchmark_result_from_gaussian.py
+  - build_benchmark_result_from_vasp.py
+  - build_benchmark_result_from_qe.py
+  - build_benchmark_result_from_cp2k.py
   external_requirements:
   - real scheduler/site for L3
   - real accelerator and versioned engine build for measured performance evidence
-  - immutable real-engine run artifacts and independent review for scoped L3 performance evidence
+  - immutable content-addressed real-engine artifacts
+  - Ed25519-signed independent review bound to policy, plan, candidates and evidence root
+  - explicit public capability registration after scoped evidence qualification
 - id: kinetics
   skill: tsao-dft-kinetics-multiscale
   status: implemented_core_handoff

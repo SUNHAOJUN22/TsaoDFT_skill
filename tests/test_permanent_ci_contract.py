@@ -24,6 +24,8 @@ class PermanentCIContractTests(unittest.TestCase):
         self.assertEqual(data["jobs"]["quality-gate"]["timeout-minutes"], 25)
         self.assertEqual(data["jobs"]["supply-chain"]["timeout-minutes"], 25)
         self.assertEqual(data["jobs"]["codeql"]["timeout-minutes"], 30)
+        versions = [item["python-version"] for item in data["jobs"]["quality-gate"]["strategy"]["matrix"]["include"]]
+        self.assertEqual(versions, ["3.10", "3.12", "3.13"])
         self.assertFalse(data["jobs"]["quality-gate"]["strategy"]["fail-fast"])
         self.assertIn("python scripts/quality_gate.py", text)
         self.assertIn("pip_audit", text)

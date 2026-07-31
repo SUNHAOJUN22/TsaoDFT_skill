@@ -4,7 +4,9 @@ Date: 2026-07-31
 Version: `0.4.0-alpha.2`  
 Branch: `main`  
 Pre-freeze qualification source commit: `3cb0925acd8605a897163e9a48f33c0a689c6454`  
-Pre-freeze qualification GitHub Actions run: `30595469898`
+Pre-freeze qualification GitHub Actions run: `30595469898`  
+Release-snapshot source commit: `d02abc442f017f839311f3d52e172eb1d015a259`  
+Release-snapshot GitHub Actions run: `30597772162`
 
 ## Audit rule
 
@@ -14,7 +16,7 @@ No branch or pull request was created. The user-mandated main-only policy was pr
 
 ## Acceptance summary
 
-The pre-freeze qualification run passed:
+The pre-freeze qualification run and the alpha.2 release-snapshot run both passed:
 
 - Python 3.10, 3.12 and 3.13 permanent quality gates;
 - 325 tests across nine non-empty suites;
@@ -28,7 +30,9 @@ The pre-freeze qualification run passed:
 - runtime, development and exact locked-environment `pip-audit`;
 - locked CycloneDX JSON SBOM generation and upload.
 
-`.github/workflows/ci.yml` is the only permanent workflow. It has read-only contents permission and no repository write/push step.
+The release snapshot is `d02abc442f017f839311f3d52e172eb1d015a259`, validated by run `30597772162`. Its exact artifact IDs and SHA-256 digests are recorded in `docs/RELEASE_EVIDENCE_0.4.0-alpha.2.json` and `docs/RELEASE_SHA256_0.4.0-alpha.2.txt`.
+
+`.github/workflows/ci.yml` is the only permanent workflow. It has read-only repository contents permission and no repository write/push step.
 
 ## Repository architecture
 
@@ -108,6 +112,12 @@ The HPC capability remains `L2_VALIDATED_ADAPTER`. Scoped performance eligibilit
 | `benchmark_bridge.py` | 100.00% | 100.00% |
 | `generate_job_script.py` | 100.00% | 98.53% |
 | `validate_hpc_manifest.py` | 100.00% | 98.57% |
+
+## Version-freeze scope
+
+The alpha.2 phase changed only release/version metadata, Skill metadata/catalog/manifest versions, CHANGELOG and release/audit evidence. Two tests received mechanical exact-version assertion updates. Production Parser, trust-boundary, HPC generation, automatic-tuning, coverage, mypy, Bandit and workflow logic were not changed.
+
+Historical CHANGELOG versions, Schema versions, Policy IDs, benchmark-result Schema versions, engine examples and external software versions were preserved. README and README_EN contain no current project-version field and therefore required no mechanical version edit.
 
 ## Scientific non-claims
 

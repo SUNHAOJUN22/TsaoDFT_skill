@@ -62,11 +62,7 @@ def load_campaign(path: Path) -> tuple[dict[str, Any], dict[str, Any], list[dict
         path_errors: list[str] = []
         safe_relative_path(base_manifest, "base_manifest", path_errors, allow_dot=False)
         errors.extend(path_errors)
-        base_path = (
-            path.parent / "__invalid_base_manifest__"
-            if path_errors
-            else path.parent / base_manifest
-        )
+        base_path = path.parent / "__invalid_base_manifest__" if path_errors else path.parent / base_manifest
 
     if not base_path.is_file():
         errors.append(f"base_manifest not found: {base_path}")

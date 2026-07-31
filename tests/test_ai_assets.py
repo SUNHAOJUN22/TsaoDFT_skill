@@ -15,7 +15,7 @@ MANIFEST = ROOT / "assets/ai/manifest.yaml"
 class AIAssetTests(unittest.TestCase):
     def test_manifest_policy_and_hashes(self):
         data = yaml.safe_load(MANIFEST.read_text(encoding="utf-8"))
-        self.assertEqual(data["release"], "0.4.0-alpha.1")
+        self.assertEqual(data["release"], "0.4.0-alpha.2")
         self.assertEqual(len(data["assets"]), 1)
         item = data["assets"][0]
         self.assertEqual(item["role"], "hero")

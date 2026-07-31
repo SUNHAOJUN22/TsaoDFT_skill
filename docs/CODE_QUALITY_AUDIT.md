@@ -4,7 +4,9 @@ Date: 2026-07-31
 Version: `0.4.0-alpha.2`  
 Branch: `main`  
 Pre-freeze qualification source commit: `3cb0925acd8605a897163e9a48f33c0a689c6454`  
-Pre-freeze qualification GitHub Actions run: `30595469898`
+Pre-freeze qualification GitHub Actions run: `30595469898`  
+Release-snapshot source commit: `d02abc442f017f839311f3d52e172eb1d015a259`  
+Release-snapshot GitHub Actions run: `30597772162`
 
 ## Evidence rule
 
@@ -21,6 +23,12 @@ A passing parser, fixture, static-analysis stage, scheduler test or acceleration
 - installer rollback, ownership and concurrency behavior;
 - capability/public-claim boundaries and L2/L3 separation;
 - 325 tests across nine isolated suites.
+
+## Release-snapshot verification
+
+The alpha.2 source and release-document snapshot at `d02abc442f017f839311f3d52e172eb1d015a259` was validated by GitHub Actions run `30597772162`. Python 3.10, 3.12 and 3.13, CodeQL, all three dependency-audit modes and CycloneDX SBOM generation completed successfully. The release snapshot retained 325 tests, 92.48% statement coverage, 80.18% branch coverage and the six core-module thresholds without regression.
+
+The exact artifact IDs and digests are recorded in `docs/RELEASE_EVIDENCE_0.4.0-alpha.2.json` and `docs/RELEASE_SHA256_0.4.0-alpha.2.txt`.
 
 ## Closed P0/P1 findings
 
@@ -58,12 +66,12 @@ Destination, backup and ownership marker are treated as a recoverable transactio
 
 ## Static quality and security
 
-- Ruff lint and formatting: blocking;
-- ordinary mypy: 18 isolated targets;
-- strict mypy: `shell_contract.py`, `trust_boundary.py`, `engine_parser_contract.py`, `benchmark_bridge.py`;
-- Bandit: production sources with exact reviewed allowances;
-- CodeQL Python `security-extended`: hosted blocking job;
-- secret, ignore-marker, XML/YAML, governance and repository-shape validators: blocking;
+- Ruff lint and formatting: blocking and PASS;
+- ordinary mypy: 18 isolated targets, PASS;
+- strict mypy: `shell_contract.py`, `trust_boundary.py`, `engine_parser_contract.py`, `benchmark_bridge.py`, PASS;
+- Bandit: production sources with exact reviewed allowances, PASS;
+- CodeQL Python `security-extended`: hosted blocking job, PASS;
+- secret, ignore-marker, XML/YAML, governance and repository-shape validators: PASS;
 - runtime, development and locked-environment `pip-audit`: PASS;
 - locked CycloneDX JSON SBOM: generated and uploaded.
 

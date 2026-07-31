@@ -1,9 +1,10 @@
 # TsaoDFT Full Repository and Agent Skill Audit
 
-Date: 2026-07-30  
+Date: 2026-07-31  
+Version: `0.4.0-alpha.2`  
 Branch: `main`  
-Code qualification source commit before documentation closure: `3f43bb8266dd3e218b3df6f0e48d7f4861113908`  
-Code qualification GitHub Actions run: `30557385623`
+Pre-freeze qualification source commit: `3cb0925acd8605a897163e9a48f33c0a689c6454`  
+Pre-freeze qualification GitHub Actions run: `30595469898`
 
 ## Audit rule
 
@@ -13,7 +14,7 @@ No branch or pull request was created. The user-mandated main-only policy was pr
 
 ## Acceptance summary
 
-The code qualification run passed:
+The pre-freeze qualification run passed:
 
 - Python 3.10, 3.12 and 3.13 permanent quality gates;
 - 325 tests across nine non-empty suites;

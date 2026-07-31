@@ -3,7 +3,9 @@
 Date: 2026-07-31  
 Version: `0.4.0-alpha.2`  
 Pre-freeze qualification source commit: `3cb0925acd8605a897163e9a48f33c0a689c6454`  
-Pre-freeze qualification GitHub Actions run: `30595469898`
+Pre-freeze qualification GitHub Actions run: `30595469898`  
+Release-snapshot source commit: `d02abc442f017f839311f3d52e172eb1d015a259`  
+Release-snapshot GitHub Actions run: `30597772162`
 
 ## Result
 
@@ -66,9 +68,13 @@ Trust-boundary core modules:
 
 Coverage is collected across the nine isolated test subprocesses, including subprocess-launched production CLIs. Each Python matrix job uploads a machine-readable `coverage-report.json` artifact.
 
-## Hosted CI evidence entering the freeze
+## Pre-freeze qualification evidence
 
-Run `30595469898` completed successfully with:
+Run `30595469898` on `3cb0925acd8605a897163e9a48f33c0a689c6454` completed successfully before any release-version edits.
+
+## Release-snapshot hosted evidence
+
+Run `30597772162` on `d02abc442f017f839311f3d52e172eb1d015a259` completed successfully after the alpha.2 version fields, CHANGELOG, release notes, audits and exact-version assertions were synchronized:
 
 - Python 3.10 quality gate: PASS;
 - Python 3.12 quality gate: PASS;
@@ -86,7 +92,20 @@ Run `30595469898` completed successfully with:
 - exact locked-environment `pip-audit`: PASS;
 - locked CycloneDX JSON SBOM generation and upload: PASS.
 
+Release-snapshot artifacts:
+
+| Artifact | ID | SHA-256 digest |
+|---|---:|---|
+| Python 3.10 coverage | `8780799895` | `45bf986c68ae74145b33c22ad5b6cae2b4f6b56f8bcb68d4dec237f06df434a0` |
+| Python 3.12 coverage | `8780802268` | `88c0a160801b2b591d5f1dd881d3edf90e2ccf4af607860a036bcb53a834d09a` |
+| Python 3.13 coverage | `8780802881` | `88c0a160801b2b591d5f1dd881d3edf90e2ccf4af607860a036bcb53a834d09a` |
+| Supply chain | `8780794965` | `99ae229e2cbf152b1fc3c0eec89d02f52e0219cc9493e5d8bcb5a141c5c76ecf` |
+
+The `coverage-report.json` inside the Python 3.12 artifact has SHA-256 `d771ff5356f59c4d14ca272b365fa44a452680c284a06a05669dc1dd7eab6321`.
+
 `.github/workflows/ci.yml` is the only permanent workflow. It uses read-only repository contents permission and contains no code-push step.
+
+The machine-readable evidence index is `docs/RELEASE_EVIDENCE_0.4.0-alpha.2.json`. Its evidence-freeze commit/run fields use explicit self-resolution rules because a tracked file cannot truthfully contain its own future commit SHA and future CI run before they exist.
 
 ## Trust-boundary coverage
 

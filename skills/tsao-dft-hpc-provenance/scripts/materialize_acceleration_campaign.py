@@ -51,6 +51,7 @@ MATRIX_FIELDS = [
     "gpu_bind",
     "scientific_equivalence",
 ]
+INTEGER_TEXT_RE = re.compile(r"^[+-]?\d+$")
 
 
 def identifier(value: str) -> str:
@@ -59,13 +60,33 @@ def identifier(value: str) -> str:
 
 
 def positive_integer(value: Any, name: str, minimum: int = 1) -> int:
-    try:
+    if isinstance(value, bool):
+        raise ValueError(f"{name} must be an integer")
+    if isinstance(value, int):
+        result = value
+    elif isinstance(value, str) and INTEGER_TEXT_RE.fullmatch(value.strip()):
         result = int(value)
-    except (TypeError, ValueError) as exc:
-        raise ValueError(f"{name} must be an integer") from exc
+    else:
+        raise ValueError(f"{name} must be an integer")
     if result < minimum:
         raise ValueError(f"{name} must be >= {minimum}")
     return result
+
+
+def boolean(value: Any, name: str, default: bool) -> bool:
+    if value is None:
+        return default
+    if not isinstance(value, bool):
+        raise ValueError(f"{name} must be boolean")
+    return value
+
+
+def mapping(value: Any, name: str) -> dict[str, Any]:
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise ValueError(f"{name} must be a mapping")
+    return value
 
 
 def read_mapping(path: Path, label: str) -> dict[str, Any]:
@@ -76,17 +97,21 @@ def read_mapping(path: Path, label: str) -> dict[str, Any]:
 
 
 def acceleration_contract(profile: dict[str, Any], plan: dict[str, Any]) -> dict[str, Any]:
-    hardware = profile.get("hardware") or {}
-    software = profile.get("software") or {}
-    policy = profile.get("policy") or {}
-    binding = profile.get("binding") or {}
-    benchmark = profile.get("benchmark") or {}
+    hardware = mapping(profile.get("hardware"), "hardware")
+    software = mapping(profile.get("software"), "software")
+    policy = mapping(profile.get("policy"), "policy")
+    binding = mapping(profile.get("binding"), "binding")
+    benchmark = mapping(profile.get("benchmark"), "benchmark")
     engine = str(profile["engine"]).lower()
     stage = str(profile["stage"]).lower()
     vendor = str(hardware.get("gpu_vendor", "none")).lower()
     gpus_per_node = positive_integer(hardware.get("gpus_per_node", 0), "hardware.gpus_per_node", 0)
     ranks_per_gpu = positive_integer(binding.get("ranks_per_gpu", 1), "binding.ranks_per_gpu")
-    allow_oversubscription = bool(binding.get("allow_gpu_oversubscription", False))
+    allow_oversubscription = boolean(
+        binding.get("allow_gpu_oversubscription"),
+        "binding.allow_gpu_oversubscription",
+        False,
+    )
     if ranks_per_gpu > 1 and not allow_oversubscription:
         raise ValueError("binding.ranks_per_gpu >1 requires binding.allow_gpu_oversubscription=true")
 
@@ -117,7 +142,7 @@ def acceleration_contract(profile: dict[str, Any], plan: dict[str, Any]) -> dict
         "precision": str(policy.get("precision", "fp64")).lower(),
         "build_fingerprint_id": build_fingerprint_id,
         "benchmark_plan_id": benchmark_plan_id,
-        "record_runtime": bool(binding.get("record_runtime", True)),
+        "record_runtime": boolean(binding.get("record_runtime"), "binding.record_runtime", True),
         "runtime_record": str(binding.get("runtime_record", "tsao-acceleration-runtime.txt")),
         "device_inventory": str(binding.get("device_inventory", "tsao-nvidia-gpu-inventory.csv")),
         "recommended_path": plan["recommended_path"],
@@ -137,7 +162,7 @@ def materialize_manifest(
     if not plan.get("ok", False):
         raise ValueError("; ".join(plan.get("errors", ["acceleration plan is invalid"])))
 
-    hardware = profile.get("hardware") or {}
+    hardware = mapping(profile.get("hardware"), "hardware")
     contract = acceleration_contract(profile, plan)
     gpus_per_node = positive_integer(hardware.get("gpus_per_node", 0), "hardware.gpus_per_node", 0)
     ranks_per_gpu = int(contract["ranks_per_gpu"])
@@ -146,7 +171,8 @@ def materialize_manifest(
         raise ValueError("hardware.cpus_per_gpu must be divisible by binding.ranks_per_gpu")
 
     manifest = copy.deepcopy(base_manifest)
-    resources = manifest.setdefault("resources", {})
+    resources = mapping(manifest.setdefault("resources", {}), "base manifest resources")
+    manifest["resources"] = resources
     resources["nodes"] = positive_integer(hardware.get("nodes", resources.get("nodes", 1)), "hardware.nodes")
     resources["gpus_per_node"] = gpus_per_node
     if gpus_per_node:
@@ -164,8 +190,10 @@ def materialize_manifest(
 
     manifest["launcher"] = "auto" if manifest.get("scheduler") == "slurm" else manifest.get("launcher", "")
     manifest["acceleration"] = contract
-    environment = manifest.setdefault("environment", {})
-    variables = environment.setdefault("variables", {})
+    environment = mapping(manifest.setdefault("environment", {}), "base manifest environment")
+    manifest["environment"] = environment
+    variables = mapping(environment.setdefault("variables", {}), "base manifest environment.variables")
+    environment["variables"] = variables
     if contract["gpu_vendor"] == "nvidia" and contract["device_order"] == "pci_bus_id":
         variables.setdefault("CUDA_DEVICE_ORDER", "PCI_BUS_ID")
     variables.setdefault("OMP_NUM_THREADS", str(resources["cpus_per_task"]))
@@ -177,10 +205,10 @@ def materialize_manifest(
 
 
 def benchmark_rows(profile: dict[str, Any], manifest: dict[str, Any]) -> list[dict[str, Any]]:
-    hardware = profile.get("hardware") or {}
-    benchmark = profile.get("benchmark") or {}
+    hardware = mapping(profile.get("hardware"), "hardware")
+    benchmark = mapping(profile.get("benchmark"), "benchmark")
     contract = manifest["acceleration"]
-    max_gpus = int(manifest["resources"].get("gpus_per_node", 0))
+    max_gpus = positive_integer(manifest["resources"].get("gpus_per_node", 0), "resources.gpus_per_node", 0)
     cpu_reference_tasks = positive_integer(
         benchmark.get("cpu_reference_tasks_per_node", hardware.get("tasks_per_node", 1)),
         "benchmark.cpu_reference_tasks_per_node",
@@ -211,6 +239,13 @@ def benchmark_rows(profile: dict[str, Any], manifest: dict[str, Any]) -> list[di
     gpu_counts = benchmark.get("gpu_counts") or [1, max_gpus]
     rank_counts = benchmark.get("ranks_per_gpu") or [1]
     node_counts = benchmark.get("node_counts") or [1]
+    for name, values in (
+        ("benchmark.gpu_counts", gpu_counts),
+        ("benchmark.ranks_per_gpu", rank_counts),
+        ("benchmark.node_counts", node_counts),
+    ):
+        if not isinstance(values, list) or not values:
+            raise ValueError(f"{name} must be a non-empty list")
     seen: set[tuple[int, int, int]] = set()
     for nodes_value in node_counts:
         nodes = positive_integer(nodes_value, "benchmark.node_counts[]")
@@ -258,9 +293,10 @@ def candidate_manifest(
     candidate["job_id"] = identifier(f"{source.get('job_id', 'JOB')}-{row['candidate_id']}")
     candidate["approval"] = "pending"
     candidate["launcher"] = "auto" if candidate.get("scheduler") == "slurm" else candidate.get("launcher", "")
-    resources = candidate.setdefault("resources", {})
+    resources = mapping(candidate.setdefault("resources", {}), "candidate resources")
+    candidate["resources"] = resources
     for key in ("nodes", "gpus_per_node", "tasks_per_node", "cpus_per_task"):
-        resources[key] = int(row[key])
+        resources[key] = positive_integer(row[key], f"candidate {key}", 0 if key == "gpus_per_node" else 1)
 
     if row["role"] == "scientific-reference":
         candidate["acceleration"] = {
@@ -278,13 +314,17 @@ def candidate_manifest(
             "record_runtime": False,
         }
     else:
-        acceleration = candidate["acceleration"]
-        acceleration["ranks_per_gpu"] = int(row["ranks_per_gpu"])
+        acceleration = mapping(candidate.get("acceleration"), "candidate acceleration")
+        candidate["acceleration"] = acceleration
+        acceleration["ranks_per_gpu"] = positive_integer(row["ranks_per_gpu"], "candidate ranks_per_gpu")
         acceleration["precision"] = row["precision"]
         acceleration["cpu_bind"] = row["cpu_bind"]
         acceleration["gpu_bind"] = row["gpu_bind"]
 
-    variables = candidate.setdefault("environment", {}).setdefault("variables", {})
+    environment = mapping(candidate.setdefault("environment", {}), "candidate environment")
+    candidate["environment"] = environment
+    variables = mapping(environment.setdefault("variables", {}), "candidate environment.variables")
+    environment["variables"] = variables
     variables["OMP_NUM_THREADS"] = str(row["cpus_per_task"])
     errors, _ = validate_manifest(candidate)
     if errors:
@@ -302,6 +342,14 @@ def write_outputs(
     candidate_dir: Path,
     plan_out: Path | None,
 ) -> list[str]:
+    candidate_names = [f"{identifier(str(row['candidate_id']))}.yaml" for row in rows]
+    if len(set(candidate_names)) != len(candidate_names):
+        raise ValueError("candidate identifiers collide after filename normalization")
+    existing = {path.name for path in candidate_dir.glob("*.yaml")} if candidate_dir.is_dir() else set()
+    stale = sorted(existing - set(candidate_names))
+    if stale:
+        raise ValueError(f"candidate_dir contains stale or foreign YAML outputs: {stale}")
+
     manifest_out.parent.mkdir(parents=True, exist_ok=True)
     matrix_out.parent.mkdir(parents=True, exist_ok=True)
     candidate_dir.mkdir(parents=True, exist_ok=True)
@@ -315,8 +363,8 @@ def write_outputs(
         plan_out.write_text(json.dumps(plan, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
     written: list[str] = []
-    for row in rows:
-        path = candidate_dir / f"{identifier(str(row['candidate_id']))}.yaml"
+    for row, name in zip(rows, candidate_names, strict=True):
+        path = candidate_dir / name
         candidate = candidate_manifest(base, accelerated, row)
         path.write_text(yaml.safe_dump(candidate, sort_keys=False), encoding="utf-8")
         written.append(str(path))
@@ -347,7 +395,7 @@ def main() -> int:
             args.candidate_dir,
             args.plan_out,
         )
-    except (OSError, ValueError, KeyError) as exc:
+    except (OSError, ValueError, KeyError, yaml.YAMLError) as exc:
         print(json.dumps({"ok": False, "errors": [str(exc)]}, indent=2))
         return 1
     print(

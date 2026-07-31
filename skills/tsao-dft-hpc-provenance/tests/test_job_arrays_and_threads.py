@@ -60,7 +60,7 @@ class JobArrayAndThreadTests(unittest.TestCase):
                 {
                     "engine": "generic",
                     "engine_version": "test",
-                    "executable": "/bin/sh",
+                    "executable": "sh",
                     "input": "payload.sh",
                     "stdout": "payload.stdout",
                     "stderr": "payload.stderr",
@@ -139,7 +139,7 @@ class JobArrayAndThreadTests(unittest.TestCase):
                 {
                     "engine": "generic",
                     "engine_version": "test",
-                    "executable": "/bin/sh",
+                    "executable": "sh",
                     "input": "payload.sh",
                     "stdout": "base.stdout",
                     "stderr": "base.stderr",
@@ -215,7 +215,7 @@ class JobArrayAndThreadTests(unittest.TestCase):
                     "task_id": "task-1",
                     "input": "input.gjf",
                     "workdir": ".",
-                    "executable": "/bin/sh",
+                    "executable": "unreviewed-shell",
                 }
             ]
             path.write_text(yaml.safe_dump(campaign), encoding="utf-8")

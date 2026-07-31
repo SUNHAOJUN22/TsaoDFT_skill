@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -48,6 +50,39 @@ class JobArrayAndThreadTests(unittest.TestCase):
         self.assertIn("exit 64", script)
         self.assertIn("g16 < demo.gjf > demo.log", script)
 
+    def test_engine_failure_is_logged_and_returned(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            payload = root / "payload.sh"
+            payload.write_text("#!/usr/bin/env sh\necho engine-failed\nexit 7\n", encoding="utf-8")
+            manifest = yaml.safe_load(yaml.safe_dump(self.base))
+            manifest.update(
+                {
+                    "engine": "generic",
+                    "engine_version": "test",
+                    "executable": "/bin/sh",
+                    "input": "payload.sh",
+                    "stdout": "payload.stdout",
+                    "stderr": "payload.stderr",
+                    "workdir": ".",
+                    "scheduler": "local",
+                    "launcher": "",
+                    "approval": "not_required",
+                }
+            )
+            manifest["resources"].update({"tasks_per_node": 1, "cpus_per_task": 1, "gpus_per_node": 0})
+            manifest["environment"] = {"modules": [], "source": [], "variables": {}}
+            manifest["scratch"] = {}
+            manifest["preflight"]["run_in_job"] = False
+            manifest["parser"]["run_in_job"] = False
+            job = root / "job.sh"
+            job.write_text(self.generator.build(manifest), encoding="utf-8")
+            result = subprocess.run(["bash", str(job)], cwd=root, capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, 7, result.stdout + result.stderr)
+            self.assertIn("TsaoDFT job end:", result.stdout)
+            self.assertIn("rc=7", result.stdout)
+            self.assertIn("engine-failed", (root / "payload.stdout").read_text(encoding="utf-8"))
+
     def test_array_compacts_one_thousand_tasks_into_two_files(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -76,19 +111,92 @@ class JobArrayAndThreadTests(unittest.TestCase):
             campaign_path.write_text(yaml.safe_dump(campaign, sort_keys=False), encoding="utf-8")
             result = self.arrays.generate(campaign_path, script_path, task_table)
             self.assertEqual(result["task_count"], 1000)
+            self.assertEqual(len(result["task_table_sha256"]), 64)
             self.assertEqual(len(list(root.glob("*"))), 4)
             with task_table.open(encoding="utf-8") as handle:
                 self.assertEqual(sum(1 for _ in handle), 1000)
             script = script_path.read_text(encoding="utf-8")
             self.assertIn("#SBATCH --array=0-999%32", script)
             self.assertIn("SLURM_ARRAY_TASK_ID", script)
+            self.assertIn("task table digest mismatch", script)
+            self.assertNotIn("shell=True", script)
             records = [json.loads(line) for line in task_table.read_text(encoding="utf-8").splitlines()]
             first = records[0]
             self.assertEqual(first["task_id"], "task-0000")
+            self.assertIn("argv", first)
+            self.assertNotIn("command", first)
+            self.assertIsInstance(first["argv"], list)
             self.assertNotEqual(records[0]["scratch_path"], records[1]["scratch_path"])
             self.assertEqual(first["environment"]["GAUSS_SCRDIR"], first["scratch_path"])
 
-    def test_array_rejects_non_slurm_and_empty_tasks(self):
+    def test_array_task_table_tampering_fails_closed(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            payload = root / "payload.sh"
+            payload.write_text("#!/usr/bin/env sh\necho array-ok\n", encoding="utf-8")
+            base = yaml.safe_load(yaml.safe_dump(self.base))
+            base.update(
+                {
+                    "engine": "generic",
+                    "engine_version": "test",
+                    "executable": "/bin/sh",
+                    "input": "payload.sh",
+                    "stdout": "base.stdout",
+                    "stderr": "base.stderr",
+                    "workdir": ".",
+                    "approval": "not_required",
+                    "launcher": "",
+                }
+            )
+            base["resources"].update({"tasks_per_node": 1, "cpus_per_task": 1, "gpus_per_node": 0})
+            base["environment"] = {"modules": [], "source": [], "variables": {}}
+            base["scratch"] = {}
+            base["preflight"]["run_in_job"] = False
+            base["parser"]["run_in_job"] = False
+            (root / "base.yaml").write_text(yaml.safe_dump(base), encoding="utf-8")
+            campaign = {
+                "schema_version": "1.0",
+                "campaign_id": "SAFE-ARRAY",
+                "base_manifest": "base.yaml",
+                "tasks": [
+                    {
+                        "task_id": "task-0001",
+                        "input": "payload.sh",
+                        "workdir": ".",
+                        "stdout": "array.stdout",
+                        "stderr": "array.stderr",
+                    }
+                ],
+            }
+            campaign_path = root / "campaign.yaml"
+            script_path = root / "campaign.sh"
+            task_table = root / "campaign.tasks.jsonl"
+            campaign_path.write_text(yaml.safe_dump(campaign), encoding="utf-8")
+            self.arrays.generate(campaign_path, script_path, task_table)
+            environment = {**os.environ, "SLURM_ARRAY_TASK_ID": "0"}
+            clean = subprocess.run(
+                ["bash", str(script_path)],
+                cwd=root,
+                env=environment,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(clean.returncode, 0, clean.stdout + clean.stderr)
+            self.assertIn("array-ok", (root / "array.stdout").read_text(encoding="utf-8"))
+            task_table.write_text(task_table.read_text(encoding="utf-8") + "\n", encoding="utf-8")
+            tampered = subprocess.run(
+                ["bash", str(script_path)],
+                cwd=root,
+                env=environment,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertNotEqual(tampered.returncode, 0)
+            self.assertIn("task table digest mismatch", tampered.stderr)
+
+    def test_array_rejects_non_slurm_empty_tasks_and_unsafe_overrides(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             base = yaml.safe_load(yaml.safe_dump(self.base))
@@ -98,6 +206,20 @@ class JobArrayAndThreadTests(unittest.TestCase):
             path = root / "campaign.yaml"
             path.write_text(yaml.safe_dump(campaign), encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "Slurm|non-empty"):
+                self.arrays.load_campaign(path)
+
+            base["scheduler"] = "slurm"
+            (root / "base.yaml").write_text(yaml.safe_dump(base), encoding="utf-8")
+            campaign["tasks"] = [
+                {
+                    "task_id": "task-1",
+                    "input": "input.gjf",
+                    "workdir": ".",
+                    "executable": "/bin/sh",
+                }
+            ]
+            path.write_text(yaml.safe_dump(campaign), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "unsupported override fields"):
                 self.arrays.load_campaign(path)
 
 

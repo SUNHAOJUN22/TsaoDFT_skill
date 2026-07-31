@@ -91,7 +91,7 @@ class RepositoryTests(unittest.TestCase):
         ]:
             self.assertTrue((ROOT / rel).exists(), rel)
         data = yaml.safe_load((ROOT / "docs/CAPABILITY_STATUS.yaml").read_text())
-        self.assertEqual(data["release"], "0.4.0-alpha.1")
+        self.assertEqual(data["release"], "0.4.0-alpha.2")
 
     def test_repo_validator(self):
         r = subprocess.run(

@@ -1,8 +1,8 @@
 cff-version: 1.2.0
 message: "If this Skill suite contributes to your work, cite this repository and the scientific software actually used."
 title: "TsaoDFT Skill: Auditable DFT Research from Structure to Multiscale Models"
-version: "0.4.0-alpha.1"
-date-released: 2026-07-24
+version: "0.4.0-alpha.2"
+date-released: 2026-07-31
 authors:
   - family-names: "Sun"
     given-names: "Haojun"

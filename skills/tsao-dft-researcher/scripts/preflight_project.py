@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from utils import load_yaml, print_result  # noqa: E402 -- script-local import follows an explicit sys.path setup
@@ -82,6 +84,14 @@ def _load_json(path: Path) -> dict[str, Any]:
     return data
 
 
+def _load_yaml_mapping(path: Path, label: str, failures: list[str]) -> dict[str, Any] | None:
+    try:
+        return load_yaml(path)
+    except (OSError, UnicodeError, ValueError, yaml.YAMLError) as exc:
+        failures.append(f"{label} parse failed: {exc}")
+        return None
+
+
 def main() -> int:
     args = parse_args()
     root = args.project_dir.resolve()
@@ -98,8 +108,12 @@ def main() -> int:
         print_result({"ok": False, "failures": failures, "warnings": warnings}, args.json)
         return 1
 
-    project = load_yaml(project_path)
-    passport = load_yaml(passport_path)
+    project = _load_yaml_mapping(project_path, ".research/project.yaml", failures)
+    passport = _load_yaml_mapping(passport_path, "calculation-passport.yaml", failures)
+    if project is None or passport is None:
+        print_result({"ok": False, "failures": failures, "warnings": warnings}, args.json)
+        return 1
+
     required = [
         "project_id",
         "name",
@@ -174,10 +188,12 @@ def main() -> int:
     tasks: dict[str, list[str]] = {}
     ready_without_approval: list[str] = []
     for path in task_files:
-        task = load_yaml(path)
+        task = _load_yaml_mapping(path, f"task {path.name}", failures)
+        if task is None:
+            continue
         tid = task.get("task_id")
-        if not tid:
-            failures.append(f"{path.name}: missing task_id")
+        if not isinstance(tid, str) or not tid.strip():
+            failures.append(f"{path.name}: missing or invalid task_id")
             continue
         if tid in tasks:
             failures.append(f"duplicate task_id: {tid}")
@@ -188,10 +204,16 @@ def main() -> int:
         if not isinstance(deps, list):
             failures.append(f"{tid}: depends_on must be a list")
             deps = []
-        tasks[tid] = [str(x) for x in deps]
+        valid_deps: list[str] = []
+        for index, dependency in enumerate(deps):
+            if not isinstance(dependency, str) or not dependency.strip():
+                failures.append(f"{tid}: depends_on[{index}] must be a non-empty task_id")
+            else:
+                valid_deps.append(dependency)
+        tasks[tid] = valid_deps
         approval = task.get("approval", {}) if isinstance(task.get("approval"), dict) else {}
         if status in {"ready", "running"} and approval.get("required") is True and approval.get("status") != "approved":
-            ready_without_approval.append(str(tid))
+            ready_without_approval.append(tid)
     for tid, deps in tasks.items():
         for dep in deps:
             if dep not in tasks:
@@ -229,7 +251,7 @@ def main() -> int:
             manifest_errors, manifest_warnings = validate_research_manifest(research_data)
             failures.extend(f"research manifest: {item}" for item in manifest_errors)
             warnings.extend(f"research manifest: {item}" for item in manifest_warnings)
-        except Exception as exc:
+        except (OSError, UnicodeError, ValueError, json.JSONDecodeError) as exc:
             failures.append(f"research manifest parse failed: {exc}")
     else:
         warnings.append("research manifest not initialized")
@@ -241,7 +263,7 @@ def main() -> int:
             )
             failures.extend(f"figure manifest: {item}" for item in figure_errors)
             warnings.extend(f"figure manifest: {item}" for item in figure_warnings)
-        except Exception as exc:
+        except (OSError, UnicodeError, ValueError, json.JSONDecodeError) as exc:
             failures.append(f"figure manifest parse failed: {exc}")
     else:
         warnings.append("figure manifest not initialized")

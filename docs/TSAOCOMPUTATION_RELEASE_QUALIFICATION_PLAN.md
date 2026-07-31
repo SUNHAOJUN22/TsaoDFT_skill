@@ -1,123 +1,68 @@
-# TsaoComputation Release Qualification Plan
+# TsaoComputation Release Qualification Contract and External Evidence Roadmap
 
-## Purpose
+Date: 2026-07-31  
+Branch policy: `main` only
 
-This plan defines the measurable closure criteria for turning the TsaoDFT/TsaoComputation repository into a trustworthy scientific-computing control plane. Architectural completeness alone is not release qualification. Every capability claim must be tied to executable tests, immutable evidence, and explicit non-claims.
+## Current phase status
 
-## Current verified baseline
+The repository-side release qualification for the evidence trust boundary, Parser contract and permanent quality gate is closed. The last fully completed documentation CI entering this status normalization was commit `9d4550588062e0ff90dfc6071ccd9e1db0c9883a`, GitHub Actions run `30558895182`.
 
-- The permanent CI workflow runs Python 3.10, 3.12, and 3.13 quality gates.
-- CodeQL security-extended analysis and dependency/SBOM jobs are required.
-- The six HPC execution trust-core modules have 100% statement coverage and at least 98.53% branch coverage:
-  - `shell_contract.py`
-  - `trust_boundary.py`
-  - `engine_parser_contract.py`
-  - `benchmark_bridge.py`
-  - `generate_job_script.py`
-  - `validate_hpc_manifest.py`
-- Research-manifest, scientific-figure, and release-coverage-runner boundary tests are versioned in the repository.
-- No hardware speedup, energy-efficiency, or scientific-equivalence claim is accepted without measured evidence from the stated engine, hardware, build, input, and precision mode.
+The repository currently has:
 
-## Gate A: repository quality
+- Python 3.10, 3.12 and 3.13 permanent quality gates;
+- Ruff lint and formatting;
+- ordinary mypy across 18 isolated targets;
+- strict mypy for `shell_contract.py`, `trust_boundary.py`, `engine_parser_contract.py` and `benchmark_bridge.py`;
+- blocking whole-repository coverage thresholds of 90% statement and 80% branch;
+- 100% statement and at least 95% branch coverage requirements for the six trust/HPC core modules;
+- Bandit, strict repository audit and nine non-empty unittest suites;
+- CodeQL, runtime/development/locked dependency audits and CycloneDX SBOM generation;
+- structured-argv execution contracts and scheduler/path/environment injection rejection;
+- Manifest-bound approval, executable Schemas and field-by-field Policy enforcement;
+- Ed25519-signed independent review bound to Policy, plan, candidates and evidence root;
+- atomic content-addressed evidence publication and independent Bundle verification;
+- a unified Gaussian/VASP/Quantum ESPRESSO/CP2K Parser state contract and deterministic Parser-to-benchmark bridges;
+- installer rollback and concurrent-install locking;
+- non-invoking hardware inventory and bounded autotuning candidate generation.
 
-Release qualification requires all of the following on the same commit:
+## Repository acceptance gates
 
-1. Whole-repository statement coverage at or above 90%.
-2. Whole-repository branch coverage at or above 80%.
-3. Trust-core statement coverage at 100% and branch coverage at or above 95% per file.
-4. Ruff lint and formatting pass.
-5. Mypy and strict trust-boundary type checks pass.
-6. All unit, negative, integration, governance, packaging, and Agent-evaluation suites pass.
-7. Python 3.10, 3.12, and 3.13 jobs pass.
-8. CodeQL, dependency audit, locked-environment audit, and CycloneDX SBOM generation pass.
+A repository commit is release-qualified only when all of the following pass on that commit:
 
-Coverage thresholds must not be met by narrowing the production denominator, excluding reachable code, adding blanket pragmas, or lowering thresholds.
+1. whole-repository statement coverage at or above 90%;
+2. whole-repository branch coverage at or above 80%;
+3. six core modules at 100% statement and at least 95% branch coverage per file;
+4. Ruff lint and formatting;
+5. ordinary and strict trust-boundary mypy;
+6. Bandit and strict repository audit;
+7. all nine test suites;
+8. Python 3.10, 3.12 and 3.13 matrix jobs;
+9. CodeQL, three dependency-audit layers and CycloneDX SBOM.
 
-## Gate B: approval-controlled execution
+Thresholds may not be met by narrowing the production denominator, excluding reachable code, adding blanket coverage pragmas or lowering the formal minima.
 
-A real engine command may be launched only when all of these conditions hold:
+## Evidence and capability boundary
 
-- The reviewed manifest hash exactly matches the execution manifest.
-- A non-expired Ed25519 approval attestation binds the manifest, benchmark plan, build fingerprint, execution scope, and site profile.
-- The executable and required inputs are content-addressed or recorded before launch.
-- Structured argv is used; unreviewed shell fragments are rejected.
-- Local, Slurm, and PBS execution paths use the same approval and evidence contract.
-- Timeout, interruption, scheduler rejection, parser rejection, and non-zero exit paths retain logs and partial evidence.
-- Checkpoint/restart execution creates explicit lineage rather than overwriting the parent run.
+Repository tests, deterministic fixtures, synthetic engine excerpts, Parser validation and generated benchmark candidates are engineering evidence. They do not establish legal real-engine execution, scientific equivalence on a real site or measured acceleration.
 
-The executor must fail closed before invoking the engine when any approval or binding check fails.
+`QUALIFIED_FOR_SCOPED_L3_PERFORMANCE_EVIDENCE` is evidence-package eligibility only. The public capability remains `L2_VALIDATED_ADAPTER` unless a separate explicit registration supplies the complete accepted L3 contract.
 
-## Gate C: scientific equivalence and performance evidence
+## External evidence roadmap
 
-An acceleration candidate is qualified only against a declared reference configuration. The evidence bundle must contain:
+The following evidence must come from a legal target environment and is not fabricated or auto-submitted by this repository:
 
-- engine name and version;
-- executable/build fingerprint and linked acceleration backend;
-- CPU, GPU, driver, runtime, compiler, MPI, and scheduler identity;
-- input and output hashes;
-- precision mode;
-- repeated measurements, with at least three successful repeats unless a stricter benchmark plan applies;
-- wall time, CPU time, host/device memory, transfer time, I/O, and available energy metrics;
-- energy, force, stress, convergence, and other declared scientific observables;
-- tolerances and pass/fail decisions for scientific equivalence;
-- median and dispersion rather than a single best run;
-- retained failed and rejected candidates.
+- exact engine, version, executable and build fingerprint;
+- site, scheduler, CPU/GPU, driver, runtime, compiler and MPI identity;
+- content-addressed inputs and outputs;
+- an accepted CPU reference and sufficient repeated candidate runs;
+- numerical equivalence for declared scientific observables before speedup;
+- measured wall time, resource use and optional energy metrics;
+- verified artifacts, Bundle digest and evidence-root SHA-256;
+- Ed25519-signed independent review bound to Policy, plan, candidates and evidence root;
+- explicit public capability registration.
 
-A candidate may be marked `qualified` only when scientific equivalence passes first. A faster but scientifically non-equivalent candidate remains rejected.
+Gaussian, VASP, Quantum ESPRESSO, CP2K or any other external engine must not be run merely to satisfy repository CI. No job is submitted automatically.
 
-## Gate D: portability and native migration
+## Closure interpretation
 
-Python remains the orchestration, validation, provenance, and experiment-control layer. Native migration is permitted only for measured hotspots with a stable contract.
-
-Required native boundaries:
-
-1. versioned file/JSON subprocess contract for engine-scale components;
-2. narrow C ABI for stable native kernels;
-3. nanobind/pybind11 only where in-process calls are justified;
-4. Python Array API and DLPack for zero-copy array interoperability where supported;
-5. deterministic CPU fallback and cross-backend reference tests.
-
-Backend qualification is separate for CUDA, HIP, SYCL/OpenMP offload, and Metal. Availability of a library does not imply that an external engine uses it.
-
-## Gate E: edge execution
-
-Edge support is qualified per device class rather than declared generically. Each supported profile must record:
-
-- architecture and operating system;
-- available memory and accelerator runtime;
-- supported model/kernel format;
-- thermal and power constraints when measurable;
-- deterministic preprocessing and postprocessing;
-- out-of-distribution or unsupported-input handling;
-- escalation path to HPC for workloads outside the edge qualification envelope.
-
-Edge inference, workflow triage, and lightweight surrogate evaluation must not be represented as a substitute for unperformed first-principles calculations.
-
-## Gate F: release evidence
-
-A release candidate requires an immutable evidence index containing:
-
-- source commit and canonical hashes;
-- CI run identifiers;
-- coverage reports;
-- test and static-analysis results;
-- CodeQL and dependency-audit status;
-- SBOM digest;
-- benchmark-plan and performance-evidence digests;
-- known limitations, unsupported combinations, and unresolved external-hardware work;
-- explicit public-release authorization.
-
-If any release-blocking evidence is missing, stale, mismatched, or unverified, the release status remains blocked.
-
-## Ordered closure sequence
-
-1. Close the whole-repository 90%/80% coverage gate with real boundary tests.
-2. Implement the approval-controlled local/Slurm/PBS executor.
-3. Implement timeout, checkpoint, restart-lineage, and partial-evidence retention.
-4. Run CPU-reference scientific-equivalence campaigns.
-5. Run backend-specific GPU and distributed benchmarks on real hardware.
-6. Add profiling evidence and migrate only proven Python hotspots to native code.
-7. Qualify edge profiles with explicit capability envelopes.
-8. Assemble the immutable release evidence index and run all gates on one commit.
-
-The repository is not “perfect” because it contains many features. It is release-qualified when every supported claim survives these gates and every unsupported claim remains explicit.
+Repository-internal release blockers are distinct from missing external L3 evidence. A green repository release does not claim L3 execution coverage; missing real-site evidence remains an explicit external limitation rather than an unresolved repository defect.

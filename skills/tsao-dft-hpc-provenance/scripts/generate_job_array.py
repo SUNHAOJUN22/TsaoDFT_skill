@@ -62,7 +62,11 @@ def load_campaign(path: Path) -> tuple[dict[str, Any], dict[str, Any], list[dict
         path_errors: list[str] = []
         safe_relative_path(base_manifest, "base_manifest", path_errors, allow_dot=False)
         errors.extend(path_errors)
-        base_path = path.parent / base_manifest
+        base_path = (
+            path.parent / "__invalid_base_manifest__"
+            if path_errors
+            else path.parent / base_manifest
+        )
 
     if not base_path.is_file():
         errors.append(f"base_manifest not found: {base_path}")
@@ -142,9 +146,7 @@ def task_record(campaign: dict[str, Any], base: dict[str, Any], task: dict[str, 
         "argv": execution_argv(merged),
         "environment": environment,
         "stdin": input_path if engine == "gaussian" else None,
-        "stdout": None
-        if engine == "cp2k"
-        else str(merged.get("stdout") or (Path(input_path).stem + ".stdout")),
+        "stdout": None if engine == "cp2k" else str(merged.get("stdout") or (Path(input_path).stem + ".stdout")),
         "stderr": str(merged.get("stderr") or (Path(input_path).stem + ".stderr")),
     }
     if (base.get("scratch") or {}).get("path"):

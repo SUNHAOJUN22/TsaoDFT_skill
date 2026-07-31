@@ -1,9 +1,10 @@
 # Code Quality and Test Audit
 
-Date: 2026-07-30  
+Date: 2026-07-31  
+Version: `0.4.0-alpha.2`  
 Branch: `main`  
-Code qualification source commit before documentation closure: `3f43bb8266dd3e218b3df6f0e48d7f4861113908`  
-Code qualification GitHub Actions run: `30557385623`
+Pre-freeze qualification source commit: `3cb0925acd8605a897163e9a48f33c0a689c6454`  
+Pre-freeze qualification GitHub Actions run: `30595469898`
 
 ## Evidence rule
 
@@ -99,7 +100,7 @@ assets and contracts
 
 ## Capability boundary
 
-The root validator now checks both:
+The root validator checks both:
 
 1. generic L3 execution evidence; and
 2. the complete signed acceleration L3 contract for repositories declaring HPC acceleration capability.

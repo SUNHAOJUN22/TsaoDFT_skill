@@ -1,6 +1,6 @@
 {
   "name": "tsao-dft",
-  "version": "0.4.0-alpha.1",
+  "version": "0.4.0-alpha.2",
   "description": "DFT-first scientific workflow Skills for molecular and periodic calculations, provenance, ML and kinetics.",
   "author": {"name": "SUNHAOJUN22", "url": "https://github.com/SUNHAOJUN22"},
   "homepage": "https://github.com/SUNHAOJUN22/TsaoDFT_skill",

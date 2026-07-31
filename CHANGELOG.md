@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased — compute efficiency, evidence trust boundary, parser contracts and release qualification
+## Unreleased
+
+## 0.4.0-alpha.2 — 2026-07-31
 
 - Integrated the permanent quality-gate sequence `Ruff lint → Ruff format → isolated mypy → trust-boundary strict mypy → statement/branch coverage → Bandit → strict repository audit → all unittest suites`.
 - Added permanent `mypy --strict` validation for `shell_contract.py`, `trust_boundary.py`, `engine_parser_contract.py` and `benchmark_bridge.py` without widening `Any`, excluding files or adding unexplained suppressions.

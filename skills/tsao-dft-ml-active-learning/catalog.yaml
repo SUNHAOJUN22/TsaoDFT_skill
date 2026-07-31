@@ -29,7 +29,7 @@ not_for:
 - treating conformers as independent samples
 - causal claims from SHAP
 - unreviewed autonomous production calculations
-version: 0.4.0-alpha.1
+version: 0.4.0-alpha.2
 implementation_status: implemented_baseline
 support_level: L2_VALIDATED_ADAPTER
 external_requirements:

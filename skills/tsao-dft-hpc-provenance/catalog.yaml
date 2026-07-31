@@ -58,7 +58,7 @@ not_for:
 - redistribution or patching of licensed software
 - unmeasured universal speedup claims
 - automatic public L3 capability promotion
-version: 0.4.0-alpha.1
+version: 0.4.0-alpha.2
 implementation_status: implemented_generation_validation_and_signed_evidence_qualification
 support_level: L2_VALIDATED_ADAPTER
 external_requirements:

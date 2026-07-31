@@ -1,5 +1,5 @@
 schema_version: '1.0'
-release: 0.4.0-alpha.1
+release: 0.4.0-alpha.2
 policy: A capability is implemented only when its scripts and tests are listed. Mentions without adapters remain reference/handoff support.
 capabilities:
 - id: orchestration

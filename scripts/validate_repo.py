@@ -7,7 +7,7 @@ import argparse
 import json
 import re
 from collections.abc import Iterable
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 import yaml
@@ -51,6 +51,7 @@ FORBIDDEN_ROOT_ENTRIES = {
 }
 BACKUP_SUFFIXES = (".bak", ".old", ".orig", ".rej", ".swp", ".tmp", "~")
 BASE64_PAYLOAD_RE = re.compile(r"[A-Za-z0-9+/=\r\n]+\Z")
+WINDOWS_ABSOLUTE_RE = re.compile(r"^[A-Za-z]:/")
 REQUIRED_DEMOS = {
     "workflow-architecture.svg",
     "wavefunction-esp-gallery.svg",
@@ -75,6 +76,30 @@ def iter_files(root: Path) -> Iterable[Path]:
             continue
         if path.is_file():
             yield path
+
+
+def contained_path(root: Path, value: Any) -> Path | None:
+    """Resolve one manifest path and reject absolute, traversal and symlink escapes."""
+
+    if not isinstance(value, str) or not value:
+        return None
+    normalized = value.replace("\\", "/")
+    relative = PurePosixPath(normalized)
+    if WINDOWS_ABSOLUTE_RE.match(normalized) or relative.is_absolute() or ".." in relative.parts:
+        return None
+    candidate = (root / Path(*relative.parts)).resolve()
+    try:
+        candidate.relative_to(root.resolve())
+    except ValueError:
+        return None
+    return candidate
+
+
+def manifest_paths(value: Any, field: str, failures: list[str]) -> list[Any]:
+    if not isinstance(value, list):
+        failures.append(f"{field} must be a list")
+        return []
+    return value
 
 
 def audit_repository_shape(failures: list[str]) -> None:
@@ -157,15 +182,35 @@ def main() -> int:
                 continue
             if release and manifest.get("version") != release:
                 failures.append(f"{skill.name}: manifest version {manifest.get('version')} != release {release}")
-            for rel in manifest.get("always_load", []) or []:
-                if not (skill / str(rel)).exists():
+            always_load = manifest_paths(
+                manifest.get("always_load", []) or [],
+                f"{skill.name}: manifest always_load",
+                failures,
+            )
+            for rel in always_load:
+                target = contained_path(skill, rel)
+                if target is None:
+                    failures.append(f"{skill.name}: unsafe always_load path {rel!r}")
+                elif not target.exists():
                     failures.append(f"{skill.name}: missing always_load path {rel}")
-            for route_name, route in (manifest.get("routes", {}) or {}).items():
+            routes = manifest.get("routes", {}) or {}
+            if not isinstance(routes, dict):
+                failures.append(f"{skill.name}: manifest routes must be a mapping")
+                routes = {}
+            for route_name, route in routes.items():
                 if not isinstance(route, dict):
                     failures.append(f"{skill.name}: route {route_name} is not mapping")
                     continue
-                for rel in route.get("load", []) or []:
-                    if not (skill / str(rel)).exists():
+                route_paths = manifest_paths(
+                    route.get("load", []) or [],
+                    f"{skill.name}: route {route_name} load",
+                    failures,
+                )
+                for rel in route_paths:
+                    target = contained_path(skill, rel)
+                    if target is None:
+                        failures.append(f"{skill.name}: route {route_name} has unsafe path {rel!r}")
+                    elif not target.exists():
                         failures.append(f"{skill.name}: route {route_name} missing {rel}")
             skill_text = (skill / "SKILL.md").read_text(encoding="utf-8") if (skill / "SKILL.md").is_file() else ""
             if release and release not in skill_text:
@@ -183,7 +228,11 @@ def main() -> int:
                 if release and capability.get("release") != release:
                     failures.append("CAPABILITY_STATUS release mismatch")
                 registered: set[str] = set()
-                for item in capability.get("capabilities", []):
+                capabilities = capability.get("capabilities", [])
+                if not isinstance(capabilities, list):
+                    failures.append("CAPABILITY_STATUS capabilities must be a list")
+                    capabilities = []
+                for item in capabilities:
                     if isinstance(item, dict):
                         skill_name = item.get("skill")
                         if isinstance(skill_name, str):
@@ -195,6 +244,7 @@ def main() -> int:
             failures.append(f"CAPABILITY_STATUS parse failed: {exc}")
 
     checked_files = 0
+    text_failure_start = len(failures)
     for file_path in iter_files(ROOT):
         if file_path.name == "SHA256SUMS" or file_path.resolve() == Path(__file__).resolve():
             continue
@@ -239,6 +289,7 @@ def main() -> int:
         readme_path = ROOT / readme_name
         if not readme_path.is_file():
             continue
+        image_failure_start = len(failures)
         text = readme_path.read_text(encoding="utf-8")
         refs: set[str] = set(MD_IMAGE_RE.findall(text)) | set(HTML_IMAGE_RE.findall(text))
         for ref in refs:
@@ -249,7 +300,13 @@ def main() -> int:
                 failures.append(f"{readme_name} contains unsafe image path: {ref}")
             elif not (ROOT / image_path).is_file():
                 failures.append(f"{readme_name} image missing: {ref}")
-        checks.append({"check": f"{readme_name}-images", "count": len(refs), "ok": True})
+        checks.append(
+            {
+                "check": f"{readme_name}-images",
+                "count": len(refs),
+                "ok": len(failures) == image_failure_start,
+            }
+        )
 
     for name in sorted(REQUIRED_DEMOS):
         demo_path = ROOT / "assets" / "demo" / name
@@ -260,7 +317,7 @@ def main() -> int:
 
     checks.extend(
         (
-            {"check": "text-files", "count": checked_files, "ok": True},
+            {"check": "text-files", "count": checked_files, "ok": len(failures) == text_failure_start},
             {"check": "skills", "count": len(skill_dirs), "ok": bool(skill_dirs)},
         )
     )

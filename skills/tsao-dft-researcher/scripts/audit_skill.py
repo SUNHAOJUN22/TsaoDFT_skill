@@ -6,12 +6,14 @@ import json
 import py_compile
 import re
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from utils import load_yaml  # noqa: E402 -- script-local import follows an explicit sys.path setup
+
+WINDOWS_ABSOLUTE_RE = re.compile(r"^[A-Za-z]:/")
 
 
 def frontmatter(text: str) -> dict[str, Any]:
@@ -28,70 +30,122 @@ def frontmatter(text: str) -> dict[str, Any]:
     return data
 
 
+def contained_path(root: Path, value: Any) -> Path | None:
+    """Resolve a Skill-relative path without permitting traversal or symlink escape."""
+
+    if not isinstance(value, str) or not value:
+        return None
+    normalized = value.replace("\\", "/")
+    relative = PurePosixPath(normalized)
+    if WINDOWS_ABSOLUTE_RE.match(normalized) or relative.is_absolute() or ".." in relative.parts:
+        return None
+    candidate = (root / Path(*relative.parts)).resolve()
+    try:
+        candidate.relative_to(root.resolve())
+    except ValueError:
+        return None
+    return candidate
+
+
+def _path_list(value: Any, field: str, failures: list[str]) -> list[Any]:
+    if not isinstance(value, list):
+        failures.append(f"{field} must be a list")
+        return []
+    return value
+
+
 def audit(skill_dir: Path) -> dict[str, Any]:
     skill_dir = skill_dir.resolve()
     failures: list[str] = []
     warnings: list[str] = []
     checks: list[dict[str, Any]] = []
 
-    required = ["SKILL.md", "manifest.yaml", "references", "templates", "scripts"]
-    for rel in required:
+    required = {
+        "SKILL.md": "file",
+        "manifest.yaml": "file",
+        "references": "directory",
+        "templates": "directory",
+        "scripts": "directory",
+    }
+    for rel, kind in required.items():
         path = skill_dir / rel
-        ok = path.exists()
+        ok = path.is_file() if kind == "file" else path.is_dir()
         checks.append({"check": f"required:{rel}", "ok": ok})
         if not ok:
-            failures.append(f"missing required path: {rel}")
+            failures.append(f"missing required {kind}: {rel}")
 
     if failures:
         return {"ok": False, "skill_dir": str(skill_dir), "failures": failures, "warnings": warnings, "checks": checks}
 
     try:
         fm = frontmatter((skill_dir / "SKILL.md").read_text(encoding="utf-8"))
+        frontmatter_failures = len(failures)
         for key in ("name", "description", "license", "compatibility", "metadata"):
             if key not in fm:
                 failures.append(f"SKILL.md frontmatter missing: {key}")
         checks.append(
-            {"check": "skill-frontmatter", "ok": not any("frontmatter" in x for x in failures), "name": fm.get("name")}
+            {
+                "check": "skill-frontmatter",
+                "ok": len(failures) == frontmatter_failures,
+                "name": fm.get("name"),
+            }
         )
     except Exception as exc:
         failures.append(str(exc))
+        checks.append({"check": "skill-frontmatter", "ok": False})
 
+    manifest_failure_start = len(failures)
+    route_count = 0
     try:
         manifest = load_yaml(skill_dir / "manifest.yaml")
-        always = manifest.get("always_load", []) or []
+        always = _path_list(manifest.get("always_load", []) or [], "manifest always_load", failures)
         routes = manifest.get("routes", {}) or {}
         for rel in always:
-            if not (skill_dir / str(rel)).exists():
+            target = contained_path(skill_dir, rel)
+            if target is None:
+                failures.append(f"manifest always_load unsafe path: {rel!r}")
+            elif not target.exists():
                 failures.append(f"manifest always_load missing: {rel}")
         if not isinstance(routes, dict) or not routes:
             failures.append("manifest routes is empty or invalid")
         else:
+            route_count = len(routes)
             for route, payload in routes.items():
                 if not isinstance(payload, dict):
                     failures.append(f"route {route} must be a mapping")
                     continue
-                for rel in payload.get("load", []) or []:
-                    if not (skill_dir / str(rel)).exists():
+                route_paths = _path_list(payload.get("load", []) or [], f"route {route} load", failures)
+                for rel in route_paths:
+                    target = contained_path(skill_dir, rel)
+                    if target is None:
+                        failures.append(f"route {route} references unsafe path: {rel!r}")
+                    elif not target.exists():
                         failures.append(f"route {route} references missing file: {rel}")
-        checks.append(
-            {
-                "check": "manifest-references",
-                "ok": not any("manifest" in x or "route " in x for x in failures),
-                "routes": len(routes),
-            }
-        )
     except Exception as exc:
         failures.append(f"manifest parse failed: {exc}")
+    checks.append(
+        {
+            "check": "manifest-references",
+            "ok": len(failures) == manifest_failure_start,
+            "routes": route_count,
+        }
+    )
 
     text_suffixes = {".md", ".yaml", ".yml", ".json", ".py", ".gjf", ".tcl", ".txt"}
     control_issues = 0
     placeholder_issues = 0
+    text_failure_start = len(failures)
     for path in skill_dir.rglob("*"):
         if not path.is_file() or "__pycache__" in path.parts:
             continue
+        try:
+            path.resolve().relative_to(skill_dir)
+        except ValueError:
+            failures.append(f"file or symlink escapes Skill root: {path.relative_to(skill_dir)}")
+            continue
         data = path.read_bytes()
         if path.suffix.lower() in text_suffixes:
-            bad = [b for b in data if b < 32 and b not in (9, 10, 13)]
+            bad = [byte for byte in data if byte < 32 and byte not in (9, 10, 13)]
             if bad:
                 control_issues += 1
                 failures.append(f"control characters in text file: {path.relative_to(skill_dir)}")
@@ -120,7 +174,14 @@ def audit(skill_dir: Path) -> dict[str, Any]:
             py_compile.compile(str(path), doraise=True)
         except Exception as exc:
             failures.append(f"Python compile failed {path.name}: {exc}")
-    checks.append({"check": "text-and-syntax", "ok": control_issues == 0, "placeholder_warnings": placeholder_issues})
+    checks.append(
+        {
+            "check": "text-and-syntax",
+            "ok": len(failures) == text_failure_start,
+            "control_issues": control_issues,
+            "placeholder_warnings": placeholder_issues,
+        }
+    )
 
     examples = list((skill_dir / "examples").rglob("*.yaml")) if (skill_dir / "examples").exists() else []
     if not examples:

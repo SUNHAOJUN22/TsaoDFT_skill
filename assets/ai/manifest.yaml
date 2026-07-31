@@ -1,5 +1,5 @@
 schema_version: '1.8'
-release: 0.4.0-alpha.1
+release: 0.4.0-alpha.2
 policy: AI-assisted visuals are limited to one conceptual overview; deterministic or accepted real data owns quantitative claims.
 visual_system: uiux_pro_v8_hero_evidence_bento
 render_validation: local_cairosvg_preview_checked_1600x900_and_half_width

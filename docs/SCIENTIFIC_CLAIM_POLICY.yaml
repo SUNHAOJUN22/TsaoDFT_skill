@@ -1,5 +1,5 @@
 schema_version: '1.0'
-release: 0.4.0-alpha.1
+release: 0.4.0-alpha.2
 policy: Scientific and engineering claims must not exceed the strongest accepted evidence and support level.
 support_levels:
   - L0_REFERENCE

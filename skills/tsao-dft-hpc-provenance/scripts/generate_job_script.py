@@ -31,12 +31,14 @@ def approval_guard(manifest: dict[str, Any]) -> list[str]:
     return [f'echo "TsaoDFT execution blocked: manifest approval is {approval}" >&2', "exit 64"]
 
 
-def launcher_prefix(manifest: dict[str, Any]) -> str:
+def launcher_argv(manifest: dict[str, Any]) -> list[str]:
+    """Return the validated launcher as structured argv."""
+
     launcher = manifest.get("launcher")
     if isinstance(launcher, dict):
-        return render_argv(launcher["argv"]) + " "
+        return [str(item) for item in launcher["argv"]]
     if launcher != "auto":
-        return ""
+        return []
     resources = manifest["resources"]
     if manifest["scheduler"] != "slurm":
         raise ValueError("launcher=auto is supported only for Slurm")
@@ -57,7 +59,12 @@ def launcher_prefix(manifest: dict[str, Any]) -> str:
             value = str(acceleration.get(key, "none"))
             if value != "none":
                 options.append(f"{flag}={value}")
-    return " ".join(q(item) for item in options) + " "
+    return options
+
+
+def launcher_prefix(manifest: dict[str, Any]) -> str:
+    argv = launcher_argv(manifest)
+    return render_argv(argv) + " " if argv else ""
 
 
 def engine_argv(manifest: dict[str, Any]) -> list[str]:
@@ -73,6 +80,12 @@ def engine_argv(manifest: dict[str, Any]) -> list[str]:
     if engine == "cp2k":
         return [executable, "-i", input_path, "-o", str(manifest.get("stdout") or "cp2k.out")]
     return [executable, input_path]
+
+
+def execution_argv(manifest: dict[str, Any]) -> list[str]:
+    """Return launcher and engine execution as one structured argv vector."""
+
+    return [*launcher_argv(manifest), *engine_argv(manifest)]
 
 
 def engine_command(manifest: dict[str, Any]) -> str:
@@ -187,12 +200,28 @@ def build(manifest: dict[str, Any]) -> str:
     lines.append(f"# preflight: {render_argv(preflight['argv'])}")
     if preflight.get("run_in_job") is True:
         lines.append(render_argv(preflight["argv"]))
-    lines.append(engine_command(manifest))
-    lines += ["rc=$?", 'echo "TsaoDFT job end: $(date -Is) rc=${rc}"']
+    lines.extend(["set +e", engine_command(manifest), "rc=$?", "set -e"])
+    lines.append('echo "TsaoDFT job end: $(date -Is) rc=${rc}"')
     parser_contract = manifest["parser"]
+    lines.append("parser_rc=0")
     if parser_contract.get("run_in_job") is True:
-        lines.append(render_argv(parser_contract["argv"]))
-    lines.append("exit ${rc}")
+        lines.extend(
+            [
+                "set +e",
+                render_argv(parser_contract["argv"]),
+                "parser_rc=$?",
+                "set -e",
+                'echo "TsaoDFT parser end: $(date -Is) rc=${parser_rc}"',
+            ]
+        )
+    lines.extend(
+        [
+            'if [ "${rc}" -ne 0 ]; then',
+            '  exit "${rc}"',
+            "fi",
+            'exit "${parser_rc}"',
+        ]
+    )
     return "\n".join(lines) + "\n"
 
 

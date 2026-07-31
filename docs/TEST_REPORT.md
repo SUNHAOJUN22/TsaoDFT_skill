@@ -1,9 +1,9 @@
 # Test Report
 
-Date: 2026-07-30  
-Version: `0.4.0-alpha.1`  
-Code qualification source commit before documentation closure: `3f43bb8266dd3e218b3df6f0e48d7f4861113908`  
-Code qualification GitHub Actions run: `30557385623`
+Date: 2026-07-31  
+Version: `0.4.0-alpha.2`  
+Pre-freeze qualification source commit: `3cb0925acd8605a897163e9a48f33c0a689c6454`  
+Pre-freeze qualification GitHub Actions run: `30595469898`
 
 ## Result
 
@@ -66,9 +66,9 @@ Trust-boundary core modules:
 
 Coverage is collected across the nine isolated test subprocesses, including subprocess-launched production CLIs. Each Python matrix job uploads a machine-readable `coverage-report.json` artifact.
 
-## Hosted CI evidence
+## Hosted CI evidence entering the freeze
 
-Run `30557385623` completed successfully with:
+Run `30595469898` completed successfully with:
 
 - Python 3.10 quality gate: PASS;
 - Python 3.12 quality gate: PASS;

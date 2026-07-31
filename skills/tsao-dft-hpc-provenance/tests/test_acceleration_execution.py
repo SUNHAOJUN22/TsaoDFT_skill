@@ -61,6 +61,22 @@ class AccelerationExecutionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "does not match"):
             self.materializer.materialize_manifest(base, copy.deepcopy(self.profile))
 
+    def test_materializer_rejects_lossy_integer_and_string_boolean_values(self):
+        with self.assertRaisesRegex(ValueError, "must be an integer"):
+            self.materializer.positive_integer(1.9, "hardware.nodes")
+        with self.assertRaisesRegex(ValueError, "must be an integer"):
+            self.materializer.positive_integer(True, "hardware.nodes")
+
+        profile = copy.deepcopy(self.profile)
+        profile["binding"]["allow_gpu_oversubscription"] = "false"
+        with self.assertRaisesRegex(ValueError, "must be boolean"):
+            self.materializer.acceleration_contract(profile, {"recommended_path": "test"})
+
+        profile = copy.deepcopy(self.profile)
+        profile["binding"]["record_runtime"] = "false"
+        with self.assertRaisesRegex(ValueError, "must be boolean"):
+            self.materializer.acceleration_contract(profile, {"recommended_path": "test"})
+
     def test_validator_rejects_rank_gpu_topology_mismatch(self):
         manifest = self.materialized()
         manifest["resources"]["tasks_per_node"] = 3
@@ -170,6 +186,19 @@ class AccelerationExecutionTests(unittest.TestCase):
                 (root / "manifest.yaml").read_text(encoding="utf-8"),
             )
             self.assertEqual(len(first), 4)
+
+            (root / "candidates" / "foreign.yaml").write_text("foreign: true\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "stale or foreign"):
+                self.materializer.write_outputs(
+                    copy.deepcopy(self.base),
+                    accelerated,
+                    plan,
+                    rows,
+                    root / "manifest.yaml",
+                    root / "matrix.csv",
+                    root / "candidates",
+                    root / "plan.json",
+                )
 
 
 if __name__ == "__main__":

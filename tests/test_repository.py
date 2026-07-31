@@ -1,8 +1,11 @@
 import hashlib
+import importlib.util
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -30,39 +33,56 @@ DEMOS = [
 
 
 class RepositoryTests(unittest.TestCase):
+    @staticmethod
+    def load_repository_validator() -> Any:
+        path = ROOT / "scripts" / "validate_repo.py"
+        spec = importlib.util.spec_from_file_location("tsao_validate_repo", path)
+        if spec is None or spec.loader is None:
+            raise RuntimeError(f"cannot import {path}")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
     def test_required_skills(self):
-        for s in SKILLS:
-            base = ROOT / "skills" / s
+        for skill_name in SKILLS:
+            base = ROOT / "skills" / skill_name
             self.assertTrue((base / "SKILL.md").exists())
             self.assertTrue((base / "catalog.yaml").exists())
 
     def test_readme_demo_assets(self):
         for stem in DEMOS:
-            p = ROOT / f"assets/demo/{stem}.svg"
-            self.assertGreater(p.stat().st_size, 800)
-            self.assertIn("SYNTHETIC DEMO", p.read_text())
+            path = ROOT / f"assets/demo/{stem}.svg"
+            self.assertGreater(path.stat().st_size, 800)
+            self.assertIn("SYNTHETIC DEMO", path.read_text())
 
     def test_demo_regeneration_is_deterministic(self):
-        def h():
+        def hashes():
             return {
-                p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((ROOT / "assets/demo").glob("*.svg"))
+                path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+                for path in sorted((ROOT / "assets/demo").glob("*.svg"))
             }
 
-        b = h()
-        r = subprocess.run(
-            [sys.executable, str(ROOT / "scripts/generate_readme_demos.py")], cwd=ROOT, capture_output=True, text=True
+        before = hashes()
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/generate_readme_demos.py")],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
         )
-        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-        self.assertEqual(b, h())
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(before, hashes())
 
     def test_catalog(self):
-        r = subprocess.run(
-            [sys.executable, str(ROOT / "scripts/validate_catalog.py")], cwd=ROOT, capture_output=True, text=True
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/validate_catalog.py")],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
         )
-        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_installer_dry_run(self):
-        r = subprocess.run(
+        result = subprocess.run(
             [
                 sys.executable,
                 str(ROOT / "scripts/install.py"),
@@ -79,7 +99,7 @@ class RepositoryTests(unittest.TestCase):
             capture_output=True,
             text=True,
         )
-        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_support_docs_and_plugin(self):
         for rel in [
@@ -94,10 +114,33 @@ class RepositoryTests(unittest.TestCase):
         self.assertEqual(data["release"], "0.4.0-alpha.2")
 
     def test_repo_validator(self):
-        r = subprocess.run(
-            [sys.executable, str(ROOT / "scripts/validate_repo.py")], cwd=ROOT, capture_output=True, text=True
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/validate_repo.py")],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
         )
-        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_manifest_paths_cannot_escape_repository_scope(self):
+        validator = self.load_repository_validator()
+        with tempfile.TemporaryDirectory() as temporary:
+            parent = Path(temporary)
+            skill = parent / "skill"
+            skill.mkdir()
+            inside = skill / "inside.md"
+            inside.write_text("inside", encoding="utf-8")
+            outside = parent / "outside.md"
+            outside.write_text("outside", encoding="utf-8")
+            self.assertEqual(validator.contained_path(skill, "inside.md"), inside.resolve())
+            self.assertIsNone(validator.contained_path(skill, "../outside.md"))
+            self.assertIsNone(validator.contained_path(skill, str(outside.resolve())))
+            link = skill / "outside-link.md"
+            try:
+                link.symlink_to(outside)
+            except OSError:
+                return
+            self.assertIsNone(validator.contained_path(skill, "outside-link.md"))
 
 
 if __name__ == "__main__":

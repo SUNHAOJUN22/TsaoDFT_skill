@@ -3,7 +3,7 @@ name: tsao-dft-hpc-provenance
 description: "Prepare and audit local, Slurm, PBS and cloud/HPC computational-chemistry execution: non-invoking hardware/environment inventory, dependency checks, cross-vendor CPU/GPU and native-code acceleration planning, bounded automatic-tuning candidate generation, resource estimates, structured-argv job scripts, benchmark campaigns, real-result evidence import, numerical-equivalence-first comparison, signed review, content-addressed scoped L3 performance qualification, batch DAGs, monitoring, failure classification, checkpoint/restart policy, provenance, reproducibility and scientific CI."
 license: MIT
 compatibility: Python 3.10+ and PyYAML. Slurm, PBS, CUDA-X/OpenACC, ROCm/HIP, oneAPI/SYCL, Metal/MPS, OpenMP offload, Kokkos, MPI, containers, AiiDA, Snakemake and Nextflow are optional external systems.
-metadata: {"version": "0.4.0-alpha.1", "author": "SUNHAOJUN22", "repository": "https://github.com/SUNHAOJUN22/TsaoDFT_skill"}
+metadata: {"version": "0.4.0-alpha.2", "author": "SUNHAOJUN22", "repository": "https://github.com/SUNHAOJUN22/TsaoDFT_skill"}
 ---
 
 # Tsao DFT HPC and Provenance

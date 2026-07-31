@@ -24,7 +24,7 @@ not_for:
 - ignoring standard states
 - declaring RDS from barrier alone
 - mixing fitted and first-principles parameters
-version: 0.4.0-alpha.1
+version: 0.4.0-alpha.2
 implementation_status: implemented_core_handoff
 support_level: L2_VALIDATED_ADAPTER
 external_requirements:

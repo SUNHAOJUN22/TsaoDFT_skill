@@ -116,7 +116,13 @@ class StructureAccelerationTests(unittest.TestCase):
             source = root / "bad.yaml"
             source.write_text("axes: [bad\n", encoding="utf-8")
             result = subprocess.run(
-                [sys.executable, str(SCRIPTS / "expand_structure_campaign.py"), str(source), "--out", str(root / "out.csv")],
+                [
+                    sys.executable,
+                    str(SCRIPTS / "expand_structure_campaign.py"),
+                    str(source),
+                    "--out",
+                    str(root / "out.csv"),
+                ],
                 capture_output=True,
                 text=True,
                 check=False,

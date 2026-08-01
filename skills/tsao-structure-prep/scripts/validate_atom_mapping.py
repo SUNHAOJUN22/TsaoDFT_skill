@@ -60,7 +60,9 @@ def validate(
     atom_count = len(atoms_a)
     if mapping is None:
         normalized_mapping = list(range(1, atom_count + 1))
-    elif not isinstance(mapping, list) or not all(isinstance(item, int) and not isinstance(item, bool) for item in mapping):
+    elif not isinstance(mapping, list) or not all(
+        isinstance(item, int) and not isinstance(item, bool) for item in mapping
+    ):
         errors.append("mapping must be a list of integers")
         return errors, warnings, {}
     else:

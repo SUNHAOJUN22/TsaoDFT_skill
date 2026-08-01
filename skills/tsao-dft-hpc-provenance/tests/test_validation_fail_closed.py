@@ -103,17 +103,17 @@ class HpcValidationFailClosedTests(unittest.TestCase):
         self.assertTrue(report["ok"])
         self.assertEqual(report["allocated_cpu_hours_total"], 192.0)
         self.assertAlmostEqual(self.resources.hours("1-01:30:00"), 25.5)
-        for bad in ("00:99:00", "1-24:00:00", "bad"):
+        for bad_walltime in ("00:99:00", "1-24:00:00", "bad"):
             with self.assertRaises(ValueError):
-                self.resources.hours(bad)
+                self.resources.hours(bad_walltime)
         with self.assertRaisesRegex(ValueError, "manifest root"):
             self.resources.estimate([], 1)
         with self.assertRaisesRegex(ValueError, "jobs"):
             self.resources.estimate(copy.deepcopy(self.manifest), True)
-        bad = copy.deepcopy(self.manifest)
-        bad["resources"]["memory_gb"] = float("inf")
+        bad_manifest = copy.deepcopy(self.manifest)
+        bad_manifest["resources"]["memory_gb"] = float("inf")
         with self.assertRaisesRegex(ValueError, "memory_gb"):
-            self.resources.estimate(bad, 1)
+            self.resources.estimate(bad_manifest, 1)
 
     def test_malformed_yaml_is_structured_failure(self) -> None:
         scripts = ("validate_site_profile.py", "validate_restart_lineage.py", "estimate_resources.py")

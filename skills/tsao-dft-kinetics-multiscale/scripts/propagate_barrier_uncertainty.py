@@ -5,47 +5,50 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 
-KB = 1.380649e-23
-H = 6.62607015e-34
-R = 1.98720425864083
+from tst_math import tst_rate_interval
 
 
-def rate(dg, T, kappa, deg):
-    return kappa * deg * KB * T / H * math.exp(-dg / (R * T))
+def rate_unit(molecularity: int) -> str:
+    if molecularity < 1:
+        raise ValueError("molecularity must be a positive integer")
+    if molecularity == 1:
+        return "s^-1"
+    if molecularity == 2:
+        return "M^-1 s^-1 (standard-state convention required)"
+    return f"concentration^({1 - molecularity}) s^-1"
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--barrier", type=float, required=True)
-    ap.add_argument("--uncertainty", type=float, required=True)
-    ap.add_argument("--temperature", type=float, required=True)
-    ap.add_argument("--kappa", type=float, default=1.0)
-    ap.add_argument("--degeneracy", type=float, default=1.0)
-    ap.add_argument("--molecularity", type=int, default=1)
-    a = ap.parse_args()
-    if a.temperature <= 0 or a.uncertainty < 0 or a.kappa <= 0 or a.degeneracy <= 0:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--barrier", type=float, required=True)
+    parser.add_argument("--uncertainty", type=float, required=True)
+    parser.add_argument("--temperature", type=float, required=True)
+    parser.add_argument("--kappa", type=float, default=1.0)
+    parser.add_argument("--degeneracy", type=float, default=1.0)
+    parser.add_argument("--molecularity", type=int, default=1)
+    args = parser.parse_args()
+    try:
+        interval = tst_rate_interval(
+            args.barrier,
+            args.uncertainty,
+            args.temperature,
+            args.kappa,
+            args.degeneracy,
+        )
+        unit = rate_unit(args.molecularity)
+    except (ValueError, OverflowError) as exc:
+        print(json.dumps({"ok": False, "errors": [str(exc)]}, indent=2))
         return 1
-    central = rate(a.barrier, a.temperature, a.kappa, a.degeneracy)
-    slow = rate(a.barrier + a.uncertainty, a.temperature, a.kappa, a.degeneracy)
-    fast = rate(a.barrier - a.uncertainty, a.temperature, a.kappa, a.degeneracy)
-    unit = (
-        "s^-1"
-        if a.molecularity == 1
-        else "M^-1 s^-1 (standard-state convention required)"
-        if a.molecularity == 2
-        else f"concentration^({1 - a.molecularity}) s^-1"
-    )
+
     print(
         json.dumps(
             {
-                "barrier_kcal_mol": a.barrier,
-                "uncertainty_kcal_mol": a.uncertainty,
-                "temperature_K": a.temperature,
-                "central_rate": central,
-                "lower_rate": slow,
-                "upper_rate": fast,
+                "ok": True,
+                "barrier_kcal_mol": args.barrier,
+                "uncertainty_kcal_mol": args.uncertainty,
+                "temperature_K": args.temperature,
+                **interval,
                 "rate_unit": unit,
                 "note": "Interval reflects only the declared barrier bound, not model/transport uncertainty.",
             },

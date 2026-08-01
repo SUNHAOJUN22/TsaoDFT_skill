@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import random
 from pathlib import Path
 
@@ -20,13 +21,19 @@ def read(path: Path) -> list[dict[str, str]]:
 
 
 def metrics(y, prediction):
-    y = np.asarray(y, float)
-    prediction = np.asarray(prediction, float)
+    y = np.asarray(y, dtype=float)
+    prediction = np.asarray(prediction, dtype=float)
+    if y.ndim != 1 or prediction.ndim != 1 or y.shape != prediction.shape or y.size == 0:
+        raise ValueError("metrics require aligned non-empty one-dimensional arrays")
+    if not np.isfinite(y).all() or not np.isfinite(prediction).all():
+        raise ValueError("metric inputs must contain only finite values")
     error = prediction - y
+    squared_error = float(error @ error)
+    centered = y - y.mean()
+    denominator = float(centered @ centered)
     mae = float(np.mean(np.abs(error)))
-    rmse = float(np.sqrt(np.mean(error**2)))
-    denominator = float(np.sum((y - y.mean()) ** 2))
-    r2 = float(1 - np.sum(error**2) / denominator) if denominator > 0 else None
+    rmse = math.sqrt(squared_error / y.size)
+    r2 = float(1 - squared_error / denominator) if denominator > 0 else None
     return {"mae": mae, "rmse": rmse, "r2": r2}
 
 
@@ -52,41 +59,52 @@ def fit_ridge(
     solver: str = "auto",
 ) -> tuple[float, np.ndarray, str, int]:
     """Fit ridge with an unpenalized intercept and the smaller linear system when possible."""
+
     x_train = np.asarray(x_train, dtype=float)
     y_train = np.asarray(y_train, dtype=float)
     if x_train.ndim != 2 or y_train.ndim != 1 or len(x_train) != len(y_train):
         raise ValueError("x_train must be 2-D and aligned with one-dimensional y_train")
     if not np.isfinite(x_train).all() or not np.isfinite(y_train).all():
         raise ValueError("training matrix and target must contain only finite values")
-    if alpha < 0:
-        raise ValueError("alpha must be non-negative")
+    if not np.isfinite(alpha) or alpha < 0:
+        raise ValueError("alpha must be finite and non-negative")
     if solver not in SOLVERS:
         raise ValueError(f"solver must be one of {SOLVERS}")
 
     sample_count, feature_count = x_train.shape
-    intercept = float(y_train.mean())
-    centered_target = y_train - intercept
+    if sample_count < 1 or feature_count < 1:
+        raise ValueError("x_train must contain at least one sample and one feature")
 
     if alpha == 0:
         design = np.column_stack((np.ones(sample_count), x_train))
         beta, *_ = np.linalg.lstsq(design, y_train, rcond=None)
         return float(beta[0]), np.asarray(beta[1:], float), "lstsq", min(design.shape)
 
+    feature_mean = x_train.mean(axis=0)
+    target_mean = float(y_train.mean())
+    centered_features = x_train - feature_mean
+    centered_target = y_train - target_mean
+
     selected = solver
     if solver == "auto":
         selected = "dual" if feature_count > sample_count else "primal"
 
     if selected == "dual":
-        gram = x_train @ x_train.T
-        dual = np.linalg.solve(gram + alpha * np.eye(sample_count), centered_target)
-        coefficients = x_train.T @ dual
+        gram = centered_features @ centered_features.T
+        gram.flat[:: sample_count + 1] += alpha
+        dual = np.linalg.solve(gram, centered_target)
+        coefficients = centered_features.T @ dual
         dimension = sample_count
     else:
-        gram = x_train.T @ x_train
-        coefficients = np.linalg.solve(gram + alpha * np.eye(feature_count), x_train.T @ centered_target)
+        gram = centered_features.T @ centered_features
+        gram.flat[:: feature_count + 1] += alpha
+        right_hand_side = centered_features.T @ centered_target
+        coefficients = np.linalg.solve(gram, right_hand_side)
         dimension = feature_count
 
-    return intercept, np.asarray(coefficients, float), selected, dimension
+    coefficients = np.asarray(coefficients, dtype=float)
+    intercept = target_mean - float(feature_mean @ coefficients)
+    return intercept, coefficients, selected, dimension
 
 
 def main() -> int:
@@ -108,8 +126,8 @@ def main() -> int:
         errors.append("dataset is empty")
     if not features:
         errors.append("at least one feature is required")
-    if args.alpha < 0:
-        errors.append("alpha must be non-negative")
+    if not math.isfinite(args.alpha) or args.alpha < 0:
+        errors.append("alpha must be finite and non-negative")
     if errors:
         print(json.dumps({"ok": False, "errors": errors}, indent=2))
         return 1

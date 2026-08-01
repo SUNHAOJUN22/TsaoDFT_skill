@@ -95,8 +95,8 @@ def validate(
         displacement = coordinates_a - coordinates_b[mapping_indices]
         distances = np.hypot.reduce(displacement, axis=1)
         finite = np.isfinite(distances)
-        for index in np.flatnonzero(~finite):
-            errors.append(f"non-finite displacement for atom {int(index) + 1}")
+        for invalid_index in np.flatnonzero(~finite):
+            errors.append(f"non-finite displacement for atom {int(invalid_index) + 1}")
         finite_distances = distances[finite]
         if finite_distances.size:
             rmsd = float(np.hypot.reduce(finite_distances) / math.sqrt(atom_count))

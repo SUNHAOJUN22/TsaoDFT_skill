@@ -69,11 +69,7 @@ def analyze(
         for previous, current in itertools.pairwise(points)
     ]
     tail = deltas[-required_tail:] if len(deltas) >= required_tail else []
-    converged = (
-        not errors
-        and len(tail) == required_tail
-        and all(item["absolute_change"] <= threshold for item in tail)
-    )
+    converged = not errors and len(tail) == required_tail and all(item["absolute_change"] <= threshold for item in tail)
     return {
         "ok": not errors,
         "errors": sorted(set(errors)),

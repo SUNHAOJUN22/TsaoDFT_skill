@@ -53,6 +53,14 @@ def clone(value: Any) -> Any:
     return json.loads(json.dumps(value, ensure_ascii=False))
 
 
+def is_finite_real(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(float(value))
+
+
+def is_exact_integer(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
 def require_mapping(value: Any, name: str, errors: list[str]) -> dict[str, Any]:
     if not isinstance(value, dict):
         errors.append(f"{name} must be a mapping")
@@ -78,16 +86,13 @@ def require_number(
     exclusive: bool = False,
 ) -> float:
     value = mapping.get(key)
-    if value is None or isinstance(value, bool):
+    if value is None or isinstance(value, bool) or not isinstance(value, (int, float)):
         errors.append(f"{path}.{key} must be numeric")
         return 0.0
-    try:
-        result = float(value)
-    except (TypeError, ValueError):
-        errors.append(f"{path}.{key} must be numeric")
-        return 0.0
+    result = float(value)
     if not math.isfinite(result):
         errors.append(f"{path}.{key} must be finite")
+        return result
     if minimum is not None and ((exclusive and result <= minimum) or (not exclusive and result < minimum)):
         comparator = ">" if exclusive else ">="
         errors.append(f"{path}.{key} must be {comparator}{minimum}")
@@ -96,23 +101,42 @@ def require_number(
 
 def require_integer(mapping: dict[str, Any], key: str, path: str, errors: list[str], *, minimum: int = 0) -> int:
     value = mapping.get(key)
-    if value is None or isinstance(value, bool):
+    if not is_exact_integer(value):
         errors.append(f"{path}.{key} must be an integer")
         return minimum
-    try:
-        result = int(value)
-    except (TypeError, ValueError):
-        errors.append(f"{path}.{key} must be an integer")
-        return minimum
+    result = int(value)
     if result < minimum:
         errors.append(f"{path}.{key} must be >={minimum}")
     return result
 
 
+def strict_policy_number(
+    mapping: dict[str, Any], key: str, default: float, *, minimum: float | None = None, exclusive: bool = False
+) -> float:
+    value = mapping.get(key, default)
+    if not is_finite_real(value):
+        raise ValueError(f"policy.{key} must be finite numeric")
+    result = float(value)
+    if minimum is not None and ((exclusive and result <= minimum) or (not exclusive and result < minimum)):
+        comparator = ">" if exclusive else ">="
+        raise ValueError(f"policy.{key} must be {comparator}{minimum}")
+    return result
+
+
+def strict_policy_integer(mapping: dict[str, Any], key: str, default: int, *, minimum: int = 0) -> int:
+    value = mapping.get(key, default)
+    if not is_exact_integer(value):
+        raise ValueError(f"policy.{key} must be an integer")
+    result = int(value)
+    if result < minimum:
+        raise ValueError(f"policy.{key} must be >={minimum}")
+    return result
+
+
 def performance_float(record: dict[str, Any], key: str) -> float:
     value = (record.get("performance") or {}).get(key)
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise ValueError(f"validated performance field is not numeric: {key}")
+    if not is_finite_real(value):
+        raise ValueError(f"validated performance field is not finite numeric: {key}")
     return float(value)
 
 
@@ -192,10 +216,11 @@ def load_policy(path: Path) -> dict[str, Any]:
 
 
 def result_sort_key(record: dict[str, Any]) -> tuple[str, str, int, str]:
+    repeat_index = record.get("repeat_index", 0)
     return (
         str(record.get("benchmark_plan_id", "")),
         str(record.get("candidate_id", "")),
-        int(record.get("repeat_index", 0) or 0),
+        int(repeat_index) if is_exact_integer(repeat_index) else 0,
         str((record.get("execution") or {}).get("run_id", "")),
     )
 
@@ -305,24 +330,31 @@ def validate_result(
     thresholds = scientific.get("convergence_thresholds")
     if not isinstance(thresholds, dict) or not thresholds:
         errors.append("scientific.convergence_thresholds must be a non-empty mapping")
+    elif not all(isinstance(name, str) and name and is_finite_real(value) for name, value in thresholds.items()):
+        errors.append("scientific.convergence_thresholds must map non-empty names to finite numeric values")
     observable_set = scientific.get("observable_set")
-    if not isinstance(observable_set, list) or not observable_set:
-        errors.append("scientific.observable_set must be a non-empty list")
+    if (
+        not isinstance(observable_set, list)
+        or not observable_set
+        or not all(isinstance(item, str) and item for item in observable_set)
+        or len(set(observable_set)) != len(observable_set)
+    ):
+        errors.append("scientific.observable_set must be a unique non-empty string list")
     if not isinstance(scientific.get("parser_accepted"), bool):
         errors.append("scientific.parser_accepted must be boolean")
     results = require_mapping(scientific.get("results"), "scientific.results", errors)
+    energy = results.get("energy_ev")
+    if energy is not None and not is_finite_real(energy):
+        errors.append("scientific.results.energy_ev must be finite numeric or null")
     for key in ("forces_ev_per_angstrom", "stress_gpa"):
         value = results.get(key)
-        if value is not None and (
-            not isinstance(value, list)
-            or not all(isinstance(item, (int, float)) and not isinstance(item, bool) for item in value)
-        ):
-            errors.append(f"scientific.results.{key} must be a numeric list or null")
+        if value is not None and (not isinstance(value, list) or not all(is_finite_real(item) for item in value)):
+            errors.append(f"scientific.results.{key} must be a finite numeric list or null")
     properties = results.get("properties", {})
     if not isinstance(properties, dict) or not all(
-        isinstance(value, (int, float)) and not isinstance(value, bool) for value in properties.values()
+        isinstance(name, str) and name and is_finite_real(value) for name, value in properties.items()
     ):
-        errors.append("scientific.results.properties must map names to numeric values")
+        errors.append("scientific.results.properties must map non-empty names to finite numeric values")
 
     performance = require_mapping(normalized.get("performance"), "performance", errors)
     require_number(performance, "wall_time_s", "performance", errors, minimum=0.0, exclusive=True)
@@ -407,12 +439,16 @@ def eligible_success(record: dict[str, Any]) -> bool:
 
 
 def percentile(values: list[float], fraction: float) -> float | None:
+    if not is_finite_real(fraction) or not 0.0 <= float(fraction) <= 1.0:
+        raise ValueError("percentile fraction must be finite and between 0 and 1")
+    if not all(is_finite_real(value) for value in values):
+        raise ValueError("percentile values must be finite numeric")
     if not values:
         return None
-    ordered = sorted(values)
+    ordered = sorted(float(value) for value in values)
     if len(ordered) == 1:
         return ordered[0]
-    location = (len(ordered) - 1) * fraction
+    location = (len(ordered) - 1) * float(fraction)
     lower = math.floor(location)
     upper = math.ceil(location)
     if lower == upper:
@@ -422,7 +458,12 @@ def percentile(values: list[float], fraction: float) -> float | None:
 
 
 def numeric_summary(values: list[float], outlier_threshold: float) -> dict[str, Any]:
-    if not values:
+    if not is_finite_real(outlier_threshold) or float(outlier_threshold) <= 0:
+        raise ValueError("outlier threshold must be finite and positive")
+    if not all(is_finite_real(value) for value in values):
+        raise ValueError("summary values must be finite numeric")
+    normalized_values = [float(value) for value in values]
+    if not normalized_values:
         return {
             "count": 0,
             "median": None,
@@ -434,19 +475,21 @@ def numeric_summary(values: list[float], outlier_threshold: float) -> dict[str, 
             "mad": None,
             "outlier_count": 0,
         }
-    median = statistics.median(values)
-    deviations = [abs(value - median) for value in values]
+    median = statistics.median(normalized_values)
+    deviations = [abs(value - median) for value in normalized_values]
     mad = statistics.median(deviations)
     outliers = 0
     if mad > 0:
-        outliers = sum(abs(0.6745 * (value - median) / mad) > outlier_threshold for value in values)
-    q1 = percentile(values, 0.25)
-    q3 = percentile(values, 0.75)
+        outliers = sum(
+            abs(0.6745 * (value - median) / mad) > float(outlier_threshold) for value in normalized_values
+        )
+    q1 = percentile(normalized_values, 0.25)
+    q3 = percentile(normalized_values, 0.75)
     return {
-        "count": len(values),
+        "count": len(normalized_values),
         "median": median,
-        "minimum": min(values),
-        "maximum": max(values),
+        "minimum": min(normalized_values),
+        "maximum": max(normalized_values),
         "q1": q1,
         "q3": q3,
         "iqr": None if q1 is None or q3 is None else q3 - q1,
@@ -476,32 +519,32 @@ def median_vector(records: list[dict[str, Any]], key: str) -> list[float] | None
     if not vectors:
         return None
     lengths = {len(vector) for vector in vectors}
-    if len(lengths) != 1:
+    if len(lengths) != 1 or not all(all(is_finite_real(item) for item in vector) for vector in vectors):
         return None
     return [statistics.median(float(vector[index]) for vector in vectors) for index in range(len(vectors[0]))]
 
 
 def reference_observables(records: list[dict[str, Any]]) -> dict[str, Any]:
     energies = [
-        float((record.get("scientific") or {}).get("results", {}).get("energy_ev"))
+        float(value)
         for record in records
-        if isinstance((record.get("scientific") or {}).get("results", {}).get("energy_ev"), (int, float))
+        if is_finite_real(value := (record.get("scientific") or {}).get("results", {}).get("energy_ev"))
     ]
     property_names = sorted(
         {
             name
             for record in records
             for name in ((record.get("scientific") or {}).get("results", {}).get("properties") or {})
+            if isinstance(name, str) and name
         }
     )
     properties: dict[str, float] = {}
     for name in property_names:
         values = [
-            float((record.get("scientific") or {}).get("results", {}).get("properties", {}).get(name))
+            float(value)
             for record in records
-            if isinstance(
-                (record.get("scientific") or {}).get("results", {}).get("properties", {}).get(name),
-                (int, float),
+            if is_finite_real(
+                value := (record.get("scientific") or {}).get("results", {}).get("properties", {}).get(name)
             )
         ]
         if values:
@@ -519,6 +562,8 @@ def maximum_vector_difference(candidate: Any, reference: Any) -> float | None:
         return 0.0
     if not isinstance(candidate, list) or not isinstance(reference, list) or len(candidate) != len(reference):
         return None
+    if not all(is_finite_real(value) for value in [*candidate, *reference]):
+        return None
     if not candidate:
         return 0.0
     return max(abs(float(left) - float(right)) for left, right in zip(candidate, reference, strict=True))
@@ -530,6 +575,8 @@ def numerical_equivalence(
     policy: dict[str, Any],
 ) -> dict[str, Any]:
     tolerances = policy.get("numerical_equivalence") or {}
+    if not isinstance(tolerances, dict):
+        raise ValueError("policy.numerical_equivalence must be a mapping")
     reference_identity = {scientific_identity(record) for record in reference_records}
     candidate_identity = {scientific_identity(record) for record in candidate_records}
     reasons: list[str] = []
@@ -547,8 +594,8 @@ def numerical_equivalence(
         reference_energy = baseline.get("energy_ev")
         candidate_energy = results.get("energy_ev")
         if reference_energy is not None:
-            if not isinstance(candidate_energy, (int, float)):
-                reasons.append("candidate energy missing")
+            if not is_finite_real(candidate_energy):
+                reasons.append("candidate energy missing or non-finite")
             else:
                 deviation = abs(float(candidate_energy) - float(reference_energy))
                 maximums["energy_abs_ev"] = max(float(maximums["energy_abs_ev"] or 0.0), deviation)
@@ -556,36 +603,41 @@ def numerical_equivalence(
             results.get("forces_ev_per_angstrom"), baseline.get("forces_ev_per_angstrom")
         )
         if force_deviation is None:
-            reasons.append("force vector missing or incompatible")
+            reasons.append("force vector missing, non-finite or incompatible")
         else:
             maximums["force_max_abs_ev_per_angstrom"] = max(
                 float(maximums["force_max_abs_ev_per_angstrom"] or 0.0), force_deviation
             )
         stress_deviation = maximum_vector_difference(results.get("stress_gpa"), baseline.get("stress_gpa"))
         if stress_deviation is None:
-            reasons.append("stress vector missing or incompatible")
+            reasons.append("stress vector missing, non-finite or incompatible")
         else:
             maximums["stress_max_abs_gpa"] = max(float(maximums["stress_max_abs_gpa"] or 0.0), stress_deviation)
         candidate_properties = results.get("properties") or {}
         for name, reference_value in (baseline.get("properties") or {}).items():
-            if name not in candidate_properties:
-                reasons.append(f"property missing: {name}")
+            candidate_value = candidate_properties.get(name)
+            if not is_finite_real(candidate_value):
+                reasons.append(f"property missing or non-finite: {name}")
                 continue
-            deviation = abs(float(candidate_properties[name]) - float(reference_value))
+            deviation = abs(float(candidate_value) - float(reference_value))
             property_deviations[name] = max(property_deviations.get(name, 0.0), deviation)
 
     limits = {
-        "energy_abs_ev": float(tolerances.get("energy_abs_ev", 0.0)),
-        "force_max_abs_ev_per_angstrom": float(tolerances.get("force_max_abs_ev_per_angstrom", 0.0)),
-        "stress_max_abs_gpa": float(tolerances.get("stress_max_abs_gpa", 0.0)),
+        "energy_abs_ev": strict_policy_number(tolerances, "energy_abs_ev", 0.0, minimum=0.0),
+        "force_max_abs_ev_per_angstrom": strict_policy_number(
+            tolerances, "force_max_abs_ev_per_angstrom", 0.0, minimum=0.0
+        ),
+        "stress_max_abs_gpa": strict_policy_number(tolerances, "stress_max_abs_gpa", 0.0, minimum=0.0),
     }
     for name, maximum_deviation in maximums.items():
         if maximum_deviation is not None and maximum_deviation > limits[name]:
             reasons.append(f"{name}={maximum_deviation} exceeds tolerance {limits[name]}")
     property_limits = tolerances.get("property_abs") or {}
-    default_property_limit = float(tolerances.get("property_abs_default", 0.0))
+    if not isinstance(property_limits, dict):
+        raise ValueError("policy.numerical_equivalence.property_abs must be a mapping")
+    default_property_limit = strict_policy_number(tolerances, "property_abs_default", 0.0, minimum=0.0)
     for name, deviation in property_deviations.items():
-        limit = float(property_limits.get(name, default_property_limit))
+        limit = strict_policy_number(property_limits, name, default_property_limit, minimum=0.0)
         if deviation > limit:
             reasons.append(f"property {name} deviation {deviation} exceeds tolerance {limit}")
     return {
@@ -597,12 +649,17 @@ def numerical_equivalence(
 
 
 def candidate_resource_counts(records: list[dict[str, Any]]) -> dict[str, int]:
-    first = records[0]
-    hardware = first.get("hardware") or {}
-    gpu_count = len(hardware.get("gpu_uuids") or [])
-    nodes = int(hardware.get("nodes", 1))
-    ranks = int(hardware.get("ranks_per_node", 1))
-    threads = int(hardware.get("threads_per_rank", 1))
+    if not records:
+        return {"nodes": 0, "gpus_total": 0, "cpu_cores_total": 0}
+    hardware = records[0].get("hardware") or {}
+    gpu_uuids = hardware.get("gpu_uuids")
+    gpu_count = len(gpu_uuids) if isinstance(gpu_uuids, list) else 0
+    nodes_value = hardware.get("nodes")
+    ranks_value = hardware.get("ranks_per_node")
+    threads_value = hardware.get("threads_per_rank")
+    nodes = int(nodes_value) if is_exact_integer(nodes_value) and nodes_value > 0 else 0
+    ranks = int(ranks_value) if is_exact_integer(ranks_value) and ranks_value > 0 else 0
+    threads = int(threads_value) if is_exact_integer(threads_value) and threads_value > 0 else 0
     return {
         "nodes": nodes,
         "gpus_total": gpu_count,
@@ -621,8 +678,13 @@ def compare_evidence(records: list[dict[str, Any]], policy: dict[str, Any]) -> d
         if group and all(record.get("role") == "scientific-reference" for record in group)
     )
     reference_id = reference_ids[0] if len(reference_ids) == 1 else None
-    minimum_repeats = int(policy.get("minimum_successful_repeats", 3))
-    outlier_threshold = float((policy.get("performance") or {}).get("outlier_modified_z_threshold", 3.5))
+    minimum_repeats = strict_policy_integer(policy, "minimum_successful_repeats", 3, minimum=1)
+    performance_policy = policy.get("performance") or {}
+    if not isinstance(performance_policy, dict):
+        raise ValueError("policy.performance must be a mapping")
+    outlier_threshold = strict_policy_number(
+        performance_policy, "outlier_modified_z_threshold", 3.5, minimum=0.0, exclusive=True
+    )
     candidate_summaries: dict[str, dict[str, Any]] = {}
     reference_eligible: list[dict[str, Any]] = []
     if reference_id is not None:
@@ -705,7 +767,7 @@ def compare_evidence(records: list[dict[str, Any]], policy: dict[str, Any]) -> d
             "representative_gpu_utilization_percent": performance.get("gpu_utilization_percent"),
         }
         median_wall = summary["wall_time_s"]["median"]
-        if median_wall is not None:
+        if is_finite_real(median_wall) and float(median_wall) > 0:
             summary["gpu_hours"] = float(median_wall) * resources["gpus_total"] / 3600.0
             summary["cpu_core_hours"] = float(median_wall) * resources["cpu_cores_total"] / 3600.0
         else:
@@ -718,12 +780,14 @@ def compare_evidence(records: list[dict[str, Any]], policy: dict[str, Any]) -> d
         reference_median = candidate_summaries[reference_id]["wall_time_s"]["median"]
     for candidate_id, summary in candidate_summaries.items():
         if candidate_id == reference_id:
-            summary["cpu_to_candidate_speedup"] = 1.0 if reference_median else None
+            summary["cpu_to_candidate_speedup"] = 1.0 if is_finite_real(reference_median) and reference_median > 0 else None
             continue
         candidate_median = summary["wall_time_s"]["median"]
         if (
-            reference_median
-            and candidate_median
+            is_finite_real(reference_median)
+            and float(reference_median) > 0
+            and is_finite_real(candidate_median)
+            and float(candidate_median) > 0
             and summary["minimum_repeats_pass"]
             and summary["numerical_equivalence"]["status"] == "PASS"
         ):
@@ -736,14 +800,15 @@ def compare_evidence(records: list[dict[str, Any]], policy: dict[str, Any]) -> d
         for candidate_id, summary in candidate_summaries.items()
         if candidate_id != reference_id
         and summary["resources"]["gpus_total"] > 0
-        and summary.get("cpu_to_candidate_speedup") is not None
+        and is_finite_real(summary.get("cpu_to_candidate_speedup"))
     ]
     single_gpu = min(single_gpu_candidates, key=lambda item: item["resources"]["gpus_total"], default=None)
     if single_gpu is not None:
         single_gpu_count = int(single_gpu["resources"]["gpus_total"])
         single_gpu_wall = float(single_gpu["wall_time_s"]["median"])
         for candidate_id, summary in candidate_summaries.items():
-            if candidate_id == reference_id or summary["wall_time_s"]["median"] is None:
+            candidate_wall = summary["wall_time_s"]["median"]
+            if candidate_id == reference_id or not is_finite_real(candidate_wall) or float(candidate_wall) <= 0:
                 summary["single_gpu_to_candidate_speedup"] = None
                 summary["strong_scaling_efficiency"] = None
                 continue
@@ -752,17 +817,19 @@ def compare_evidence(records: list[dict[str, Any]], policy: dict[str, Any]) -> d
                 summary["single_gpu_to_candidate_speedup"] = None
                 summary["strong_scaling_efficiency"] = None
                 continue
-            scaling_speedup = single_gpu_wall / float(summary["wall_time_s"]["median"])
+            scaling_speedup = single_gpu_wall / float(candidate_wall)
             summary["single_gpu_to_candidate_speedup"] = scaling_speedup
             summary["strong_scaling_efficiency"] = scaling_speedup / (gpu_count / single_gpu_count)
 
+    minimum_best_speedup = strict_policy_number(
+        performance_policy, "minimum_cpu_to_candidate_speedup", 1.0, minimum=0.0
+    )
     eligible_for_best = [
         summary
         for candidate_id, summary in candidate_summaries.items()
         if candidate_id != reference_id
-        and summary.get("cpu_to_candidate_speedup") is not None
-        and summary["cpu_to_candidate_speedup"]
-        > float((policy.get("performance") or {}).get("minimum_cpu_to_candidate_speedup", 1.0))
+        and is_finite_real(summary.get("cpu_to_candidate_speedup"))
+        and float(summary["cpu_to_candidate_speedup"]) > minimum_best_speedup
     ]
     best = max(eligible_for_best, key=lambda item: item["cpu_to_candidate_speedup"], default=None)
     return {
@@ -790,10 +857,12 @@ def candidate_qualification_status(
         return "BUILD_IDENTITY_MISSING", ["build fingerprint is missing or inconsistent"]
     if not candidate.get("hardware_identity_consistent"):
         return "HARDWARE_IDENTITY_MISSING", ["hardware fingerprint or GPU identity is missing or inconsistent"]
-    minimum_repeats = int(policy.get("minimum_successful_repeats", 3))
-    parser_accepted_runs = int(candidate.get("parser_accepted_runs", 0))
-    total_runs = int(candidate.get("total_runs", 0))
-    if total_runs >= minimum_repeats and parser_accepted_runs < minimum_repeats:
+    minimum_repeats = strict_policy_integer(policy, "minimum_successful_repeats", 3, minimum=1)
+    parser_accepted_runs = candidate.get("parser_accepted_runs", 0)
+    total_runs = candidate.get("total_runs", 0)
+    parser_count = int(parser_accepted_runs) if is_exact_integer(parser_accepted_runs) and parser_accepted_runs >= 0 else 0
+    total_count = int(total_runs) if is_exact_integer(total_runs) and total_runs >= 0 else 0
+    if total_count >= minimum_repeats and parser_count < minimum_repeats:
         return "PARSER_NOT_ACCEPTED", ["insufficient parser-accepted successful runs"]
     if not candidate.get("all_artifacts_verified"):
         return "ARTIFACT_HASH_MISMATCH", ["one or more artifacts are missing, unchecked or mismatched"]
@@ -801,10 +870,15 @@ def candidate_qualification_status(
         return "INSUFFICIENT_REPEATS", ["minimum successful repeat count is not met"]
     if candidate.get("numerical_equivalence", {}).get("status") != "PASS":
         return "NUMERICAL_MISMATCH", candidate.get("numerical_equivalence", {}).get("reasons", [])
-    minimum_speedup = float((policy.get("performance") or {}).get("minimum_cpu_to_candidate_speedup", 1.0))
+    performance_policy = policy.get("performance") or {}
+    if not isinstance(performance_policy, dict):
+        raise ValueError("policy.performance must be a mapping")
+    minimum_speedup = strict_policy_number(
+        performance_policy, "minimum_cpu_to_candidate_speedup", 1.0, minimum=0.0
+    )
     speedup = candidate.get("cpu_to_candidate_speedup")
-    if speedup is None or float(speedup) <= minimum_speedup:
-        return "PERFORMANCE_NOT_IMPROVED", [f"speedup must be greater than {minimum_speedup}"]
+    if not is_finite_real(speedup) or float(speedup) <= minimum_speedup:
+        return "PERFORMANCE_NOT_IMPROVED", [f"speedup must be finite and greater than {minimum_speedup}"]
     if not candidate.get("all_sources_real_engine"):
         reasons.append("all records must declare evidence_source.kind=real-engine")
     if (policy.get("require_independent_review", True)) and review.get("status") != "approved":
@@ -933,28 +1007,39 @@ def parse_duration(value: str) -> float | None:
             days = int(day_text)
         except ValueError:
             return None
+        if days < 0:
+            return None
     parts = text.split(":")
     try:
         numbers = [float(part) for part in parts]
     except ValueError:
         return None
+    if not all(math.isfinite(number) and number >= 0 for number in numbers):
+        return None
     if len(numbers) == 3:
         hours, minutes, seconds = numbers
+        if minutes >= 60 or seconds >= 60:
+            return None
     elif len(numbers) == 2:
         hours, minutes, seconds = 0.0, numbers[0], numbers[1]
+        if seconds >= 60:
+            return None
     else:
         return None
     return days * 86400 + hours * 3600 + minutes * 60 + seconds
 
 
 def parse_memory_kib(value: str) -> float | None:
-    match = re.fullmatch(r"\s*([0-9.]+)\s*([KMGT]?)\s*", value, re.IGNORECASE)
+    match = re.fullmatch(r"\s*([0-9]+(?:\.[0-9]+)?)\s*([KMGT]?)\s*", value, re.IGNORECASE)
     if match is None:
         return None
     amount = float(match.group(1))
+    if not math.isfinite(amount) or amount < 0:
+        return None
     unit = match.group(2).upper()
     factors = {"": 1.0, "K": 1.0, "M": 1024.0, "G": 1024.0**2, "T": 1024.0**3}
-    return amount * factors[unit]
+    result = amount * factors[unit]
+    return result if math.isfinite(result) else None
 
 
 def parse_optional_metric(kind: str, text: str) -> dict[str, Any]:
@@ -980,8 +1065,13 @@ def parse_optional_metric(kind: str, text: str) -> dict[str, Any]:
             if ": " in line:
                 key, value = line.rsplit(": ", 1)
                 metrics[key.strip()] = value.strip()
-        user = float(metrics.get("User time (seconds)", 0.0) or 0.0)
-        system = float(metrics.get("System time (seconds)", 0.0) or 0.0)
+        try:
+            user = float(metrics.get("User time (seconds)", 0.0) or 0.0)
+            system = float(metrics.get("System time (seconds)", 0.0) or 0.0)
+        except ValueError:
+            return {"status": "NOT_AVAILABLE", "reason": "time-v CPU times are not numeric"}
+        if not math.isfinite(user) or not math.isfinite(system) or user < 0 or system < 0:
+            return {"status": "NOT_AVAILABLE", "reason": "time-v CPU times are not finite non-negative values"}
         return {
             "status": "AVAILABLE" if metrics else "NOT_AVAILABLE",
             "wall_time_s": parse_duration(metrics.get("Elapsed (wall clock) time (h:mm:ss or m:ss)", "")),

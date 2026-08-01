@@ -73,9 +73,9 @@ def validate(data: Any) -> tuple[list[str], list[str], dict[str, Any]]:
 
     combined: float | None = None
     if values and rule == "root_sum_square":
-        combined = math.sqrt(sum(value * value for value in values))
+        combined = math.hypot(*values)
     elif values and rule == "sum_bounds":
-        combined = sum(values)
+        combined = math.fsum(values)
 
     if data.get("status") == "accepted" and (errors or warnings):
         errors.append("accepted uncertainty budget has unresolved errors/warnings")

@@ -185,7 +185,9 @@ class ParallelControlPlaneEdgeTests(unittest.TestCase):
             patch.object(importer, "load_json", return_value={"properties": {"schema_version": {"const": "2.0"}}}),
             patch.object(importer, "load_records", side_effect=[OSError("unreadable"), records]),
             patch.object(importer, "validate_record_schema", side_effect=[["schema failure"], [], []]),
-            patch.object(importer, "validate_result", side_effect=[ValueError("semantic crash"), (valid, [], ["review"])]),
+            patch.object(
+                importer, "validate_result", side_effect=[ValueError("semantic crash"), (valid, [], ["review"])]
+            ),
             patch.object(importer, "result_sort_key", side_effect=result_key),
         ):
             imported, report = importer.import_with_schema(
@@ -223,18 +225,22 @@ class ParallelControlPlaneEdgeTests(unittest.TestCase):
             audit = root / "report.json"
             with (
                 patch.object(importer, "import_with_schema", return_value=([record], report)),
-                patch.object(sys, "argv", [
-                    "import_benchmark_evidence.py",
-                    "input.json",
-                    "--schema",
-                    "schema.json",
-                    "--out",
-                    str(out),
-                    "--report",
-                    str(audit),
-                    "--workers",
-                    "2",
-                ]),
+                patch.object(
+                    sys,
+                    "argv",
+                    [
+                        "import_benchmark_evidence.py",
+                        "input.json",
+                        "--schema",
+                        "schema.json",
+                        "--out",
+                        str(out),
+                        "--report",
+                        str(audit),
+                        "--workers",
+                        "2",
+                    ],
+                ),
                 redirect_stdout(io.StringIO()) as stdout,
             ):
                 self.assertEqual(importer.main(), 0)
@@ -246,16 +252,20 @@ class ParallelControlPlaneEdgeTests(unittest.TestCase):
             failed_report = root / "failed-report.json"
             with (
                 patch.object(importer, "import_with_schema", side_effect=ValueError("bad schema")),
-                patch.object(sys, "argv", [
-                    "import_benchmark_evidence.py",
-                    "input.json",
-                    "--schema",
-                    "schema.json",
-                    "--out",
-                    str(root / "missing-output.jsonl"),
-                    "--report",
-                    str(failed_report),
-                ]),
+                patch.object(
+                    sys,
+                    "argv",
+                    [
+                        "import_benchmark_evidence.py",
+                        "input.json",
+                        "--schema",
+                        "schema.json",
+                        "--out",
+                        str(root / "missing-output.jsonl"),
+                        "--report",
+                        str(failed_report),
+                    ],
+                ),
                 redirect_stdout(io.StringIO()) as stdout,
             ):
                 self.assertEqual(importer.main(), 1)

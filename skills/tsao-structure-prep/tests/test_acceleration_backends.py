@@ -10,6 +10,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
@@ -29,11 +30,13 @@ def load_script(name: str) -> Any:
 class StructureAccelerationTests(unittest.TestCase):
     geometry: Any
     campaign: Any
+    mapping: Any
 
     @classmethod
     def setUpClass(cls) -> None:
         cls.geometry = load_script("inspect_xyz.py")
         cls.campaign = load_script("expand_structure_campaign.py")
+        cls.mapping = load_script("validate_atom_mapping.py")
 
     def test_pair_backends_are_equivalent_and_auto_selects(self) -> None:
         rng = random.Random(17)
@@ -77,6 +80,34 @@ class StructureAccelerationTests(unittest.TestCase):
             failed = self.geometry.inspect(nonfinite, backend=backend)
             self.assertFalse(failed["ok"])
             self.assertIn("non-finite distance", " ".join(failed["errors"]))
+
+    def test_large_atom_mapping_uses_vectorized_distance_reduction(self) -> None:
+        atom_count = 2_000
+        reference = [
+            {
+                "index": index + 1,
+                "element": "C",
+                "x": float(index),
+                "y": float(index % 13),
+                "z": float(index % 7),
+            }
+            for index in range(atom_count)
+        ]
+        candidate = [
+            {
+                **atom,
+                "x": atom["x"] + 1.0,
+                "y": atom["y"] + 2.0,
+                "z": atom["z"] + 2.0,
+            }
+            for atom in reference
+        ]
+        with patch.object(self.mapping.math, "dist", side_effect=AssertionError("scalar distance path used")):
+            errors, warnings, summary = self.mapping.validate(reference, candidate)
+        self.assertEqual(errors, [])
+        self.assertIn("large raw-coordinate RMSD", " ".join(warnings))
+        self.assertAlmostEqual(summary["raw_rmsd_angstrom"], 3.0, places=12)
+        self.assertAlmostEqual(summary["max_displacement_angstrom"], 3.0, places=12)
 
     def test_streaming_campaign_and_limit_cleanup(self) -> None:
         campaign = {

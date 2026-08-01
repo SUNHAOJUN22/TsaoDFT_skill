@@ -126,10 +126,7 @@ class ParallelControlPlaneTests(unittest.TestCase):
                 with lock:
                     active -= 1
 
-        specs = {
-            f"tool-{index}": {"names": [f"tool-{index}"], "args": ["--version"]}
-            for index in range(8)
-        }
+        specs = {f"tool-{index}": {"names": [f"tool-{index}"], "args": ["--version"]} for index in range(8)}
         with patch.object(base, "resolve_command", side_effect=lambda names: f"/bin/{names[0]}"):
             report = env.inspect_command_group_parallel(
                 specs,
@@ -165,14 +162,8 @@ class ParallelControlPlaneTests(unittest.TestCase):
     def test_parallel_environment_collection_and_cli_failure(self) -> None:
         env = self.parallel_environment
         base = env.base
-        commands = {
-            key: {"status": base.NOT_AVAILABLE, "command": None, "version": None}
-            for key in base.COMMAND_SPECS
-        }
-        engines = {
-            key: {"status": base.NOT_AVAILABLE, "command": None, "version": None}
-            for key in base.ENGINE_SPECS
-        }
+        commands = {key: {"status": base.NOT_AVAILABLE, "command": None, "version": None} for key in base.COMMAND_SPECS}
+        engines = {key: {"status": base.NOT_AVAILABLE, "command": None, "version": None} for key in base.ENGINE_SPECS}
         with (
             patch.object(env, "inspect_command_group_parallel", side_effect=[commands, engines]),
             patch.object(base, "apple_gpu_inventory", return_value=[]),

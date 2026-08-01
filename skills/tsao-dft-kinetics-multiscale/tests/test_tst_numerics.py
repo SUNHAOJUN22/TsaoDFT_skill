@@ -31,11 +31,13 @@ def load_script(name: str) -> Any:
 class TstNumericsTests(unittest.TestCase):
     tst: Any
     eyring: Any
+    uncertainty: Any
 
     @classmethod
     def setUpClass(cls) -> None:
         cls.tst = load_script("tst_math.py")
         cls.eyring = load_script("eyring_rates.py")
+        cls.uncertainty = load_script("propagate_barrier_uncertainty.py")
 
     def test_known_eyring_rate_matches_independent_si_expression(self) -> None:
         temperature = 298.15
@@ -77,6 +79,11 @@ class TstNumericsTests(unittest.TestCase):
         self.assertEqual(self.eyring.rate_unit(1), "s^-1")
         self.assertEqual(self.eyring.rate_unit(2), "M^-1 s^-1")
         self.assertEqual(self.eyring.rate_unit(3), "M^-2 s^-1")
+        with self.assertRaisesRegex(ValueError, "positive integer"):
+            self.uncertainty.rate_unit(0)
+        self.assertEqual(self.uncertainty.rate_unit(1), "s^-1")
+        self.assertEqual(self.uncertainty.rate_unit(2), "M^-1 s^-1 (standard-state convention required)")
+        self.assertEqual(self.uncertainty.rate_unit(3), "concentration^(-2) s^-1")
 
     def test_eyring_cli_streams_rows_and_cleans_failed_output(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

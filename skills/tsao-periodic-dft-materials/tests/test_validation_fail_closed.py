@@ -27,6 +27,11 @@ def load_script(name: str) -> Any:
 
 
 class PeriodicValidationFailClosedTests(unittest.TestCase):
+    energy: Any
+    qe: Any
+    energy_data: dict[str, Any]
+    qe_text: str
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.energy = load_script("check_energy_compatibility.py")

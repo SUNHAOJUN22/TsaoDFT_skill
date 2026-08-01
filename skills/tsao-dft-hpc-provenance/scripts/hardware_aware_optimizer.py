@@ -18,9 +18,10 @@ from hardware_provider_policy import (
     validation_requirements,
 )
 from jsonschema import Draft202012Validator
+from jsonschema.exceptions import SchemaError
 
 
-def build_optimization_plan(profile: dict[str, Any]) -> dict[str, Any]:
+def build_optimization_plan(profile: Any) -> dict[str, Any]:
     errors, warnings, normalized = validate_profile(profile)
     if errors:
         return {"ok": False, "errors": errors, "warnings": warnings}
@@ -76,10 +77,14 @@ def build_optimization_plan(profile: dict[str, Any]) -> dict[str, Any]:
 
 def validate_output_schema(report: dict[str, Any], schema_path: Path) -> list[str]:
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    Draft202012Validator.check_schema(schema)
     validator = Draft202012Validator(schema)
     return [
         f"{'.'.join(str(part) for part in error.absolute_path) or '<root>'}: {error.message}"
-        for error in sorted(validator.iter_errors(report), key=lambda item: list(item.absolute_path))
+        for error in sorted(
+            validator.iter_errors(report),
+            key=lambda item: tuple(str(part) for part in item.absolute_path),
+        )
     ]
 
 
@@ -101,18 +106,14 @@ def main() -> int:
     args = parser.parse_args()
     try:
         loaded = load_profile(args.profile)
-    except (OSError, json.JSONDecodeError, yaml.YAMLError) as exc:
+    except (OSError, UnicodeError, json.JSONDecodeError, yaml.YAMLError) as exc:
         report: dict[str, Any] = {"ok": False, "errors": [str(exc)], "warnings": []}
     else:
-        report = (
-            build_optimization_plan(loaded)
-            if type(loaded) is dict
-            else {"ok": False, "errors": ["profile root must be a mapping"], "warnings": []}
-        )
+        report = build_optimization_plan(loaded)
     if report.get("ok"):
         try:
             schema_errors = validate_output_schema(report, args.schema)
-        except (OSError, json.JSONDecodeError) as exc:
+        except (OSError, UnicodeError, json.JSONDecodeError, SchemaError) as exc:
             schema_errors = [f"schema load failed: {exc}"]
         if schema_errors:
             report = {"ok": False, "errors": schema_errors, "warnings": report.get("warnings", [])}

@@ -75,10 +75,7 @@ class NumericalConvergenceTests(unittest.TestCase):
             root = Path(temporary)
             source = root / "convergence.csv"
             source.write_text(
-                "value,observable_value\n"
-                "300,1.000\n"
-                "400,1.020\n"
-                "500,1.025\n",
+                "value,observable_value\n300,1.000\n400,1.020\n500,1.025\n",
                 encoding="utf-8",
             )
             command = [

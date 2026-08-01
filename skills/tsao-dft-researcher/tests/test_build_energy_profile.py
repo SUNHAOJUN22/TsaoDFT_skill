@@ -77,7 +77,7 @@ class BuildEnergyProfileTests(unittest.TestCase):
             self.module.build_relative_rows(raw, float("nan"))
 
     def test_nonfinite_duplicate_and_malformed_rows_fail_without_outputs(self) -> None:
-        cases = [
+        cases: list[tuple[list[list[Any]], str]] = [
             ([["A", "nan"]], "finite"),
             ([["A", "inf"]], "finite"),
             ([["A", -1.0], ["A", -2.0]], "duplicate"),

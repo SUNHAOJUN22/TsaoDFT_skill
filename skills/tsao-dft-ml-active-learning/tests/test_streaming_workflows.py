@@ -120,13 +120,29 @@ class MlStreamingTests(unittest.TestCase):
             pool = root / "pool.csv"
             pool.write_text("sample_id,parent_id,uncertainty\n", encoding="utf-8")
             active = subprocess.run(
-                [sys.executable, str(SCRIPTS / "select_active_learning_batch.py"), str(pool), "--batch-size", "1", "--out", str(root / "out.csv")],
+                [
+                    sys.executable,
+                    str(SCRIPTS / "select_active_learning_batch.py"),
+                    str(pool),
+                    "--batch-size",
+                    "1",
+                    "--out",
+                    str(root / "out.csv"),
+                ],
                 capture_output=True,
                 text=True,
                 check=False,
             )
             split = subprocess.run(
-                [sys.executable, str(SCRIPTS / "group_split.py"), str(pool), "--group", "parent_id", "--out-dir", str(root / "split")],
+                [
+                    sys.executable,
+                    str(SCRIPTS / "group_split.py"),
+                    str(pool),
+                    "--group",
+                    "parent_id",
+                    "--out-dir",
+                    str(root / "split"),
+                ],
                 capture_output=True,
                 text=True,
                 check=False,

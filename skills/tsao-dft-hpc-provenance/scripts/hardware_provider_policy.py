@@ -52,7 +52,8 @@ def classify_bottleneck(profile: dict[str, Any]) -> str:
         return "dense-solve"
     if engine == "cp2k":
         atoms = _number(workload.get("atoms"))
-        model = str(workload.get("model", "")).lower()
+        raw_model = workload.get("model", "")
+        model = raw_model.lower() if isinstance(raw_model, str) else ""
         is_sparse = (atoms is not None and atoms >= 1000) or "sparse" in model or "linear" in model
         return "sparse" if is_sparse else "dense-solve"
     if engine == "gaussian":

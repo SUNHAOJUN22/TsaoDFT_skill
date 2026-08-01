@@ -65,7 +65,14 @@ class CatalysisStreamingTests(unittest.TestCase):
 
     def test_contract_edges(self) -> None:
         valid = self.valid_campaign()
-        cases: list[Any] = [None, [], {"axes": []}, {"axes": {}}, {**valid, "exclusions": {}}, {**valid, "max_candidates": -1}]
+        cases: list[Any] = [
+            None,
+            [],
+            {"axes": []},
+            {"axes": {}},
+            {**valid, "exclusions": {}},
+            {**valid, "max_candidates": -1},
+        ]
         missing = self.valid_campaign()
         del missing["axes"]["multiplicity"]
         cases.append(missing)

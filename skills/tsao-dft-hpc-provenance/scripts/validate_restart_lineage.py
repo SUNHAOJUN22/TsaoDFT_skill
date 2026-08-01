@@ -57,11 +57,8 @@ def validate(data: Any) -> tuple[list[str], list[str]]:
     mode = data.get("restart_mode")
     if mode not in RESTART_MODES:
         errors.append("invalid restart_mode")
-    same_fingerprint = (
-        isinstance(parent_fingerprint, str)
-        and bool(parent_fingerprint)
-        and parent_fingerprint == child_fingerprint
-    )
+    same_fingerprint = isinstance(parent_fingerprint, str) and bool(parent_fingerprint)
+    same_fingerprint = same_fingerprint and parent_fingerprint == child_fingerprint
     if mode == "exact_restart" and not same_fingerprint:
         errors.append("exact_restart requires identical method fingerprints")
 

@@ -149,8 +149,8 @@ def validate(rows: Any, config: Any) -> tuple[list[str], list[str], dict[str, An
     if invalid_target:
         errors.append(f"invalid target values at rows {invalid_target[:10]}")
 
-    fingerprints = {row[fingerprint] for row in normalized_rows if fingerprint in row and row[fingerprint]}
-    fidelities = {row[fidelity] for row in normalized_rows if fidelity in row and row[fidelity]}
+    fingerprints = {value for row in normalized_rows if (value := row.get(fingerprint))}
+    fidelities = {value for row in normalized_rows if (value := row.get(fidelity))}
     if fingerprint not in fields:
         warnings.append("method_fingerprint column absent; DFT label provenance cannot be checked row-wise")
     elif len(fingerprints) > 1 and not config.get("mixed_method_policy"):

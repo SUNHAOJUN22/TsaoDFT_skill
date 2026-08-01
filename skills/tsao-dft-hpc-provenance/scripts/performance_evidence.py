@@ -480,9 +480,7 @@ def numeric_summary(values: list[float], outlier_threshold: float) -> dict[str, 
     mad = statistics.median(deviations)
     outliers = 0
     if mad > 0:
-        outliers = sum(
-            abs(0.6745 * (value - median) / mad) > float(outlier_threshold) for value in normalized_values
-        )
+        outliers = sum(abs(0.6745 * (value - median) / mad) > float(outlier_threshold) for value in normalized_values)
     q1 = percentile(normalized_values, 0.25)
     q3 = percentile(normalized_values, 0.75)
     return {
@@ -780,7 +778,9 @@ def compare_evidence(records: list[dict[str, Any]], policy: dict[str, Any]) -> d
         reference_median = candidate_summaries[reference_id]["wall_time_s"]["median"]
     for candidate_id, summary in candidate_summaries.items():
         if candidate_id == reference_id:
-            summary["cpu_to_candidate_speedup"] = 1.0 if is_finite_real(reference_median) and reference_median > 0 else None
+            summary["cpu_to_candidate_speedup"] = (
+                1.0 if is_finite_real(reference_median) and reference_median > 0 else None
+            )
             continue
         candidate_median = summary["wall_time_s"]["median"]
         if (
@@ -860,7 +860,9 @@ def candidate_qualification_status(
     minimum_repeats = strict_policy_integer(policy, "minimum_successful_repeats", 3, minimum=1)
     parser_accepted_runs = candidate.get("parser_accepted_runs", 0)
     total_runs = candidate.get("total_runs", 0)
-    parser_count = int(parser_accepted_runs) if is_exact_integer(parser_accepted_runs) and parser_accepted_runs >= 0 else 0
+    parser_count = (
+        int(parser_accepted_runs) if is_exact_integer(parser_accepted_runs) and parser_accepted_runs >= 0 else 0
+    )
     total_count = int(total_runs) if is_exact_integer(total_runs) and total_runs >= 0 else 0
     if total_count >= minimum_repeats and parser_count < minimum_repeats:
         return "PARSER_NOT_ACCEPTED", ["insufficient parser-accepted successful runs"]
@@ -873,9 +875,7 @@ def candidate_qualification_status(
     performance_policy = policy.get("performance") or {}
     if not isinstance(performance_policy, dict):
         raise ValueError("policy.performance must be a mapping")
-    minimum_speedup = strict_policy_number(
-        performance_policy, "minimum_cpu_to_candidate_speedup", 1.0, minimum=0.0
-    )
+    minimum_speedup = strict_policy_number(performance_policy, "minimum_cpu_to_candidate_speedup", 1.0, minimum=0.0)
     speedup = candidate.get("cpu_to_candidate_speedup")
     if not is_finite_real(speedup) or float(speedup) <= minimum_speedup:
         return "PERFORMANCE_NOT_IMPROVED", [f"speedup must be finite and greater than {minimum_speedup}"]

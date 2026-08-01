@@ -101,9 +101,7 @@ def main() -> int:
             writer.writeheader()
             row_count = 0
             for line_number, raw in enumerate(reader, start=2):
-                writer.writerow(
-                    transform_row(raw, line_number, args.temperature, args.kappa, args.standard_state)
-                )
+                writer.writerow(transform_row(raw, line_number, args.temperature, args.kappa, args.standard_state))
                 row_count += 1
             if row_count == 0:
                 raise ValueError("barrier table is empty")

@@ -58,11 +58,29 @@ class NumericalConvergenceTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
+            no_header = root / "no-header.csv"
+            no_header.write_text("", encoding="utf-8")
+            points, errors = self.convergence.load_points(no_header, "value", "observable_value")
+            self.assertEqual(points, [])
+            self.assertIn("missing a CSV header", " ".join(errors))
+
             missing = root / "missing.csv"
             missing.write_text("other,observable_value\n1,2\n", encoding="utf-8")
             points, errors = self.convergence.load_points(missing, "value", "observable_value")
             self.assertEqual(points, [])
             self.assertIn("missing column value", " ".join(errors))
+
+            malformed = root / "malformed.csv"
+            malformed.write_text("value,observable_value\n1,bad\n", encoding="utf-8")
+            points, errors = self.convergence.load_points(malformed, "value", "observable_value")
+            self.assertEqual(points, [])
+            self.assertIn("row 2", " ".join(errors))
+
+            extra = root / "extra.csv"
+            extra.write_text("value,observable_value\n1,2,3\n", encoding="utf-8")
+            points, errors = self.convergence.load_points(extra, "value", "observable_value")
+            self.assertEqual(points, [])
+            self.assertIn("more fields", " ".join(errors))
 
             nonfinite = root / "nonfinite.csv"
             nonfinite.write_text("value,observable_value\n1,nan\n", encoding="utf-8")

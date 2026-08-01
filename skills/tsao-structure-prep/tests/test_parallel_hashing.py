@@ -52,6 +52,16 @@ class StructureParallelHashingTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.hasher.hash_records([], workers=2)
 
+    def test_worker_contract_fails_closed(self) -> None:
+        with self.assertRaisesRegex(ValueError, "task_count"):
+            self.utils.normalized_workers(1, -1)
+        with self.assertRaisesRegex(ValueError, "maximum"):
+            self.utils.normalized_workers(1, 2, maximum=0)
+        with self.assertRaisesRegex(ValueError, "integer or null"):
+            self.utils.normalized_workers(True, 2)
+        with self.assertRaisesRegex(ValueError, "non-negative"):
+            self.utils.normalized_workers(-1, 2)
+
     def test_cli_success_and_structured_failure(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

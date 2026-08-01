@@ -26,6 +26,13 @@ def load_script(name: str) -> Any:
 
 
 class HpcValidationFailClosedTests(unittest.TestCase):
+    site: Any
+    restart: Any
+    resources: Any
+    site_profile: dict[str, Any]
+    lineage: dict[str, Any]
+    manifest: dict[str, Any]
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.site = load_script("validate_site_profile.py")

@@ -95,12 +95,13 @@ class StructureAccelerationTests(unittest.TestCase):
         ]
         candidate = [
             {
-                **atom,
-                "x": atom["x"] + 1.0,
-                "y": atom["y"] + 2.0,
-                "z": atom["z"] + 2.0,
+                "index": index + 1,
+                "element": "C",
+                "x": float(index) + 1.0,
+                "y": float(index % 13) + 2.0,
+                "z": float(index % 7) + 2.0,
             }
-            for atom in reference
+            for index in range(atom_count)
         ]
         with patch.object(self.mapping.math, "dist", side_effect=AssertionError("scalar distance path used")):
             errors, warnings, summary = self.mapping.validate(reference, candidate)

@@ -87,6 +87,8 @@ class PerformanceEvidenceNumericsTests(unittest.TestCase):
             self.core.numeric_summary([1.0], float("nan"))
         with self.assertRaisesRegex(ValueError, "percentile fraction"):
             self.core.percentile([1.0], 1.5)
+        with self.assertRaisesRegex(ValueError, "percentile values"):
+            self.core.percentile([1.0, float("nan")], 0.5)
         self.assertIsNone(self.core.maximum_vector_difference([0.0, float("nan")], [0.0, 0.0]))
 
     def test_numerical_equivalence_cannot_pass_nan_candidate(self) -> None:
@@ -135,16 +137,24 @@ class PerformanceEvidenceNumericsTests(unittest.TestCase):
 
     def test_duration_memory_and_time_adapter_fail_closed(self) -> None:
         self.assertIsNone(self.core.parse_duration("nan"))
+        self.assertIsNone(self.core.parse_duration("1.5"))
+        self.assertIsNone(self.core.parse_duration("01:60"))
         self.assertIsNone(self.core.parse_duration("01:60:00"))
         self.assertIsNone(self.core.parse_duration("01:00:60"))
         self.assertIsNone(self.core.parse_duration("-1-00:00:00"))
         self.assertIsNone(self.core.parse_memory_kib("."))
         self.assertIsNone(self.core.parse_memory_kib("1e309G"))
-        invalid = self.core.parse_optional_metric(
+        self.assertIsNone(self.core.parse_memory_kib(f"{'9' * 400}G"))
+        invalid_numeric = self.core.parse_optional_metric(
+            "time-v",
+            "User time (seconds): bad\nSystem time (seconds): 1\n",
+        )
+        self.assertEqual(invalid_numeric["status"], "NOT_AVAILABLE")
+        invalid_finite = self.core.parse_optional_metric(
             "time-v",
             "User time (seconds): nan\nSystem time (seconds): 1\n",
         )
-        self.assertEqual(invalid["status"], "NOT_AVAILABLE")
+        self.assertEqual(invalid_finite["status"], "NOT_AVAILABLE")
 
     def test_policy_numeric_types_are_exact_and_finite(self) -> None:
         bad_repeat_policy = copy.deepcopy(self.policy)
@@ -152,12 +162,81 @@ class PerformanceEvidenceNumericsTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "must be an integer"):
             self.core.compare_evidence([], bad_repeat_policy)
 
+        negative_repeat_policy = copy.deepcopy(self.policy)
+        negative_repeat_policy["minimum_successful_repeats"] = 0
+        with self.assertRaisesRegex(ValueError, "must be >=1"):
+            self.core.compare_evidence([], negative_repeat_policy)
+
         bad_threshold_policy = copy.deepcopy(self.policy)
         bad_threshold_policy["performance"]["outlier_modified_z_threshold"] = float("inf")
         with self.assertRaisesRegex(ValueError, "finite numeric"):
             self.core.compare_evidence([], bad_threshold_policy)
 
+        bad_performance_policy = copy.deepcopy(self.policy)
+        bad_performance_policy["performance"] = []
+        with self.assertRaisesRegex(ValueError, "must be a mapping"):
+            self.core.compare_evidence([], bad_performance_policy)
+
         self.assertTrue(math.isfinite(self.core.numeric_summary([1.0, 2.0, 3.0], 3.5)["median"]))
+
+    def test_equivalence_policy_mappings_and_limits_fail_closed(self) -> None:
+        references = self.fixture.validated(self.fixture.reference_records())
+        candidates = self.fixture.validated(self.fixture.gpu_records(candidate="gpu"))
+
+        nonmapping = copy.deepcopy(self.policy)
+        nonmapping["numerical_equivalence"] = []
+        with self.assertRaisesRegex(ValueError, "must be a mapping"):
+            self.core.numerical_equivalence(candidates, references, nonmapping)
+
+        bad_property_limits = copy.deepcopy(self.policy)
+        bad_property_limits["numerical_equivalence"]["property_abs"] = []
+        with self.assertRaisesRegex(ValueError, "property_abs must be a mapping"):
+            self.core.numerical_equivalence(candidates, references, bad_property_limits)
+
+        negative_energy_limit = copy.deepcopy(self.policy)
+        negative_energy_limit["numerical_equivalence"]["energy_abs_ev"] = -1.0
+        with self.assertRaisesRegex(ValueError, "must be >=0.0"):
+            self.core.numerical_equivalence(candidates, references, negative_energy_limit)
+
+        nonfinite_default = copy.deepcopy(self.policy)
+        nonfinite_default["numerical_equivalence"]["property_abs_default"] = float("nan")
+        with self.assertRaisesRegex(ValueError, "finite numeric"):
+            self.core.numerical_equivalence(candidates, references, nonfinite_default)
+
+    def test_resource_counts_fail_closed_for_empty_and_invalid_topology(self) -> None:
+        self.assertEqual(
+            self.core.candidate_resource_counts([]),
+            {"nodes": 0, "gpus_total": 0, "cpu_cores_total": 0},
+        )
+        invalid = {
+            "hardware": {
+                "nodes": 2,
+                "ranks_per_node": 0,
+                "threads_per_rank": 1.5,
+                "gpu_uuids": "GPU-1",
+            }
+        }
+        self.assertEqual(
+            self.core.candidate_resource_counts([invalid]),
+            {"nodes": 2, "gpus_total": 0, "cpu_cores_total": 0},
+        )
+
+    def test_direct_qualification_rejects_bad_performance_policy(self) -> None:
+        candidate = {
+            "build_identity_consistent": True,
+            "hardware_identity_consistent": True,
+            "parser_accepted_runs": 3,
+            "total_runs": 3,
+            "all_artifacts_verified": True,
+            "minimum_repeats_pass": True,
+            "numerical_equivalence": {"status": "PASS", "reasons": []},
+            "cpu_to_candidate_speedup": 2.0,
+            "all_sources_real_engine": True,
+        }
+        policy = copy.deepcopy(self.policy)
+        policy["performance"] = "bad"
+        with self.assertRaisesRegex(ValueError, "must be a mapping"):
+            self.core.candidate_qualification_status(candidate, "PASS", policy, self.fixture.approved_review())
 
 
 if __name__ == "__main__":

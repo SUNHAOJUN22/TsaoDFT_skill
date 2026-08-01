@@ -7,6 +7,7 @@ import argparse
 import json
 import math
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -25,54 +26,79 @@ ALLOWED = {
     "reference_state",
     "other",
 }
+RULES = {"root_sum_square", "sum_bounds", "report_separately"}
 
 
-def validate(d: dict) -> tuple[list[str], list[str], dict]:
-    e = []
-    w = []
-    for k in ["schema_version", "project_id", "observable", "unit", "components", "combination_rule", "status"]:
-        if k not in d:
-            e.append(f"missing {k}")
-    comps = d.get("components") or []
-    vals = []
-    if not comps:
-        w.append("no uncertainty components declared")
-    for i, c in enumerate(comps):
-        if c.get("type") not in ALLOWED:
-            e.append(f"components[{i}] invalid type")
-        try:
-            value = float(c.get("magnitude"))
-            if value < 0:
-                e.append(f"components[{i}] magnitude must be nonnegative")
-            vals.append(value)
-        except (TypeError, ValueError):
-            e.append(f"components[{i}] magnitude must be numeric")
-        if not c.get("basis"):
-            w.append(f"components[{i}] has no evidence/basis")
-    rule = d.get("combination_rule")
-    combined = None
-    if vals:
-        if rule == "root_sum_square":
-            combined = math.sqrt(sum(v * v for v in vals))
-        elif rule == "sum_bounds":
-            combined = sum(vals)
-        elif rule == "report_separately":
-            combined = None
+def validate(data: Any) -> tuple[list[str], list[str], dict[str, Any]]:
+    errors: list[str] = []
+    warnings: list[str] = []
+    if not isinstance(data, dict):
+        return ["uncertainty budget root must be a mapping"], warnings, {"combined_magnitude": None, "unit": None}
+
+    for key in ["schema_version", "project_id", "observable", "unit", "components", "combination_rule", "status"]:
+        if key not in data:
+            errors.append(f"missing {key}")
+
+    components = data.get("components")
+    if not isinstance(components, list):
+        errors.append("components must be a list")
+        components = []
+    if not components:
+        warnings.append("no uncertainty components declared")
+
+    values: list[float] = []
+    for index, component in enumerate(components):
+        if not isinstance(component, dict):
+            errors.append(f"components[{index}] must be a mapping")
+            continue
+        if component.get("type") not in ALLOWED:
+            errors.append(f"components[{index}] invalid type")
+        raw_magnitude = component.get("magnitude")
+        if isinstance(raw_magnitude, bool) or not isinstance(raw_magnitude, (int, float)):
+            errors.append(f"components[{index}] magnitude must be finite numeric")
         else:
-            e.append("invalid combination_rule")
-    if d.get("status") == "accepted" and (e or w):
-        e.append("accepted uncertainty budget has unresolved errors/warnings")
-    return e, w, {"combined_magnitude": combined, "unit": d.get("unit")}
+            magnitude = float(raw_magnitude)
+            if not math.isfinite(magnitude):
+                errors.append(f"components[{index}] magnitude must be finite numeric")
+            elif magnitude < 0:
+                errors.append(f"components[{index}] magnitude must be nonnegative")
+            else:
+                values.append(magnitude)
+        if not component.get("basis"):
+            warnings.append(f"components[{index}] has no evidence/basis")
+
+    rule = data.get("combination_rule")
+    if rule not in RULES:
+        errors.append("invalid combination_rule")
+
+    combined: float | None = None
+    if values and rule == "root_sum_square":
+        combined = math.sqrt(sum(value * value for value in values))
+    elif values and rule == "sum_bounds":
+        combined = sum(values)
+
+    if data.get("status") == "accepted" and (errors or warnings):
+        errors.append("accepted uncertainty budget has unresolved errors/warnings")
+    return (
+        sorted(set(errors)),
+        sorted(set(warnings)),
+        {"combined_magnitude": combined, "unit": data.get("unit")},
+    )
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("budget", type=Path)
-    a = ap.parse_args()
-    d = yaml.safe_load(a.budget.read_text()) or {}
-    e, w, s = validate(d)
-    print(json.dumps({"ok": not e, "errors": e, "warnings": w, "summary": s}, indent=2))
-    return 0 if not e else 1
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("budget", type=Path)
+    args = parser.parse_args()
+    try:
+        data = yaml.safe_load(args.budget.read_text(encoding="utf-8"))
+        errors, warnings, summary = validate(data)
+    except (OSError, UnicodeError, yaml.YAMLError) as exc:
+        errors = [f"uncertainty budget parse failed: {exc}"]
+        warnings = []
+        summary = {"combined_magnitude": None, "unit": None}
+    print(json.dumps({"ok": not errors, "errors": errors, "warnings": warnings, "summary": summary}, indent=2))
+    return 0 if not errors else 1
 
 
 if __name__ == "__main__":

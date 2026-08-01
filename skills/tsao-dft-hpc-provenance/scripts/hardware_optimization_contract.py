@@ -273,13 +273,9 @@ def validate_profile(profile: dict[str, Any]) -> tuple[list[str], list[str], dic
     model_family = str(software.get("model_family", "none")).lower()
     if "cuequivariance" in normalized_libraries and model_family not in {"equivariant", "mace", "nequip", "e3nn"}:
         errors.append("cuEquivariance requires an accepted equivariant, MACE, NequIP or e3nn model family")
-    if "tensorrt" in normalized_libraries and not (
-        target == "edge" and stage == "ml-surrogate" and vendor == "nvidia"
-    ):
+    if "tensorrt" in normalized_libraries and not (target == "edge" and stage == "ml-surrogate" and vendor == "nvidia"):
         errors.append("TensorRT is limited to NVIDIA edge ml-surrogate plans")
-    if "openvino" in normalized_libraries and not (
-        target == "edge" and stage == "ml-surrogate" and vendor == "intel"
-    ):
+    if "openvino" in normalized_libraries and not (target == "edge" and stage == "ml-surrogate" and vendor == "intel"):
         errors.append("OpenVINO is limited to Intel edge ml-surrogate plans")
 
     if stage == "engine" and target != "edge" and backend != "cpu":

@@ -9,8 +9,8 @@ import math
 from pathlib import Path
 from typing import Any
 
-from inspect_xyz import parse_xyz
 import numpy as np
+from inspect_xyz import parse_xyz
 
 
 def atom_record(value: Any, label: str, errors: list[str]) -> dict[str, Any] | None:

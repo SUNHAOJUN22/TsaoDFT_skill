@@ -5,18 +5,35 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 from pathlib import Path
+from typing import Any
 
 import yaml
 
-SCHED = {"local", "slurm", "pbs"}
+SCHEDULERS = {"local", "slurm", "pbs"}
+WALLTIME_RE = re.compile(r"^(?:\d+-)?\d{1,3}:\d{2}:\d{2}$")
+CREDENTIAL_RE = re.compile(r"(token|password|secret)\s*[=:]\s*[\"']?[^\"',}\s]+", re.I)
 
 
-def validate(d):
-    e = []
-    w = []
-    for k in [
+def positive_number(value: Any, label: str, errors: list[str], *, integer: bool = False) -> None:
+    valid_type = isinstance(value, int) if integer else isinstance(value, (int, float))
+    if isinstance(value, bool) or not valid_type:
+        errors.append(f"{label} must be {'a positive integer' if integer else 'positive finite numeric'}")
+        return
+    number = float(value)
+    if not math.isfinite(number) or number <= 0:
+        errors.append(f"{label} must be {'a positive integer' if integer else 'positive finite numeric'}")
+
+
+def validate(data: Any) -> tuple[list[str], list[str]]:
+    errors: list[str] = []
+    warnings: list[str] = []
+    if not isinstance(data, dict):
+        return ["site profile root must be a mapping"], warnings
+
+    for key in [
         "schema_version",
         "site_id",
         "scheduler",
@@ -27,41 +44,81 @@ def validate(d):
         "security",
         "status",
     ]:
-        if k not in d:
-            e.append(f"missing {k}")
-    if d.get("scheduler") not in SCHED:
-        e.append("unsupported scheduler")
-    software = d.get("software") or {}
-    for engine, rec in software.items():
-        if not isinstance(rec, dict):
-            e.append(f"software.{engine} must be mapping")
+        if key not in data:
+            errors.append(f"missing {key}")
+    if data.get("scheduler") not in SCHEDULERS:
+        errors.append("unsupported scheduler")
+
+    software = data.get("software")
+    if not isinstance(software, dict):
+        errors.append("software must be a mapping")
+        software = {}
+    for engine, record in software.items():
+        if not isinstance(engine, str) or not engine:
+            errors.append("software engine names must be non-empty strings")
             continue
-        for k in ["executable", "version_policy", "module_or_environment"]:
-            if rec.get(k) in (None, "unknown"):
-                w.append(f"software.{engine} unresolved {k}")
-    sec = d.get("security") or {}
-    if sec.get("contains_credentials") is True:
-        e.append("site profile must not contain credentials")
-    text = json.dumps(d)
-    if re.search(r'(token|password|secret)\s*[=:]\s*["\']?[^"\',}\s]+', text, re.I):
-        e.append("possible credential literal detected")
-    limits = d.get("resource_limits") or {}
-    for k in ["max_nodes", "max_walltime", "max_memory_gb_per_node"]:
-        if k not in limits:
-            w.append(f"resource_limits missing {k}")
-    if d.get("status") == "accepted" and (e or w):
-        e.append("accepted site profile has unresolved errors/warnings")
-    return e, w
+        if not isinstance(record, dict):
+            errors.append(f"software.{engine} must be mapping")
+            continue
+        for key in ("executable", "version_policy", "module_or_environment"):
+            if record.get(key) in (None, "", "unknown"):
+                warnings.append(f"software.{engine} unresolved {key}")
+
+    scratch = data.get("scratch")
+    if not isinstance(scratch, dict):
+        errors.append("scratch must be a mapping")
+
+    security = data.get("security")
+    if not isinstance(security, dict):
+        errors.append("security must be a mapping")
+        security = {}
+    contains_credentials = security.get("contains_credentials")
+    if contains_credentials is True:
+        errors.append("site profile must not contain credentials")
+    elif contains_credentials is not False:
+        errors.append("security.contains_credentials must be boolean false")
+
+    serialized = yaml.safe_dump(data, sort_keys=True)
+    if CREDENTIAL_RE.search(serialized):
+        errors.append("possible credential literal detected")
+
+    limits = data.get("resource_limits")
+    if not isinstance(limits, dict):
+        errors.append("resource_limits must be a mapping")
+        limits = {}
+    for key in ("max_nodes", "max_walltime", "max_memory_gb_per_node"):
+        if key not in limits:
+            warnings.append(f"resource_limits missing {key}")
+    if "max_nodes" in limits:
+        positive_number(limits.get("max_nodes"), "resource_limits.max_nodes", errors, integer=True)
+    if "max_memory_gb_per_node" in limits:
+        positive_number(
+            limits.get("max_memory_gb_per_node"),
+            "resource_limits.max_memory_gb_per_node",
+            errors,
+        )
+    if "max_walltime" in limits:
+        walltime = limits.get("max_walltime")
+        if not isinstance(walltime, str) or WALLTIME_RE.fullmatch(walltime) is None:
+            errors.append("resource_limits.max_walltime must be HH:MM:SS or D-HH:MM:SS")
+
+    if data.get("status") == "accepted" and (errors or warnings):
+        errors.append("accepted site profile has unresolved errors/warnings")
+    return sorted(set(errors)), sorted(set(warnings))
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("profile", type=Path)
-    a = ap.parse_args()
-    d = yaml.safe_load(a.profile.read_text()) or {}
-    e, w = validate(d)
-    print(json.dumps({"ok": not e, "errors": e, "warnings": w}, indent=2))
-    return 0 if not e else 1
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("profile", type=Path)
+    args = parser.parse_args()
+    try:
+        data = yaml.safe_load(args.profile.read_text(encoding="utf-8"))
+        errors, warnings = validate(data)
+    except (OSError, UnicodeError, yaml.YAMLError) as exc:
+        errors = [f"site profile parse failed: {exc}"]
+        warnings = []
+    print(json.dumps({"ok": not errors, "errors": errors, "warnings": warnings}, indent=2))
+    return 0 if not errors else 1
 
 
 if __name__ == "__main__":

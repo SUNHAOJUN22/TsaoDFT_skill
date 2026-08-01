@@ -10,7 +10,6 @@ from typing import Any
 
 import yaml
 
-
 REQUIRED_METRICS = {"mae", "rmse", "r2"}
 
 

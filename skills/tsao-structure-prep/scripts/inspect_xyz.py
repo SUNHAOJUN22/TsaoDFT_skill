@@ -11,6 +11,7 @@ import json
 import math
 import re
 from pathlib import Path
+from typing import Any
 
 COVALENT = {
     "H": 0.31,
@@ -46,78 +47,110 @@ COVALENT = {
 VALID = re.compile(r"^[A-Z][a-z]?$")
 
 
-def parse_xyz(path: Path) -> tuple[str, list[dict]]:
+def parse_xyz(path: Path) -> tuple[str, list[dict[str, Any]]]:
     lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
     if not lines:
         raise ValueError("empty XYZ")
     try:
-        n = int(lines[0].strip())
+        atom_count = int(lines[0].strip())
     except ValueError as exc:
         raise ValueError("first line must be atom count") from exc
-    if len(lines) < n + 2:
-        raise ValueError(f"expected {n} atoms but file has fewer lines")
-    atoms = []
-    for i, line in enumerate(lines[2 : 2 + n], 1):
-        p = line.split()
-        if len(p) < 4:
-            raise ValueError(f"atom line {i} has fewer than 4 fields")
-        el = p[0].capitalize()
-        if not VALID.match(el):
-            raise ValueError(f"invalid element token {p[0]} at atom {i}")
+    if atom_count < 1:
+        raise ValueError("atom count must be positive")
+    if len(lines) < atom_count + 2:
+        raise ValueError(f"expected {atom_count} atoms but file has fewer lines")
+
+    atoms: list[dict[str, Any]] = []
+    for index, line in enumerate(lines[2 : 2 + atom_count], 1):
+        parts = line.split()
+        if len(parts) < 4:
+            raise ValueError(f"atom line {index} has fewer than 4 fields")
+        element = parts[0].capitalize()
+        if VALID.fullmatch(element) is None:
+            raise ValueError(f"invalid element token {parts[0]} at atom {index}")
         try:
-            x, y, z = map(float, p[1:4])
+            x, y, z = map(float, parts[1:4])
         except ValueError as exc:
-            raise ValueError(f"non-numeric coordinate at atom {i}") from exc
-        atoms.append({"index": i, "element": el, "x": x, "y": y, "z": z})
+            raise ValueError(f"non-numeric coordinate at atom {index}") from exc
+        if not all(math.isfinite(value) for value in (x, y, z)):
+            raise ValueError(f"non-finite coordinate at atom {index}")
+        atoms.append({"index": index, "element": element, "x": x, "y": y, "z": z})
     return lines[1] if len(lines) > 1 else "", atoms
 
 
-def distance(a, b):
+def distance(a: dict[str, Any], b: dict[str, Any]) -> float:
     return math.dist((a["x"], a["y"], a["z"]), (b["x"], b["y"], b["z"]))
 
 
-def inspect(atoms: list[dict], clash_scale: float = 0.55, bond_scale: float = 1.25) -> dict:
-    errors = []
-    warnings = []
-    pairs = []
-    bonds = []
+def inspect(
+    atoms: list[dict[str, Any]],
+    clash_scale: float = 0.55,
+    bond_scale: float = 1.25,
+) -> dict[str, Any]:
+    errors: list[str] = []
+    warnings: list[str] = []
+    pairs: list[float] = []
+    bonds: list[dict[str, Any]] = []
     if not atoms:
         errors.append("no atoms")
-    for i, a in enumerate(atoms):
-        if a["element"] not in COVALENT:
-            warnings.append(f"no covalent radius for {a['element']}; pair heuristics incomplete")
-        for b in atoms[i + 1 :]:
-            d = distance(a, b)
-            pairs.append(d)
-            ra = COVALENT.get(a["element"])
-            rb = COVALENT.get(b["element"])
-            if d < 1e-6:
-                errors.append(f"duplicate coordinates: atoms {a['index']} and {b['index']}")
-            if ra and rb:
-                ref = ra + rb
-                if d < clash_scale * ref:
-                    errors.append(f"severe contact {a['index']}-{b['index']}: {d:.3f} Å")
-                if d <= bond_scale * ref:
+    if not math.isfinite(clash_scale) or clash_scale <= 0:
+        errors.append("clash_scale must be positive finite")
+    if not math.isfinite(bond_scale) or bond_scale <= 0:
+        errors.append("bond_scale must be positive finite")
+
+    for index, atom in enumerate(atoms):
+        if atom["element"] not in COVALENT:
+            warnings.append(f"no covalent radius for {atom['element']}; pair heuristics incomplete")
+        for other in atoms[index + 1 :]:
+            separation = distance(atom, other)
+            if not math.isfinite(separation):
+                errors.append(f"non-finite distance: atoms {atom['index']} and {other['index']}")
+                continue
+            pairs.append(separation)
+            radius_a = COVALENT.get(atom["element"])
+            radius_b = COVALENT.get(other["element"])
+            if separation < 1e-6:
+                errors.append(f"duplicate coordinates: atoms {atom['index']} and {other['index']}")
+            if radius_a and radius_b:
+                reference = radius_a + radius_b
+                if separation < clash_scale * reference:
+                    errors.append(f"severe contact {atom['index']}-{other['index']}: {separation:.3f} Å")
+                if separation <= bond_scale * reference:
                     bonds.append(
-                        {"i": a["index"], "j": b["index"], "distance_angstrom": round(d, 6), "heuristic_only": True}
+                        {
+                            "i": atom["index"],
+                            "j": other["index"],
+                            "distance_angstrom": round(separation, 6),
+                            "heuristic_only": True,
+                        }
                     )
-    degree = {a["index"]: 0 for a in atoms}
-    for b in bonds:
-        degree[b["i"]] += 1
-        degree[b["j"]] += 1
-    isolated = [i for i, v in degree.items() if v == 0]
+
+    degree = {atom["index"]: 0 for atom in atoms}
+    for bond in bonds:
+        degree[bond["i"]] += 1
+        degree[bond["j"]] += 1
+    isolated = [index for index, value in degree.items() if value == 0]
     if isolated:
         warnings.append(f"heuristically isolated atoms: {isolated}; review fragments/coordination")
-    centroid = {k: sum(a[k] for a in atoms) / len(atoms) for k in ["x", "y", "z"]} if atoms else {}
+    centroid = (
+        {axis: sum(atom[axis] for atom in atoms) / len(atoms) for axis in ("x", "y", "z")}
+        if atoms
+        else {}
+    )
     span = (
-        {axis: max(a[axis] for a in atoms) - min(a[axis] for a in atoms) for axis in ["x", "y", "z"]} if atoms else {}
+        {axis: max(atom[axis] for atom in atoms) - min(atom[axis] for atom in atoms) for axis in ("x", "y", "z")}
+        if atoms
+        else {}
     )
     return {
         "ok": not errors,
-        "errors": errors,
+        "errors": sorted(set(errors)),
         "warnings": sorted(set(warnings)),
         "atom_count": len(atoms),
-        "elements": {e: sum(a["element"] == e for a in atoms) for e in sorted({a["element"] for a in atoms})},
+        "elements": {
+            element: sum(atom["element"] == element for atom in atoms)
+            for element in sorted({atom["element"] for atom in atoms})
+        },
         "centroid_angstrom": centroid,
         "span_angstrom": span,
         "minimum_pair_distance_angstrom": min(pairs) if pairs else None,
@@ -127,23 +160,24 @@ def inspect(atoms: list[dict], clash_scale: float = 0.55, bond_scale: float = 1.
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("xyz", type=Path)
-    ap.add_argument("--json", action="store_true")
-    ap.add_argument("--out", type=Path)
-    a = ap.parse_args()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("xyz", type=Path)
+    parser.add_argument("--json", action="store_true")
+    parser.add_argument("--out", type=Path)
+    args = parser.parse_args()
     try:
-        comment, atoms = parse_xyz(a.xyz)
-        r = inspect(atoms)
-        r["comment"] = comment
-        r["source"] = str(a.xyz.resolve())
-    except Exception as exc:
-        r = {"ok": False, "errors": [str(exc)], "warnings": [], "source": str(a.xyz.resolve())}
-    text = json.dumps(r, ensure_ascii=False, indent=2)
-    if a.out:
-        a.out.write_text(text, encoding="utf-8")
+        comment, atoms = parse_xyz(args.xyz)
+        result = inspect(atoms)
+        result["comment"] = comment
+        result["source"] = str(args.xyz.resolve())
+    except (OSError, UnicodeError, ValueError) as exc:
+        result = {"ok": False, "errors": [str(exc)], "warnings": [], "source": str(args.xyz.resolve())}
+    text = json.dumps(result, ensure_ascii=False, indent=2)
+    if args.out:
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text(text, encoding="utf-8")
     print(text)
-    return 0 if r["ok"] else 1
+    return 0 if result["ok"] else 1
 
 
 if __name__ == "__main__":

@@ -46,7 +46,8 @@ def validate(data: Any) -> tuple[list[str], list[str]]:
 
     if len(fingerprints) != 1:
         errors.append(f"incompatible method fingerprints: {sorted(fingerprints)}")
-    if coefficients and abs(sum(coefficients)) < 1e-12 and data.get("quantity") == "total_energy":
+    coefficient_sum = math.fsum(coefficients)
+    if coefficients and abs(coefficient_sum) < 1e-12 and data.get("quantity") == "total_energy":
         errors.append("derived expression mislabeled total_energy")
     return sorted(set(errors)), sorted(fingerprints)
 

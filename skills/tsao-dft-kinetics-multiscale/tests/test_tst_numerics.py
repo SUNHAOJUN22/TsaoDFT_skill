@@ -84,9 +84,7 @@ class TstNumericsTests(unittest.TestCase):
             source = root / "barriers.csv"
             output = root / "rates.csv"
             source.write_text(
-                "reaction_id,delta_g_dagger_kcal_mol,path_degeneracy,molecularity\n"
-                "r1,15,1,1\n"
-                "r2,16,2,2\n",
+                "reaction_id,delta_g_dagger_kcal_mol,path_degeneracy,molecularity\nr1,15,1,1\nr2,16,2,2\n",
                 encoding="utf-8",
             )
             result = subprocess.run(

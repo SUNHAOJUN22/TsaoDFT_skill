@@ -37,6 +37,8 @@ def budget(values: list[float], rule: str = "root_sum_square") -> dict[str, Any]
 
 
 class UncertaintyNumericsTests(unittest.TestCase):
+    module: Any
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.module = load_script()

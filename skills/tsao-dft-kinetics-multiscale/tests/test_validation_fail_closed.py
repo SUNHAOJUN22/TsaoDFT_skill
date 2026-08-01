@@ -27,6 +27,9 @@ def load_script() -> Any:
 
 
 class ReactionNetworkFailClosedTests(unittest.TestCase):
+    module: Any
+    base: dict[str, Any]
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.module = load_script()

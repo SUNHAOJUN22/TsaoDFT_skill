@@ -1,22 +1,69 @@
 #!/usr/bin/env python3
+"""Check whether terms in a derived energy expression are method-compatible."""
+
+from __future__ import annotations
+
 import argparse
 import json
+import math
 from pathlib import Path
+from typing import Any
 
 import yaml
 
-ap = argparse.ArgumentParser()
-ap.add_argument("expression", type=Path)
-a = ap.parse_args()
-d = yaml.safe_load(a.expression.read_text())
-terms = d.get("terms") or []
-fps = {t.get("method_fingerprint") for t in terms}
-errors = []
-if len(terms) < 2:
-    errors.append("energy expression needs at least two terms")
-if None in fps or len(fps) != 1:
-    errors.append(f"incompatible method fingerprints: {sorted(str(x) for x in fps)}")
-if abs(sum(float(t.get("coefficient", 0)) for t in terms)) < 1e-12 and d.get("quantity") == "total_energy":
-    errors.append("derived expression mislabeled total_energy")
-print(json.dumps({"ok": not errors, "errors": errors, "fingerprints": sorted(str(x) for x in fps)}, indent=2))
-raise SystemExit(0 if not errors else 1)
+
+def validate(data: Any) -> tuple[list[str], list[str]]:
+    errors: list[str] = []
+    if not isinstance(data, dict):
+        return ["energy expression root must be a mapping"], []
+
+    terms = data.get("terms")
+    if not isinstance(terms, list):
+        return ["terms must be a list"], []
+    if len(terms) < 2:
+        errors.append("energy expression needs at least two terms")
+
+    fingerprints: set[str] = set()
+    coefficients: list[float] = []
+    for index, term in enumerate(terms):
+        if not isinstance(term, dict):
+            errors.append(f"terms[{index}] must be a mapping")
+            continue
+        fingerprint = term.get("method_fingerprint")
+        if not isinstance(fingerprint, str) or not fingerprint:
+            errors.append(f"terms[{index}].method_fingerprint must be a non-empty string")
+        else:
+            fingerprints.add(fingerprint)
+        raw_coefficient = term.get("coefficient")
+        if isinstance(raw_coefficient, bool) or not isinstance(raw_coefficient, (int, float)):
+            errors.append(f"terms[{index}].coefficient must be finite numeric")
+            continue
+        coefficient = float(raw_coefficient)
+        if not math.isfinite(coefficient):
+            errors.append(f"terms[{index}].coefficient must be finite numeric")
+            continue
+        coefficients.append(coefficient)
+
+    if len(fingerprints) != 1:
+        errors.append(f"incompatible method fingerprints: {sorted(fingerprints)}")
+    if coefficients and abs(sum(coefficients)) < 1e-12 and data.get("quantity") == "total_energy":
+        errors.append("derived expression mislabeled total_energy")
+    return sorted(set(errors)), sorted(fingerprints)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("expression", type=Path)
+    args = parser.parse_args()
+    try:
+        data = yaml.safe_load(args.expression.read_text(encoding="utf-8"))
+        errors, fingerprints = validate(data)
+    except (OSError, UnicodeError, yaml.YAMLError) as exc:
+        errors = [f"energy expression parse failed: {exc}"]
+        fingerprints = []
+    print(json.dumps({"ok": not errors, "errors": errors, "fingerprints": fingerprints}, indent=2))
+    return 0 if not errors else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

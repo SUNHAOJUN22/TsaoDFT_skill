@@ -27,6 +27,13 @@ def load_script(name: str) -> Any:
 
 
 class MlValidationFailClosedTests(unittest.TestCase):
+    dataset: Any
+    model_card: Any
+    manifest: Any
+    rows: list[dict[str, str]]
+    config: dict[str, Any]
+    project: dict[str, Any]
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.dataset = load_script("validate_dft_dataset.py")

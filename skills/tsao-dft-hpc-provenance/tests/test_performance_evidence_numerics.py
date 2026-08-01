@@ -173,7 +173,7 @@ class PerformanceEvidenceNumericsTests(unittest.TestCase):
             self.core.compare_evidence([], bad_threshold_policy)
 
         bad_performance_policy = copy.deepcopy(self.policy)
-        bad_performance_policy["performance"] = []
+        bad_performance_policy["performance"] = ["malformed"]
         with self.assertRaisesRegex(ValueError, "must be a mapping"):
             self.core.compare_evidence([], bad_performance_policy)
 
@@ -184,12 +184,12 @@ class PerformanceEvidenceNumericsTests(unittest.TestCase):
         candidates = self.fixture.validated(self.fixture.gpu_records(candidate="gpu"))
 
         nonmapping = copy.deepcopy(self.policy)
-        nonmapping["numerical_equivalence"] = []
+        nonmapping["numerical_equivalence"] = ["malformed"]
         with self.assertRaisesRegex(ValueError, "must be a mapping"):
             self.core.numerical_equivalence(candidates, references, nonmapping)
 
         bad_property_limits = copy.deepcopy(self.policy)
-        bad_property_limits["numerical_equivalence"]["property_abs"] = []
+        bad_property_limits["numerical_equivalence"]["property_abs"] = ["malformed"]
         with self.assertRaisesRegex(ValueError, "property_abs must be a mapping"):
             self.core.numerical_equivalence(candidates, references, bad_property_limits)
 

@@ -12,7 +12,7 @@ import shutil
 import statistics
 from collections import defaultdict
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeGuard
 
 import yaml
 
@@ -53,11 +53,11 @@ def clone(value: Any) -> Any:
     return json.loads(json.dumps(value, ensure_ascii=False))
 
 
-def is_finite_real(value: Any) -> bool:
+def is_finite_real(value: Any) -> TypeGuard[int | float]:
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(float(value))
 
 
-def is_exact_integer(value: Any) -> bool:
+def is_exact_integer(value: Any) -> TypeGuard[int]:
     return isinstance(value, int) and not isinstance(value, bool)
 
 

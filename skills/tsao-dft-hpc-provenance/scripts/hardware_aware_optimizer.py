@@ -8,8 +8,8 @@ import json
 from pathlib import Path
 from typing import Any
 
-import yaml
 from jsonschema import Draft202012Validator
+import yaml
 
 from hardware_optimization_contract import NOT_AVAILABLE, SCHEMA_VERSION, validate_profile
 from hardware_provider_policy import (

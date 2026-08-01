@@ -5,25 +5,19 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 from pathlib import Path
 from typing import Any
 
-from jsonschema import Draft202012Validator
-import yaml
-
-SCRIPT_DIR = Path(__file__).resolve().parent
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
-
-from hardware_optimization_contract import NOT_AVAILABLE, SCHEMA_VERSION, validate_profile  # noqa: E402
-from hardware_provider_policy import (  # noqa: E402
+from hardware_optimization_contract import NOT_AVAILABLE, SCHEMA_VERSION, validate_profile
+from hardware_provider_policy import (
     classify_bottleneck,
     library_assessment,
     resource_layout,
     select_provider,
     validation_requirements,
 )
+from jsonschema import Draft202012Validator
+import yaml
 
 
 def build_optimization_plan(profile: dict[str, Any]) -> dict[str, Any]:

@@ -13,7 +13,7 @@ from typing import Any
 import yaml
 
 SCHEDULERS = {"local", "slurm", "pbs"}
-WALLTIME_RE = re.compile(r"^(?:\d+-)?\d{1,3}:\d{2}:\d{2}$")
+WALLTIME_RE = re.compile(r"^(?:(\d+)-)?(\d+):(\d{2}):(\d{2})$")
 CREDENTIAL_RE = re.compile(r"(token|password|secret)\s*[=:]\s*[\"']?[^\"',}\s]+", re.I)
 
 
@@ -25,6 +25,20 @@ def positive_number(value: Any, label: str, errors: list[str], *, integer: bool 
     number = float(value)
     if not math.isfinite(number) or number <= 0:
         errors.append(f"{label} must be {'a positive integer' if integer else 'positive finite numeric'}")
+
+
+def valid_walltime(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    match = WALLTIME_RE.fullmatch(value)
+    if match is None:
+        return False
+    hour = int(match.group(2))
+    minute = int(match.group(3))
+    second = int(match.group(4))
+    if minute >= 60 or second >= 60:
+        return False
+    return match.group(1) is None or hour < 24
 
 
 def validate(data: Any) -> tuple[list[str], list[str]]:
@@ -97,10 +111,8 @@ def validate(data: Any) -> tuple[list[str], list[str]]:
             "resource_limits.max_memory_gb_per_node",
             errors,
         )
-    if "max_walltime" in limits:
-        walltime = limits.get("max_walltime")
-        if not isinstance(walltime, str) or WALLTIME_RE.fullmatch(walltime) is None:
-            errors.append("resource_limits.max_walltime must be HH:MM:SS or D-HH:MM:SS")
+    if "max_walltime" in limits and not valid_walltime(limits.get("max_walltime")):
+        errors.append("resource_limits.max_walltime must be valid HH:MM:SS or D-HH:MM:SS")
 
     if data.get("status") == "accepted" and (errors or warnings):
         errors.append("accepted site profile has unresolved errors/warnings")

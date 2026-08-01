@@ -140,7 +140,8 @@ def _pair_findings_numpy(
 
     for index, atom in enumerate(atoms[:-1]):
         delta = coordinates[index + 1 :] - coordinates[index]
-        separations = np.sqrt(np.einsum("ij,ij->i", delta, delta, optimize=True))
+        separations = np.einsum("ij,ij->i", delta, delta)
+        np.sqrt(separations, out=separations)
         finite = np.isfinite(separations)
         for offset in np.flatnonzero(~finite):
             other = atoms[index + 1 + int(offset)]

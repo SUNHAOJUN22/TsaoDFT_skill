@@ -90,8 +90,10 @@ def validate(data: Any) -> tuple[list[str], list[str]]:
         elif not isinstance(namelists[section], dict):
             errors.append(f"&{section.upper()} must be a mapping")
 
-    control = namelists.get("control") if isinstance(namelists.get("control"), dict) else {}
-    system = namelists.get("system") if isinstance(namelists.get("system"), dict) else {}
+    raw_control = namelists.get("control")
+    raw_system = namelists.get("system")
+    control: dict[str, Any] = raw_control if isinstance(raw_control, dict) else {}
+    system: dict[str, Any] = raw_system if isinstance(raw_system, dict) else {}
     for key in ("calculation", "prefix", "outdir", "pseudo_dir"):
         if key not in control:
             warnings.append(f"CONTROL missing explicit {key}")

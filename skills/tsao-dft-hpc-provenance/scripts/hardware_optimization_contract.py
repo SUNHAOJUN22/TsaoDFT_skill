@@ -108,6 +108,18 @@ def _string(value: Any, name: str, errors: list[str], *, allow_not_available: bo
     return rendered
 
 
+def _normalized_string(value: Any, name: str, errors: list[str]) -> str:
+    rendered = _string(value, name, errors)
+    return rendered.lower() if rendered else ""
+
+
+def _choice(value: Any, name: str, choices: set[str], errors: list[str]) -> str:
+    rendered = _normalized_string(value, name, errors)
+    if rendered and rendered not in choices:
+        errors.append(f"{name} must be one of {sorted(choices)}")
+    return rendered
+
+
 def _strict_int(value: Any, name: str, errors: list[str], minimum: int = 0) -> int:
     if type(value) is not int:
         errors.append(f"{name} must be an integer")
@@ -162,7 +174,10 @@ def _bool(value: Any, name: str, errors: list[str]) -> bool:
     return value
 
 
-def validate_profile(profile: dict[str, Any]) -> tuple[list[str], list[str], dict[str, Any]]:
+def validate_profile(profile: Any) -> tuple[list[str], list[str], dict[str, Any]]:
+    if type(profile) is not dict:
+        return ["profile root must be a mapping"], [], {}
+
     errors: list[str] = []
     warnings: list[str] = []
     evidence = _mapping(profile.get("evidence", {}), "evidence", errors)
@@ -172,44 +187,35 @@ def validate_profile(profile: dict[str, Any]) -> tuple[list[str], list[str], dic
     workload = _mapping(profile.get("workload", {}), "workload", errors)
     policy = _mapping(profile.get("policy", {}), "policy", errors)
 
+    schema_version = _string(profile.get("schema_version"), "schema_version", errors)
     profile_id = _string(profile.get("profile_id"), "profile_id", errors)
-    engine = str(profile.get("engine", "")).lower()
-    stage = str(profile.get("stage", "")).lower()
-    target = str(hardware.get("target", "")).lower()
-    vendor = str(hardware.get("gpu_vendor", "none")).lower()
-    backend = str(software.get("backend", "cpu")).lower()
-    provider = str(software.get("provider", "auto")).lower()
-    precision = str(policy.get("precision", "fp64")).lower()
-    expected_kernel = str(workload.get("expected_kernel", "auto")).lower()
-    edge_runtime = str(software.get("edge_runtime", "auto")).lower()
+    engine = _choice(profile.get("engine"), "engine", ENGINES, errors)
+    stage = _choice(profile.get("stage"), "stage", STAGES, errors)
+    target = _choice(hardware.get("target"), "hardware.target", TARGETS, errors)
+    vendor = _choice(hardware.get("gpu_vendor", "none"), "hardware.gpu_vendor", GPU_VENDORS, errors)
+    backend = _choice(software.get("backend", "cpu"), "software.backend", BACKENDS, errors)
+    provider = _choice(software.get("provider", "auto"), "software.provider", PROVIDERS, errors)
+    precision = _choice(policy.get("precision", "fp64"), "policy.precision", PRECISIONS, errors)
+    expected_kernel = _choice(
+        workload.get("expected_kernel", "auto"),
+        "workload.expected_kernel",
+        BOTTLENECKS,
+        errors,
+    )
+    edge_runtime = _choice(software.get("edge_runtime", "auto"), "software.edge_runtime", EDGE_RUNTIMES, errors)
 
-    if str(profile.get("schema_version", "")) != SCHEMA_VERSION:
+    if schema_version != SCHEMA_VERSION:
         errors.append(f"schema_version must be {SCHEMA_VERSION}")
-    if engine not in ENGINES:
-        errors.append(f"engine must be one of {sorted(ENGINES)}")
-    if stage not in STAGES:
-        errors.append(f"stage must be one of {sorted(STAGES)}")
-    if target not in TARGETS:
-        errors.append(f"hardware.target must be one of {sorted(TARGETS)}")
-    if vendor not in GPU_VENDORS:
-        errors.append(f"hardware.gpu_vendor must be one of {sorted(GPU_VENDORS)}")
-    if backend not in BACKENDS:
-        errors.append(f"software.backend must be one of {sorted(BACKENDS)}")
-    elif vendor in GPU_VENDORS and vendor not in BACKEND_VENDORS[backend]:
+    if backend and vendor and vendor not in BACKEND_VENDORS[backend]:
         errors.append(f"software.backend={backend} is incompatible with hardware.gpu_vendor={vendor}")
-    if provider not in PROVIDERS:
-        errors.append(f"software.provider must be one of {sorted(PROVIDERS)}")
-    if precision not in PRECISIONS:
-        errors.append(f"policy.precision must be one of {sorted(PRECISIONS)}")
-    if expected_kernel not in BOTTLENECKS:
-        errors.append(f"workload.expected_kernel must be one of {sorted(BOTTLENECKS)}")
-    if edge_runtime not in EDGE_RUNTIMES:
-        errors.append(f"software.edge_runtime must be one of {sorted(EDGE_RUNTIMES)}")
 
-    source_kind = str(evidence.get("source_kind", "simulation")).lower()
+    source_kind = _choice(
+        evidence.get("source_kind", "simulation"),
+        "evidence.source_kind",
+        {"simulation", "observed"},
+        errors,
+    )
     labels = set(_string_list(evidence.get("labels", []), "evidence.labels", errors))
-    if source_kind not in {"simulation", "observed"}:
-        errors.append("evidence.source_kind must be simulation or observed")
     if source_kind == "simulation" and not SIMULATION_LABELS.issubset(labels):
         missing = sorted(SIMULATION_LABELS - labels)
         errors.append(f"simulation evidence is missing required labels: {missing}")
@@ -270,7 +276,7 @@ def validate_profile(profile: dict[str, Any]) -> tuple[list[str], list[str], dic
     if unknown:
         errors.append(f"unknown acceleration libraries: {unknown}")
 
-    model_family = str(software.get("model_family", "none")).lower()
+    model_family = _normalized_string(software.get("model_family", "none"), "software.model_family", errors)
     if "cuequivariance" in normalized_libraries and model_family not in {"equivariant", "mace", "nequip", "e3nn"}:
         errors.append("cuEquivariance requires an accepted equivariant, MACE, NequIP or e3nn model family")
     if "tensorrt" in normalized_libraries and not (target == "edge" and stage == "ml-surrogate" and vendor == "nvidia"):

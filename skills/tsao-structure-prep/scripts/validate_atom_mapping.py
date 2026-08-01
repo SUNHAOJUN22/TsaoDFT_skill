@@ -9,6 +9,8 @@ import math
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 from inspect_xyz import parse_xyz
 
 
@@ -71,26 +73,42 @@ def validate(
         errors.append("mapping must be a 1-based permutation")
         return errors, warnings, {}
 
-    squared_distance = 0.0
-    maximum_distance = 0.0
-    element_mismatches: list[tuple[int, int, object, object]] = []
-    for index, candidate_index in enumerate(normalized_mapping):
-        atom_a = atoms_a[index]
-        atom_b = atoms_b[candidate_index - 1]
-        if atom_a["element"] != atom_b["element"]:
-            element_mismatches.append((index + 1, candidate_index, atom_a["element"], atom_b["element"]))
-        distance = math.dist(
-            (atom_a["x"], atom_a["y"], atom_a["z"]),
-            (atom_b["x"], atom_b["y"], atom_b["z"]),
-        )
-        if not math.isfinite(distance):
-            errors.append(f"non-finite displacement for atom {index + 1}")
-            continue
-        squared_distance += distance * distance
-        maximum_distance = max(maximum_distance, distance)
+    elements_a = [str(atom["element"]) for atom in atoms_a]
+    elements_b = [str(atom["element"]) for atom in atoms_b]
+    element_mismatches = [
+        (index + 1, candidate_index, elements_a[index], elements_b[candidate_index - 1])
+        for index, candidate_index in enumerate(normalized_mapping)
+        if elements_a[index] != elements_b[candidate_index - 1]
+    ]
     if element_mismatches:
         errors.append(f"element mismatches: {element_mismatches}")
-    rmsd = math.sqrt(squared_distance / atom_count) if atom_count else 0.0
+
+    if atom_count:
+        coordinates_a = np.asarray(
+            [[atom["x"], atom["y"], atom["z"]] for atom in atoms_a],
+            dtype=np.float64,
+        )
+        coordinates_b = np.asarray(
+            [[atom["x"], atom["y"], atom["z"]] for atom in atoms_b],
+            dtype=np.float64,
+        )
+        mapping_indices = np.asarray(normalized_mapping, dtype=np.intp) - 1
+        displacement = coordinates_a - coordinates_b[mapping_indices]
+        distances = np.hypot.reduce(displacement, axis=1)
+        finite = np.isfinite(distances)
+        for index in np.flatnonzero(~finite):
+            errors.append(f"non-finite displacement for atom {int(index) + 1}")
+        finite_distances = distances[finite]
+        if finite_distances.size:
+            rmsd = float(np.hypot.reduce(finite_distances) / math.sqrt(atom_count))
+            maximum_distance = float(finite_distances.max())
+        else:
+            rmsd = 0.0
+            maximum_distance = 0.0
+    else:
+        rmsd = 0.0
+        maximum_distance = 0.0
+
     if rmsd > 2.0:
         warnings.append("large raw-coordinate RMSD; alignment was not performed")
     return (

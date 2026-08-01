@@ -206,15 +206,16 @@ def validate_profile(profile: Any) -> tuple[list[str], list[str], dict[str, Any]
 
     if schema_version != SCHEMA_VERSION:
         errors.append(f"schema_version must be {SCHEMA_VERSION}")
-    if backend and vendor and vendor not in BACKEND_VENDORS[backend]:
+    if backend in BACKEND_VENDORS and vendor and vendor not in BACKEND_VENDORS[backend]:
         errors.append(f"software.backend={backend} is incompatible with hardware.gpu_vendor={vendor}")
 
-    source_kind = _choice(
+    source_kind = _normalized_string(
         evidence.get("source_kind", "simulation"),
         "evidence.source_kind",
-        {"simulation", "observed"},
         errors,
     )
+    if source_kind and source_kind not in {"simulation", "observed"}:
+        errors.append("evidence.source_kind must be simulation or observed")
     labels = set(_string_list(evidence.get("labels", []), "evidence.labels", errors))
     if source_kind == "simulation" and not SIMULATION_LABELS.issubset(labels):
         missing = sorted(SIMULATION_LABELS - labels)

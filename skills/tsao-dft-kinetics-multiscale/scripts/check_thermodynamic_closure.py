@@ -77,9 +77,7 @@ def analyze(document: Any, tolerance: Any) -> dict[str, Any]:
             if reported_reverse is not None:
                 closure_error = math.fsum((reported_reverse, -expected_reverse))
                 if abs(closure_error) > threshold:
-                    errors.append(
-                        f"{reaction_id} closure error {closure_error:.6g} exceeds {threshold}"
-                    )
+                    errors.append(f"{reaction_id} closure error {closure_error:.6g} exceeds {threshold}")
         rows.append(
             {
                 "reaction_id": reaction_id,

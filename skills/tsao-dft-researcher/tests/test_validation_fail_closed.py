@@ -26,6 +26,11 @@ def load_script(name: str) -> Any:
 
 
 class ResearcherValidationFailClosedTests(unittest.TestCase):
+    uncertainty: Any
+    multiwfn: Any
+    budget: dict[str, Any]
+    recipe: dict[str, Any]
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.uncertainty = load_script("validate_uncertainty_budget.py")

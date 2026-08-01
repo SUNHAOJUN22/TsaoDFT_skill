@@ -119,9 +119,7 @@ def resource_layout(profile: dict[str, Any], provider: str) -> tuple[dict[str, A
             openmp_threads = max(1, int(physical) // max(ranks, 1))
         elif profile.get("cpus_per_gpu") is not None:
             openmp_threads = int(profile["cpus_per_gpu"])
-            assumptions.append(
-                "physical_cores is NOT_AVAILABLE; OpenMP baseline uses the declared cpus_per_gpu value"
-            )
+            assumptions.append("physical_cores is NOT_AVAILABLE; OpenMP baseline uses the declared cpus_per_gpu value")
         else:
             openmp_threads = 1
             assumptions.append("CPU topology is NOT_AVAILABLE; OpenMP baseline is conservatively one thread")

@@ -88,7 +88,7 @@ class BuildEnergyProfileTests(unittest.TestCase):
             root = Path(tmp)
             for index, (rows, expected_error) in enumerate(cases):
                 source = root / f"case-{index}.csv"
-                prefix = root / f"case-{index}"
+                prefix = root / f"output-case-{index}"
                 self.write_source(source, rows)
                 completed = subprocess.run(
                     [sys.executable, str(SCRIPT), str(source), "--out", str(prefix)],

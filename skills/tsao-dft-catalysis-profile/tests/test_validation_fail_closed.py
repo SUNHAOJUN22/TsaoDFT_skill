@@ -26,6 +26,11 @@ def load_script(name: str) -> Any:
 
 
 class CatalysisValidationFailClosedTests(unittest.TestCase):
+    claim: Any
+    profile_validator: Any
+    claim_data: dict[str, Any]
+    profile: dict[str, Any]
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.claim = load_script("validate_claim_scope.py")

@@ -203,7 +203,9 @@ def inspect(
         if atom["element"] not in COVALENT:
             warnings.append(f"no covalent radius for {atom['element']}; pair heuristics incomplete")
 
-    selected_backend = "numpy" if backend == "numpy" or (backend == "auto" and len(atoms) >= AUTO_NUMPY_ATOMS) else "python"
+    selected_backend = (
+        "numpy" if backend == "numpy" or (backend == "auto" and len(atoms) >= AUTO_NUMPY_ATOMS) else "python"
+    )
     if selected_backend == "numpy":
         pair_errors, bonds, minimum = _pair_findings_numpy(atoms, clash_scale, bond_scale)
     else:

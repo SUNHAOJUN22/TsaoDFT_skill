@@ -21,6 +21,11 @@ routes:
   acceleration:
     triggers:
     - GPU acceleration
+    - hardware-aware optimizer
+    - optimization plan
+    - provider contract
+    - edge inference
+    - out-of-domain
     - CUDA-X
     - cuTENSOR
     - cuEquivariance
@@ -62,6 +67,7 @@ routes:
     - acceleration campaign
     load:
     - references/gpu-acceleration.md
+    - references/hardware-aware-optimization.md
     - references/environment.md
     - references/site-profiles-and-lineage.md
   performance_evidence:

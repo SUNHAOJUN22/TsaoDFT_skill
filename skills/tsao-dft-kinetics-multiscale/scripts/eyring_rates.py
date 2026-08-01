@@ -40,12 +40,12 @@ def transform_row(
 ) -> dict[str, object]:
     if None in raw:
         raise ValueError(f"row {line_number} has more fields than the CSV header")
-    row = {str(key): "" if value is None else value for key, value in raw.items()}
-    barrier_text = row.get("delta_g_dagger_kcal_mol", "").strip()
+    text_row = {str(key): "" if value is None else value for key, value in raw.items()}
+    barrier_text = text_row.get("delta_g_dagger_kcal_mol", "").strip()
     if not barrier_text:
         raise ValueError(f"row {line_number} is missing delta_g_dagger_kcal_mol")
-    degeneracy_text = row.get("path_degeneracy", "").strip()
-    molecularity_text = row.get("molecularity", "").strip()
+    degeneracy_text = text_row.get("path_degeneracy", "").strip()
+    molecularity_text = text_row.get("molecularity", "").strip()
     try:
         barrier = float(barrier_text)
         degeneracy = float(degeneracy_text) if degeneracy_text else 1.0
@@ -53,6 +53,7 @@ def transform_row(
     except ValueError as exc:
         raise ValueError(f"row {line_number} contains an invalid numeric field") from exc
     value = tst_rate(barrier, temperature, kappa, degeneracy)
+    row: dict[str, object] = dict(text_row)
     row.update(
         {
             "k_tst_s-1_or_standard_state": f"{value:.8e}",

@@ -69,7 +69,9 @@ def validate(data: Any) -> tuple[list[str], list[str]]:
         if missing:
             errors.append(f"{level} missing evidence: {sorted(missing)}")
         if level in {"catalyst_poisoning", "industrial_performance"}:
-            warnings.append("strong claim requires external experimental/process evidence; isolated DFT is insufficient")
+            warnings.append(
+                "strong claim requires external experimental/process evidence; isolated DFT is insufficient"
+            )
         if level == "poisoning_hypothesis" and "experimental_validation" not in evidence:
             warnings.append("label explicitly as hypothesis, not established poisoning")
 

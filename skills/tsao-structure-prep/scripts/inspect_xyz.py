@@ -132,11 +132,7 @@ def inspect(
     isolated = [index for index, value in degree.items() if value == 0]
     if isolated:
         warnings.append(f"heuristically isolated atoms: {isolated}; review fragments/coordination")
-    centroid = (
-        {axis: sum(atom[axis] for atom in atoms) / len(atoms) for axis in ("x", "y", "z")}
-        if atoms
-        else {}
-    )
+    centroid = {axis: sum(atom[axis] for atom in atoms) / len(atoms) for axis in ("x", "y", "z")} if atoms else {}
     span = (
         {axis: max(atom[axis] for atom in atoms) - min(atom[axis] for atom in atoms) for axis in ("x", "y", "z")}
         if atoms

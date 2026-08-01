@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -33,37 +34,62 @@ REQUIREMENTS = {
 }
 
 
-def validate(d):
-    e = []
-    w = []
-    for k in ["claim_id", "claim_level", "text", "system_scope", "evidence", "limitations", "status"]:
-        if k not in d:
-            e.append(f"missing {k}")
-    level = d.get("claim_level")
+def string_list(value: Any, label: str, errors: list[str]) -> list[str]:
+    if not isinstance(value, list):
+        errors.append(f"{label} must be a list")
+        return []
+    if not all(isinstance(item, str) and item for item in value):
+        errors.append(f"{label} must contain non-empty strings")
+        return []
+    return value
+
+
+def validate(data: Any) -> tuple[list[str], list[str]]:
+    errors: list[str] = []
+    warnings: list[str] = []
+    if not isinstance(data, dict):
+        return ["claim scope root must be a mapping"], warnings
+
+    for key in ("claim_id", "claim_level", "text", "system_scope", "evidence", "limitations", "status"):
+        if key not in data:
+            errors.append(f"missing {key}")
+    for key in ("claim_id", "text", "system_scope"):
+        value = data.get(key)
+        if not isinstance(value, str) or not value:
+            errors.append(f"{key} must be a non-empty string")
+
+    evidence = set(string_list(data.get("evidence"), "evidence", errors))
+    string_list(data.get("limitations"), "limitations", errors)
+
+    level = data.get("claim_level")
     if level not in LEVELS:
-        e.append("invalid claim_level")
-        return e, w
-    evidence = set(d.get("evidence") or [])
-    missing = REQUIREMENTS[level] - evidence
-    if missing:
-        e.append(f"{level} missing evidence: {sorted(missing)}")
-    if level in {"catalyst_poisoning", "industrial_performance"}:
-        w.append("strong claim requires external experimental/process evidence; isolated DFT is insufficient")
-    if level == "poisoning_hypothesis" and "experimental_validation" not in evidence:
-        w.append("label explicitly as hypothesis, not established poisoning")
-    if d.get("status") == "accepted" and (e or w):
-        e.append("accepted claim has unresolved errors/warnings")
-    return e, w
+        errors.append("invalid claim_level")
+    else:
+        missing = REQUIREMENTS[level] - evidence
+        if missing:
+            errors.append(f"{level} missing evidence: {sorted(missing)}")
+        if level in {"catalyst_poisoning", "industrial_performance"}:
+            warnings.append("strong claim requires external experimental/process evidence; isolated DFT is insufficient")
+        if level == "poisoning_hypothesis" and "experimental_validation" not in evidence:
+            warnings.append("label explicitly as hypothesis, not established poisoning")
+
+    if data.get("status") == "accepted" and (errors or warnings):
+        errors.append("accepted claim has unresolved errors/warnings")
+    return sorted(set(errors)), sorted(set(warnings))
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("claim", type=Path)
-    a = ap.parse_args()
-    d = yaml.safe_load(a.claim.read_text()) or {}
-    e, w = validate(d)
-    print(json.dumps({"ok": not e, "errors": e, "warnings": w}, indent=2))
-    return 0 if not e else 1
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("claim", type=Path)
+    args = parser.parse_args()
+    try:
+        data = yaml.safe_load(args.claim.read_text(encoding="utf-8"))
+        errors, warnings = validate(data)
+    except (OSError, UnicodeError, yaml.YAMLError) as exc:
+        errors = [f"claim scope parse failed: {exc}"]
+        warnings = []
+    print(json.dumps({"ok": not errors, "errors": errors, "warnings": warnings}, indent=2))
+    return 0 if not errors else 1
 
 
 if __name__ == "__main__":

@@ -25,6 +25,11 @@ def load_script(name: str) -> Any:
 
 
 class StructureValidationFailClosedTests(unittest.TestCase):
+    inspect_xyz: Any
+    mapping: Any
+    water: list[dict[str, Any]]
+    shifted: list[dict[str, Any]]
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.inspect_xyz = load_script("inspect_xyz.py")

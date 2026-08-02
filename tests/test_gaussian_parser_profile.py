@@ -68,6 +68,7 @@ class GaussianParserProfileTests(unittest.TestCase):
 
     def test_profile_is_labeled_deterministic_and_finite(self) -> None:
         report = self.module.profile_parser(3, 4, 2, 2)
+        self.assertEqual(report["schema_version"], "1.1")
         self.assertEqual(report["labels"], self.module.EVIDENCE_LABELS)
         self.assertFalse(report["external_dft_engine_invoked"])
         self.assertEqual(report["performance_qualification"], "NOT_ELIGIBLE")
@@ -86,6 +87,16 @@ class GaussianParserProfileTests(unittest.TestCase):
         self.assertGreaterEqual(report["measurement"]["median_peak_mib"], 0.0)
         self.assertTrue(report["measurement"]["top_cumulative_functions"])
 
+        comparison = report["taxonomy_comparison"]
+        self.assertTrue(comparison["equivalent"])
+        self.assertEqual(comparison["iterations"], 5)
+        self.assertEqual(len(comparison["all_legacy_seconds"]), 5)
+        self.assertEqual(len(comparison["all_current_seconds"]), 5)
+        self.assertTrue(math.isfinite(comparison["legacy_median_seconds"]))
+        self.assertTrue(math.isfinite(comparison["current_median_seconds"]))
+        if comparison["observed_legacy_over_current_ratio"] is not None:
+            self.assertTrue(math.isfinite(comparison["observed_legacy_over_current_ratio"]))
+
         repeated = self.module.profile_parser(3, 4, 2, 1)
         self.assertEqual(
             report["parser_result"]["result_sha256"],
@@ -95,6 +106,48 @@ class GaussianParserProfileTests(unittest.TestCase):
             self.module.profile_parser(1, 1, 0, 0)
         with self.assertRaises(ValueError):
             self.module.profile_parser(1, 1, 0, True)
+
+    def test_taxonomy_comparison_contracts_and_mismatch(self) -> None:
+        parser = self.module.load_parser()
+        text = "SCF has not converged\nErroneous write\nECP for atom 4 was not found\n"
+        comparison = self.module.compare_taxonomy_algorithms(parser, text, 3)
+        self.assertTrue(comparison["equivalent"])
+        self.assertEqual(comparison["iterations"], 3)
+        self.assertEqual(
+            self.module.legacy_error_taxonomy(parser, text),
+            parser._error_taxonomy(text),
+        )
+
+        for invalid in (0, -1, True):
+            with self.assertRaises(ValueError):
+                self.module.compare_taxonomy_algorithms(parser, text, invalid)
+
+        fake_parser = SimpleNamespace(
+            ERROR_TAXONOMY_RULES=(("A", "alpha"),),
+            _error_taxonomy=lambda _: [{"category": "B", "evidence_pattern": "beta"}],
+        )
+        with self.assertRaisesRegex(RuntimeError, "not equivalent"):
+            self.module.compare_taxonomy_algorithms(fake_parser, "alpha", 1)
+
+    def test_taxonomy_timing_fails_closed(self) -> None:
+        with (
+            patch.object(self.module.time, "perf_counter", side_effect=[0.0, float("nan")]),
+            self.assertRaisesRegex(RuntimeError, "non-finite Gaussian taxonomy timing"),
+        ):
+            self.module._measure_call(lambda: [])
+
+        fake_parser = SimpleNamespace(ERROR_TAXONOMY_RULES=(), _error_taxonomy=lambda _: [])
+        with (
+            patch.object(self.module.statistics, "median", side_effect=[float("inf"), 0.1]),
+            self.assertRaisesRegex(RuntimeError, "non-finite legacy Gaussian taxonomy median"),
+        ):
+            self.module.compare_taxonomy_algorithms(fake_parser, "", 1)
+
+        with (
+            patch.object(self.module.statistics, "median", side_effect=[0.1, float("nan")]),
+            self.assertRaisesRegex(RuntimeError, "non-finite current Gaussian taxonomy median"),
+        ):
+            self.module.compare_taxonomy_algorithms(fake_parser, "", 1)
 
     def test_profile_detects_output_instability(self) -> None:
         stable = {"status": "A"}
@@ -187,6 +240,7 @@ class GaussianParserProfileTests(unittest.TestCase):
             emitted = json.loads(stdout.getvalue())
             written = json.loads(output.read_text(encoding="utf-8"))
             self.assertEqual(emitted["parser_result"], written["parser_result"])
+            self.assertEqual(emitted["taxonomy_comparison"], written["taxonomy_comparison"])
             self.assertEqual(emitted["labels"], self.module.EVIDENCE_LABELS)
 
         observation = self.module.profile_parser(120, 18, 24, 1)
@@ -198,6 +252,7 @@ class GaussianParserProfileTests(unittest.TestCase):
                     "workload": observation["workload"],
                     "parser_result": observation["parser_result"],
                     "measurement": observation["measurement"],
+                    "taxonomy_comparison": observation["taxonomy_comparison"],
                 },
                 sort_keys=True,
             )

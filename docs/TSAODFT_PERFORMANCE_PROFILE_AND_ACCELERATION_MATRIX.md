@@ -2,7 +2,7 @@
 
 **Repository:** `SUNHAOJUN22/TsaoDFT_skill`  
 **Purpose:** distinguish implemented repository-level efficiency improvements from profile-gated native work and real external-engine acceleration evidence.  
-**Truth boundary:** no row labelled `REAL_EVIDENCE_REQUIRED` is a measured speedup claim.
+**Truth boundary:** no row labelled `REAL_EVIDENCE_REQUIRED` is a measured speedup claim. Synthetic parser observations remain `SIMULATION_ONLY / NOT_REAL_HARDWARE / NOT_PERFORMANCE_EVIDENCE`.
 
 ## 1. Status vocabulary
 
@@ -28,6 +28,7 @@
 | convergence analysis | sorted CSV + adjacent differences | O(n log n) due to sorting, O(n) scan | strict parsing, complete-tail rule, pairwise scan | skip sorting only if input-order contract becomes explicit | data-size and order profile | `IMPLEMENTED_VALIDATED` |
 | atom mapping displacement | NumPy indexed coordinate differences | O(n) | removed Python per-atom `math.dist` loop | native/OpenMP only for very large accepted mappings | end-to-end conversion-inclusive profile | `IMPLEMENTED_VALIDATED` |
 | generic XYZ pair distance | NumPy hypot reductions | per pair O(1); all-pairs caller may be O(n²) | vectorized backend | cell lists / neighbor lists for large periodic systems | accepted periodic workload and reference | `PROFILE_GATED` |
+| Gaussian error taxonomy | precomputed casefolded literal-evidence index plus one ordered same-line ECP rule | O(text + evidence_count) normalized lookup; prior path performed nine case-insensitive full-text regex searches | profile-backed replacement; 512 category combinations and shared evidence prove legacy equivalence; slower mega-regex experiment rejected | no further taxonomy implementation justified | representative real logs only for external validity, not current semantic correctness | `IMPLEMENTED_VALIDATED` |
 | energy-profile calculation | finite CSV + `math.fsum` differences | O(states); plotting startup dominates small inputs | validated references and transactional four-file output | plot-process reuse/caching only for large campaigns | campaign-level profile | `IMPLEMENTED_VALIDATED` |
 | file hashing | chunked `hashlib.sha256` | O(bytes), bounded memory | streaming; parallel ordered hashing exists in campaign paths | filesystem-aware batching only if hashing dominates | I/O profile | `ALREADY_NATIVE_LIBRARY` |
 | evidence canonicalization | deterministic JSON and SHA-256 | O(records × record_size) | content-addressed evidence and ordered output | incremental Merkle-like structures for huge campaigns | record-count/profile evidence | `PROFILE_GATED` |
@@ -42,7 +43,8 @@
 | VASP | mmap/stream-aware extraction depending adapter path | fatal/late failure must override earlier apparent success; force blocks preserved | already avoids a simple full Python object copy in key path | profile real OUTCAR/vasprun sizes before native work | `STREAMING_VALIDATED` |
 | Quantum ESPRESSO | line streaming and last-value extraction | late routine errors win | bounded memory | maintain streaming; optimize regex only if profile identifies hotspot | `STREAMING_VALIDATED` |
 | CP2K | line streaming and last-value extraction | late abort wins | bounded memory | maintain streaming; profile large DBCSR-heavy logs only if parsing matters | `STREAMING_VALIDATED` |
-| Gaussian | rich regex parsing with substantial full-text state | late Gaussian errors win; TS/minimum fields and rich properties validated | strongest remaining repository parser candidate, but representative large-log profile absent | staged scanner/index or hybrid stream + targeted blocks after profile | `PROFILE_GATED` |
+| Gaussian taxonomy | one casefold normalization plus indexed evidence membership; one explicit ECP line-order rule | exact legacy category set/order, shared evidence and full parser hash preserved | synthetic same-process A/B observed legacy/current ratio 24.778914× for the isolated taxonomy function; not performance evidence | freeze unless real logs reveal a semantic or workload gap | `IMPLEMENTED_VALIDATED` |
+| Gaussian broader parser | rich regex/block parsing and several `splitlines()` passes | late Gaussian errors win; TS/minimum fields, coordinates and rich properties validated | synthetic profile now places orientation parsing above taxonomy; real-log distribution remains unavailable | profile legally usable real logs before changing orientation/block architecture | `PROFILE_GATED` |
 | engine parser contract | normalized acceptance and error precedence | missing files and fatal warnings fail closed | trust-boundary cost is small relative to external calculations | no native route justified | `IMPLEMENTED_VALIDATED` |
 | benchmark bridge | parser outputs mapped into evidence records | required observables must be present | trust-boundary transformation, not a numerical hotspot | no acceleration without campaign profile | `IMPLEMENTED_VALIDATED` |
 
@@ -55,9 +57,9 @@ The repository does not implement the expensive electronic-structure kernels. It
 | VASP | licensed CPU build | supported NVIDIA GPU/OpenACC build where available | plan build capability, resource binding, job generation, parser and evidence qualification | VASP version/build, GPU model, ranks/GPU, NCORE/KPAR-equivalent choices, system size | `REAL_EVIDENCE_REQUIRED` |
 | Quantum ESPRESSO | CPU MPI/OpenMP build | CUDA or vendor-supported GPU build, depending installation | generate empirically tested decomposition candidates; do not assume universal layout | pw.x build, FFT/diagonalization libraries, k-points, bands, pools, GPUs | `REAL_EVIDENCE_REQUIRED` |
 | CP2K | CPU MPI/OpenMP with optimized BLAS/ScaLAPACK/DBCSR | CUDA/HIP/SYCL depending build and solver path | identify compatible provider and solver choices; materialize campaign | CP2K build, DBCSR/DBM, grid levels, basis, system sparsity, ranks/GPU | `REAL_EVIDENCE_REQUIRED` |
-| Gaussian | packaged executable as licensed | only capabilities supported by the installed product/build | parse and validate outputs; no arbitrary kernel retrofit | installed revision, supported hardware, job type | `REAL_EVIDENCE_REQUIRED` |
+| Gaussian | packaged executable as licensed | only capabilities supported by the installed product/build | parse and validate outputs; parser optimization does not change engine execution | installed revision, supported hardware, job type | `REAL_EVIDENCE_REQUIRED` |
 
-No numerical speedup is recorded for these rows because no qualifying real campaign was available in the current execution environment.
+No external-engine numerical speedup is recorded for these rows because no qualifying real campaign was available in the current execution environment.
 
 ## 5. Accelerator-provider compatibility matrix
 
@@ -83,7 +85,8 @@ No numerical speedup is recorded for these rows because no qualifying real campa
 | multi-GPU strong scaling | compatible single-GPU baseline | 2/4/8 GPU layouts where site permits | speedup, efficiency, topology, binding, profiler evidence | schema/math ready; real runs absent |
 | cross-provider comparison | same scientific identity | CUDA/HIP/SYCL only where engine builds exist | separate build identities and no mixed-topology aggregation | planning ready; real runs absent |
 | edge surrogate | remote DFT reference and accepted model | CPU/GPU/NPU inference candidates | calibration, OOD gate, latency/energy, fallback trace | policy concept ready; accepted model/hardware absent |
-| parser large-file benchmark | parsed reference fixture | current vs candidate parser | exact normalized output, wall time, peak RSS, file size | Gaussian workload still needed |
+| Gaussian synthetic parser microprofile | deterministic synthetic reference and full result hash | legacy taxonomy vs current taxonomy | labels, exact equality, wall-time observations, peak traced allocation and cProfile | implemented and CI-validated; explicitly not eligible as performance evidence |
+| Gaussian real-log parser benchmark | parsed real-log reference fixture | current vs future parser architecture | exact normalized output, wall time, peak RSS, file size and late-failure behavior | representative legally usable Gaussian logs still needed |
 
 ## 7. Native-extension decision matrix
 
@@ -91,14 +94,14 @@ A native module may proceed only when all boxes are satisfied.
 
 | Gate | Required result | Current general state |
 |---|---|---|
-| representative profile | target path is a material end-to-end hotspot | not established for remaining candidates |
+| representative profile | target path is a material end-to-end hotspot | synthetic taxonomy hotspot closed; not established for remaining real-log candidates |
 | reference implementation | deterministic CPU/Python result | available for existing numerical modules |
 | equivalence | normal, extreme and adversarial tests | available for current Python improvements; absent for hypothetical native kernels |
 | conversion overhead | included in benchmark | not measured |
 | platform support | Windows core and Python 3.10/3.12/3.13 retained | must be designed |
 | fallback | safe behavior when compiler/runtime unavailable | not implemented because no native module admitted |
 | security | no downloaded executable or opaque binary path | required |
-| measured benefit | repeatable end-to-end improvement | not available |
+| measured benefit | repeatable end-to-end improvement | not available for a native candidate |
 
 Decision: no new native extension is currently justified.
 
@@ -108,14 +111,15 @@ Decision: no new native extension is currently justified.
 
 Choose one licensed engine/build and one scientifically accepted input. Capture a CPU reference and one accelerator candidate with complete fingerprints and at least the policy repeat count. This is the shortest path to a truthful real acceleration statement.
 
-### Priority 2 — Gaussian parser profile
+### Priority 2 — Gaussian real-log parser profile
 
-Collect representative small, medium and large logs, including late failures and rich output blocks. Measure wall time and peak RSS. Only then choose among:
+The synthetic taxonomy hotspot has been closed. Next, collect representative small, medium and large real logs, including late failures and rich output blocks. Measure wall time and peak RSS while requiring exact normalized-output equality. Only then consider:
 
-- targeted block indexing;
-- streaming state machine;
+- reducing repeated line splitting;
+- targeted orientation/block indexing;
+- streaming state machines;
 - mmap search;
-- compiled regex or native scanner.
+- compiled regex or a native scanner.
 
 ### Priority 3 — Periodic high-volume geometry
 
@@ -137,11 +141,12 @@ Only after an accepted MACE/NequIP/e3nn workload is present, benchmark baseline 
 ```text
 REPOSITORY_NUMERICAL_ACCELERATION: IMPLEMENTED_FOR_SCOPED_HOTSPOTS
 STREAMING_PATHS: IMPLEMENTED_FOR_EYRING_QE_CP2K_AND_SELECTED_VASP_WORKFLOWS
+GAUSSIAN_ERROR_TAXONOMY_OPTIMIZATION: IMPLEMENTED_VALIDATED
+GAUSSIAN_BROADER_REAL_LOG_OPTIMIZATION: PROFILE_GATED
 PERFORMANCE_EVIDENCE_MATH: VALIDATED
 EXTERNAL_DFT_ENGINE_ACCELERATION: CONTROL_PLANE_READY_ONLY
 REAL_CPU_ACCELERATION_EVIDENCE: NOT_AVAILABLE
 REAL_GPU_ACCELERATION_EVIDENCE: NOT_AVAILABLE
 NATIVE_EXTENSION: NOT_ADMITTED_WITHOUT_PROFILE
-GAUSSIAN_PARSER_OPTIMIZATION: PROFILE_GATED
 PUBLIC_CAPABILITY_LEVEL: L2_VALIDATED_ADAPTER
 ```

@@ -89,7 +89,14 @@ class GaussianLogBatchProfileTests(unittest.TestCase):
             self.assertEqual(len(report["records"]), 3)
             hashes = [record["input_sha256"] for record in report["records"]]
             self.assertEqual(hashes, sorted(hashes))
-            self.assertEqual(sorted(record["content_occurrence_index"] for record in report["records"] if record["input_sha256"] == hashes[0]), list(range(1, hashes.count(hashes[0]) + 1)))
+            self.assertEqual(
+                sorted(
+                    record["content_occurrence_index"]
+                    for record in report["records"]
+                    if record["input_sha256"] == hashes[0]
+                ),
+                list(range(1, hashes.count(hashes[0]) + 1)),
+            )
 
             rendered = json.dumps(report, sort_keys=True)
             for path in paths:

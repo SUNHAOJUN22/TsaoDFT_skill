@@ -30,6 +30,7 @@
 | generic XYZ pair distance | NumPy hypot reductions | per pair O(1); all-pairs caller may be O(n²) | vectorized backend | cell lists / neighbor lists for large periodic systems | accepted periodic workload and reference | `PROFILE_GATED` |
 | Gaussian error taxonomy | precomputed casefolded literal-evidence index plus one ordered same-line ECP rule | O(text + evidence_count) normalized lookup; prior path performed nine case-insensitive full-text regex searches | profile-backed replacement; 512 category combinations and shared evidence prove legacy equivalence; slower mega-regex experiment rejected | no further taxonomy implementation justified | representative real logs only for external validity, not current semantic correctness | `IMPLEMENTED_VALIDATED` |
 | Gaussian local-log profiling | chunked file read/hash followed by validated text parser; read/decode and parser measurements separated | current parser still requires decoded full text in memory | size/regular-file/mutation guards, source-identity omission, atomic report, result hash, cProfile and taxonomy A/B comparison | run on representative real logs before any parser architecture change | legally usable logs spanning size, job type and failure state | `IMPLEMENTED_VALIDATED` |
+| Gaussian multi-log batch profiling | each file uses the validated local profiler; records are hash ordered; cross-file statistics and hotspots are aggregated | O(files × parser cost); optional processes increase throughput but can contend for shared resources | deterministic all-or-nothing batch, duplicate-content accounting, ordinal-only failures, isolated sequential default and explicit process-parallel mode | benchmark batch throughput only on the target machine; use sequential mode for comparable per-file timing | representative multi-category real-log set; repeated sequential and concurrent observations | `IMPLEMENTED_VALIDATED` |
 | energy-profile calculation | finite CSV + `math.fsum` differences | O(states); plotting startup dominates small inputs | validated references and transactional four-file output | plot-process reuse/caching only for large campaigns | campaign-level profile | `IMPLEMENTED_VALIDATED` |
 | file hashing | chunked `hashlib.sha256` | O(bytes), bounded memory | streaming; parallel ordered hashing exists in campaign paths | filesystem-aware batching only if hashing dominates | I/O profile | `ALREADY_NATIVE_LIBRARY` |
 | evidence canonicalization | deterministic JSON and SHA-256 | O(records × record_size) | content-addressed evidence and ordered output | incremental Merkle-like structures for huge campaigns | record-count/profile evidence | `PROFILE_GATED` |
@@ -46,7 +47,8 @@
 | CP2K | line streaming and last-value extraction | late abort wins | bounded memory | maintain streaming; profile large DBCSR-heavy logs only if parsing matters | `STREAMING_VALIDATED` |
 | Gaussian taxonomy | one casefold normalization plus indexed evidence membership; one explicit ECP line-order rule | exact legacy category set/order, shared evidence and full parser hash preserved | synthetic same-process A/B observation exists for the isolated taxonomy function; explicitly not product performance evidence | freeze unless real logs reveal a semantic or workload gap | `IMPLEMENTED_VALIDATED` |
 | Gaussian local-file profile surface | bounded regular-file read, streamed SHA-256, UTF-8 replacement accounting, repeated parse and cProfile | input mutation, oversize, empty/non-regular file and output collision fail closed; source path/basename/content omitted | execution capability is validated; no representative real log has been measured | run `scripts/profile_gaussian_log.py` on reviewed real logs and compare hotspot rankings | `IMPLEMENTED_VALIDATED` |
-| Gaussian broader parser | rich regex/block parsing and several `splitlines()` passes | late Gaussian errors win; TS/minimum fields, coordinates and rich properties validated | synthetic profile places orientation parsing above taxonomy, but real-log distribution remains unavailable | profile legally usable real logs before changing orientation/block architecture | `PROFILE_GATED` |
+| Gaussian multi-file profile surface | isolated sequential or process-parallel independent local profiles followed by deterministic anonymous aggregation | any file failure aborts publication; duplicate contents remain visible; concurrent contention is explicitly labelled | batch measurement and throughput execution capability are validated; no production batch has been measured | run `scripts/profile_gaussian_log_batch.py --workers 1` for cross-log hotspot evidence, then separately evaluate `--workers N` for throughput | `IMPLEMENTED_VALIDATED` |
+| Gaussian broader parser | rich regex/block parsing and several `splitlines()` passes | late Gaussian errors win; TS/minimum fields, coordinates and rich properties validated | synthetic profile places orientation parsing above taxonomy, but representative cross-log distribution remains unavailable | change architecture only after stable cross-log hotspot evidence | `PROFILE_GATED` |
 | engine parser contract | normalized acceptance and error precedence | missing files and fatal warnings fail closed | trust-boundary cost is small relative to external calculations | no native route justified | `IMPLEMENTED_VALIDATED` |
 | benchmark bridge | parser outputs mapped into evidence records | required observables must be present | trust-boundary transformation, not a numerical hotspot | no acceleration without campaign profile | `IMPLEMENTED_VALIDATED` |
 
@@ -88,8 +90,10 @@ No external-engine numerical speedup is recorded for these rows because no quali
 | cross-provider comparison | same scientific identity | CUDA/HIP/SYCL only where engine builds exist | separate build identities and no mixed-topology aggregation | planning ready; real runs absent |
 | edge surrogate | remote DFT reference and accepted model | CPU/GPU/NPU inference candidates | calibration, OOD gate, latency/energy, fallback trace | policy concept ready; accepted model/hardware absent |
 | Gaussian synthetic parser microprofile | deterministic synthetic reference and full result hash | legacy taxonomy vs current taxonomy | labels, exact equality, wall-time observations, peak traced allocation and cProfile | implemented and CI-validated; explicitly not eligible as performance evidence |
-| Gaussian local-log parser profile | reviewed local text log and private source SHA-256 | current parser on representative job/failure classes | read/decode time, parser time, peak traced allocation, cProfile, result hash and source/privacy labels | executable and CI-validated; representative real logs not yet supplied |
-| Gaussian parser architecture benchmark | reviewed real-log reference set | current vs future parser architecture | exact normalized output, wall time, peak RSS, file size and late-failure behavior | remains gated on representative local-profile results |
+| Gaussian single local-log profile | reviewed local text log and private source SHA-256 | current parser on representative job/failure classes | read/decode time, parser time, peak traced allocation, cProfile, result hash and privacy labels | executable and CI-validated; representative real logs not yet supplied |
+| Gaussian cross-log isolated study | representative private log collection | current parser with `--workers 1` | deterministic records, status/size/timing/memory summaries and stable hotspot prevalence | executable and CI-validated; representative real batch absent |
+| Gaussian batch-throughput study | the same reviewed log collection | `--workers 1` versus explicit process counts | batch elapsed time collected externally, worker/mode/contention metadata and identical result hashes | execution route ready; no target-machine throughput result exists |
+| Gaussian parser architecture benchmark | reviewed real-log reference set | current versus future parser architecture | exact normalized output, wall time, peak RSS, file size and late-failure behavior | remains gated on representative batch-profile results |
 
 ## 7. Native-extension decision matrix
 
@@ -97,7 +101,7 @@ A native module may proceed only when all boxes are satisfied.
 
 | Gate | Required result | Current general state |
 |---|---|---|
-| representative profile | target path is a material end-to-end hotspot | synthetic taxonomy hotspot closed; local profiling tool ready; remaining real-log hotspot not established |
+| representative profile | target path is a material end-to-end hotspot | synthetic taxonomy hotspot closed; single-/multi-log profiling tools ready; remaining real-log hotspot not established |
 | reference implementation | deterministic CPU/Python result | available for existing numerical modules |
 | equivalence | normal, extreme and adversarial tests | available for current Python improvements; absent for hypothetical native kernels |
 | conversion overhead | included in benchmark | not measured |
@@ -110,25 +114,27 @@ Decision: no new native extension is currently justified.
 
 ## 8. Prioritized acceleration roadmap
 
-### Priority 1 — Real evidence campaign
+### Priority 1 — Real engine evidence campaign
 
-Choose one licensed engine/build and one scientifically accepted input. Capture a CPU reference and one accelerator candidate with complete fingerprints and at least the policy repeat count. This is the shortest path to a truthful real acceleration statement.
+Choose one licensed engine/build and one scientifically accepted input. Capture a CPU reference and one accelerator candidate with complete fingerprints and at least the policy repeat count. This is the shortest path to a truthful real DFT acceleration statement.
 
-### Priority 2 — Gaussian real-log parser profile
+### Priority 2 — Gaussian representative batch profile
 
-The synthetic taxonomy hotspot has been closed and the privacy-safe local profiler is available. Run:
+The synthetic taxonomy hotspot is closed and both local profiling tools are available. First run isolated profiling:
 
 ```text
-python scripts/profile_gaussian_log.py <gaussian.log> --iterations 3 --taxonomy-iterations 5 --out <profile.json>
+python scripts/profile_gaussian_log_batch.py <log1> <log2> <log3> --iterations 3 --taxonomy-iterations 5 --workers 1 --out <batch.json>
 ```
 
-Use representative small, medium and operationally large logs, including successful rich-output jobs, incomplete jobs and late failures. Compare hotspot rankings and normalized result hashes. Only then consider:
+Use small, medium and operationally large logs across successful minimum/frequency, TS, IRC, rich-property, incomplete and late-error jobs. Evaluate hotspot prevalence and normalized result hashes. Only then consider:
 
 - reducing repeated line splitting;
 - targeted orientation/block indexing;
 - streaming state machines;
 - mmap search;
 - compiled regex or a native scanner.
+
+For batch throughput, run a separate study with explicit worker counts. Do not compare concurrent per-file timing directly with isolated timing.
 
 ### Priority 3 — Periodic high-volume geometry
 
@@ -151,8 +157,11 @@ Only after an accepted MACE/NequIP/e3nn workload is present, benchmark baseline 
 REPOSITORY_NUMERICAL_ACCELERATION: IMPLEMENTED_FOR_SCOPED_HOTSPOTS
 STREAMING_PATHS: IMPLEMENTED_FOR_EYRING_QE_CP2K_AND_SELECTED_VASP_WORKFLOWS
 GAUSSIAN_ERROR_TAXONOMY_OPTIMIZATION: IMPLEMENTED_VALIDATED
-GAUSSIAN_LOCAL_LOG_PROFILING: IMPLEMENTED_VALIDATED
-REPRESENTATIVE_REAL_GAUSSIAN_LOG_PROFILE: NOT_AVAILABLE
+GAUSSIAN_SINGLE_LOCAL_LOG_PROFILING: IMPLEMENTED_VALIDATED
+GAUSSIAN_MULTI_LOG_BATCH_PROFILING: IMPLEMENTED_VALIDATED
+GAUSSIAN_PROCESS_PARALLEL_BATCH_MODE: IMPLEMENTED_VALIDATED
+CONCURRENT_PER_FILE_TIMING_EQUIVALENCE: NOT_ASSUMED
+REPRESENTATIVE_REAL_GAUSSIAN_BATCH_PROFILE: NOT_AVAILABLE
 GAUSSIAN_BROADER_REAL_LOG_OPTIMIZATION: PROFILE_GATED
 PERFORMANCE_EVIDENCE_MATH: VALIDATED
 EXTERNAL_DFT_ENGINE_ACCELERATION: CONTROL_PLANE_READY_ONLY

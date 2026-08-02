@@ -278,9 +278,7 @@ def _normalize_environment_counts(value: object) -> dict[str, int]:
 
 
 def _aggregate_hotspots(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    values: dict[str, dict[str, list[float]]] = defaultdict(
-        lambda: {"ranks": [], "seconds": [], "calls": []}
-    )
+    values: dict[str, dict[str, list[float]]] = defaultdict(lambda: {"ranks": [], "seconds": [], "calls": []})
     for record in records:
         for hotspot in record["top_cumulative_functions"]:
             accumulator = values[hotspot["function"]]
@@ -574,9 +572,7 @@ def build_comparison_report(
         differences = [field for field in SEMANTIC_FIELDS if before[field] != after[field]]
         if differences:
             semantic_difference_count += 1
-        environment_match = (
-            before["environment_fingerprint_sha256"] == after["environment_fingerprint_sha256"]
-        )
+        environment_match = before["environment_fingerprint_sha256"] == after["environment_fingerprint_sha256"]
         if not environment_match:
             environment_mismatch_count += 1
         if before["median_seconds"] <= 0 or after["median_seconds"] <= 0:
@@ -622,15 +618,9 @@ def build_comparison_report(
         reasons.append("TIMING_CONTENTION_MARKED")
     if baseline_execution["iterations_per_file"] != candidate_execution["iterations_per_file"]:
         reasons.append("ITERATION_SETTINGS_DIFFER")
-    if (
-        baseline_execution["taxonomy_iterations_per_file"]
-        != candidate_execution["taxonomy_iterations_per_file"]
-    ):
+    if baseline_execution["taxonomy_iterations_per_file"] != candidate_execution["taxonomy_iterations_per_file"]:
         reasons.append("TAXONOMY_ITERATION_SETTINGS_DIFFER")
-    if (
-        baseline_execution["max_input_bytes_per_file"]
-        != candidate_execution["max_input_bytes_per_file"]
-    ):
+    if baseline_execution["max_input_bytes_per_file"] != candidate_execution["max_input_bytes_per_file"]:
         reasons.append("MAX_INPUT_LIMIT_DIFFERS")
     if environment_mismatch_count:
         reasons.append("ENVIRONMENT_FINGERPRINT_MISMATCH")

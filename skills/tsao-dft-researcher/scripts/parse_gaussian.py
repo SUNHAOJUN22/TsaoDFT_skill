@@ -100,6 +100,44 @@ ATOMIC_SYMBOLS = [
     "At",
     "Rn",
 ]
+ERROR_TAXONOMY_RULES: tuple[tuple[str, str], ...] = (
+    ("SCF_CONVERGENCE", r"Convergence failure -- run terminated|SCF has not converged|No convergence is achieved"),
+    (
+        "OPTIMIZATION",
+        r"Number of steps exceeded|Optimization stopped|FormBX had a problem|Error in internal coordinate system",
+    ),
+    ("MEMORY", r"Out-of-memory|Not enough memory|galloc: could not allocate|Erroneous write|malloc failed"),
+    (
+        "DISK_OR_IO",
+        r"No space left on device|FileIO operation on non-existent file|Erroneous write|read-write file error",
+    ),
+    ("GEOMETRY", r"Atoms too close|Problem with the distance matrix|End of file in ZSymb|Linear angle in Bend"),
+    (
+        "BASIS_ECP",
+        r"Unrecognized atomic symbol|Atomic number out of range|No basis functions|ECP.*not found|Error reading general basis",
+    ),
+    ("CHECKPOINT", r"FileIO operation on non-existent file|No data on checkpoint file|GetChg"),
+    ("L502", r"l502\.exe"),
+    ("L9999", r"l9999\.exe"),
+)
+
+
+def _build_error_taxonomy_matcher() -> tuple[re.Pattern[str], dict[str, tuple[str, ...]]]:
+    evidence_categories: dict[str, list[str]] = {}
+    for category, pattern in ERROR_TAXONOMY_RULES:
+        for evidence in pattern.split("|"):
+            evidence_categories.setdefault(evidence, []).append(category)
+
+    grouped_patterns: list[str] = []
+    group_categories: dict[str, tuple[str, ...]] = {}
+    for index, (evidence, categories) in enumerate(evidence_categories.items()):
+        group = f"E{index}"
+        grouped_patterns.append(f"(?P<{group}>{evidence})")
+        group_categories[group] = tuple(categories)
+    return re.compile("|".join(grouped_patterns), re.IGNORECASE), group_categories
+
+
+ERROR_EVIDENCE_PATTERN, ERROR_EVIDENCE_CATEGORIES = _build_error_taxonomy_matcher()
 
 
 def fnum(value: str) -> float:
@@ -136,31 +174,17 @@ def _error_links(text: str) -> list[str]:
 
 
 def _error_taxonomy(text: str) -> list[dict[str, str]]:
-    rules = [
-        ("SCF_CONVERGENCE", r"Convergence failure -- run terminated|SCF has not converged|No convergence is achieved"),
-        (
-            "OPTIMIZATION",
-            r"Number of steps exceeded|Optimization stopped|FormBX had a problem|Error in internal coordinate system",
-        ),
-        ("MEMORY", r"Out-of-memory|Not enough memory|galloc: could not allocate|Erroneous write|malloc failed"),
-        (
-            "DISK_OR_IO",
-            r"No space left on device|FileIO operation on non-existent file|Erroneous write|read-write file error",
-        ),
-        ("GEOMETRY", r"Atoms too close|Problem with the distance matrix|End of file in ZSymb|Linear angle in Bend"),
-        (
-            "BASIS_ECP",
-            r"Unrecognized atomic symbol|Atomic number out of range|No basis functions|ECP.*not found|Error reading general basis",
-        ),
-        ("CHECKPOINT", r"FileIO operation on non-existent file|No data on checkpoint file|GetChg"),
-        ("L502", r"l502\.exe"),
-        ("L9999", r"l9999\.exe"),
+    found: set[str] = set()
+    for match in ERROR_EVIDENCE_PATTERN.finditer(text):
+        if match.lastgroup is not None:
+            found.update(ERROR_EVIDENCE_CATEGORIES[match.lastgroup])
+        if len(found) == len(ERROR_TAXONOMY_RULES):
+            break
+    return [
+        {"category": category, "evidence_pattern": pattern}
+        for category, pattern in ERROR_TAXONOMY_RULES
+        if category in found
     ]
-    out = []
-    for category, pattern in rules:
-        if re.search(pattern, text, re.IGNORECASE):
-            out.append({"category": category, "evidence_pattern": pattern})
-    return out
 
 
 def _gaussian_version(text: str) -> str | None:

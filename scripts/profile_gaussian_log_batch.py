@@ -170,10 +170,7 @@ def _record_from_report(report: dict[str, Any]) -> dict[str, Any]:
     input_sha256 = workload.get("input_sha256")
     result_sha256 = parser_result.get("result_sha256")
     environment_sha256 = environment.get("fingerprint_sha256")
-    if not all(
-        isinstance(item, str) and len(item) == 64
-        for item in (input_sha256, result_sha256, environment_sha256)
-    ):
+    if not all(isinstance(item, str) and len(item) == 64 for item in (input_sha256, result_sha256, environment_sha256)):
         raise ValueError("Gaussian local-profile hashes are malformed")
 
     top_functions = measurement.get("top_cumulative_functions")

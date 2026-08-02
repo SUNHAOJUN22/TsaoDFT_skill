@@ -19,10 +19,6 @@ The phase does not claim Gaussian engine acceleration, GPU acceleration, or targ
 
 The new profiler is:
 
-`script/profile_gaussian_parser.py`
-
-Repository path:
-
 `scripts/profile_gaussian_parser.py`
 
 It provides:

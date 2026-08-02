@@ -80,9 +80,7 @@ class GaussianBatchProfileComparisonEdgeTests(unittest.TestCase):
         records = records if records is not None else [self._record()]
         concurrent = mode == "CONCURRENT_BATCH_THROUGHPUT"
         statuses = dict(sorted(Counter(record["status"] for record in records).items()))
-        environments = dict(
-            sorted(Counter(record["environment_fingerprint_sha256"] for record in records).items())
-        )
+        environments = dict(sorted(Counter(record["environment_fingerprint_sha256"] for record in records).items()))
         unique = len({record["input_sha256"] for record in records})
         return {
             "schema_version": "1.0",
@@ -255,9 +253,7 @@ class GaussianBatchProfileComparisonEdgeTests(unittest.TestCase):
             self.module._normalized_record(duplicate, 0)
 
         rank_gap = dict(valid)
-        rank_gap["top_cumulative_functions"] = [
-            {"function": "gap", "rank": 2, "calls": 1, "cumulative_seconds": 1.0}
-        ]
+        rank_gap["top_cumulative_functions"] = [{"function": "gap", "rank": 2, "calls": 1, "cumulative_seconds": 1.0}]
         with self.assertRaisesRegex(ValueError, "ranks must be contiguous"):
             self.module._normalized_record(rank_gap, 0)
 

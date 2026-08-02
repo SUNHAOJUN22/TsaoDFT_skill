@@ -185,11 +185,15 @@ def compare_taxonomy_algorithms(parser: Any, text: str, iterations: int) -> dict
     if isinstance(iterations, bool) or not isinstance(iterations, int) or iterations <= 0:
         raise ValueError("taxonomy iterations must be a positive exact integer")
 
+    def legacy_call() -> list[dict[str, str]]:
+        return legacy_error_taxonomy(parser, text)
+
+    def current_call() -> list[dict[str, str]]:
+        return parser._error_taxonomy(text)
+
     legacy_seconds: list[float] = []
     current_seconds: list[float] = []
     for index in range(iterations):
-        legacy_call = lambda: legacy_error_taxonomy(parser, text)
-        current_call = lambda: parser._error_taxonomy(text)
         calls = ((legacy_call, legacy_seconds), (current_call, current_seconds))
         if index % 2:
             calls = tuple(reversed(calls))

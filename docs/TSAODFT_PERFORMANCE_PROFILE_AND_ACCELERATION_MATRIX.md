@@ -2,11 +2,11 @@
 
 **Repository:** `SUNHAOJUN22/TsaoDFT_skill`  
 **Purpose:** distinguish implemented repository-level efficiency improvements from profile-gated native work and real external-engine acceleration evidence.  
-**Truth boundary:** no row labelled `REAL_EVIDENCE_REQUIRED` is a measured speedup claim. Synthetic and local parser observations remain explicitly ineligible as DFT-engine or GPU performance evidence.
+**Truth boundary:** no row labelled `REAL_EVIDENCE_REQUIRED` is a measured speedup claim. Synthetic and local parser observations, including Phase 10 comparison classifications, remain explicitly ineligible as DFT-engine, GPU or product performance evidence.
 
 ## 1. Status vocabulary
 
-- `IMPLEMENTED_VALIDATED`: optimization, profiling capability or hardening exists and passes permanent CI;
+- `IMPLEMENTED_VALIDATED`: optimization, profiling/comparison capability or hardening exists and passes permanent CI;
 - `ALREADY_NATIVE_LIBRARY`: Python delegates the expensive operation to an optimized compiled library;
 - `STREAMING_VALIDATED`: bounded-memory streaming path is implemented and tested;
 - `CONTROL_PLANE_ONLY`: repository plans, validates or records acceleration but does not execute the external engine kernel itself;
@@ -31,6 +31,7 @@
 | Gaussian error taxonomy | precomputed casefolded literal-evidence index plus one ordered same-line ECP rule | O(text + evidence_count) normalized lookup; prior path performed nine case-insensitive full-text regex searches | profile-backed replacement; 512 category combinations and shared evidence prove legacy equivalence; slower mega-regex experiment rejected | no further taxonomy implementation justified | representative real logs only for external validity, not current semantic correctness | `IMPLEMENTED_VALIDATED` |
 | Gaussian local-log profiling | chunked file read/hash followed by validated text parser; read/decode and parser measurements separated | current parser still requires decoded full text in memory | size/regular-file/mutation guards, source-identity omission, atomic report, result hash, cProfile and taxonomy A/B comparison | run on representative real logs before any parser architecture change | legally usable logs spanning size, job type and failure state | `IMPLEMENTED_VALIDATED` |
 | Gaussian multi-log batch profiling | each file uses the validated local profiler; records are hash ordered; cross-file statistics and hotspots are aggregated | O(files × parser cost); optional processes increase throughput but can contend for shared resources | deterministic all-or-nothing batch, duplicate-content accounting, ordinal-only failures, isolated sequential default and explicit process-parallel mode | benchmark batch throughput only on the target machine; use sequential mode for comparable per-file timing | representative multi-category real-log set; repeated sequential and concurrent observations | `IMPLEMENTED_VALIDATED` |
+| Gaussian batch-profile comparison | strict baseline/candidate report validation, anonymous record matching, semantic and timing-eligibility gates, hotspot migration analysis | O(records + hotspot functions); comparison cost is small relative to parsing | prevents mismatched input, changed semantics, environment drift, repeat-setting drift or concurrent timing from generating a misleading ratio; atomic private output | apply to one controlled parser candidate after representative baseline profiling | paired isolated reports from identical logs, settings and environment; exact semantic equivalence | `IMPLEMENTED_VALIDATED` |
 | energy-profile calculation | finite CSV + `math.fsum` differences | O(states); plotting startup dominates small inputs | validated references and transactional four-file output | plot-process reuse/caching only for large campaigns | campaign-level profile | `IMPLEMENTED_VALIDATED` |
 | file hashing | chunked `hashlib.sha256` | O(bytes), bounded memory | streaming; parallel ordered hashing exists in campaign paths | filesystem-aware batching only if hashing dominates | I/O profile | `ALREADY_NATIVE_LIBRARY` |
 | evidence canonicalization | deterministic JSON and SHA-256 | O(records × record_size) | content-addressed evidence and ordered output | incremental Merkle-like structures for huge campaigns | record-count/profile evidence | `PROFILE_GATED` |
@@ -48,7 +49,8 @@
 | Gaussian taxonomy | one casefold normalization plus indexed evidence membership; one explicit ECP line-order rule | exact legacy category set/order, shared evidence and full parser hash preserved | synthetic same-process A/B observation exists for the isolated taxonomy function; explicitly not product performance evidence | freeze unless real logs reveal a semantic or workload gap | `IMPLEMENTED_VALIDATED` |
 | Gaussian local-file profile surface | bounded regular-file read, streamed SHA-256, UTF-8 replacement accounting, repeated parse and cProfile | input mutation, oversize, empty/non-regular file and output collision fail closed; source path/basename/content omitted | execution capability is validated; no representative real log has been measured | run `scripts/profile_gaussian_log.py` on reviewed real logs and compare hotspot rankings | `IMPLEMENTED_VALIDATED` |
 | Gaussian multi-file profile surface | isolated sequential or process-parallel independent local profiles followed by deterministic anonymous aggregation | any file failure aborts publication; duplicate contents remain visible; concurrent contention is explicitly labelled | batch measurement and throughput execution capability are validated; no production batch has been measured | run `scripts/profile_gaussian_log_batch.py --workers 1` for cross-log hotspot evidence, then separately evaluate `--workers N` for throughput | `IMPLEMENTED_VALIDATED` |
-| Gaussian broader parser | rich regex/block parsing and several `splitlines()` passes | late Gaussian errors win; TS/minimum fields, coordinates and rich properties validated | synthetic profile places orientation parsing above taxonomy, but representative cross-log distribution remains unavailable | change architecture only after stable cross-log hotspot evidence | `PROFILE_GATED` |
+| Gaussian profile comparison surface | two anonymous Phase 9 reports are revalidated and matched by content hash/occurrence; hotspot aggregates are rebuilt from records | timing is withheld for input mismatch, semantic mismatch, concurrent mode, environment/settings mismatch or non-positive timing | comparison mechanics are validated; no representative paired real report exists | compare a controlled parser candidate against an isolated baseline on the same log multiset | `IMPLEMENTED_VALIDATED` |
+| Gaussian broader parser | rich regex/block parsing and several `splitlines()` passes | late Gaussian errors win; TS/minimum fields, coordinates and rich properties validated | synthetic profile places orientation parsing above taxonomy, but representative cross-log distribution and paired comparison remain unavailable | change architecture only after stable cross-log hotspot evidence and a Phase 10-comparable candidate | `PROFILE_GATED` |
 | engine parser contract | normalized acceptance and error precedence | missing files and fatal warnings fail closed | trust-boundary cost is small relative to external calculations | no native route justified | `IMPLEMENTED_VALIDATED` |
 | benchmark bridge | parser outputs mapped into evidence records | required observables must be present | trust-boundary transformation, not a numerical hotspot | no acceleration without campaign profile | `IMPLEMENTED_VALIDATED` |
 
@@ -61,7 +63,7 @@ The repository does not implement the expensive electronic-structure kernels. It
 | VASP | licensed CPU build | supported NVIDIA GPU/OpenACC build where available | plan build capability, resource binding, job generation, parser and evidence qualification | VASP version/build, GPU model, ranks/GPU, NCORE/KPAR-equivalent choices, system size | `REAL_EVIDENCE_REQUIRED` |
 | Quantum ESPRESSO | CPU MPI/OpenMP build | CUDA or vendor-supported GPU build, depending installation | generate empirically tested decomposition candidates; do not assume universal layout | pw.x build, FFT/diagonalization libraries, k-points, bands, pools, GPUs | `REAL_EVIDENCE_REQUIRED` |
 | CP2K | CPU MPI/OpenMP with optimized BLAS/ScaLAPACK/DBCSR | CUDA/HIP/SYCL depending build and solver path | identify compatible provider and solver choices; materialize campaign | CP2K build, DBCSR/DBM, grid levels, basis, system sparsity, ranks/GPU | `REAL_EVIDENCE_REQUIRED` |
-| Gaussian | packaged executable as licensed | only capabilities supported by the installed product/build | parse and locally profile text outputs; parser measurements do not change engine execution | installed revision, supported hardware, job type | `REAL_EVIDENCE_REQUIRED` |
+| Gaussian | packaged executable as licensed | only capabilities supported by the installed product/build | parse, profile and compare text-output parser observations; these do not change engine execution | installed revision, supported hardware, job type | `REAL_EVIDENCE_REQUIRED` |
 
 No external-engine numerical speedup is recorded for these rows because no qualifying real campaign was available in the current execution environment.
 
@@ -93,7 +95,8 @@ No external-engine numerical speedup is recorded for these rows because no quali
 | Gaussian single local-log profile | reviewed local text log and private source SHA-256 | current parser on representative job/failure classes | read/decode time, parser time, peak traced allocation, cProfile, result hash and privacy labels | executable and CI-validated; representative real logs not yet supplied |
 | Gaussian cross-log isolated study | representative private log collection | current parser with `--workers 1` | deterministic records, status/size/timing/memory summaries and stable hotspot prevalence | executable and CI-validated; representative real batch absent |
 | Gaussian batch-throughput study | the same reviewed log collection | `--workers 1` versus explicit process counts | batch elapsed time collected externally, worker/mode/contention metadata and identical result hashes | execution route ready; no target-machine throughput result exists |
-| Gaussian parser architecture benchmark | reviewed real-log reference set | current versus future parser architecture | exact normalized output, wall time, peak RSS, file size and late-failure behavior | remains gated on representative batch-profile results |
+| Gaussian paired parser comparison | identical private log multiset and isolated environment/settings | baseline parser versus one controlled candidate | exact record semantics, comparable timing gate, per-record ratios/deltas, memory change and hotspot migration | comparator implemented and CI-validated; representative paired reports absent |
+| Gaussian parser architecture benchmark | reviewed real-log reference set | current versus future parser architecture | exact normalized output, wall time, peak RSS, file size and late-failure behavior | remains gated on representative batch-profile and paired-comparison results |
 
 ## 7. Native-extension decision matrix
 
@@ -101,14 +104,14 @@ A native module may proceed only when all boxes are satisfied.
 
 | Gate | Required result | Current general state |
 |---|---|---|
-| representative profile | target path is a material end-to-end hotspot | synthetic taxonomy hotspot closed; single-/multi-log profiling tools ready; remaining real-log hotspot not established |
+| representative profile | target path is a material end-to-end hotspot | synthetic taxonomy hotspot closed; single-/multi-log profiling and strict comparison tools ready; remaining real-log hotspot not established |
 | reference implementation | deterministic CPU/Python result | available for existing numerical modules |
-| equivalence | normal, extreme and adversarial tests | available for current Python improvements; absent for hypothetical native kernels |
+| equivalence | normal, extreme and adversarial tests | available for current Python improvements; Phase 10 can enforce paired parser semantic identity; absent for hypothetical native kernels |
 | conversion overhead | included in benchmark | not measured |
 | platform support | Windows core and Python 3.10/3.12/3.13 retained | must be designed |
 | fallback | safe behavior when compiler/runtime unavailable | not implemented because no native module admitted |
 | security | no downloaded executable or opaque binary path | required |
-| measured benefit | repeatable end-to-end improvement | not available for a native candidate |
+| measured benefit | repeatable end-to-end improvement from comparable isolated reports | not available for a native candidate |
 
 Decision: no new native extension is currently justified.
 
@@ -118,23 +121,37 @@ Decision: no new native extension is currently justified.
 
 Choose one licensed engine/build and one scientifically accepted input. Capture a CPU reference and one accelerator candidate with complete fingerprints and at least the policy repeat count. This is the shortest path to a truthful real DFT acceleration statement.
 
-### Priority 2 — Gaussian representative batch profile
+### Priority 2 — Gaussian representative baseline and paired comparison
 
-The synthetic taxonomy hotspot is closed and both local profiling tools are available. First run isolated profiling:
+First create an isolated baseline on reviewed logs:
 
 ```text
-python scripts/profile_gaussian_log_batch.py <log1> <log2> <log3> --iterations 3 --taxonomy-iterations 5 --workers 1 --out <batch.json>
+python scripts/profile_gaussian_log_batch.py <log1> <log2> <log3> --iterations 3 --taxonomy-iterations 5 --workers 1 --out <baseline.json>
 ```
 
-Use small, medium and operationally large logs across successful minimum/frequency, TS, IRC, rich-property, incomplete and late-error jobs. Evaluate hotspot prevalence and normalized result hashes. Only then consider:
+Use small, medium and operationally large logs across successful minimum/frequency, TS, IRC, rich-property, incomplete and late-error jobs. Then apply exactly one controlled parser candidate and produce the candidate report on the same machine, inputs and settings:
 
-- reducing repeated line splitting;
-- targeted orientation/block indexing;
-- streaming state machines;
-- mmap search;
-- compiled regex or a native scanner.
+```text
+python scripts/profile_gaussian_log_batch.py <same logs> --iterations 3 --taxonomy-iterations 5 --workers 1 --out <candidate.json>
+```
 
-For batch throughput, run a separate study with explicit worker counts. Do not compare concurrent per-file timing directly with isolated timing.
+Compare them:
+
+```text
+python scripts/compare_gaussian_batch_profiles.py <baseline.json> <candidate.json> --max-regression-percent 10 --out <comparison.json>
+```
+
+Only admit an architectural change when:
+
+- anonymous input multisets match;
+- all normalized parser outputs are semantically equivalent;
+- environment fingerprints and repeat settings match;
+- both reports are isolated sequential;
+- the comparison is timing-eligible;
+- hotspot movement supports the intended change;
+- repeated end-to-end observations show a material benefit.
+
+For batch throughput, run a separate study with explicit worker counts. Concurrent per-file timing remains ineligible for isolated parser comparison.
 
 ### Priority 3 — Periodic high-volume geometry
 
@@ -160,8 +177,14 @@ GAUSSIAN_ERROR_TAXONOMY_OPTIMIZATION: IMPLEMENTED_VALIDATED
 GAUSSIAN_SINGLE_LOCAL_LOG_PROFILING: IMPLEMENTED_VALIDATED
 GAUSSIAN_MULTI_LOG_BATCH_PROFILING: IMPLEMENTED_VALIDATED
 GAUSSIAN_PROCESS_PARALLEL_BATCH_MODE: IMPLEMENTED_VALIDATED
+GAUSSIAN_BATCH_PROFILE_COMPARATOR: IMPLEMENTED_VALIDATED
+INPUT_MULTISET_EQUIVALENCE_GATE: IMPLEMENTED_VALIDATED
+PARSER_SEMANTIC_EQUIVALENCE_GATE: IMPLEMENTED_VALIDATED
+ISOLATED_TIMING_COMPARABILITY_GATE: IMPLEMENTED_VALIDATED
+HOTSPOT_MIGRATION_ANALYSIS: IMPLEMENTED_VALIDATED
 CONCURRENT_PER_FILE_TIMING_EQUIVALENCE: NOT_ASSUMED
 REPRESENTATIVE_REAL_GAUSSIAN_BATCH_PROFILE: NOT_AVAILABLE
+REPRESENTATIVE_REAL_GAUSSIAN_BATCH_COMPARISON: NOT_AVAILABLE
 GAUSSIAN_BROADER_REAL_LOG_OPTIMIZATION: PROFILE_GATED
 PERFORMANCE_EVIDENCE_MATH: VALIDATED
 EXTERNAL_DFT_ENGINE_ACCELERATION: CONTROL_PLANE_READY_ONLY

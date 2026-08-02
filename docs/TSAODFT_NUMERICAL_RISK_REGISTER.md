@@ -2,7 +2,7 @@
 
 **Repository:** `SUNHAOJUN22/TsaoDFT_skill`  
 **Scope:** scientific formulas, numerical stability, algorithmic scaling, parser behavior, performance evidence and real-acceleration claims  
-**Assessment basis:** validated repository state through Phase 8; representative real Gaussian logs and real external-engine/GPU benchmarks remain unavailable.
+**Assessment basis:** validated repository state through Phase 9; representative real Gaussian logs and real external-engine/GPU benchmarks remain unavailable.
 
 ## 1. Severity and status definitions
 
@@ -21,7 +21,7 @@ Status:
 - `REAL_EVIDENCE_REQUIRED`: no truthful real-performance conclusion can be made without hardware/build data;
 - `OPEN_NONBLOCKING`: remaining issue is documented and does not invalidate the current L2 validated-adapter capability.
 
-## 2. Resolved scientific and numerical risks
+## 2. Resolved scientific, numerical and measurement risks
 
 | ID | Severity | Area | Risk and failure mode | Resolution and evidence | Status |
 |---|---|---|---|---|---|
@@ -42,6 +42,7 @@ Status:
 | NR-015 | MEDIUM | Eyring CSV | complete-table materialization retained O(rows) Python objects and could leave partial output | row streaming and atomic publication | `RESOLVED` |
 | NR-016 | MEDIUM | Gaussian error taxonomy | nine independent case-insensitive full-text regex searches dominated the synthetic large-log parser profile; a first mega-regex rewrite was slower despite semantic equivalence | deterministic labeled profiler; slower mega-regex rejected; precomputed casefolded literal index plus preserved `ECP.*not found` semantics; 512 category combinations, shared-evidence tests and unchanged full-parser result hash | `RESOLVED` |
 | NR-017 | MEDIUM | Gaussian local profiling | real-log profiling previously required ad hoc script edits and could expose source paths, overwrite inputs, accept mutable/oversized files or produce unlabeled observations | standalone local profiler with chunked hashing, size and regular-file guards, read-time mutation detection, source/output collision refusal, atomic JSON, minimal environment fields and explicit parser-only non-qualification labels | `RESOLVED` |
+| NR-018 | MEDIUM | Gaussian batch profiling | multi-log studies previously required manual aggregation, could silently omit failed files, leak calculation identities, lose duplicate-content visibility or mix concurrent throughput timing with isolated per-file timing | standalone batch profiler with ordinal-only failures, all-or-nothing publication, deterministic hash-based ordering, duplicate-content accounting, cross-log hotspot aggregation, isolated sequential default and explicit concurrent-contention labels | `RESOLVED` |
 
 ## 3. Mitigated risks requiring task-specific scientific judgment
 
@@ -56,12 +57,13 @@ Status:
 | NR-107 | MEDIUM | performance outliers | MAD-based outlier flags do not explain root cause and must not justify deletion | outliers are counted and retained | profiler traces and operational review | `MITIGATED` |
 | NR-108 | HIGH | benchmark topology | apparently identical GPU counts can conceal different CPU, interconnect or binding topology | hardware and GPU identities are recorded and compared | complete real-site topology fingerprint | `REAL_EVIDENCE_REQUIRED` |
 | NR-109 | MEDIUM | local-log privacy | input SHA-256 is retained for auditability and can still be a sensitive identifier | path, basename, contents, hostname, username and home directory are omitted; disclosure warning is explicit | user data-governance review before sharing profile JSON outside the trusted environment | `MITIGATED` |
+| NR-110 | MEDIUM | concurrent parser profiling | process-parallel profiling can reduce batch completion time but shared CPU, storage, cache and memory contention can distort individual file timings | sequential mode is the default; requested/used workers, mode and contention possibility are recorded; CI uses no speed threshold | repeat sequential and concurrent studies on the target machine and interpret concurrent mode as throughput evidence only | `MITIGATED` |
 
 ## 4. Profile-gated performance and scalability risks
 
 | ID | Severity | Candidate area | Current concern | Why no blind implementation was made | Profiling/acceptance requirement | Status |
 |---|---|---|---|---|---|---|
-| PR-201 | MEDIUM | Gaussian parser beyond error taxonomy | the synthetic profile closed the error-taxonomy hotspot, and a privacy-safe local profiler is now executable, but no representative real logs have established whether orientation parsing, repeated line splitting or another path dominates | the accepted changes are limited to a measured synthetic hotspot and a measurement tool; the combined mega-regex regression was explicitly rejected; no native or broad parser rewrite was added | run `scripts/profile_gaussian_log.py` on legally usable successful, incomplete and late-failure logs; require exact normalized-output review, wall time, read/decode separation and peak memory | `PROFILE_GATED` |
+| PR-201 | MEDIUM | Gaussian parser beyond error taxonomy | the synthetic hotspot is closed and single-/multi-log profilers are executable, but no representative real batch has established whether orientation parsing, repeated line splitting or another path dominates across job categories | the accepted changes are limited to a measured synthetic hotspot and validated measurement tools; the slower mega-regex experiment was rejected; no native or broad parser rewrite was added | run `scripts/profile_gaussian_log_batch.py` with `--workers 1` on legally usable successful, rich-output, incomplete and late-failure logs; require cross-log hotspot agreement, exact normalized-output review, read/decode separation and peak-memory observations | `PROFILE_GATED` |
 | PR-202 | MEDIUM | trajectory processing | future multi-frame geometry and neighbor-list work may become O(frames × atoms²) | no accepted large trajectory workload currently defines the boundary | representative frames/atoms/cell; memory and pair-count profile | `PROFILE_GATED` |
 | PR-203 | MEDIUM | periodic neighbor lists | naïve full pair matrices can exceed memory | no current repository hotspot justifies a new native backend | cell-list/reference implementation and periodic-equivalence tests | `PROFILE_GATED` |
 | PR-204 | LOW | energy-profile plots | Matplotlib startup dominates small tables | output generation is not established as an end-to-end hotspot | campaign-scale profile before caching or alternate renderer | `PROFILE_GATED` |
@@ -94,14 +96,16 @@ Status:
 | QR-405 | MEDIUM | flaky timing benchmarks block CI | correctness and evidence invariants are gates; parser timings remain observations rather than pass thresholds | `MITIGATED` |
 | QR-406 | HIGH | simulated or local parser observations presented as engine evidence | explicit source kinds, evidence labels, `NOT_ELIGIBLE` qualification and L2-only capability boundary | `MITIGATED` |
 | QR-407 | HIGH | local profiling leaks confidential calculation identity | successful and failed reports omit source path/basename/content; minimal environment contract and direct non-disclosure tests | `MITIGATED` |
+| QR-408 | HIGH | a failed file is silently dropped from a batch report | any child failure aborts publication; existing output remains unchanged; failure identifies only the ordinal | `MITIGATED` |
+| QR-409 | HIGH | concurrent batch timing is misrepresented as isolated speedup | execution mode and contention flag are mandatory; the report explicitly limits concurrent results to throughput observations | `MITIGATED` |
 
 ## 7. Priority order for future work
 
-1. Run the validated local profiler on representative legally usable Gaussian logs and compare hotspot rankings while preserving late-error-wins and normalized-output semantics.
+1. Run the validated batch profiler in isolated sequential mode on representative legally usable Gaussian logs and compare hotspot stability across successful, rich-output, incomplete and late-error jobs.
 2. Define one real, licensed and reproducible VASP/QE/CP2K benchmark campaign with CPU reference and complete hardware/build fingerprints.
 3. Review task-specific scientific-equivalence tolerances before any real performance qualification.
 4. Add periodic trajectory/neighbor-list work only when an accepted workload demonstrates a scaling bottleneck.
-5. Consider native or GPU code only after end-to-end profiling includes data conversion and launch overhead.
+5. Consider native or GPU code only after end-to-end profiling includes data conversion, file I/O and launch overhead.
 
 ## 8. Current residual-risk conclusion
 
@@ -112,8 +116,11 @@ PERFORMANCE_EVIDENCE_NONFINITE_BYPASS: CLOSED
 LOSSY_INTEGER_BYPASS: CLOSED
 PARTIAL_ENERGY_PROFILE_PUBLICATION: CLOSED
 GAUSSIAN_ERROR_TAXONOMY_HOTSPOT: RESOLVED_WITH_SYNTHETIC_PROFILE
-GAUSSIAN_LOCAL_LOG_PROFILING_TOOL: IMPLEMENTED_VALIDATED
-REPRESENTATIVE_REAL_GAUSSIAN_LOG_PROFILE: NOT_AVAILABLE
+GAUSSIAN_SINGLE_LOCAL_LOG_PROFILING_TOOL: IMPLEMENTED_VALIDATED
+GAUSSIAN_MULTI_LOG_BATCH_PROFILING_TOOL: IMPLEMENTED_VALIDATED
+CONCURRENT_BATCH_CONTENTION_LABEL: ENFORCED
+PARTIAL_GAUSSIAN_BATCH_PUBLICATION: BLOCKED
+REPRESENTATIVE_REAL_GAUSSIAN_BATCH_PROFILE: NOT_AVAILABLE
 GAUSSIAN_BROADER_REAL_LOG_OPTIMIZATION: PROFILE_GATED
 NATIVE_CPU_OR_GPU_EXTENSION: PROFILE_GATED
 PUBLIC_CAPABILITY_LEVEL: L2_VALIDATED_ADAPTER

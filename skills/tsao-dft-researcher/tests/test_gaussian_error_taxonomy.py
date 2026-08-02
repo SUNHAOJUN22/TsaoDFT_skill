@@ -114,9 +114,7 @@ class GaussianErrorTaxonomyTests(unittest.TestCase):
 
         self.assertEqual(len(self.module.ERROR_EVIDENCE_CATEGORIES), len(unique_evidence))
         indexed_categories = {
-            category
-            for categories in self.module.ERROR_EVIDENCE_CATEGORIES.values()
-            for category in categories
+            category for categories in self.module.ERROR_EVIDENCE_CATEGORIES.values() for category in categories
         }
         self.assertEqual(indexed_categories, {category for category, _ in self.module.ERROR_TAXONOMY_RULES})
 

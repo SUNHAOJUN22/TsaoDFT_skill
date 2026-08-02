@@ -57,9 +57,10 @@ class GaussianLocalLogProfileTests(unittest.TestCase):
         for value in ("0", "-1", "1.0", "01", "bad"):
             with self.assertRaises(argparse.ArgumentTypeError):
                 self.module.positive_int(value)
-        for value in (0, -1, True, 1.5, "1"):
+        invalid_values: tuple[object, ...] = (0, -1, True, 1.5, "1")
+        for invalid_value in invalid_values:
             with self.assertRaises(ValueError):
-                self.module.require_positive_exact_int(value, "count")
+                self.module.require_positive_exact_int(invalid_value, "count")
 
         with (
             patch.object(self.module.importlib.util, "spec_from_file_location", return_value=None),

@@ -12,6 +12,7 @@ import statistics
 import sys
 from collections import Counter, defaultdict
 from concurrent.futures import ProcessPoolExecutor
+from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
@@ -63,10 +64,8 @@ def load_local_profile() -> Any:
 def _redact_error(message: str, path: Path) -> str:
     redacted = message
     candidates = {str(path), path.name}
-    try:
+    with suppress(OSError):
         candidates.add(str(path.resolve()))
-    except OSError:
-        pass
     for candidate in sorted((item for item in candidates if item), key=len, reverse=True):
         redacted = redacted.replace(candidate, "[REDACTED]")
     return redacted

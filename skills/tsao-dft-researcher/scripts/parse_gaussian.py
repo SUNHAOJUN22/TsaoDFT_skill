@@ -120,24 +120,32 @@ ERROR_TAXONOMY_RULES: tuple[tuple[str, str], ...] = (
     ("L502", r"l502\.exe"),
     ("L9999", r"l9999\.exe"),
 )
+ECP_NOT_FOUND_EVIDENCE = r"ECP.*not found"
 
 
-def _build_error_taxonomy_matcher() -> tuple[re.Pattern[str], dict[str, tuple[str, ...]]]:
+def _build_error_taxonomy_index() -> tuple[
+    tuple[tuple[str, tuple[str, ...]], ...],
+    dict[str, tuple[str, ...]],
+    tuple[str, ...],
+]:
     evidence_categories: dict[str, list[str]] = {}
     for category, pattern in ERROR_TAXONOMY_RULES:
         for evidence in pattern.split("|"):
             evidence_categories.setdefault(evidence, []).append(category)
 
-    grouped_patterns: list[str] = []
-    group_categories: dict[str, tuple[str, ...]] = {}
-    for index, (evidence, categories) in enumerate(evidence_categories.items()):
-        group = f"E{index}"
-        grouped_patterns.append(f"(?P<{group}>{evidence})")
-        group_categories[group] = tuple(categories)
-    return re.compile("|".join(grouped_patterns), re.IGNORECASE), group_categories
+    literal_evidence: list[tuple[str, tuple[str, ...]]] = []
+    for evidence, categories in evidence_categories.items():
+        if evidence != ECP_NOT_FOUND_EVIDENCE:
+            literal_evidence.append((evidence.replace(r"\.", ".").casefold(), tuple(categories)))
+    frozen_categories = {evidence: tuple(categories) for evidence, categories in evidence_categories.items()}
+    return (
+        tuple(literal_evidence),
+        frozen_categories,
+        frozen_categories[ECP_NOT_FOUND_EVIDENCE],
+    )
 
 
-ERROR_EVIDENCE_PATTERN, ERROR_EVIDENCE_CATEGORIES = _build_error_taxonomy_matcher()
+ERROR_LITERAL_EVIDENCE, ERROR_EVIDENCE_CATEGORIES, ERROR_ECP_CATEGORIES = _build_error_taxonomy_index()
 
 
 def fnum(value: str) -> float:
@@ -174,12 +182,19 @@ def _error_links(text: str) -> list[str]:
 
 
 def _error_taxonomy(text: str) -> list[dict[str, str]]:
+    folded = text.casefold()
     found: set[str] = set()
-    for match in ERROR_EVIDENCE_PATTERN.finditer(text):
-        if match.lastgroup is not None:
-            found.update(ERROR_EVIDENCE_CATEGORIES[match.lastgroup])
-        if len(found) == len(ERROR_TAXONOMY_RULES):
-            break
+    for evidence, categories in ERROR_LITERAL_EVIDENCE:
+        if evidence in folded:
+            found.update(categories)
+
+    if "ecp" in folded and "not found" in folded:
+        for line in folded.splitlines():
+            ecp_index = line.find("ecp")
+            if ecp_index >= 0 and line.find("not found", ecp_index + 3) >= 0:
+                found.update(ERROR_ECP_CATEGORIES)
+                break
+
     return [
         {"category": category, "evidence_pattern": pattern}
         for category, pattern in ERROR_TAXONOMY_RULES

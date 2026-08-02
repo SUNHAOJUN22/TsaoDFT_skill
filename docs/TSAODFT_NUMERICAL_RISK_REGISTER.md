@@ -2,7 +2,7 @@
 
 **Repository:** `SUNHAOJUN22/TsaoDFT_skill`  
 **Scope:** scientific formulas, numerical stability, algorithmic scaling, parser behavior, performance evidence and real-acceleration claims  
-**Assessment basis:** validated repository state through Phase 7; real external-engine and GPU benchmarks remain unavailable.
+**Assessment basis:** validated repository state through Phase 8; representative real Gaussian logs and real external-engine/GPU benchmarks remain unavailable.
 
 ## 1. Severity and status definitions
 
@@ -41,6 +41,7 @@ Status:
 | NR-014 | MEDIUM | geometry mapping | per-atom Python distance calls limited scalability | NumPy vectorized displacement/RMSD/max reduction and 2,000-atom test | `RESOLVED` |
 | NR-015 | MEDIUM | Eyring CSV | complete-table materialization retained O(rows) Python objects and could leave partial output | row streaming and atomic publication | `RESOLVED` |
 | NR-016 | MEDIUM | Gaussian error taxonomy | nine independent case-insensitive full-text regex searches dominated the synthetic large-log parser profile; a first mega-regex rewrite was slower despite semantic equivalence | deterministic labeled profiler; slower mega-regex rejected; precomputed casefolded literal index plus preserved `ECP.*not found` semantics; 512 category combinations, shared-evidence tests and unchanged full-parser result hash | `RESOLVED` |
+| NR-017 | MEDIUM | Gaussian local profiling | real-log profiling previously required ad hoc script edits and could expose source paths, overwrite inputs, accept mutable/oversized files or produce unlabeled observations | standalone local profiler with chunked hashing, size and regular-file guards, read-time mutation detection, source/output collision refusal, atomic JSON, minimal environment fields and explicit parser-only non-qualification labels | `RESOLVED` |
 
 ## 3. Mitigated risks requiring task-specific scientific judgment
 
@@ -54,18 +55,19 @@ Status:
 | NR-106 | MEDIUM | energy profile | Hartree-to-kcal conversion is correct, but combining energies from inconsistent methods remains scientifically invalid | surrounding manifests carry method fingerprints | method-identity enforcement at every profile ingestion route | `MITIGATED` |
 | NR-107 | MEDIUM | performance outliers | MAD-based outlier flags do not explain root cause and must not justify deletion | outliers are counted and retained | profiler traces and operational review | `MITIGATED` |
 | NR-108 | HIGH | benchmark topology | apparently identical GPU counts can conceal different CPU, interconnect or binding topology | hardware and GPU identities are recorded and compared | complete real-site topology fingerprint | `REAL_EVIDENCE_REQUIRED` |
+| NR-109 | MEDIUM | local-log privacy | input SHA-256 is retained for auditability and can still be a sensitive identifier | path, basename, contents, hostname, username and home directory are omitted; disclosure warning is explicit | user data-governance review before sharing profile JSON outside the trusted environment | `MITIGATED` |
 
 ## 4. Profile-gated performance and scalability risks
 
 | ID | Severity | Candidate area | Current concern | Why no blind implementation was made | Profiling/acceptance requirement | Status |
 |---|---|---|---|---|---|---|
-| PR-201 | MEDIUM | Gaussian parser beyond error taxonomy | the synthetic profile closed the error-taxonomy hotspot, but orientation parsing, repeated line splitting and real Gaussian revision/layout diversity may dominate different real logs | the accepted change is limited to a measured synthetic hotspot; the combined mega-regex regression was explicitly rejected; no native or broad parser rewrite was added | representative legally usable Gaussian logs across successful, incomplete and late-failure jobs; exact normalized-output equivalence; wall time and peak RSS | `PROFILE_GATED` |
+| PR-201 | MEDIUM | Gaussian parser beyond error taxonomy | the synthetic profile closed the error-taxonomy hotspot, and a privacy-safe local profiler is now executable, but no representative real logs have established whether orientation parsing, repeated line splitting or another path dominates | the accepted changes are limited to a measured synthetic hotspot and a measurement tool; the combined mega-regex regression was explicitly rejected; no native or broad parser rewrite was added | run `scripts/profile_gaussian_log.py` on legally usable successful, incomplete and late-failure logs; require exact normalized-output review, wall time, read/decode separation and peak memory | `PROFILE_GATED` |
 | PR-202 | MEDIUM | trajectory processing | future multi-frame geometry and neighbor-list work may become O(frames × atoms²) | no accepted large trajectory workload currently defines the boundary | representative frames/atoms/cell; memory and pair-count profile | `PROFILE_GATED` |
 | PR-203 | MEDIUM | periodic neighbor lists | naïve full pair matrices can exceed memory | no current repository hotspot justifies a new native backend | cell-list/reference implementation and periodic-equivalence tests | `PROFILE_GATED` |
 | PR-204 | LOW | energy-profile plots | Matplotlib startup dominates small tables | output generation is not established as an end-to-end hotspot | campaign-scale profile before caching or alternate renderer | `PROFILE_GATED` |
 | PR-205 | LOW | hashing | streaming hashlib is already native and memory-bounded | custom C++ would duplicate optimized library code | profile showing hashing dominates end-to-end time | `PROFILE_GATED` |
 | PR-206 | MEDIUM | ridge solver | BLAS/LAPACK performance depends on linked implementation and matrix shape | NumPy already delegates to native libraries | realistic dataset shapes and BLAS environment benchmark | `PROFILE_GATED` |
-| PR-207 | MEDIUM | control-plane JSON/YAML | repeated canonicalization could matter in very large evidence campaigns | present campaigns are not shown to be serialization-bound | record-count profile and content-addressing cost breakdown | `PROFILE_GATED` |
+| PR-207 | MEDIUM | control-plane JSON/YAML | repeated canonicalization could matter in very large evidence campaigns | present campaigns are not shown to be serialization-bound | record-count/profile evidence and content-addressing cost breakdown | `PROFILE_GATED` |
 | PR-208 | MEDIUM | environment probes | subprocess probe startup may dominate short local commands | probes are bounded and correctness-sensitive | representative repeated workflow profile; safe cache invalidation design | `PROFILE_GATED` |
 
 ## 5. Real-acceleration evidence risks
@@ -75,7 +77,7 @@ Status:
 | AR-301 | CRITICAL | VASP GPU speedup | control-plane support may be mistaken for measured VASP acceleration | real VASP GPU build, immutable input, CPU reference, repeats, scientific equivalence and signed evidence bundle | `REAL_EVIDENCE_REQUIRED` |
 | AR-302 | CRITICAL | QE GPU speedup | backend recommendation does not prove the installed QE build supports or benefits from it | real build capabilities, decomposition sweep and measured topology | `REAL_EVIDENCE_REQUIRED` |
 | AR-303 | CRITICAL | CP2K GPU speedup | CUDA/HIP/SYCL route depends on build, solver and workload | real CP2K build, DBM/DBCSR/solver profile, reference outputs | `REAL_EVIDENCE_REQUIRED` |
-| AR-304 | CRITICAL | Gaussian acceleration | repository parser optimization can be mistaken for accelerating the externally packaged Gaussian electronic-structure engine | supported executable/build evidence and real engine run comparison; parser-only observations must remain separately labelled | `REAL_EVIDENCE_REQUIRED` |
+| AR-304 | CRITICAL | Gaussian acceleration | repository parser profiling or optimization can be mistaken for accelerating the externally packaged Gaussian electronic-structure engine | supported executable/build evidence and real engine run comparison; parser-only observations must remain separately labelled | `REAL_EVIDENCE_REQUIRED` |
 | AR-305 | HIGH | multi-GPU scaling | speedup can appear from incomparable topology or insufficient single-GPU baseline | compatible single-GPU and N-GPU runs, bindings, interconnect and strong-scaling math | `REAL_EVIDENCE_REQUIRED` |
 | AR-306 | HIGH | edge inference | a surrogate could be presented as replacing DFT validation | accepted model, calibration, OOD/uncertainty gate and remote DFT fallback | `REAL_EVIDENCE_REQUIRED` |
 | AR-307 | HIGH | cuEquivariance | library may be incorrectly presented as a Kohn–Sham DFT accelerator | accepted equivariant ML workload such as MACE/NequIP/e3nn and measured inference/training | `REAL_EVIDENCE_REQUIRED` |
@@ -89,12 +91,13 @@ Status:
 | QR-402 | HIGH | old CI result incorrectly attributed to latest commit | exact final HEAD combined status, jobs and logs checked | `MITIGATED` |
 | QR-403 | HIGH | coverage improvement through denominator manipulation | permanent coverage inventory and no exclusion/gate changes | `MITIGATED` |
 | QR-404 | HIGH | trust-boundary regression | six core modules tracked separately; strict mypy and adversarial tests | `MITIGATED` |
-| QR-405 | MEDIUM | flaky timing benchmarks block CI | correctness/complexity invariants used instead of fragile time thresholds; synthetic timings are observations rather than pass thresholds | `MITIGATED` |
-| QR-406 | HIGH | simulated fixtures presented as real evidence | explicit evidence labels, `NOT_ELIGIBLE` qualification and L2-only capability boundary | `MITIGATED` |
+| QR-405 | MEDIUM | flaky timing benchmarks block CI | correctness and evidence invariants are gates; parser timings remain observations rather than pass thresholds | `MITIGATED` |
+| QR-406 | HIGH | simulated or local parser observations presented as engine evidence | explicit source kinds, evidence labels, `NOT_ELIGIBLE` qualification and L2-only capability boundary | `MITIGATED` |
+| QR-407 | HIGH | local profiling leaks confidential calculation identity | successful and failed reports omit source path/basename/content; minimal environment contract and direct non-disclosure tests | `MITIGATED` |
 
 ## 7. Priority order for future work
 
-1. Obtain representative legally usable Gaussian logs and profile orientation/block parsing without changing late-error-wins or normalized-output semantics.
+1. Run the validated local profiler on representative legally usable Gaussian logs and compare hotspot rankings while preserving late-error-wins and normalized-output semantics.
 2. Define one real, licensed and reproducible VASP/QE/CP2K benchmark campaign with CPU reference and complete hardware/build fingerprints.
 3. Review task-specific scientific-equivalence tolerances before any real performance qualification.
 4. Add periodic trajectory/neighbor-list work only when an accepted workload demonstrates a scaling bottleneck.
@@ -109,6 +112,8 @@ PERFORMANCE_EVIDENCE_NONFINITE_BYPASS: CLOSED
 LOSSY_INTEGER_BYPASS: CLOSED
 PARTIAL_ENERGY_PROFILE_PUBLICATION: CLOSED
 GAUSSIAN_ERROR_TAXONOMY_HOTSPOT: RESOLVED_WITH_SYNTHETIC_PROFILE
+GAUSSIAN_LOCAL_LOG_PROFILING_TOOL: IMPLEMENTED_VALIDATED
+REPRESENTATIVE_REAL_GAUSSIAN_LOG_PROFILE: NOT_AVAILABLE
 GAUSSIAN_BROADER_REAL_LOG_OPTIMIZATION: PROFILE_GATED
 NATIVE_CPU_OR_GPU_EXTENSION: PROFILE_GATED
 PUBLIC_CAPABILITY_LEVEL: L2_VALIDATED_ADAPTER

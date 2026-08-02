@@ -10,6 +10,9 @@
 **Phase 7 starting HEAD:** `84684603a18f4b61e8dd49e1ba95d7ee1eb4ad7f`  
 **Phase 7 validated implementation HEAD:** `755e24af960a6e119b31c319bf3c561df4f4eb60`  
 **Phase 7 implementation run:** `30735755022`  
+**Phase 8 starting HEAD:** `363dfb72b3c20b39c7db5d57d644deaf3b580163`  
+**Phase 8 validated implementation HEAD:** `d407643da7ea904a202f2b34ce0dd4edb4ec95eb`  
+**Phase 8 implementation run:** `30757856383`  
 **Documentation candidate:** the `main` commit containing this report; its exact CI is verified after publication.  
 **Public capability boundary:** `L2_VALIDATED_ADAPTER`
 
@@ -17,7 +20,7 @@
 
 The repository-wide program established and implemented a correctness-first acceleration architecture.
 
-The most important result is not a claimed GPU speedup. It is that paths capable of producing scientifically incorrect values, false benchmark qualification or unjustified optimization claims were identified, corrected and guarded by direct tests:
+The most important result is not a claimed GPU speedup. It is that paths capable of producing scientifically incorrect values, false benchmark qualification, confidential-data leakage or unjustified optimization claims were identified, corrected and guarded by direct tests:
 
 - a dimensionally inconsistent Eyring/TST rate expression;
 - an incorrect ridge-regression intercept for non-centered features;
@@ -28,9 +31,10 @@ The most important result is not a claimed GPU speedup. It is that paths capable
 - NaN/Inf propagation into scientific equivalence and speedup;
 - partial energy-profile output publication;
 - scalar geometry reductions that could be safely vectorized;
-- a Gaussian error-taxonomy hotspot that repeatedly scanned complete logs with nine case-insensitive regex rules.
+- a Gaussian error-taxonomy hotspot that repeatedly scanned complete logs with nine case-insensitive regex rules;
+- the absence of a controlled, privacy-safe way to profile legally usable local Gaussian logs.
 
-Repository-level efficiency improved through streaming, vectorization, smaller linear systems, compiled BLAS/LAPACK use, transactional output and profile-backed parser work. A slower Gaussian mega-regex rewrite was explicitly rejected even though it was semantically correct and CI-green. No external DFT-engine or GPU speedup is claimed because qualifying real hardware/build evidence was not available.
+Repository-level efficiency and measurement readiness improved through streaming, vectorization, smaller linear systems, compiled BLAS/LAPACK use, transactional output, profile-backed parser work and a standalone local-log profiler. A slower Gaussian mega-regex rewrite was explicitly rejected even though it was semantically correct and CI-green. No external DFT-engine or GPU speedup is claimed because qualifying real hardware/build evidence was not available.
 
 ## 2. Architecture boundary
 
@@ -42,7 +46,7 @@ Repository responsibilities include:
 - scientific preflight;
 - job and scheduler generation;
 - hardware-aware planning;
-- output parsing;
+- output parsing and parser profiling;
 - provenance and hashing;
 - scientific-equivalence gates;
 - benchmark evidence qualification;
@@ -57,7 +61,7 @@ External engine responsibilities remain:
 - sparse/dense solver kernels;
 - engine-native MPI/OpenMP/GPU execution.
 
-The repository therefore cannot truthfully claim to have accelerated VASP, Quantum ESPRESSO, CP2K or the Gaussian electronic-structure engine merely because it generates GPU-aware plans or optimizes a log parser.
+The repository therefore cannot truthfully claim to have accelerated VASP, Quantum ESPRESSO, CP2K or the Gaussian electronic-structure engine merely because it generates GPU-aware plans, optimizes a log parser or profiles a local output file.
 
 ## 3. Mandatory V2 deliverables
 
@@ -69,9 +73,10 @@ The execution produced or updated:
 4. `docs/TSAODFT_PERFORMANCE_PROFILE_AND_ACCELERATION_MATRIX.md`
 5. `docs/TSAODFT_NUMERICAL_PERFORMANCE_AND_EVIDENCE_PHASE6_FINAL_REPORT.md`
 6. `docs/TSAODFT_GAUSSIAN_PARSER_PROFILE_PHASE7_REPORT.md`
-7. `docs/TSAODFT_FULL_NUMERICAL_AND_ACCELERATION_FINAL_REPORT.md`
+7. `docs/TSAODFT_GAUSSIAN_LOCAL_PROFILE_PHASE8_REPORT.md`
+8. `docs/TSAODFT_FULL_NUMERICAL_AND_ACCELERATION_FINAL_REPORT.md`
 
-Together they define the reusable protocol, validated formula inventory, resolved/open risks, profile-gated opportunities, Phase 6 trust-boundary implementation, Phase 7 Gaussian parser evidence and final program status.
+Together they define the reusable protocol, validated formula inventory, resolved/open risks, profile-gated opportunities, Phase 6 trust-boundary implementation, Phase 7 synthetic Gaussian parser evidence, Phase 8 local-file profiling readiness and final program status.
 
 ## 4. Scientific correctness results
 
@@ -139,7 +144,10 @@ Implemented streaming/bounded-memory paths include:
 - QE output parsing;
 - CP2K output parsing;
 - selected VASP parsing paths;
-- file and provenance hashing.
+- file and provenance hashing;
+- chunked local Gaussian-log reading and SHA-256 computation before text parsing.
+
+The current rich Gaussian parser still accepts a decoded text string, so Phase 8 does not misrepresent the parser itself as fully streaming.
 
 ### 6.2 Vectorization and native libraries
 
@@ -156,7 +164,7 @@ No C++ rewrite was added where NumPy already calls optimized native libraries.
 
 Energy-profile CSV/SVG/PDF/PNG outputs are generated in same-filesystem staging, validated as a complete bundle and only then published. Existing formal outputs remain unchanged if rendering fails before publication; publish-time failures restore backups.
 
-### 6.4 Gaussian parser profile and accepted optimization
+### 6.4 Gaussian synthetic parser profile and accepted optimization
 
 Phase 7 added `scripts/profile_gaussian_parser.py`, which generates deterministic synthetic Gaussian-like text and reports:
 
@@ -167,7 +175,7 @@ Phase 7 added `scripts/profile_gaussian_parser.py`, which generates deterministi
 - same-process legacy/current taxonomy A/B observations;
 - explicit evidence limitations.
 
-All reports are labelled:
+All synthetic reports are labelled:
 
 ```text
 SIMULATION_ONLY
@@ -188,16 +196,50 @@ The accepted implementation uses one `casefold()` normalization, precomputed lit
 - late-error semantics in the full parser;
 - the deterministic full parser result SHA-256 `e44eabaa5cb182ea76fb547d1027fa41754230d0bfe159f7b224d58706748edd`.
 
-On the final implementation runner, the same-process isolated taxonomy observation was:
+The isolated taxonomy ratio is an explicitly synthetic same-process observation, not a product speedup, full-parser guarantee or Gaussian-engine acceleration claim.
 
-| Measurement | Observation |
-|---|---:|
-| Legacy median | 0.100938047 s |
-| Current median | 0.004073546 s |
-| Legacy/current ratio | 24.778914× |
-| Semantic equality | PASS |
+### 6.5 Privacy-safe local Gaussian-log profiler
 
-This ratio is an isolated synthetic same-process observation, not a product speedup, full-parser guarantee or Gaussian-engine acceleration claim.
+Phase 8 added:
+
+```text
+scripts/profile_gaussian_log.py
+```
+
+It can profile a local Gaussian text log without recording the source path, basename or contents. It reports:
+
+- streamed input SHA-256;
+- bytes and lines;
+- UTF-8 replacement count;
+- read/decode time;
+- repeated parser time;
+- peak traced Python allocation;
+- cProfile hotspot ranking;
+- normalized parser-result hash;
+- minimal environment fingerprint;
+- same-process taxonomy comparison;
+- explicit source and evidence limitations.
+
+The tool enforces:
+
+- regular, non-empty input;
+- configurable exact-integer size limit, default 512 MiB;
+- read-time file mutation detection;
+- refusal to replace the input with the report;
+- atomic report publication;
+- structured failure without source-identity disclosure.
+
+Every local report is labelled:
+
+```text
+LOCAL_INPUT_FILE
+PARSER_ONLY_OBSERVATION
+NOT_DFT_ENGINE_PERFORMANCE_EVIDENCE
+NOT_GPU_PERFORMANCE_EVIDENCE
+performance_qualification = NOT_ELIGIBLE_FOR_DFT_OR_GPU_ACCELERATION_CLAIMS
+```
+
+No representative real Gaussian log was supplied or executed during Phase 8. The tool establishes measurement readiness, not real-log performance evidence.
 
 ## 7. Performance-evidence correctness
 
@@ -214,7 +256,7 @@ The performance-evidence trust boundary now requires:
 - numerical-equivalence PASS before speedup;
 - independent review where policy requires it.
 
-NaN cannot pass a speedup comparison, fractional topology cannot be truncated, and malformed non-empty policy sections cannot silently become defaults.
+NaN cannot pass a speedup comparison, fractional topology cannot be truncated, malformed non-empty policy sections cannot silently become defaults, and parser-only local observations cannot become engine evidence through relabelling.
 
 ## 8. Test and coverage progression
 
@@ -224,9 +266,10 @@ NaN cannot pass a speedup comparison, fractional topology cannot be truncated, a
 | Phase 5 final | 434 | 9 | 0 | 93.98% | 83.22% |
 | Phase 6 validated implementation | 450 | 9 | 0 | 94.13% | 83.42% |
 | Phase 6 final documentation HEAD | 450 | 9 | 0 | 94.09% | 83.47% |
-| Phase 7 validated implementation | **465** | **9** | **0** | **94.17%** | **83.69%** |
+| Phase 7 validated implementation | 465 | 9 | 0 | 94.17% | 83.69% |
+| Phase 8 validated implementation | **473** | **9** | **0** | **94.21%** | **83.71%** |
 
-Coverage was not raised by exclusions, denominator changes or weakened gates. New branches were covered with scientific, extreme-value, malformed-input, transactional-output, parser-equivalence and profiling-contract tests.
+Coverage was not raised by exclusions, denominator changes or weakened gates. New branches were covered with scientific, extreme-value, malformed-input, transactional-output, parser-equivalence, privacy, file-mutation and profiling-contract tests.
 
 The six execution/trust cores remain:
 
@@ -241,7 +284,7 @@ The six execution/trust cores remain:
 
 ## 9. Permanent quality gate
 
-The validated Phase 7 implementation passed:
+The validated Phase 8 implementation passed:
 
 - Python 3.10;
 - Python 3.12;
@@ -249,7 +292,7 @@ The validated Phase 7 implementation passed:
 - Ruff lint and format;
 - mypy across 18 isolated targets;
 - strict trust-boundary mypy across 4 targets;
-- 465 tests across 9 suites;
+- 473 tests across 9 suites;
 - statement and branch coverage;
 - Bandit;
 - strict repository audit;
@@ -257,10 +300,14 @@ The validated Phase 7 implementation passed:
 - runtime, development and exact locked-environment dependency audits;
 - CycloneDX SBOM generation.
 
-The Phase 7 implementation coverage artifact was:
+The Phase 8 implementation artifacts were:
 
-- ID `8829520557`;
-- digest `d5732ffe0638caf3b2ef54ebba64d9c1620e9cd215de2ec6928156ad057a1e26`.
+```text
+Python 3.12 coverage artifact ID: 8836521705
+Python 3.12 coverage artifact SHA-256: 6184268bcca832c8e172ad895dba48fbf1cc5d423291bbb47021793930bfedbf
+Supply-chain artifact ID: 8836508854
+Supply-chain artifact SHA-256: 8fbdb2620961fda94fef8dbb8fe0f1e031b694add6a393ede8d597ba5bc51976
+```
 
 The final documentation HEAD must independently pass the same permanent workflow. Its exact run and artifact are reported after this commit exists.
 
@@ -276,8 +323,10 @@ The final documentation HEAD must independently pass the same permanent workflow
 - robust performance statistics;
 - scientific-equivalence gates;
 - content-addressed evidence bundles;
-- qualification rules that keep unreviewed/synthetic evidence at L2;
-- a CI-validated synthetic Gaussian parser profiler and one scoped parser-hotspot optimization.
+- qualification rules that keep unreviewed, synthetic and parser-only local evidence at L2;
+- a CI-validated synthetic Gaussian parser profiler;
+- one scoped Gaussian parser-hotspot optimization;
+- a CI-validated privacy-safe local Gaussian-log profiler.
 
 ### Not available
 
@@ -285,7 +334,7 @@ The final documentation HEAD must independently pass the same permanent workflow
 - qualifying real QE CPU-vs-GPU measurements;
 - qualifying real CP2K CPU-vs-GPU measurements;
 - qualifying Gaussian engine accelerator measurements;
-- representative real Gaussian large-log parser measurements;
+- representative real Gaussian parser-profile measurements;
 - real multi-GPU scaling evidence;
 - real edge-device latency/energy evidence;
 - accepted cuEquivariance workload evidence;
@@ -297,7 +346,8 @@ Therefore:
 REAL_DFT_ENGINE_BENCHMARK: NOT_AVAILABLE
 REAL_GPU_BENCHMARK: NOT_AVAILABLE
 REAL_EDGE_BENCHMARK: NOT_AVAILABLE
-REAL_GAUSSIAN_LOG_PROFILE: NOT_AVAILABLE
+REPRESENTATIVE_REAL_GAUSSIAN_LOG_PROFILE: NOT_AVAILABLE
+GAUSSIAN_LOCAL_PROFILE_EXECUTION_CAPABILITY: AVAILABLE
 PUBLIC_CAPABILITY_PROMOTION: NOT_AUTHORIZED
 ```
 
@@ -312,21 +362,23 @@ The program found higher-priority correctness defects and low-risk Python/NumPy 
 - scientific-equivalence suite;
 - real hardware access.
 
-The Gaussian taxonomy hotspot was resolved in Python after profiling. Adding a native layer for it would not be justified. Adding a native layer elsewhere without the listed conditions would increase maintenance, packaging and security risk without a trustworthy performance conclusion.
+The Gaussian taxonomy hotspot was resolved in Python after profiling. Phase 8 added the missing real-file measurement surface rather than guessing which broader parser path deserves native code. Adding a native layer without representative local-profile evidence would increase maintenance, packaging and security risk without a trustworthy performance conclusion.
 
 ## 12. Remaining work
 
 ### Highest priority
 
-1. Obtain legally usable representative Gaussian logs and profile orientation/block parsing while preserving late-error-wins and normalized output.
-2. Select one licensed VASP, QE or CP2K installation and run a real CPU-reference/accelerator campaign.
-3. Review task-specific energy/force/stress/property tolerances.
-4. Record complete build and hardware topology fingerprints.
-5. Retain all failed and successful repeats in a signed evidence bundle.
+1. Run `scripts/profile_gaussian_log.py` on legally usable representative Gaussian logs covering successful, rich-output, incomplete and late-failure jobs.
+2. Review normalized parser outputs and compare hotspot rankings across small, medium and operationally large logs.
+3. Select one licensed VASP, QE or CP2K installation and run a real CPU-reference/accelerator campaign.
+4. Review task-specific energy/force/stress/property tolerances.
+5. Record complete build and hardware topology fingerprints.
+6. Retain all failed and successful repeats in a signed evidence bundle.
 
 ### Conditional
 
 - reducing repeated Gaussian line splitting only after real-log evidence;
+- targeted orientation indexing or a parser state machine only after cross-log profile agreement;
 - periodic cell-list/neighbor-list backend for accepted large trajectories;
 - native/OpenMP/Kokkos geometry backend after conversion-inclusive profile;
 - cuEquivariance for an accepted equivariant ML model;
@@ -359,6 +411,9 @@ ENERGY_PROFILE_ATOMIC_PUBLICATION: PASS
 GAUSSIAN_SYNTHETIC_PROFILE: COMPLETE
 GAUSSIAN_ERROR_TAXONOMY_EQUIVALENCE: PASS
 GAUSSIAN_ERROR_TAXONOMY_OPTIMIZATION: IMPLEMENTED_VALIDATED
+GAUSSIAN_LOCAL_LOG_PROFILER: IMPLEMENTED_VALIDATED
+GAUSSIAN_LOCAL_PROFILE_PRIVACY_BOUNDARY: PASS
+REPRESENTATIVE_REAL_GAUSSIAN_LOG_PROFILE: NOT_AVAILABLE
 GAUSSIAN_BROADER_REAL_LOG_OPTIMIZATION: PROFILE_GATED
 NATIVE_ACCELERATION: PROFILE_GATED
 REAL_CPU_ACCELERATION_EVIDENCE: NOT_AVAILABLE

@@ -3,7 +3,6 @@ from __future__ import annotations
 import importlib.util
 import io
 import json
-import os
 import stat
 import sys
 import tempfile
@@ -199,18 +198,22 @@ class GaussianBatchProfileComparisonEdgeTests(unittest.TestCase):
                 st_size=len(payload),
                 st_mtime_ns=regular.st_mtime_ns,
             )
-            with patch.object(self.module.os, "fstat", return_value=directory_stat):
-                with self.assertRaisesRegex(ValueError, "regular file"):
-                    self.module.read_profile_report(path, 1024)
+            with (
+                patch.object(self.module.os, "fstat", return_value=directory_stat),
+                self.assertRaisesRegex(ValueError, "regular file"),
+            ):
+                self.module.read_profile_report(path, 1024)
 
             small_before = SimpleNamespace(
                 st_mode=stat.S_IFREG,
                 st_size=1,
                 st_mtime_ns=regular.st_mtime_ns,
             )
-            with patch.object(self.module.os, "fstat", return_value=small_before):
-                with self.assertRaisesRegex(ValueError, "size limit"):
-                    self.module.read_profile_report(path, 4)
+            with (
+                patch.object(self.module.os, "fstat", return_value=small_before),
+                self.assertRaisesRegex(ValueError, "size limit"),
+            ):
+                self.module.read_profile_report(path, 4)
 
             before = SimpleNamespace(
                 st_mode=stat.S_IFREG,
@@ -222,9 +225,11 @@ class GaussianBatchProfileComparisonEdgeTests(unittest.TestCase):
                 st_size=len(payload),
                 st_mtime_ns=2,
             )
-            with patch.object(self.module.os, "fstat", side_effect=[before, after]):
-                with self.assertRaisesRegex(RuntimeError, "changed while"):
-                    self.module.read_profile_report(path, 1024)
+            with (
+                patch.object(self.module.os, "fstat", side_effect=[before, after]),
+                self.assertRaisesRegex(RuntimeError, "changed while"),
+            ):
+                self.module.read_profile_report(path, 1024)
 
     def test_hotspot_and_record_validation_edges(self) -> None:
         valid = self._record()
@@ -369,9 +374,11 @@ class GaussianBatchProfileComparisonEdgeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             destination = root / "destination.json"
-            with patch.object(Path, "replace", side_effect=OSError("blocked")):
-                with self.assertRaisesRegex(ValueError, "written atomically"):
-                    self.module.write_atomic(destination, "payload")
+            with (
+                patch.object(Path, "replace", side_effect=OSError("blocked")),
+                self.assertRaisesRegex(ValueError, "written atomically"),
+            ):
+                self.module.write_atomic(destination, "payload")
             self.assertFalse(destination.exists())
 
             baseline = root / "baseline.json"

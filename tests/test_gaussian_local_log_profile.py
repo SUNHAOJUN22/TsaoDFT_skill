@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import argparse
+import hashlib
 import importlib.util
 import io
 import json
 import math
-import os
 import stat
 import sys
 import tempfile
@@ -13,7 +14,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "profile_gaussian_log.py"
@@ -54,7 +55,7 @@ class GaussianLocalLogProfileTests(unittest.TestCase):
         self.assertEqual(self.module.positive_int("7"), 7)
         self.assertEqual(self.module.require_positive_exact_int(4, "count"), 4)
         for value in ("0", "-1", "1.0", "01", "bad"):
-            with self.assertRaises(Exception):
+            with self.assertRaises(argparse.ArgumentTypeError):
                 self.module.positive_int(value)
         for value in (0, -1, True, 1.5, "1"):
             with self.assertRaises(ValueError):
@@ -78,7 +79,7 @@ class GaussianLocalLogProfileTests(unittest.TestCase):
 
             self.assertIn("Normal termination of Gaussian 16", text)
             self.assertEqual(metadata["input_bytes"], len(raw))
-            self.assertEqual(metadata["input_sha256"], __import__("hashlib").sha256(raw).hexdigest())
+            self.assertEqual(metadata["input_sha256"], hashlib.sha256(raw).hexdigest())
             self.assertGreater(metadata["input_lines"], 0)
             self.assertEqual(metadata["utf8_replacement_character_count"], 1)
             self.assertTrue(math.isfinite(metadata["read_decode_seconds"]))
@@ -180,7 +181,7 @@ class GaussianLocalLogProfileTests(unittest.TestCase):
                 )
 
         unstable_core = SimpleNamespace(
-            canonical_result_sha256=__import__("unittest.mock").mock.Mock(side_effect=["expected", "changed"]),
+            canonical_result_sha256=Mock(side_effect=["expected", "changed"]),
             compare_taxonomy_algorithms=lambda *_: {"equivalent": True},
             top_cumulative_functions=lambda _: [],
         )
@@ -188,9 +189,7 @@ class GaussianLocalLogProfileTests(unittest.TestCase):
             self.module.profile_local_text(unstable_core, parser, "x", metadata, 1, 1)
 
         cprofile_core = SimpleNamespace(
-            canonical_result_sha256=__import__("unittest.mock").mock.Mock(
-                side_effect=["expected", "expected", "changed"]
-            ),
+            canonical_result_sha256=Mock(side_effect=["expected", "expected", "changed"]),
             compare_taxonomy_algorithms=lambda *_: {"equivalent": True},
             top_cumulative_functions=lambda _: [],
         )

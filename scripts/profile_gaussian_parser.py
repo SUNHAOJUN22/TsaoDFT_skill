@@ -194,9 +194,12 @@ def compare_taxonomy_algorithms(parser: Any, text: str, iterations: int) -> dict
     legacy_seconds: list[float] = []
     current_seconds: list[float] = []
     for index in range(iterations):
-        calls = ((legacy_call, legacy_seconds), (current_call, current_seconds))
+        calls: list[tuple[Callable[[], list[dict[str, str]]], list[float]]] = [
+            (legacy_call, legacy_seconds),
+            (current_call, current_seconds),
+        ]
         if index % 2:
-            calls = tuple(reversed(calls))
+            calls.reverse()
         results: list[list[dict[str, str]]] = []
         for function, timings in calls:
             result, elapsed = _measure_call(function)

@@ -127,9 +127,9 @@ class GaussianBatchProfileComparisonEdgeTests(unittest.TestCase):
                 self.module.require_nonnegative_finite_real(value, "value")
         with self.assertRaises(ValueError):
             self.module.require_bool(1, "flag")
-        for value in (None, "", 1):
+        for text_value in (None, "", 1):
             with self.assertRaises(ValueError):
-                self.module.require_string(value, "text")
+                self.module.require_string(text_value, "text")
         with self.assertRaises(ValueError):
             self.module.mapping_field({"item": []}, "item", "root")
         with self.assertRaises(ValueError):

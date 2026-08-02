@@ -272,9 +272,7 @@ def build_batch_report(
                 "function": function,
                 "files_present": len(values["ranks"]),
                 "median_rank": float(statistics.median(values["ranks"])),
-                "median_cumulative_seconds": float(
-                    statistics.median(values["cumulative_seconds"])
-                ),
+                "median_cumulative_seconds": float(statistics.median(values["cumulative_seconds"])),
                 "total_cumulative_seconds": math.fsum(values["cumulative_seconds"]),
                 "total_calls": int(math.fsum(values["calls"])),
             }
@@ -338,9 +336,7 @@ def build_batch_report(
             "error_termination_count": sum(record["error_termination"] for record in records),
             "input_bytes": _summary([float(record["input_bytes"]) for record in records]),
             "input_lines": _summary([float(record["input_lines"]) for record in records]),
-            "read_decode_seconds": _summary(
-                [record["read_decode_seconds"] for record in records]
-            ),
+            "read_decode_seconds": _summary([record["read_decode_seconds"] for record in records]),
             "parser_median_seconds": _summary([record["median_seconds"] for record in records]),
             "parser_peak_mib": _summary([record["median_peak_mib"] for record in records]),
             "taxonomy_ratio": _summary(ratios) if ratios else None,

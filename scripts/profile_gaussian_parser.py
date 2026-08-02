@@ -147,8 +147,9 @@ def canonical_result_sha256(result: dict[str, Any]) -> str:
 
 def top_cumulative_functions(profile: cProfile.Profile, limit: int = 12) -> list[dict[str, Any]]:
     stats = pstats.Stats(profile)
+    stats_data = vars(stats).get("stats", {})
     rows: list[tuple[float, int, str]] = []
-    for (filename, line_number, function_name), (_, total_calls, _, cumulative_seconds, _) in stats.stats.items():
+    for (filename, line_number, function_name), (_, total_calls, _, cumulative_seconds, _) in stats_data.items():
         rows.append((cumulative_seconds, total_calls, f"{Path(filename).name}:{line_number}:{function_name}"))
     rows.sort(key=lambda item: (-item[0], item[2]))
     return [

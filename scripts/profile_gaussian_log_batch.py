@@ -14,7 +14,7 @@ from collections import Counter, defaultdict
 from concurrent.futures import ProcessPoolExecutor
 from contextlib import suppress
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 ROOT = Path(__file__).resolve().parents[1]
 LOCAL_PROFILE_PATH = ROOT / "scripts/profile_gaussian_log.py"
@@ -33,6 +33,15 @@ class BatchProfileError(RuntimeError):
     def __init__(self, failures: list[dict[str, Any]]) -> None:
         super().__init__("one or more Gaussian logs could not be profiled")
         self.failures = failures
+
+
+class HotspotSummary(TypedDict):
+    function: str
+    files_present: int
+    median_rank: float
+    median_cumulative_seconds: float
+    total_cumulative_seconds: float
+    total_calls: int
 
 
 def positive_int(value: str) -> int:
@@ -142,21 +151,29 @@ def _summary(values: list[float]) -> dict[str, float]:
     }
 
 
+def _mapping_field(document: dict[str, Any], key: str) -> dict[str, Any]:
+    value = document.get(key)
+    if not isinstance(value, dict):
+        raise ValueError("malformed Gaussian local-profile report")
+    return value
+
+
 def _record_from_report(report: dict[str, Any]) -> dict[str, Any]:
     if report.get("schema_version") != "1.0":
         raise ValueError("unexpected Gaussian local-profile schema version")
-    workload = report.get("workload")
-    parser_result = report.get("parser_result")
-    measurement = report.get("measurement")
-    taxonomy = report.get("taxonomy_comparison")
-    environment = report.get("environment")
-    if not all(isinstance(item, dict) for item in (workload, parser_result, measurement, taxonomy, environment)):
-        raise ValueError("malformed Gaussian local-profile report")
+    workload = _mapping_field(report, "workload")
+    parser_result = _mapping_field(report, "parser_result")
+    measurement = _mapping_field(report, "measurement")
+    taxonomy = _mapping_field(report, "taxonomy_comparison")
+    environment = _mapping_field(report, "environment")
 
     input_sha256 = workload.get("input_sha256")
     result_sha256 = parser_result.get("result_sha256")
     environment_sha256 = environment.get("fingerprint_sha256")
-    if not all(isinstance(item, str) and len(item) == 64 for item in (input_sha256, result_sha256, environment_sha256)):
+    if not all(
+        isinstance(item, str) and len(item) == 64
+        for item in (input_sha256, result_sha256, environment_sha256)
+    ):
         raise ValueError("Gaussian local-profile hashes are malformed")
 
     top_functions = measurement.get("top_cumulative_functions")
@@ -265,7 +282,7 @@ def build_batch_report(
             accumulator["cumulative_seconds"].append(hotspot["cumulative_seconds"])
             accumulator["calls"].append(float(hotspot["calls"]))
 
-    hotspot_summary = []
+    hotspot_summary: list[HotspotSummary] = []
     for function, values in hotspot_accumulator.items():
         hotspot_summary.append(
             {

@@ -10,11 +10,13 @@ import importlib.util
 import json
 import math
 import pstats
+import re
 import statistics
 import sys
 import tempfile
 import time
 import tracemalloc
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -162,6 +164,61 @@ def top_cumulative_functions(profile: cProfile.Profile, limit: int = 12) -> list
     ]
 
 
+def legacy_error_taxonomy(parser: Any, text: str) -> list[dict[str, str]]:
+    return [
+        {"category": category, "evidence_pattern": pattern}
+        for category, pattern in parser.ERROR_TAXONOMY_RULES
+        if re.search(pattern, text, re.IGNORECASE)
+    ]
+
+
+def _measure_call(function: Callable[[], list[dict[str, str]]]) -> tuple[list[dict[str, str]], float]:
+    started = time.perf_counter()
+    result = function()
+    elapsed = time.perf_counter() - started
+    if not math.isfinite(elapsed) or elapsed < 0:
+        raise RuntimeError("non-finite Gaussian taxonomy timing")
+    return result, elapsed
+
+
+def compare_taxonomy_algorithms(parser: Any, text: str, iterations: int) -> dict[str, Any]:
+    if isinstance(iterations, bool) or not isinstance(iterations, int) or iterations <= 0:
+        raise ValueError("taxonomy iterations must be a positive exact integer")
+
+    legacy_seconds: list[float] = []
+    current_seconds: list[float] = []
+    for index in range(iterations):
+        legacy_call = lambda: legacy_error_taxonomy(parser, text)
+        current_call = lambda: parser._error_taxonomy(text)
+        calls = ((legacy_call, legacy_seconds), (current_call, current_seconds))
+        if index % 2:
+            calls = tuple(reversed(calls))
+        results: list[list[dict[str, str]]] = []
+        for function, timings in calls:
+            result, elapsed = _measure_call(function)
+            results.append(result)
+            timings.append(elapsed)
+        if results[0] != results[1]:
+            raise RuntimeError("Gaussian taxonomy algorithms are not equivalent")
+
+    legacy_median = statistics.median(legacy_seconds)
+    current_median = statistics.median(current_seconds)
+    if not math.isfinite(legacy_median) or legacy_median < 0:
+        raise RuntimeError("non-finite legacy Gaussian taxonomy median")
+    if not math.isfinite(current_median) or current_median < 0:
+        raise RuntimeError("non-finite current Gaussian taxonomy median")
+    ratio = legacy_median / current_median if current_median > 0 else None
+    return {
+        "iterations": iterations,
+        "equivalent": True,
+        "legacy_median_seconds": legacy_median,
+        "current_median_seconds": current_median,
+        "observed_legacy_over_current_ratio": ratio,
+        "all_legacy_seconds": legacy_seconds,
+        "all_current_seconds": current_seconds,
+    }
+
+
 def profile_parser(blocks: int, atoms: int, filler_lines: int, iterations: int) -> dict[str, Any]:
     if isinstance(iterations, bool) or not isinstance(iterations, int) or iterations <= 0:
         raise ValueError("iterations must be a positive exact integer")
@@ -198,8 +255,9 @@ def profile_parser(blocks: int, atoms: int, filler_lines: int, iterations: int) 
     if not math.isfinite(median_peak_mib) or median_peak_mib < 0:
         raise RuntimeError("non-finite Gaussian parser memory measurement")
 
+    taxonomy_comparison = compare_taxonomy_algorithms(parser, text, max(5, iterations))
     return {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "scope": "gaussian_parser_synthetic_repository_microprofile",
         "labels": list(EVIDENCE_LABELS),
         "external_dft_engine_invoked": False,
@@ -229,10 +287,12 @@ def profile_parser(blocks: int, atoms: int, filler_lines: int, iterations: int) 
             "all_peak_mib": peaks,
             "top_cumulative_functions": top_cumulative_functions(profiler),
         },
+        "taxonomy_comparison": taxonomy_comparison,
         "limitations": [
             "The input is deterministic synthetic text rather than a Gaussian-produced log.",
             "Hosted CI timing is not target-workstation, HPC-cluster, GPU, or external-engine performance evidence.",
             "The result may identify parser hotspots but cannot establish end-to-end DFT acceleration.",
+            "The observed taxonomy ratio is a same-process micro-observation and is not a product performance claim.",
         ],
     }
 

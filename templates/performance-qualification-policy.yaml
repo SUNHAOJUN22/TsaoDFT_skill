@@ -1,0 +1,25 @@
+schema_version: 1
+qualification: acceleration_l3_required_evidence
+minimum_repeats: 3
+requirements:
+  engine_identity: required
+  engine_version: required
+  build_fingerprint: required
+  hardware_fingerprint: required
+  run_ids: required
+  artifact_checksums: required
+  cpu_reference: required
+  numerical_equivalence: PASS
+  parser_acceptance: PASS
+  performance_policy: PASS
+failure_states:
+  - INSUFFICIENT_REPEATS
+  - NUMERICAL_MISMATCH
+  - BUILD_IDENTITY_MISSING
+  - HARDWARE_IDENTITY_MISSING
+  - PARSER_NOT_ACCEPTED
+  - ARTIFACT_HASH_MISMATCH
+  - REFERENCE_MISSING
+  - PERFORMANCE_NOT_IMPROVED
+  - L2_ONLY
+qualified_state: QUALIFIED_FOR_SCOPED_L3_PERFORMANCE_EVIDENCE

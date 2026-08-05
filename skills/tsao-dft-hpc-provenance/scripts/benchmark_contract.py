@@ -25,9 +25,7 @@ LEGACY_FLAT_SCHEMA_VERSION = "1.0"
 CANONICAL_SHAPE = "nested"
 LEGACY_FLAT_SHAPE = "flat"
 CANONICAL_SCHEMA_ID = "https://github.com/SUNHAOJUN22/TsaoDFT_skill/benchmark-result.schema.json"
-LEGACY_FLAT_SCHEMA_ID = (
-    "https://github.com/SUNHAOJUN22/TsaoDFT_skill/benchmark-result-flat-v1.0.schema.json"
-)
+LEGACY_FLAT_SCHEMA_ID = "https://github.com/SUNHAOJUN22/TsaoDFT_skill/benchmark-result-flat-v1.0.schema.json"
 ROLES = {"scientific-reference", "acceleration-candidate"}
 
 
@@ -90,10 +88,7 @@ def schema_errors(instance: Any, schema: dict[str, Any]) -> list[str]:
         validator.iter_errors(instance),
         key=lambda error: tuple(str(part) for part in error.absolute_path),
     )
-    return [
-        f"{'.'.join(str(part) for part in error.absolute_path) or '<root>'}: {error.message}"
-        for error in errors
-    ]
+    return [f"{'.'.join(str(part) for part in error.absolute_path) or '<root>'}: {error.message}" for error in errors]
 
 
 def canonical_schema() -> dict[str, Any]:
@@ -229,9 +224,7 @@ def _legacy_flat_to_nested(record: dict[str, Any], role_hint: str | None) -> tup
 
     scientific_results: dict[str, Any] = {
         "energy_ev": results.get("energy_ev", results.get("energy_eV")),
-        "forces_ev_per_angstrom": results.get(
-            "forces_ev_per_angstrom", results.get("forces_eV_per_angstrom")
-        ),
+        "forces_ev_per_angstrom": results.get("forces_ev_per_angstrom", results.get("forces_eV_per_angstrom")),
         "stress_gpa": results.get("stress_gpa"),
         "properties": {},
     }
@@ -272,9 +265,7 @@ def _legacy_flat_to_nested(record: dict[str, Any], role_hint: str | None) -> tup
         if _text(item.get("stable_id"), "MISSING") != "MISSING"
     ]
     memory_values = [
-        _int_or(item.get("memory_bytes"), 0)
-        for item in accelerators
-        if _int_or(item.get("memory_bytes"), 0) > 0
+        _int_or(item.get("memory_bytes"), 0) for item in accelerators if _int_or(item.get("memory_bytes"), 0) > 0
     ]
     output_hash = record.get("output_artifact_sha256")
     if not isinstance(output_hash, str) or len(output_hash) != 64:
@@ -378,9 +369,7 @@ def _legacy_flat_to_nested(record: dict[str, Any], role_hint: str | None) -> tup
             "cpu_utilization_percent": _optional_float((record.get("utilization") or {}).get("cpu_percent"))
             if isinstance(record.get("utilization"), dict)
             else None,
-            "gpu_utilization_percent": _optional_float(
-                (record.get("utilization") or {}).get("accelerator_percent")
-            )
+            "gpu_utilization_percent": _optional_float((record.get("utilization") or {}).get("accelerator_percent"))
             if isinstance(record.get("utilization"), dict)
             else None,
             "io_bytes": 0,
@@ -409,9 +398,7 @@ def _legacy_flat_to_nested(record: dict[str, Any], role_hint: str | None) -> tup
     }
 
 
-def normalize_record(
-    record: dict[str, Any], role_hint: str | None = None
-) -> tuple[dict[str, Any], dict[str, Any]]:
+def normalize_record(record: dict[str, Any], role_hint: str | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
     shape = detect_shape(record)
     version = record.get("schema_version")
     if shape == CANONICAL_SHAPE:
@@ -491,15 +478,8 @@ def compute_qualification_view(canonical: dict[str, Any]) -> dict[str, Any]:
         "convergence": {"achieved": scientific["parser_accepted"] is True},
         "wall_time_seconds": performance["wall_time_s"],
         "scientific_results": {
-            **{
-                key: value
-                for key, value in scientific["results"].items()
-                if key != "properties" and value is not None
-            },
-            **{
-                str(key): value
-                for key, value in (scientific["results"].get("properties") or {}).items()
-            },
+            **{key: value for key, value in scientific["results"].items() if key != "properties" and value is not None},
+            **{str(key): value for key, value in (scientific["results"].get("properties") or {}).items()},
         },
         "parser_acceptance": "PASS" if scientific["parser_accepted"] else "FAIL",
         "exit_status": execution["exit_status"],

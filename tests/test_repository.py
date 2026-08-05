@@ -53,7 +53,7 @@ class RepositoryTests(unittest.TestCase):
         for stem in DEMOS:
             path = ROOT / f"assets/demo/{stem}.svg"
             self.assertGreater(path.stat().st_size, 800)
-            self.assertIn("SYNTHETIC DEMO", path.read_text())
+            self.assertIn("SYNTHETIC DEMO", path.read_text(encoding="utf-8"))
 
     def test_demo_regeneration_is_deterministic(self):
         def hashes():
@@ -110,7 +110,7 @@ class RepositoryTests(unittest.TestCase):
             ".codex-plugin/plugin.json",
         ]:
             self.assertTrue((ROOT / rel).exists(), rel)
-        data = yaml.safe_load((ROOT / "docs/CAPABILITY_STATUS.yaml").read_text())
+        data = yaml.safe_load((ROOT / "docs/CAPABILITY_STATUS.yaml").read_text(encoding="utf-8"))
         self.assertEqual(data["release"], "0.4.0-alpha.2")
 
     def test_repo_validator(self):

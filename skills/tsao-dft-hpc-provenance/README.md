@@ -8,6 +8,79 @@ python scripts/generate_job_script.py examples/slurm/hpc-manifest.yaml --out job
 python scripts/classify_failure.py examples/failures/gaussian-memory.log
 ```
 
+## Acceleration registry
+
+`plan_acceleration.py` and `hardware_optimization_contract.py` load library, alias and backend compatibility views at runtime from `scripts/acceleration_registry.py`. They no longer maintain independent mirror catalogs. The root quality gate rejects a planner that reintroduces a local `_library` catalog or stops loading the canonical registry.
+
+```bash
+python ../../scripts/validate_acceleration_registry.py --json
+```
+
+Registry membership is planning metadata. It does not prove that CUDA-X, ROCm, oneAPI, Metal or any external DFT engine is installed or executed.
+
+## EngineCapability
+
+VASP, Quantum ESPRESSO and CP2K use the strict `EngineCapability` contract to record:
+
+- engine and executable identity;
+- engine version and executable SHA-256;
+- compiler, compiler version and build type;
+- MPI implementation/version and OpenMP runtime;
+- accelerator backend, GPU vendor and toolkit version;
+- deterministic build fingerprint;
+- version-probe observation, upstream-test status and execution authorization.
+
+Repository templates intentionally contain `NOT_AVAILABLE` fields and validate as `EXTERNAL_HOLD`:
+
+```bash
+python ../../scripts/validate_engine_capabilities.py --json
+
+python scripts/engine_capability.py \
+  templates/vasp-engine-capability.yaml \
+  --json
+```
+
+`IDENTITY_VERIFIED` means that the build identity is complete. It is not numerical or performance qualification. Missing engine access, license, build identity or authorization remains `EXTERNAL_HOLD`.
+
+## Reproducible CPU/accelerator qualification
+
+`qualify_compute_campaign.py` loads benchmark result documents in deterministic path order with a hard limit of eight worker threads. A campaign can reach `QUALIFIED_FOR_REVIEW` only when all of the following are present:
+
+- at least three contiguous repeats for an FP64 CPU reference and each candidate;
+- real-engine observations accepted by the existing benchmark result schema;
+- identical input and method fingerprints;
+- successful parsing, exit status and convergence;
+- immutable build and hardware fingerprints;
+- property-specific numerical equivalence within declared absolute and relative tolerances;
+- a median reference-over-candidate wall-time ratio that meets the declared threshold.
+
+```bash
+python ../../scripts/validate_compute_qualification.py --json
+
+python scripts/qualify_compute_campaign.py \
+  templates/compute-qualification-campaign.yaml \
+  results/*.json \
+  --workers 8 \
+  --out qualification-report.json
+```
+
+Without real GPU, licensed solver, engine build, hardware identity and accepted result evidence, the workflow reports `EXTERNAL_HOLD` and does not calculate or publish a speedup. `QUALIFIED_FOR_REVIEW` is still not signed L3 evidence.
+
+## Permanent gates
+
+The root quality gate now runs, in order:
+
+1. acceleration evidence contracts;
+2. canonical acceleration registry validation;
+3. EngineCapability validation;
+4. reproducible compute qualification validation;
+5. compute architecture audit;
+6. lint, formatting, typing, coverage, security and repository tests.
+
+```bash
+python ../../scripts/quality_gate.py
+```
+
 ## v0.4 depth
 
 See `SKILL.md`, `manifest.yaml`, `scripts/`, `templates/`, and `tests/` for the deterministic DFT adapters and scientific gates introduced in v0.4.0-alpha.1.

@@ -29,6 +29,10 @@ REQUIRED_DEMOS = {
     "assets/demo/edge-hpc-closed-loop.svg",
     "assets/demo/native-acceleration-roadmap.svg",
     "assets/demo/evidence-qualification-pipeline.svg",
+    "assets/demo/acceleration-registry-governance.svg",
+    "assets/demo/backend-portability-stack.svg",
+    "assets/demo/windows-linux-execution-matrix.svg",
+    "assets/demo/scientific-acceleration-funnel.svg",
 }
 
 

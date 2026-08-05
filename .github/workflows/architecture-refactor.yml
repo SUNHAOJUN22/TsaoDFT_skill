@@ -58,7 +58,9 @@ jobs:
           LIBRARIES: dict[str, dict[str, str]] = _REGISTRY.plan_libraries()
           ALIASES: dict[str, str] = _REGISTRY.plan_aliases()
           '''
-          replacement = "\n".join(line[10:] if line.startswith("          ") else line for line in replacement.splitlines()) + "\n"
+          replacement = "\n".join(
+              line[10:] if line.startswith("          ") else line for line in replacement.splitlines()
+          ) + "\n"
           plan = plan[:start] + replacement + plan[end:]
           plan_path.write_text(plan, encoding="utf-8")
 
@@ -88,28 +90,25 @@ jobs:
 
 
           '''
-          replacement = "\n".join(line[10:] if line.startswith("          ") else line for line in replacement.splitlines()) + "\n"
+          replacement = "\n".join(
+              line[10:] if line.startswith("          ") else line for line in replacement.splitlines()
+          ) + "\n"
           contract = contract[:start] + replacement + contract[end:]
           contract_path.write_text(contract, encoding="utf-8")
 
           gate_path = root / "scripts" / "quality_gate.py"
           gate = gate_path.read_text(encoding="utf-8")
-          marker = '''        Stage(
-              "acceleration contracts",
-              (sys.executable, "scripts/validate_acceleration_contracts.py"),
-          ),
-          '''
-          marker = "\n".join(line[10:] if line.startswith("          ") else line for line in marker.splitlines()) + "\n"
-          addition = marker + '''        Stage(
-              "acceleration registry",
-              (sys.executable, "scripts/validate_acceleration_registry.py"),
-          ),
-          '''
-          addition = "\n".join(line[10:] if line.startswith("          ") else line for line in addition.splitlines()) + "\n"
           if "scripts/validate_acceleration_registry.py" not in gate:
-              if marker not in gate:
-                  raise RuntimeError("quality gate acceleration-contract marker not found")
-              gate = gate.replace(marker, addition, 1)
+              anchor = '        Stage("packaging model", (sys.executable, "scripts/validate_packaging_model.py")),\n'
+              registry_stage = (
+                  '        Stage(\n'
+                  '            "acceleration registry",\n'
+                  '            (sys.executable, "scripts/validate_acceleration_registry.py"),\n'
+                  '        ),\n'
+              )
+              if anchor not in gate:
+                  raise RuntimeError("quality gate packaging-model anchor not found")
+              gate = gate.replace(anchor, registry_stage + anchor, 1)
           gate_path.write_text(gate, encoding="utf-8")
           PY
 
@@ -144,7 +143,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if [[ "${QUALITY_OUTCOME}" == "success" ]]; then
-            rm -f architecture-refactor-quality.log
+            rm -f architecture-refactor-quality.log architecture-refactor-status.json
             git rm .github/workflows/architecture-refactor.yml
             git add -A
             git commit -m "refactor: unify acceleration contracts and audit compute architecture"
@@ -167,7 +166,7 @@ jobs:
                 encoding="utf-8",
             )
             PY
-            git restore . ':!.github/workflows/architecture-refactor.yml' ':!architecture-refactor-status.json'
+            git reset --hard HEAD
             git add architecture-refactor-status.json
             git commit -m "test: record acceleration refactor quality failure"
           fi

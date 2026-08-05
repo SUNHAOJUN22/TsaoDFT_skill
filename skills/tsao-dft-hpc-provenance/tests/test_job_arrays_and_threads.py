@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -23,6 +24,46 @@ def load_script(name: str):
     return module
 
 
+def resolve_posix_shell() -> str:
+    """Resolve a real POSIX shell without selecting the Windows WSL launcher."""
+
+    if os.name != "nt":
+        shell = shutil.which("bash")
+        if shell is None:
+            raise RuntimeError("bash is required for generated POSIX job-script tests")
+        return shell
+
+    candidates: list[Path] = []
+    git = shutil.which("git")
+    if git is not None:
+        git_path = Path(git)
+        candidates.extend(
+            (
+                git_path.parent.parent / "bin" / "bash.exe",
+                git_path.parent.parent / "usr" / "bin" / "bash.exe",
+            )
+        )
+    for variable in ("ProgramFiles", "ProgramW6432", "LOCALAPPDATA"):
+        base = os.environ.get(variable)
+        if not base:
+            continue
+        root = Path(base)
+        candidates.extend(
+            (
+                root / "Git" / "bin" / "bash.exe",
+                root / "Programs" / "Git" / "bin" / "bash.exe",
+            )
+        )
+    for candidate in candidates:
+        if candidate.is_file():
+            return str(candidate)
+
+    shell = shutil.which("bash")
+    if shell is not None and "system32" not in Path(shell).as_posix().casefold():
+        return shell
+    raise RuntimeError("Git for Windows Bash is required for generated POSIX job-script tests")
+
+
 class JobArrayAndThreadTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -30,6 +71,7 @@ class JobArrayAndThreadTests(unittest.TestCase):
         cls.generator = load_script("generate_job_script.py")
         cls.arrays = load_script("generate_job_array.py")
         cls.base = yaml.safe_load((ROOT / "examples/slurm/hpc-manifest.yaml").read_text(encoding="utf-8"))
+        cls.posix_shell = resolve_posix_shell()
 
     def test_thread_oversubscription_is_rejected(self):
         manifest = yaml.safe_load(yaml.safe_dump(self.base))
@@ -77,7 +119,13 @@ class JobArrayAndThreadTests(unittest.TestCase):
             manifest["parser"]["run_in_job"] = False
             job = root / "job.sh"
             job.write_text(self.generator.build(manifest), encoding="utf-8")
-            result = subprocess.run(["bash", str(job)], cwd=root, capture_output=True, text=True, check=False)
+            result = subprocess.run(
+                [self.posix_shell, str(job)],
+                cwd=root,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
             self.assertEqual(result.returncode, 7, result.stdout + result.stderr)
             self.assertIn("TsaoDFT job end:", result.stdout)
             self.assertIn("rc=7", result.stdout)
@@ -175,7 +223,7 @@ class JobArrayAndThreadTests(unittest.TestCase):
             self.arrays.generate(campaign_path, script_path, task_table)
             environment = {**os.environ, "SLURM_ARRAY_TASK_ID": "0"}
             clean = subprocess.run(
-                ["bash", str(script_path)],
+                [self.posix_shell, str(script_path)],
                 cwd=root,
                 env=environment,
                 capture_output=True,
@@ -186,7 +234,7 @@ class JobArrayAndThreadTests(unittest.TestCase):
             self.assertIn("array-ok", (root / "array.stdout").read_text(encoding="utf-8"))
             task_table.write_text(task_table.read_text(encoding="utf-8") + "\n", encoding="utf-8")
             tampered = subprocess.run(
-                ["bash", str(script_path)],
+                [self.posix_shell, str(script_path)],
                 cwd=root,
                 env=environment,
                 capture_output=True,

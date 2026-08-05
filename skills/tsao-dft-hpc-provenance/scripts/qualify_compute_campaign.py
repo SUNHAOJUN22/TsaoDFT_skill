@@ -10,7 +10,7 @@ import os
 import statistics
 import sys
 from collections import defaultdict
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
@@ -404,7 +404,7 @@ def _role_hints(campaign: dict[str, Any]) -> dict[str, str]:
 
 def _coerce_documents(
     campaign: dict[str, Any],
-    documents: list[CampaignDocument | dict[str, Any]],
+    documents: Sequence[CampaignDocument | dict[str, Any]],
 ) -> tuple[list[CampaignDocument], list[str]]:
     prepared: list[CampaignDocument] = []
     errors: list[str] = []
@@ -477,7 +477,7 @@ def _append_identity_drift(
 
 def qualify(
     campaign: dict[str, Any],
-    documents: list[CampaignDocument | dict[str, Any]],
+    documents: Sequence[CampaignDocument | dict[str, Any]],
     load_errors: list[str] | None = None,
 ) -> dict[str, Any]:
     prepared, coercion_errors = _coerce_documents(campaign, documents)

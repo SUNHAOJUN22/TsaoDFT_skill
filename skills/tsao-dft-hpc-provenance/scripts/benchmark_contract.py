@@ -8,7 +8,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from jsonschema import Draft202012Validator, FormatChecker
 from jsonschema.exceptions import SchemaError
@@ -152,6 +152,16 @@ def _text(value: Any, fallback: str = "MISSING") -> str:
     return value.strip() if isinstance(value, str) and value.strip() else fallback
 
 
+def _mapping(value: Any) -> dict[str, Any]:
+    return cast(dict[str, Any], value) if isinstance(value, dict) else {}
+
+
+def _mapping_list(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    return [cast(dict[str, Any], item) for item in value if isinstance(item, dict)]
+
+
 def _float_or(value: Any, fallback: float = 0.0) -> float:
     if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(float(value)):
         return float(value)
@@ -190,20 +200,19 @@ def _legacy_flat_to_nested(record: dict[str, Any], role_hint: str | None) -> tup
     missing = set(str(item) for item in (record.get("missing_fields") or []) if isinstance(item, str))
     engine_name = _text(record.get("engine"))
     engine_version = _text(record.get("engine_version"))
-    build = record.get("build_fingerprint") if isinstance(record.get("build_fingerprint"), dict) else {}
-    hardware = record.get("hardware_fingerprint") if isinstance(record.get("hardware_fingerprint"), dict) else {}
-    cpu = hardware.get("cpu") if isinstance(hardware.get("cpu"), dict) else {}
-    topology = hardware.get("topology") if isinstance(hardware.get("topology"), dict) else {}
-    accelerators = hardware.get("accelerators") if isinstance(hardware.get("accelerators"), list) else []
-    accelerators = [item for item in accelerators if isinstance(item, dict)]
+    build = _mapping(record.get("build_fingerprint"))
+    hardware = _mapping(record.get("hardware_fingerprint"))
+    cpu = _mapping(hardware.get("cpu"))
+    topology = _mapping(hardware.get("topology"))
+    accelerators = _mapping_list(hardware.get("accelerators"))
     primary_accelerator = accelerators[0] if accelerators else {}
-    scheduler = record.get("scheduler") if isinstance(record.get("scheduler"), dict) else {}
-    filesystem = record.get("filesystem") if isinstance(record.get("filesystem"), dict) else {}
-    binding = record.get("binding") if isinstance(record.get("binding"), dict) else {}
-    convergence = record.get("convergence") if isinstance(record.get("convergence"), dict) else {}
-    results = record.get("scientific_results") if isinstance(record.get("scientific_results"), dict) else {}
-    mpi = record.get("mpi") if isinstance(record.get("mpi"), dict) else {}
-    openmp = record.get("openmp_runtime") if isinstance(record.get("openmp_runtime"), dict) else {}
+    scheduler = _mapping(record.get("scheduler"))
+    filesystem = _mapping(record.get("filesystem"))
+    binding = _mapping(record.get("binding"))
+    convergence = _mapping(record.get("convergence"))
+    results = _mapping(record.get("scientific_results"))
+    mpi = _mapping(record.get("mpi"))
+    openmp = _mapping(record.get("openmp_runtime"))
 
     if not record.get("engine_executable"):
         missing.add("engine executable unavailable in legacy flat v1.0")
@@ -242,12 +251,8 @@ def _legacy_flat_to_nested(record: dict[str, Any], role_hint: str | None) -> tup
         if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(float(value)):
             scientific_results["properties"][key] = float(value)
 
-    model_identity = results.get("model_identity") if isinstance(results.get("model_identity"), dict) else {}
-    thresholds = (
-        results.get("convergence_thresholds")
-        if isinstance(results.get("convergence_thresholds"), dict)
-        else {"legacy_missing": 0.0}
-    )
+    model_identity = _mapping(results.get("model_identity"))
+    thresholds = _mapping(results.get("convergence_thresholds")) or {"legacy_missing": 0.0}
     observable_set = [
         name
         for name, key in (

@@ -157,9 +157,7 @@ class SignalVisitor(ast.NodeVisitor):
     def visit_Call(self, node: ast.Call) -> None:
         name = self.call_name(node.func)
         self.subprocess_calls += int(name.startswith(("subprocess.", "os.system")))
-        self.file_reads += int(
-            name.endswith(("read_text", "read_bytes", "read", "readlines"))
-        )
+        self.file_reads += int(name.endswith(("read_text", "read_bytes", "read", "readlines")))
         self.generic_visit(node)
 
 
@@ -175,19 +173,14 @@ def _tracked_paths(root: Path) -> list[Path]:
     except (OSError, subprocess.TimeoutExpired):
         completed = None
     if completed is not None and completed.returncode == 0:
-        candidates = [
-            root / item
-            for item in completed.stdout.decode("utf-8").split("\0")
-            if item
-        ]
+        candidates = [root / item for item in completed.stdout.decode("utf-8").split("\0") if item]
     else:
         candidates = list(root.rglob("*"))
     return sorted(
         (
             path
             for path in candidates
-            if path.is_file()
-            and not EXCLUDED_PARTS.intersection(path.relative_to(root).parts)
+            if path.is_file() and not EXCLUDED_PARTS.intersection(path.relative_to(root).parts)
         ),
         key=lambda path: path.as_posix(),
     )
@@ -278,9 +271,7 @@ def build_report(root: Path) -> dict[str, Any]:
         try:
             tree = ast.parse(text)
         except SyntaxError as exc:
-            parse_failures.append(
-                {"path": relative, "error": f"line {exc.lineno or 0}: {exc.msg}"}
-            )
+            parse_failures.append({"path": relative, "error": f"line {exc.lineno or 0}: {exc.msg}"})
             continue
         signals = SignalVisitor()
         signals.visit(tree)
@@ -319,9 +310,7 @@ def build_report(root: Path) -> dict[str, Any]:
     python_share = round(100.0 * python_lines / source_lines, 2) if source_lines else 0.0
     native_share = round(100.0 * native_lines / source_lines, 2) if source_lines else 0.0
     candidates.sort(key=lambda item: (-int(item["score"]), str(item["path"])))
-    numeric_roles = python_roles["numeric-candidate"] + python_roles[
-        "mixed-control-and-numeric"
-    ]
+    numeric_roles = python_roles["numeric-candidate"] + python_roles["mixed-control-and-numeric"]
     conclusion = (
         "Python is predominantly the orchestration, validation, parsing and evidence "
         "control plane; external DFT engines remain the compute plane."
@@ -430,15 +419,10 @@ def render_markdown(report: dict[str, Any]) -> str:
     )
     candidates = report["ranked_static_candidates"][:20]
     if candidates:
-        lines.extend(
-            ["| Path | Score | Evidence | Action |", "|---|---:|---|---|"]
-        )
+        lines.extend(["| Path | Score | Evidence | Action |", "|---|---:|---|---|"])
         for item in candidates:
             evidence = "; ".join(item["reasons"]).replace("|", "\\|")
-            lines.append(
-                f"| `{item['path']}` | {item['score']} | {evidence} | "
-                f"`{item['recommended_action']}` |"
-            )
+            lines.append(f"| `{item['path']}` | {item['score']} | {evidence} | `{item['recommended_action']}` |")
     else:
         lines.append("No static candidate crossed the conservative threshold.")
     lines.extend(["", "## Required implementation sequence", ""])

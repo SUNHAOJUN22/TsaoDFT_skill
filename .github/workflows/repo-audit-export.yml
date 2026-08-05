@@ -1,0 +1,38 @@
+name: Repository audit export
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/repo-audit-export.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+
+      - name: Package repository snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar --exclude=.git --exclude=repo-snapshot.tar.gz -czf repo-snapshot.tar.gz .
+          find . -path ./.git -prune -o -type f -print | LC_ALL=C sort > repo-file-list.txt
+
+      - name: Upload repository snapshot
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: repo-audit-${{ github.sha }}
+          path: |
+            repo-snapshot.tar.gz
+            repo-file-list.txt
+          if-no-files-found: error
+          retention-days: 1

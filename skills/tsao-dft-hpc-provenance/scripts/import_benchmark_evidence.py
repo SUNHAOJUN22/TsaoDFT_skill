@@ -63,9 +63,7 @@ def import_with_schema(
     schema = load_json(schema_path)
     contract_mode = contract.approved_schema_kind(schema)
     if require_authoritative and contract_mode != "canonical-nested-v1.1":
-        raise ValueError(
-            "formal qualification requires the authoritative nested v1.1 benchmark-result schema"
-        )
+        raise ValueError("formal qualification requires the authoritative nested v1.1 benchmark-result schema")
     records: list[dict[str, Any]] = []
     failures: list[dict[str, Any]] = []
     tasks: list[ValidationTask] = []

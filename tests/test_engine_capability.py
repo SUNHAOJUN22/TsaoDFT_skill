@@ -14,13 +14,7 @@ from typing import Any
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-MODULE_PATH = (
-    ROOT
-    / "skills"
-    / "tsao-dft-hpc-provenance"
-    / "scripts"
-    / "engine_capability.py"
-)
+MODULE_PATH = ROOT / "skills" / "tsao-dft-hpc-provenance" / "scripts" / "engine_capability.py"
 VALIDATOR_PATH = ROOT / "scripts" / "validate_engine_capabilities.py"
 
 

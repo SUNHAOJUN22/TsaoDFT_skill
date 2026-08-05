@@ -59,10 +59,7 @@ entries:
     reason: strict mypy receives sys.executable, fixed flags and repository-owned targets through argv with shell disabled.
   - path: scripts/audit_compute_architecture.py
     test_id: B404
-    reason: subprocess is imported only to query tracked repository files with the fixed read-only git ls-files command.
-  - path: scripts/audit_compute_architecture.py
-    test_id: B607
-    reason: the only partial executable path is the fixed git command used for repository inventory; no user command text is accepted.
+    reason: subprocess is used only for a read-only git ls-files inventory; the executable is resolved to an absolute path and no shell is used.
   - path: scripts/audit_compute_architecture.py
     test_id: B603
-    reason: git ls-files is invoked through a fixed argv list with shell disabled, a bounded timeout, and repository-controlled cwd.
+    reason: the audit executes the resolved git binary with a fixed argv list, a repository path as cwd and no user-provided command text.

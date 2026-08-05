@@ -168,7 +168,7 @@ def validate() -> dict[str, Any]:
             errors.append("benchmark importer still rewrites records to semantic schema v1.0")
         if "def validate_canonical_result" not in performance_source:
             errors.append("native canonical semantic validator is missing")
-        if "validate_canonical_result as validate_result" not in importer_source:
+        if "validate_result = performance.validate_canonical_result" not in importer_source:
             errors.append("formal importer is not wired directly to native canonical semantics")
 
         bridge_source = BRIDGE.read_text(encoding="utf-8")

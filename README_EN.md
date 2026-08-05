@@ -12,13 +12,14 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-539%20passing-16A34A" alt="539 tests passing">
-  <img src="https://img.shields.io/badge/coverage-94.38%25%20stmt%20%7C%2084.41%25%20branch-16A34A" alt="94.38 percent statement and 84.41 percent branch coverage">
+  <img src="https://img.shields.io/badge/tests-559%20passing-16A34A" alt="559 tests passing">
+  <img src="https://img.shields.io/badge/Linux%20coverage-94.44%25%20stmt%20%7C%2084.61%25%20branch-16A34A" alt="Linux 94.44 percent statement and 84.61 percent branch coverage">
+  <img src="https://img.shields.io/badge/Windows%20PowerShell-PASS-1687FF" alt="Windows PowerShell control plane pass">
   <img src="https://img.shields.io/badge/public%20support-L2_VALIDATED_ADAPTER-6D5DFB" alt="Public support L2 validated adapter">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
 
-> **AI image declaration | AI-GENERATED CONCEPTUAL ILLUSTRATION:** the overview below follows an AI-assisted Hero-Centric + Evidence Bento visual direction. Molecules, lattices, orbital-like forms, servers and data interfaces communicate research context only; they are not outputs from Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD or experiment. The architecture gallery is made from repository-controlled deterministic SVGs. Every conceptual or synthetic asset is labelled, and quantitative claims still require accepted source files, calculation artifacts and reproducible scripts.
+> **AI image declaration | AI-GENERATED CONCEPTUAL ILLUSTRATION:** the overview below follows an AI-assisted Hero-Centric + Evidence Bento visual direction. Molecules, lattices, orbital-like forms, servers and data interfaces communicate research context only; they are not outputs from Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD or experiment. The remaining architecture figures use an AI-assisted visual language but are repository-controlled deterministic SVGs. Every conceptual or synthetic asset is labelled, and quantitative claims still require accepted source files, calculation artifacts and reproducible scripts.
 
 <p align="center">
   <img src="assets/ai/hero/tsao-dft-hero.svg" width="100%" alt="TsaoDFT evidence-first DFT research operating system conceptual overview">
@@ -84,7 +85,7 @@ The following figures are controlled by repository scripts and fixed synthetic d
 
 ## Acceleration architecture gallery
 
-The five deterministic SVGs below explain how the repository may consume C++, OpenMP, Kokkos, CUDA-X, edge inference and real-engine capabilities. Their visual direction is AI-assisted, but the actual assets are repository-defined, reproducible and ineligible as scientific or performance data.
+The nine deterministic SVGs below explain how the repository may consume C++, OpenMP, Kokkos, CUDA-X, ROCm, oneAPI, Metal, edge inference and real-engine capabilities. Their visual direction is AI-assisted, but the actual assets are repository-defined, reproducible and ineligible as scientific or performance data.
 
 <table>
 <tr>
@@ -98,9 +99,46 @@ The five deterministic SVGs below explain how the repository may consume C++, Op
 <tr>
 <td colspan="2"><img src="assets/demo/evidence-qualification-pipeline.svg" width="100%" alt="Scoped L3 acceleration evidence qualification pipeline"></td>
 </tr>
+<tr>
+<td><img src="assets/demo/acceleration-registry-governance.svg" width="100%" alt="Canonical acceleration registry governance"></td>
+<td><img src="assets/demo/backend-portability-stack.svg" width="100%" alt="Backend portability stack"></td>
+</tr>
+<tr>
+<td><img src="assets/demo/windows-linux-execution-matrix.svg" width="100%" alt="Windows and Linux execution matrix"></td>
+<td><img src="assets/demo/scientific-acceleration-funnel.svg" width="100%" alt="Scientific acceleration qualification funnel"></td>
+</tr>
 </table>
 
 See [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md) and [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md).
+
+## Executable acceleration registry and architecture audit
+
+Acceleration libraries, backends and aliases are no longer independently maintained by multiple planners. The authoritative fact source is:
+
+```text
+skills/tsao-dft-hpc-provenance/scripts/acceleration_registry.py
+```
+
+It governs **27** CUDA-X, ROCm, oneAPI, Metal and portable interfaces, then exposes two compatible views:
+
+- `plan_acceleration.py` for engine builds and candidate plans;
+- `hardware_optimization_contract.py` for workload, edge-runtime and hardware decisions.
+
+The permanent Linux and Windows gates compare libraries, aliases, backends and vendor compatibility field by field. Silent drift fails before capability claims:
+
+```bash
+python scripts/validate_acceleration_registry.py --json
+```
+
+The repository also provides an executable static compute-architecture audit:
+
+```bash
+python scripts/audit_compute_architecture.py \
+  --json-out build/compute-architecture.json \
+  --markdown-out build/compute-architecture.md
+```
+
+The current audit observes that **Python represents 99.48% of audited source lines and repository-native languages represent 0.0%**. This is source composition—not runtime, bottleneck or evidence that the repository should be rewritten wholesale in C++. The 40 ranked candidates are also conservative static candidates only; representative profiling must establish a hotspot before migration to C++, OpenMP, Kokkos, CUDA, HIP or SYCL.
 
 ## Python, C++ and GPU responsibilities
 
@@ -120,12 +158,14 @@ The rule is: **profile first; vectorise before native migration; retain the CPU 
 
 | Library / route | Valid use | Invalid interpretation |
 |---|---|---|
-| cuBLAS / cuSOLVER | Large repeated dense matrices already resident on GPU | “Python code is automatically accelerated” |
+| cuBLAS / cuSOLVER / cuSOLVERMp | Large repeated dense matrices or distributed solves already resident on GPU | “Python code is automatically accelerated” |
 | cuFFT / cuFFTMp | Supported external-engine builds or an explicit repository FFT kernel | A Python wrapper automatically accelerates VASP/QE/CP2K |
 | cuSPARSE | A measured sparse-matrix hotspot | A generic optimisation for small dense tables |
 | cuTENSOR | Profiled high-order contractions, permutations and reductions | A universal external-DFT switch |
 | cuEquivariance | Accepted MACE, NequIP, e3nn or related equivariant models | A Kohn–Sham DFT accelerator |
 | NCCL / NVSHMEM | Compatible multi-GPU communication and distributed workloads | Single-GPU, small-file or Parser optimisation |
+| rocBLAS / rocSOLVER / rocFFT / RCCL | Explicit HIP/ROCm engine builds or repository kernels | Automatically translating an NVIDIA build into an AMD build |
+| oneMKL / oneCCL / OpenVINO | Explicit SYCL/oneAPI numerical or edge-inference routes | An unvalidated universal cross-vendor replacement |
 | TensorRT / ONNX Runtime | Edge surrogate inference with UQ/OOD and remote-DFT fallback | A replacement for production DFT |
 
 ## Support levels
@@ -264,16 +304,18 @@ python -m pip check
 python scripts/quality_gate.py
 ```
 
-Current Linux code-qualification baseline: **539 tests, 9 isolated suites, 0 failed suites; 94.38% statement and 84.41% branch coverage.**
+Current Linux code-qualification baseline: **559 tests, 9 isolated suites, 0 failed suites; 94.44% statement and 84.61% branch coverage.**
 
-The permanent Windows job runs the same **539 tests** and measures **94.32% statement / 84.22% branch coverage**. `generate_job_script.py` remains at **100% statement / 100% branch coverage** on Linux and Windows.
+The permanent Windows job runs the same **559 tests** and measures **94.38% statement / 84.42% branch coverage**. `generate_job_script.py` remains at **100% statement / 100% branch coverage** on Linux and Windows.
 
-The permanent gate covers 9 isolated test suites, Python 3.10 / 3.12 / 3.13, Windows PowerShell, statement and branch coverage, 18 mypy targets, 4 strict trust-boundary type targets, Ruff, Bandit, repository audit, CodeQL, three `pip-audit` modes and CycloneDX JSON SBOM. Supply-chain reports and the SBOM are preserved before a failing audit makes the workflow fail.
+The permanent gate covers 9 isolated test suites, Python 3.10 / 3.12 / 3.13, Windows PowerShell, acceleration-registry drift, executable compute-architecture audit, statement and branch coverage, 18 mypy targets, 4 strict trust-boundary type targets, Ruff, Bandit, repository audit, CodeQL, three `pip-audit` modes and CycloneDX JSON SBOM. Supply-chain reports and the SBOM are preserved before a failing audit makes the workflow fail.
 
 ```text
 assets and executable contracts
 → dependency and constraint validation
 → acceleration evidence schema/policy validation
+→ canonical acceleration registry drift validation
+→ executable compute architecture audit
 → governance, capability and security validators
 → Ruff lint and formatting
 → isolated mypy + strict trust-boundary mypy

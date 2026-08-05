@@ -403,7 +403,7 @@ def build_powershell(manifest: dict[str, Any]) -> str:
             lines.append(f"$env:GAUSS_SCRDIR = {scratch_path}")
     lines += ["", f"Set-Location -LiteralPath {ps_literal(manifest['workdir'])}"]
     lines.extend(powershell_approval_guard(manifest))
-    lines.append('Write-Output "TsaoDFT job start: $((Get-Date).ToString(\'o\'))"')
+    lines.append("Write-Output \"TsaoDFT job start: $((Get-Date).ToString('o'))\"")
     lines.extend(powershell_runtime_provenance(manifest))
 
     preflight = manifest["preflight"]
@@ -428,7 +428,7 @@ def build_powershell(manifest: dict[str, Any]) -> str:
         invoke.append(f"-StandardOutputPath {ps_literal(stdout)}")
     invoke.append(f"-StandardErrorPath {ps_literal(stderr)}")
     lines.append(" `\n  ".join(invoke))
-    lines.append('Write-Output "TsaoDFT job end: $((Get-Date).ToString(\'o\')) rc=$engineRc"')
+    lines.append("Write-Output \"TsaoDFT job end: $((Get-Date).ToString('o')) rc=$engineRc\"")
 
     parser_contract = manifest["parser"]
     lines.append("$parserRc = 0")
@@ -437,7 +437,7 @@ def build_powershell(manifest: dict[str, Any]) -> str:
             [
                 f"$parserArgv = {render_powershell_argv(parser_contract['argv'])}",
                 "$parserRc = Invoke-TsaoProcess -Argv $parserArgv",
-                'Write-Output "TsaoDFT parser end: $((Get-Date).ToString(\'o\')) rc=$parserRc"',
+                "Write-Output \"TsaoDFT parser end: $((Get-Date).ToString('o')) rc=$parserRc\"",
             ]
         )
     lines.extend(["if ($engineRc -ne 0) { exit $engineRc }", "exit $parserRc"])

@@ -95,7 +95,11 @@ def validate_campaign(campaign: Any) -> list[str]:
     if engine not in ENGINES:
         errors.append(f"engine must be one of {sorted(ENGINES)}")
     candidates = campaign.get("candidate_ids")
-    if not isinstance(candidates, list) or not candidates or not all(isinstance(item, str) and item for item in candidates):
+    if (
+        not isinstance(candidates, list)
+        or not candidates
+        or not all(isinstance(item, str) and item for item in candidates)
+    ):
         errors.append("candidate_ids must be a non-empty list of strings")
         candidates = []
     elif len(candidates) != len(set(candidates)):
@@ -121,7 +125,12 @@ def validate_campaign(campaign: Any) -> list[str]:
                 continue
             for field in ("absolute", "relative"):
                 value = raw[field]
-                if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(float(value)) or value < 0:
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(value, (int, float))
+                    or not math.isfinite(float(value))
+                    or value < 0
+                ):
                     errors.append(f"numerical_tolerances.{name}.{field} must be finite and >= 0")
     return errors
 
@@ -142,7 +151,9 @@ def _load_validated(path: Path, validator: Draft202012Validator) -> tuple[str, d
     return path.as_posix(), document, rendered
 
 
-def load_results(paths: list[Path], schema: dict[str, Any], workers: int | None = None) -> tuple[list[dict[str, Any]], list[str]]:
+def load_results(
+    paths: list[Path], schema: dict[str, Any], workers: int | None = None
+) -> tuple[list[dict[str, Any]], list[str]]:
     ordered = sorted((Path(path) for path in paths), key=lambda path: path.as_posix())
     validator = Draft202012Validator(schema, format_checker=FormatChecker())
     count = normalized_workers(workers, len(ordered))
@@ -180,7 +191,9 @@ def _compare(reference: Any, candidate: Any, absolute: float, relative: float, p
     return [f"{path}: scientific result type mismatch"]
 
 
-def qualify(campaign: dict[str, Any], documents: list[dict[str, Any]], load_errors: list[str] | None = None) -> dict[str, Any]:
+def qualify(
+    campaign: dict[str, Any], documents: list[dict[str, Any]], load_errors: list[str] | None = None
+) -> dict[str, Any]:
     errors = [*validate_campaign(campaign), *(load_errors or [])]
     holds: list[str] = []
     if not documents:
@@ -276,7 +289,13 @@ def qualify(campaign: dict[str, Any], documents: list[dict[str, Any]], load_erro
             if ratio < threshold:
                 errors.append(f"{candidate_id}: performance threshold was not met")
 
-    state = QUALIFIED_FOR_REVIEW if not errors and not holds and performance["evaluated"] else EXTERNAL_HOLD if holds else UNQUALIFIED
+    state = (
+        QUALIFIED_FOR_REVIEW
+        if not errors and not holds and performance["evaluated"]
+        else EXTERNAL_HOLD
+        if holds
+        else UNQUALIFIED
+    )
     return {
         "ok": not errors,
         "state": state,

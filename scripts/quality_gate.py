@@ -32,6 +32,10 @@ def stages(include_tests: bool = True) -> list[Stage]:
             (sys.executable, "scripts/validate_acceleration_contracts.py"),
         ),
         Stage(
+            "benchmark contract",
+            (sys.executable, "scripts/validate_benchmark_contract.py"),
+        ),
+        Stage(
             "acceleration registry",
             (sys.executable, "scripts/validate_acceleration_registry.py"),
         ),

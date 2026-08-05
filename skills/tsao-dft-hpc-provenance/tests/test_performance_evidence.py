@@ -149,7 +149,6 @@ class PerformanceEvidenceTests(unittest.TestCase):
                 }
             ],
             "evidence_source": {"kind": source, "source_id": run_id, "missing_fields": []},
-            "review": {"status": "pending", "reviewer": "", "reviewed_at": ""},
         }
 
     def validated(self, records: list[dict]) -> list[dict]:
@@ -179,6 +178,7 @@ class PerformanceEvidenceTests(unittest.TestCase):
         normalized, errors, warnings = self.core.validate_result(self.reference_records()[0], self.artifact_root)
         self.assertEqual(errors, [])
         self.assertEqual(warnings, [])
+        self.assertEqual(normalized["schema_version"], "1.1")
         self.assertTrue(self.core.all_artifacts_verified(normalized))
 
     def test_valid_single_gpu_result(self):
@@ -327,10 +327,16 @@ class PerformanceEvidenceTests(unittest.TestCase):
         reverse = self.core.compare_evidence(list(reversed(records)), self.policy)
         self.assertEqual(forward, reverse)
 
-    def test_fabricated_l3_label_is_ignored(self):
+    def test_fabricated_l3_label_is_rejected_by_contract(self):
+        record = self.gpu_records()[0]
+        record["support_level"] = "L3_EXECUTION_TESTED"
+        normalized, errors, _ = self.core.validate_result(record, self.artifact_root)
+        self.assertFalse(normalized["validation"]["ok"])
+        self.assertTrue(any("Additional properties" in error or "support_level" in error for error in errors))
+
+    def test_non_real_canonical_evidence_remains_l2_only(self):
         candidates = self.gpu_records()
         for record in candidates:
-            record["support_level"] = "L3_EXECUTION_TESTED"
             record["evidence_source"]["kind"] = "test-fixture"
         records = self.validated([*self.reference_records(), *candidates])
         summary = self.core.compare_evidence(records, self.policy)
@@ -338,7 +344,6 @@ class PerformanceEvidenceTests(unittest.TestCase):
             summary["candidates"]["gpu-1"], summary["reference_status"], self.policy, self.approved_review()
         )
         self.assertEqual(status, "L2_ONLY")
-        self.assertEqual(summary["candidates"]["gpu-1"]["reported_support_level_ignored"], ["L3_EXECUTION_TESTED"])
 
     def test_real_reviewed_evidence_can_be_scoped_qualified(self):
         records = self.validated([*self.reference_records(), *self.gpu_records()])
@@ -386,6 +391,7 @@ class PerformanceEvidenceTests(unittest.TestCase):
         records, report = self.core.import_evidence(paths, self.artifact_root)
         self.assertTrue(report["ok"])
         self.assertEqual(len(records), 3)
+        self.assertTrue(all(record["schema_version"] == "1.1" for record in records))
 
     def test_csv_dotted_field_import(self):
         path = self.artifact_root / "record.csv"

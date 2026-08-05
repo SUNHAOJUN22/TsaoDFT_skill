@@ -14,13 +14,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 from jsonschema.exceptions import SchemaError
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_SCHEMA = (
-    ROOT
-    / "skills"
-    / "tsao-dft-hpc-provenance"
-    / "templates"
-    / "benchmark-result-flat-v1.0.schema.json"
-)
+DEFAULT_SCHEMA = ROOT / "skills" / "tsao-dft-hpc-provenance" / "templates" / "benchmark-result-flat-v1.0.schema.json"
 DEFAULT_POLICY = ROOT / "templates" / "performance-qualification-policy.yaml"
 
 REQUIRED_RESULT_FIELDS = {

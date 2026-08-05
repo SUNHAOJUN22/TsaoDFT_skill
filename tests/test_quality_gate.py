@@ -30,7 +30,8 @@ class QualityGateTests(unittest.TestCase):
         self.assertEqual(names[1], "dependency contract")
         self.assertLess(names.index("dependency contract"), names.index("Ruff lint"))
         self.assertLess(names.index("CI constraints"), names.index("acceleration contracts"))
-        self.assertLess(names.index("acceleration contracts"), names.index("capability claims"))
+        self.assertLess(names.index("acceleration contracts"), names.index("acceleration registry"))
+        self.assertLess(names.index("acceleration registry"), names.index("capability claims"))
         self.assertEqual(names[-1], "unit tests")
 
     def test_skip_tests_removes_only_unit_test_stage(self):

@@ -34,9 +34,20 @@ def _reject_constant(value: str) -> None:
     raise QualificationLoadError(f"non-finite JSON constant is forbidden: {value}")
 
 
+def _parse_finite_float(value: str) -> float:
+    parsed = float(value)
+    if not math.isfinite(parsed):
+        raise QualificationLoadError(f"non-finite JSON number is forbidden: {value}")
+    return parsed
+
+
 def load_json(path: Path) -> dict[str, Any]:
     try:
-        value = json.loads(path.read_text(encoding="utf-8"), parse_constant=_reject_constant)
+        value = json.loads(
+            path.read_text(encoding="utf-8"),
+            parse_constant=_reject_constant,
+            parse_float=_parse_finite_float,
+        )
     except (OSError, UnicodeError, json.JSONDecodeError, QualificationLoadError) as exc:
         raise QualificationLoadError(f"cannot load {path.name}: {exc}") from exc
     if type(value) is not dict:

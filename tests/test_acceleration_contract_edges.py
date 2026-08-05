@@ -8,6 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 
 import yaml
 
@@ -64,19 +65,17 @@ class AccelerationContractEdgeTests(unittest.TestCase):
         malformed = copy.deepcopy(current)
         malformed["type"] = "array"
         malformed["additionalProperties"] = True
-        malformed["required"] = [1]
-        malformed["properties"] = []
+        malformed["required"] = []
         failures = contracts.validate_schema_contract(malformed)
         self.assertIn("benchmark result schema root type must be object", failures)
         self.assertIn("benchmark result schema must reject unknown top-level fields", failures)
         self.assertTrue(any("missing required fields" in failure for failure in failures))
-        self.assertIn("benchmark result schema properties must be a mapping", failures)
 
         malformed = copy.deepcopy(current)
-        malformed["properties"]["wall_time_seconds"] = "number"
+        malformed["properties"]["wall_time_seconds"] = {"type": "number", "minimum": 0}
         malformed["properties"]["timestamp"] = {"type": "string"}
-        malformed["properties"]["evidence_source"] = []
-        malformed["$defs"] = []
+        malformed["properties"]["evidence_source"] = {"enum": ["simulation"]}
+        malformed["$defs"]["sha256"] = {"type": "string", "pattern": "x"}
         malformed["allOf"] = []
         failures = contracts.validate_schema_contract(malformed)
         self.assertIn("wall_time_seconds must be strictly positive", failures)
@@ -87,6 +86,12 @@ class AccelerationContractEdgeTests(unittest.TestCase):
             "benchmark result schema must conditionally require complete accepted-run evidence",
             failures,
         )
+
+        malformed = copy.deepcopy(current)
+        malformed["properties"] = []
+        with patch.object(contracts.Draft202012Validator, "check_schema", return_value=None):
+            failures = contracts.validate_schema_contract(malformed)
+        self.assertIn("benchmark result schema properties must be a mapping", failures)
 
     def test_policy_contract_reports_every_gate(self) -> None:
         current = contracts.load_yaml_mapping(contracts.DEFAULT_POLICY)

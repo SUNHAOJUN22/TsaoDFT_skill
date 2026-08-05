@@ -88,19 +88,60 @@ python scripts/engine_capability.py \
 
 `IDENTITY_VERIFIED` means that the build identity is complete. It is not numerical or performance qualification. Missing engine access, license, build identity or authorization remains `EXTERNAL_HOLD`.
 
-## Reproducible CPU/accelerator qualification
+## Compute-campaign policy authority and migration
 
-`qualify_compute_campaign.py` no longer consumes `compute_qualification_view`. Every input now follows one mandatory path:
+The compute-campaign configuration is a policy and participant-selection contract. It is independent of the benchmark-result evidence contract even though both canonical contracts currently use version `1.1`.
+
+The authoritative closed Draft 2020-12 Schema is:
 
 ```text
-raw canonical or explicit legacy input
+templates/compute-qualification-campaign.schema.json
+```
+
+The repository-level `../../templates/compute-qualification-campaign.schema.json` is a byte-identical mirror. The historical configuration contract remains explicit at:
+
+```text
+templates/compute-qualification-campaign-v1.0.schema.json
+```
+
+Canonical campaign v1.1 replaces the implicit `reference_candidate_id` plus `candidate_ids` split with explicit participants:
+
+```yaml
+schema_version: "1.1"
+participants:
+  - candidate_id: CPU-FP64-REFERENCE
+    role: scientific-reference
+  - candidate_id: GPU-CANDIDATE
+    role: acceleration-candidate
+```
+
+`compute_campaign_contract.py` is the only loader and migration authority. It rejects duplicate YAML or JSON keys before object construction, rejects non-finite constants and exponent overflow, validates a closed Schema with no defaults, then enforces semantic invariants that JSON Schema alone cannot express cleanly. These include globally unique candidate identities across roles, exactly one scientific reference, at least one acceleration candidate and non-whitespace identifiers.
+
+A legal v1.0 campaign is accepted only by the central adapter. Migration performs one explicit operation: it converts `reference_candidate_id` and `candidate_ids` into typed participant records. It records `NO_EVIDENCE_PROMOTION`, `defaults_applied: []` and `evidence_fields_added: []`. It does not infer a solver, executable, license, run, hardware, scientific result or any other benchmark evidence, and therefore cannot remove an existing `EXTERNAL_HOLD`.
+
+Unknown versions, mixed v1.0/v1.1 role fields, duplicate roles or identities, invalid repeat counts, invalid ratios, malformed or non-finite tolerances, type confusion and additional fields fail closed. There are no valid-contract defaults for repeat counts, ratios or tolerance values.
+
+Both `CampaignConfig` and `CampaignDocument` recursively freeze nested mappings and sequences. Callers receive explicit detached copies for validation or downstream libraries, so mutation after validation cannot alter the policy or evidence being qualified.
+
+## Reproducible CPU/accelerator qualification
+
+`qualify_compute_campaign.py` no longer consumes `compute_qualification_view`. Every input now follows two independent central boundaries:
+
+```text
+campaign YAML/JSON
+  -> compute_campaign_contract.load_campaign()
+  -> closed Schema + semantic validation
+  -> explicit v1.0-to-v1.1 policy migration when required
+  -> immutable CampaignConfig
+
+benchmark result JSON
   -> benchmark_contract.normalize_record()
   -> performance_evidence.validate_canonical_result()
-  -> CampaignDocument typed canonical accessor
+  -> immutable CampaignDocument typed accessor
   -> identity, numerical and performance gates
 ```
 
-The campaign therefore reads canonical nested v1.1 fields directly. It does not flatten engine, software, hardware, execution, scientific, performance, artifact or provenance structures before qualification. Legacy flat v1.0 may still enter through the explicit central adapter, but its `imported-unverified` source, migration impact and irrecoverable missing fields keep the campaign on `EXTERNAL_HOLD`. Custom Schemas are rejected from this workflow.
+The campaign therefore reads canonical nested v1.1 evidence fields directly. It does not flatten engine, software, hardware, execution, scientific, performance, artifact or provenance structures before qualification. Legacy flat benchmark-result v1.0 may still enter through its separate explicit central adapter, but its `imported-unverified` source, migration impact and irrecoverable missing fields keep the campaign on `EXTERNAL_HOLD`. Custom benchmark-result Schemas are rejected from this workflow.
 
 The former projection lost or weakened material qualification evidence:
 
@@ -128,7 +169,7 @@ A canonical campaign can reach `QUALIFIED_FOR_REVIEW` only when all of the follo
 - property-specific numerical equivalence within declared absolute and relative tolerances;
 - a finite median reference-over-candidate wall-time ratio that meets the declared threshold.
 
-Before Schema validation, the evidence loaders reject non-standard `NaN`/`Infinity` constants and exponent overflow such as `1e999`. Non-finite wall times, nested result arrays, convergence thresholds or scientific properties therefore cannot enter equivalence, median or performance-ratio calculations. Standard-result/property key collisions also fail closed instead of inheriting the lossy projection's overwrite behavior.
+Before Schema validation, the campaign and evidence loaders reject non-standard `NaN`/`Infinity` constants and exponent overflow such as `1e999`. Non-finite thresholds, wall times, nested result arrays, convergence thresholds or scientific properties therefore cannot enter equivalence, median or performance-ratio calculations. Standard-result/property key collisions also fail closed instead of inheriting the lossy projection's overwrite behavior.
 
 ```bash
 python ../../scripts/validate_compute_qualification.py --json
@@ -144,15 +185,19 @@ Without real GPU, licensed solver, engine build, site/run/hardware identity, ver
 
 ## Machine-readable contract evidence
 
-The permanent quality gate writes `compute-contract-evidence.json` from the acceleration registry, benchmark contract, EngineCapability and compute-qualification validators without invoking an external engine. Evidence Schema v1.3 records:
+The permanent quality gate writes `compute-contract-evidence.json` from the acceleration registry, benchmark contract, EngineCapability and compute-qualification validators without invoking an external engine. Evidence Schema v1.4 records:
 
 - canonical acceleration registry validation and runtime single-source status;
-- nested v1.1 benchmark authority and root-mirror digest;
-- native semantic version `1.1`;
-- `compatibility_view_present: false` for the removed nested-v1.0 semantic downgrade view;
+- nested v1.1 benchmark-result authority and root-mirror digest;
+- native benchmark-result semantic version `1.1`;
+- canonical compute-campaign v1.1 authority, Schema digest and synchronized root mirror;
+- legal campaign v1.0 migration, no-default and no-evidence-creation guarantees;
+- campaign and benchmark-result contract independence;
+- immutable campaign policy and evidence accessors;
+- unknown or mixed campaign input as `FAIL_CLOSED`;
+- `compatibility_view_present: false` for the removed benchmark nested-v1.0 semantic downgrade view;
 - `legacy_semantic_bypass: FAIL_CLOSED`;
-- supported central legacy migrations;
-- flat v1.0 migration impact as `EXTERNAL_HOLD` and unknown/mixed input as `FAIL_CLOSED`;
+- flat benchmark-result v1.0 migration impact as `EXTERNAL_HOLD`;
 - compute campaign input model `canonical-nested-v1.1-typed-accessor`;
 - mandatory central normalization and native semantic validation;
 - diagnostic projection retained, not consumed, and `NOT_ELIGIBLE` for qualification;
@@ -179,12 +224,13 @@ The root quality gate now runs, in order:
 2. single-authority benchmark-result contract, native v1.1 semantics and migration validation;
 3. canonical acceleration registry validation;
 4. EngineCapability validation;
-5. native canonical compute qualification and projection-isolation validation;
-6. machine-readable compute contract evidence capture;
-7. compute architecture audit;
-8. lint, formatting, typing, evidence-bound coverage, security and repository tests.
+5. closed canonical compute-campaign contract, migration and immutable-access validation;
+6. native canonical compute qualification and projection-isolation validation;
+7. machine-readable compute contract evidence capture;
+8. compute architecture audit;
+9. lint, formatting, typing, evidence-bound coverage, security and repository tests.
 
-The benchmark and compute-contract gates perform table-driven negative regression over canonical/legacy/custom inputs, rare flat-field combinations, missing and contradictory provenance, role and version migration, site/run/build/hardware identity, multi-GPU UUID stability, artifact status, non-finite values, projection collision/equivalence boundaries and unknown or mixed shapes.
+The benchmark and compute-contract gates perform table-driven negative regression over canonical/legacy/custom evidence, canonical/legacy campaign policies, rare flat-field combinations, duplicate keys and identities, missing and contradictory provenance, role and version migration, site/run/build/hardware identity, multi-GPU UUID stability, artifact status, non-finite values, projection collision/equivalence boundaries and unknown or mixed shapes.
 
 ```bash
 python ../../scripts/quality_gate.py

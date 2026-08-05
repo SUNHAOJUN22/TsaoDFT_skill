@@ -194,7 +194,7 @@ class ParallelControlPlaneTests(unittest.TestCase):
         lock = threading.Lock()
         records = [
             {
-                "schema_version": "2.0",
+                "schema_version": "1.1",
                 "benchmark_plan_id": "PLAN",
                 "candidate_id": f"candidate-{index:02d}",
                 "repeat_index": 1,
@@ -202,6 +202,14 @@ class ParallelControlPlaneTests(unittest.TestCase):
             }
             for index in reversed(range(12))
         ]
+        schema = {
+            "$id": importer.contract.CANONICAL_SCHEMA_ID,
+            "properties": {"schema_version": {"const": "1.1"}},
+        }
+
+        def normalize(record: dict[str, Any], role_hint: str | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
+            del role_hint
+            return record, {"migration": "none"}
 
         def validate(record: dict[str, Any], _: Path | None) -> tuple[dict[str, Any], list[str], list[str]]:
             nonlocal active, maximum
@@ -218,9 +226,9 @@ class ParallelControlPlaneTests(unittest.TestCase):
                     active -= 1
 
         with (
-            patch.object(importer, "load_json", return_value={"properties": {"schema_version": {"const": "2.0"}}}),
+            patch.object(importer, "load_json", return_value=schema),
             patch.object(importer, "load_records", return_value=records),
-            patch.object(importer, "validate_record_schema", return_value=[]),
+            patch.object(importer.contract, "normalize_record", side_effect=normalize),
             patch.object(importer, "validate_result", side_effect=validate),
         ):
             imported, report = importer.import_with_schema(
@@ -236,9 +244,9 @@ class ParallelControlPlaneTests(unittest.TestCase):
 
         duplicate = [records[0], dict(records[0])]
         with (
-            patch.object(importer, "load_json", return_value={"properties": {}}),
+            patch.object(importer, "load_json", return_value=schema),
             patch.object(importer, "load_records", return_value=duplicate),
-            patch.object(importer, "validate_record_schema", return_value=[]),
+            patch.object(importer.contract, "normalize_record", side_effect=normalize),
             patch.object(importer, "validate_result", side_effect=validate),
         ):
             _, report = importer.import_with_schema(

@@ -468,10 +468,7 @@ def main() -> int:
         print(json.dumps({"ok": False, "errors": errors, "warnings": warnings}, indent=2))
         return 1
     try:
-        if args.shell == "posix":
-            script = build_posix(loaded)
-        else:
-            script = build_powershell(loaded)
+        script = build_posix(loaded) if args.shell == "posix" else build_powershell(loaded)
     except ValueError as exc:
         print(json.dumps({"ok": False, "errors": [str(exc)], "warnings": warnings}, indent=2))
         return 1

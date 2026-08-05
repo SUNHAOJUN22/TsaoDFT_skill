@@ -3,8 +3,10 @@
 
 from __future__ import annotations
 
+import importlib.util
 import math
 import re
+from pathlib import Path
 from typing import Any
 
 SCHEMA_VERSION = "1.0"
@@ -23,67 +25,22 @@ PROVIDERS = {"auto", "cpu", "engine-native", "array-api", "custom-native", "edge
 BOTTLENECKS = {"auto", "fft", "dense-solve", "sparse", "tensor", "communication", "io", "transfer", "unknown"}
 PRECISIONS = {"fp64", "mixed-validated", "mixed-experimental"}
 EDGE_RUNTIMES = {"auto", "onnxruntime", "tensorrt", "openvino", "framework"}
-BACKEND_VENDORS = {
-    "cpu": GPU_VENDORS,
-    "cuda": {"nvidia"},
-    "openacc": {"nvidia"},
-    "hip": {"amd", "nvidia"},
-    "sycl": {"intel", "amd", "nvidia"},
-    "openmp-offload": {"amd", "intel", "nvidia"},
-    "metal": {"apple"},
-}
 
 
-def _library(vendor: str, category: str, purpose: str) -> dict[str, str]:
-    return {"vendor": vendor, "category": category, "purpose": purpose}
+def _load_acceleration_registry() -> Any:
+    path = Path(__file__).with_name("acceleration_registry.py")
+    spec = importlib.util.spec_from_file_location("tsao_optimizer_acceleration_registry", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot import {path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
-LIBRARIES: dict[str, dict[str, str]] = {
-    "cublas": _library("nvidia", "dense-solve", "Dense BLAS through an accepted build or explicit CUDA integration."),
-    "cusolver": _library(
-        "nvidia",
-        "dense-solve",
-        "Factorization and eigensolver support through an accepted integration.",
-    ),
-    "cufft": _library("nvidia", "fft", "FFT primitives for supported engine builds or explicit custom kernels."),
-    "cusparse": _library("nvidia", "sparse", "Sparse primitives for an explicit profiled sparse path."),
-    "cutensor": _library("nvidia", "tensor", "High-order contractions, reductions and permutations."),
-    "cuequivariance": _library(
-        "nvidia",
-        "tensor",
-        "Equivariant atomistic-ML operations for accepted model families.",
-    ),
-    "nccl": _library("nvidia", "communication", "Multi-GPU collectives with topology evidence."),
-    "tensorrt": _library("nvidia", "edge-runtime", "Validated NVIDIA edge inference."),
-    "rocblas": _library("amd", "dense-solve", "Dense BLAS through an accepted HIP build or explicit integration."),
-    "rocsolver": _library(
-        "amd",
-        "dense-solve",
-        "Factorization and eigensolver support through an accepted HIP path.",
-    ),
-    "rocfft": _library("amd", "fft", "FFT primitives for supported HIP builds or explicit kernels."),
-    "rocsparse": _library("amd", "sparse", "Sparse primitives for an explicit profiled sparse path."),
-    "hiptensor": _library("amd", "tensor", "Tensor contractions for an explicit HIP workload."),
-    "rccl": _library("amd", "communication", "Multi-GPU collectives with topology evidence."),
-    "onemkl": _library("intel", "math", "BLAS, LAPACK, FFT or sparse kernels for explicit oneAPI paths."),
-    "oneccl": _library("intel", "communication", "Distributed collectives with topology evidence."),
-    "openvino": _library("intel", "edge-runtime", "Validated Intel edge inference."),
-    "mps": _library("apple", "tensor", "Supported Metal array and ML operations."),
-    "accelerate": _library("apple", "math", "Apple host BLAS, LAPACK and FFT services."),
-    "arrayapi": _library("portable", "interface", "Backend-neutral Python array interface."),
-    "dlpack": _library("portable", "interface", "Audited tensor interchange and copy avoidance."),
-    "kokkos": _library("portable", "native", "Performance-portable C++ kernels after profiling."),
-    "onnxruntime": _library("portable", "edge-runtime", "Portable validated surrogate inference baseline."),
-}
-ALIASES = {re.sub(r"[^a-z0-9]", "", name.lower()): name for name in LIBRARIES}
-ALIASES.update(
-    {
-        "pythonarrayapi": "arrayapi",
-        "onnxruntimegpu": "onnxruntime",
-        "onemathkernellibrary": "onemkl",
-        "metalperformanceshaders": "mps",
-    }
-)
+_REGISTRY = _load_acceleration_registry()
+BACKEND_VENDORS = {name: set(_REGISTRY.BACKEND_VENDORS[name]) for name in BACKENDS}
+LIBRARIES: dict[str, dict[str, str]] = _REGISTRY.optimizer_libraries()
+ALIASES: dict[str, str] = _REGISTRY.optimizer_aliases()
 
 
 def normalize_library(value: str) -> str:

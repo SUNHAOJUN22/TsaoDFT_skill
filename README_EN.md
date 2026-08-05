@@ -2,7 +2,7 @@
 
 <p align="center">
   <strong>A DFT-first, evidence-locked and auditable research operating system for molecular and periodic science</strong><br>
-  From structure preparation and real-engine execution to wavefunctions, materials properties, machine learning, kinetics, GPU/HPC provenance and publication-claim audit
+  From structure preparation and real-engine acceptance to ML, kinetics, edge computing, GPU/HPC acceleration and traceable publication claims
 </p>
 
 <p align="center">
@@ -12,13 +12,13 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-325%20passing-16A34A" alt="325 tests passing">
-  <img src="https://img.shields.io/badge/coverage-92.48%25%20stmt%20%7C%2080.18%25%20branch-16A34A" alt="92.48 percent statement and 80.18 percent branch coverage">
+  <img src="https://img.shields.io/badge/tests-500%2B%20gated-16A34A" alt="More than 500 gated tests">
+  <img src="https://img.shields.io/badge/coverage-measured%20in%20CI-16A34A" alt="Statement and branch coverage measured in CI">
   <img src="https://img.shields.io/badge/public%20support-L2_VALIDATED_ADAPTER-6D5DFB" alt="Public support L2 validated adapter">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
 
-> **AI image declaration | AI-GENERATED CONCEPTUAL ILLUSTRATION:** the overview below was generated with the UI/UX Pro Max Hero-Centric + Evidence Bento workflow. Its molecules, lattice, orbital-like forms, servers and data interfaces communicate research context only; they are not outputs from Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD or experiment. Quantitative claims still require accepted source files, calculation artifacts and reproducible scripts.
+> **AI image declaration | AI-GENERATED CONCEPTUAL ILLUSTRATION:** the overview below follows an AI-assisted Hero-Centric + Evidence Bento visual direction. Molecules, lattices, orbital-like forms, servers and data interfaces communicate research context only; they are not outputs from Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD or experiment. The architecture gallery is made from repository-controlled deterministic SVGs. Every conceptual or synthetic asset is labelled, and quantitative claims still require accepted source files, calculation artifacts and reproducible scripts.
 
 <p align="center">
   <img src="assets/ai/hero/tsao-dft-hero.svg" width="100%" alt="TsaoDFT evidence-first DFT research operating system conceptual overview">
@@ -35,7 +35,7 @@
 </tr>
 </table>
 
-`TsaoDFT_skill` is not a loose prompt collection. It never promotes normal termination, an attractive plot or a high model score directly into a scientific conclusion:
+`TsaoDFT_skill` is not a loose prompt collection. It never promotes normal termination, attractive plots, GPU allocation or a high model score directly into a scientific conclusion:
 
 ```text
 planned
@@ -64,12 +64,12 @@ Every transition must identify the acceptance owner, supporting artifact, method
 | [`tsao-periodic-dft-materials`](skills/tsao-periodic-dft-materials/) | VASP, Quantum ESPRESSO and CP2K, including surfaces/defects, bands/DOS, NEB and convergence | Does not distribute POTCAR, pseudopotentials or restricted databases |
 | [`tsao-dft-ml-active-learning`](skills/tsao-dft-ml-active-learning/) | DFT-label audit, leakage prevention, applicability domain, uncertainty, active learning and inverse design | High R², SHAP or acquisition score does not prove mechanism or causality |
 | [`tsao-dft-kinetics-multiscale`](skills/tsao-dft-kinetics-multiscale/) | Eyring/TST, networks, detailed balance, uncertainty, microkinetics and reactor handoff | Consumes only accepted standard/reference-state evidence |
-| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | Local/Slurm/PBS, structured argv, inventory, tuning candidates, GPU planning, unified Parsers, real benchmarks, signed review and content-addressed evidence | GPU allocation, scheduler completion, self-reported L3 or synthetic fixtures prove neither real execution nor speedup |
+| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | Local/Slurm/PBS, structured argv, inventory, tuning candidates, GPU planning, Parsers, real benchmarks, signed review and content-addressed evidence | GPU allocation, scheduler completion, self-reported L3 or synthetic fixtures prove neither real execution nor speedup |
 | [`tsao-dft-catalysis-profile`](skills/tsao-dft-catalysis-profile/) | DCS/MCSOMe/DMOS, Si–O/Si–C, Ti/TEA, Ziegler–Natta and polyolefin catalysis | Scoped profile; never auto-applied to unrelated catalysis |
 
 ## Scientific figures: conceptual and deterministic evidence stay separate
 
-The four figures below are generated from fixed synthetic data and repository scripts. Every asset is labelled `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`.
+The following figures are controlled by repository scripts and fixed synthetic data. Every asset is visibly labelled `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`. They demonstrate figure contracts, evidence organisation and system design—not production results.
 
 <table>
 <tr>
@@ -82,7 +82,51 @@ The four figures below are generated from fixed synthetic data and repository sc
 </tr>
 </table>
 
+## Acceleration architecture gallery
+
+The five deterministic SVGs below explain how the repository may consume C++, OpenMP, Kokkos, CUDA-X, edge inference and real-engine capabilities. Their visual direction is AI-assisted, but the actual assets are repository-defined, reproducible and ineligible as scientific or performance data.
+
+<table>
+<tr>
+<td width="50%"><img src="assets/demo/hybrid-compute-architecture.svg" width="100%" alt="Hybrid Python native and external-engine architecture"></td>
+<td width="50%"><img src="assets/demo/cuda-x-decision-map.svg" width="100%" alt="CUDA-X library decision map"></td>
+</tr>
+<tr>
+<td><img src="assets/demo/edge-hpc-closed-loop.svg" width="100%" alt="Edge to HPC scientific feedback loop"></td>
+<td><img src="assets/demo/native-acceleration-roadmap.svg" width="100%" alt="Profile-gated native acceleration roadmap"></td>
+</tr>
+<tr>
+<td colspan="2"><img src="assets/demo/evidence-qualification-pipeline.svg" width="100%" alt="Scoped L3 acceleration evidence qualification pipeline"></td>
+</tr>
+</table>
+
 See [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md) and [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md).
+
+## Python, C++ and GPU responsibilities
+
+The repository is Python-dominant by design, but Python is primarily the scientific control plane rather than a reimplementation of professional DFT kernels.
+
+| Layer | Preferred technologies | Responsibility |
+|---|---|---|
+| Scientific control plane | Python, JSON Schema, YAML, structured argv | Workflow, preflight, fingerprints, evidence, scheduling, parsing and reporting |
+| Numerical reference | NumPy, BLAS, LAPACK | Deterministic CPU reference, vectorisation, linear algebra and equivalence baseline |
+| Optional native layer | C++20, OpenMP, Kokkos, narrow C ABI | Profile-proven neighbour, geometry, scanning or batched numerical hotspots |
+| Optional GPU layer | CUDA, HIP, SYCL, Array API, DLPack | Large repeated kernels after transfer and launch overhead are included |
+| External compute plane | VASP, QE, CP2K, Gaussian | FFT, diagonalisation, integrals, SCF and engine-native MPI/OpenMP/GPU kernels |
+
+The rule is: **profile first; vectorise before native migration; retain the CPU reference; accept C++ or GPU backends only when numerical equivalence and end-to-end benefit both pass.**
+
+## How CUDA-X and other acceleration libraries enter
+
+| Library / route | Valid use | Invalid interpretation |
+|---|---|---|
+| cuBLAS / cuSOLVER | Large repeated dense matrices already resident on GPU | “Python code is automatically accelerated” |
+| cuFFT / cuFFTMp | Supported external-engine builds or an explicit repository FFT kernel | A Python wrapper automatically accelerates VASP/QE/CP2K |
+| cuSPARSE | A measured sparse-matrix hotspot | A generic optimisation for small dense tables |
+| cuTENSOR | Profiled high-order contractions, permutations and reductions | A universal external-DFT switch |
+| cuEquivariance | Accepted MACE, NequIP, e3nn or related equivariant models | A Kohn–Sham DFT accelerator |
+| NCCL / NVSHMEM | Compatible multi-GPU communication and distributed workloads | Single-GPU, small-file or Parser optimisation |
+| TensorRT / ONNX Runtime | Edge surrogate inference with UQ/OOD and remote-DFT fallback | A replacement for production DFT |
 
 ## Support levels
 
@@ -142,7 +186,19 @@ python skills/tsao-dft-hpc-provenance/scripts/materialize_acceleration_campaign.
 
 Every candidate remains `approval: pending`; no job is submitted. Formal executable, launcher, preflight and Parser commands use structured argv. Approval is bound to the Manifest digest, plan, candidate and method fingerprint.
 
-After legal real runs, use executable Schemas, a signed review and content-addressed publication:
+### Validate one real benchmark result
+
+The root benchmark Schema and scoped-L3 policy are part of the permanent quality gate. A result can be validated independently:
+
+```bash
+python scripts/validate_acceleration_contracts.py \
+  --result build/benchmark-result.json \
+  --json
+```
+
+The gate rejects zero wall time, NaN/Inf, boolean integers, non-lowercase SHA-256 values, unknown fields, invalid timestamps and accepted real runs without complete build, hardware and scientific-result identity.
+
+### Import, qualify and verify an evidence bundle
 
 ```bash
 python skills/tsao-dft-hpc-provenance/scripts/import_benchmark_evidence.py \
@@ -165,7 +221,7 @@ python skills/tsao-dft-hpc-provenance/scripts/verify_evidence_bundle.py \
   build/performance-evidence/evidence-<root_sha256>
 ```
 
-Formal comparison accepts one benchmark plan. Schema, scientific/build/hardware/Parser identity and numerical equivalence must pass before effective speedup. The review must be Ed25519-signed and bind Policy, plan, candidates and evidence root. Publication is atomic and fails on missing, extra, altered, digest/size-mismatched or root/directory-mismatched content.
+Formal comparison accepts one benchmark plan. Schema, input, method, build, hardware, topology, Parser and numerical equivalence must pass before effective speedup is calculated. The review must be Ed25519-signed and bind the Policy, plan, candidates and evidence root; publication is atomic.
 
 ## Engineering quality and one-command acceptance
 
@@ -175,21 +231,20 @@ python -m pip check
 python scripts/quality_gate.py
 ```
 
-Current code-qualification baseline: **325 tests, 9 isolated suites, 0 failed suites; 92.48% statement and 80.18% branch coverage.** The six trust/execution core modules have 100% statement and 98.53%–100% branch coverage.
+The permanent gate covers 9 isolated test suites, Python 3.10 / 3.12 / 3.13, statement and branch coverage, 18 mypy targets, 4 strict trust-boundary type targets, Ruff, Bandit, repository audit, CodeQL, three `pip-audit` modes and CycloneDX JSON SBOM. Supply-chain reports and the SBOM are preserved before a failing audit makes the workflow fail.
 
 ```text
-assets and contracts
+assets and executable contracts
+→ dependency and constraint validation
+→ acceleration evidence schema/policy validation
 → governance, capability and security validators
 → Ruff lint and formatting
-→ isolated mypy (18 targets)
-→ trust-boundary strict mypy (4 targets)
+→ isolated mypy + strict trust-boundary mypy
 → statement and branch coverage
-→ Bandit
-→ strict repository audit
-→ all 9 unittest suites
+→ Bandit + strict repository audit
+→ all isolated unittest suites
+→ pip-audit + SBOM + CodeQL
 ```
-
-GitHub Actions runs the permanent gate on Python 3.10 / 3.12 / 3.13 plus CodeQL `security-extended`, three `pip-audit` modes and CycloneDX JSON SBOM. `.github/workflows/ci.yml` is the only permanent workflow; it has read-only contents permission and no code-push step.
 
 - [`docs/REPOSITORY_FULL_AUDIT.md`](docs/REPOSITORY_FULL_AUDIT.md)
 - [`docs/CODE_QUALITY_AUDIT.md`](docs/CODE_QUALITY_AUDIT.md)
@@ -202,7 +257,7 @@ GitHub Actions runs the permanent gate on Python 3.10 / 3.12 / 3.13 plus CodeQL 
 This repository:
 
 - does not distribute or bypass restricted engines, licences, POTCAR, pseudopotentials or basis/potential libraries;
-- never presents conceptual AI imagery as computational or experimental evidence;
+- never presents conceptual AI imagery or synthetic SVGs as computational or experimental evidence;
 - never equates normal termination, scheduling, model scores, attractive graphics, GPU allocation or hosted fixtures with scientific acceptance;
 - does not accept a plain `approved` field as signed approval;
 - does not claim `L3_EXECUTION_TESTED` without legal real-engine/build/hardware/site repeats, a verified content-addressed evidence root, signed independent review and explicit registration.
@@ -220,8 +275,8 @@ This repository:
 | [`docs/REPOSITORY_FULL_AUDIT.md`](docs/REPOSITORY_FULL_AUDIT.md) | Full repository audit |
 | [`docs/CODE_QUALITY_AUDIT.md`](docs/CODE_QUALITY_AUDIT.md) | Code, test, coverage and CI audit |
 | [`docs/SUPPLY_CHAIN_POLICY.md`](docs/SUPPLY_CHAIN_POLICY.md) | Dependency, vulnerability, SBOM and release policy |
-| [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md) | AI-image governance |
-| [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md) | Execution, acceleration and signed evidence boundary |
+| [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md) | AI-image and deterministic-demo governance |
+| [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md) | Execution, acceleration and signed-evidence boundary |
 | [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) | Test and engineering acceptance |
 
 Repository policy: **work directly on `main`; do not create feature, fix or temporary branches. Use Tags / Releases for publication snapshots.**

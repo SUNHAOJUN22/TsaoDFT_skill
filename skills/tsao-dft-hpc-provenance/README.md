@@ -54,6 +54,8 @@ python scripts/engine_capability.py \
 - property-specific numerical equivalence within declared absolute and relative tolerances;
 - a median reference-over-candidate wall-time ratio that meets the declared threshold.
 
+Before JSON Schema validation, the evidence loader rejects non-standard `NaN`/`Infinity` constants and exponent overflow such as `1e999`. Non-finite wall times or scientific values therefore cannot enter equivalence, median or performance-ratio calculations.
+
 ```bash
 python ../../scripts/validate_compute_qualification.py --json
 

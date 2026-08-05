@@ -76,7 +76,7 @@ class AccelerationContractEdgeTests(unittest.TestCase):
         malformed["properties"]["timestamp"] = {"type": "string"}
         malformed["properties"]["evidence_source"] = {"enum": ["simulation"]}
         malformed["$defs"]["sha256"] = {"type": "string", "pattern": "x"}
-        malformed["allOf"] = []
+        del malformed["allOf"]
         failures = contracts.validate_schema_contract(malformed)
         self.assertIn("wall_time_seconds must be strictly positive", failures)
         self.assertIn("timestamp must use JSON Schema date-time format", failures)

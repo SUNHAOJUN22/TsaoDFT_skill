@@ -206,7 +206,8 @@ def qualify(
     if unexpected:
         errors.append(f"unexpected candidate_ids: {unexpected}")
 
-    minimum_repeats = campaign.get("minimum_repeats") if type(campaign.get("minimum_repeats")) is int else 3
+    raw_minimum_repeats = campaign.get("minimum_repeats")
+    minimum_repeats = int(raw_minimum_repeats) if type(raw_minimum_repeats) is int else 3
     for candidate_id in expected_ids:
         rows = sorted(groups.get(str(candidate_id), []), key=lambda item: int(item.get("repeat_index", 0)))
         if len(rows) < minimum_repeats:

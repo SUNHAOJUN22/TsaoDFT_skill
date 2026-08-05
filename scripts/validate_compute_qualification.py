@@ -17,6 +17,9 @@ CONTRACT_PATH = ROOT / "skills" / "tsao-dft-hpc-provenance" / "scripts" / "bench
 CAMPAIGN_CONTRACT_PATH = (
     ROOT / "skills" / "tsao-dft-hpc-provenance" / "scripts" / "compute_campaign_contract.py"
 )
+CAMPAIGN_SCHEMA_PATH = (
+    ROOT / "skills" / "tsao-dft-hpc-provenance" / "templates" / "compute-qualification-campaign.schema.json"
+)
 CAMPAIGN_PATH = (
     ROOT / "skills" / "tsao-dft-hpc-provenance" / "templates" / "compute-qualification-campaign.yaml"
 )
@@ -172,6 +175,7 @@ def validate() -> dict[str, Any]:
         source = MODULE_PATH.read_text(encoding="utf-8")
         contract_source = CONTRACT_PATH.read_text(encoding="utf-8")
         campaign_source = CAMPAIGN_CONTRACT_PATH.read_text(encoding="utf-8")
+        campaign_schema_source = CAMPAIGN_SCHEMA_PATH.read_text(encoding="utf-8")
         if "ThreadPoolExecutor" not in source or "executor.map" not in source:
             errors.append("qualification workflow lacks deterministic bounded concurrency")
         if "campaign_policy.prepare_campaign" not in source:
@@ -192,7 +196,10 @@ def validate() -> dict[str, Any]:
             )
         if "normalized, _ = normalize_record(canonical)" not in contract_source:
             errors.append("legacy diagnostic projection no longer routes through central normalization")
-        if "additionalProperties" not in campaign_source or "normalize_campaign" not in campaign_source:
+        if (
+            '"additionalProperties": false' not in campaign_schema_source
+            or "normalize_campaign" not in campaign_source
+        ):
             errors.append("campaign contract is not closed and centrally normalized")
         if len(hold_report.get("identity_invariants") or []) < 7:
             errors.append("compute qualification identity invariants are incomplete")

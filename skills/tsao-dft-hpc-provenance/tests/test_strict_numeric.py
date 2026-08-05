@@ -28,9 +28,9 @@ class StrictNumericTests(unittest.TestCase):
         self.assertEqual(numeric.exact_int(4, "value", errors, minimum=1), 4)
         self.assertEqual(errors, [])
 
-        for value in (True, 4.0, "4", None):
+        for coercion_value in (True, 4.0, "4", None):
             local: list[str] = []
-            self.assertEqual(numeric.exact_int(value, "value", local, minimum=1, default=7), 7)
+            self.assertEqual(numeric.exact_int(coercion_value, "value", local, minimum=1, default=7), 7)
             self.assertEqual(local, ["value must be an exact integer"])
 
         errors = []
@@ -43,14 +43,14 @@ class StrictNumericTests(unittest.TestCase):
         self.assertEqual(numeric.finite_float(4.5, "value", errors, minimum=0.1), 4.5)
         self.assertEqual(errors, [])
 
-        for value in (True, "4", None):
+        for coercion_value in (True, "4", None):
             local: list[str] = []
-            self.assertEqual(numeric.finite_float(value, "value", local, default=2.5), 2.5)
+            self.assertEqual(numeric.finite_float(coercion_value, "value", local, default=2.5), 2.5)
             self.assertEqual(local, ["value must be a finite number"])
 
-        for value in (math.nan, math.inf, -math.inf):
-            local = []
-            self.assertEqual(numeric.finite_float(value, "value", local, default=2.5), 2.5)
+        for nonfinite_value in (math.nan, math.inf, -math.inf):
+            local: list[str] = []
+            self.assertEqual(numeric.finite_float(nonfinite_value, "value", local, default=2.5), 2.5)
             self.assertEqual(local, ["value must be finite"])
 
         errors = []
@@ -63,9 +63,9 @@ class StrictNumericTests(unittest.TestCase):
         self.assertFalse(numeric.exact_bool(False, "flag", errors))
         self.assertEqual(errors, [])
 
-        for value in (1, 0, "true", None):
+        for standin in (1, 0, "true", None):
             local: list[str] = []
-            self.assertTrue(numeric.exact_bool(value, "flag", local, default=True))
+            self.assertTrue(numeric.exact_bool(standin, "flag", local, default=True))
             self.assertEqual(local, ["flag must be a boolean"])
 
     def test_exact_int_list_is_sorted_unique_and_fail_closed(self) -> None:
@@ -77,9 +77,10 @@ class StrictNumericTests(unittest.TestCase):
         self.assertEqual(numeric.exact_int_list([4, 2, 4], "items", errors, [1]), [2, 4])
         self.assertEqual(errors, [])
 
-        for value in ([], "1,2", {1, 2}):
+        invalid_lists: tuple[object, ...] = ([], "1,2", {1, 2})
+        for invalid_list in invalid_lists:
             local: list[str] = []
-            self.assertEqual(numeric.exact_int_list(value, "items", local, [1]), [1])
+            self.assertEqual(numeric.exact_int_list(invalid_list, "items", local, [1]), [1])
             self.assertEqual(local, ["items must be a non-empty list"])
 
         errors = []

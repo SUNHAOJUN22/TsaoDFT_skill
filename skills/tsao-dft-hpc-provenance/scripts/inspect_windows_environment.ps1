@@ -43,6 +43,7 @@ catch {
 }
 
 $MemoryModules = @()
+[long]$TotalPhysicalBytes = 0
 try {
     $MemoryModules = @(
         Get-CimInstance -ClassName Win32_PhysicalMemory -ErrorAction Stop |
@@ -54,6 +55,9 @@ try {
             } |
             Sort-Object -Property capacity_bytes, configured_clock_mhz
     )
+    foreach ($Module in $MemoryModules) {
+        $TotalPhysicalBytes += [long]$Module["capacity_bytes"]
+    }
 }
 catch {
     $Errors.Add("MEMORY_INVENTORY_FAILED")
@@ -92,7 +96,7 @@ $Report = [ordered]@{
     cpu = $Processors
     memory = [ordered]@{
         module_count = $MemoryModules.Count
-        total_physical_bytes = [long](($MemoryModules | Measure-Object -Property capacity_bytes -Sum).Sum)
+        total_physical_bytes = $TotalPhysicalBytes
         modules = $MemoryModules
     }
     graphics = $GraphicsAdapters

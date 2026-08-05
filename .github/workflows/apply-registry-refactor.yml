@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/apply-registry-refactor.yml"
+  workflow_dispatch:
 
 permissions:
   contents: write

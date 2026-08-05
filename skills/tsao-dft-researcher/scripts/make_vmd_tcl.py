@@ -30,7 +30,7 @@ def replace(template: str, mapping: dict[str, object]) -> str:
 
 def resolve_input(base: Path, value: str) -> Path:
     path = Path(value)
-    return path if path.is_absolute() else (base / path).resolve()
+    return path if path.is_absolute() else (base / path).absolute()
 
 
 def camera_commands(panel: dict[str, Any]) -> str:

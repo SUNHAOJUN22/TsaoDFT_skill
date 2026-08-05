@@ -163,31 +163,22 @@ class ParallelControlPlaneEdgeTests(unittest.TestCase):
                 self.assertEqual(module.main(), 1)
             self.assertFalse(json.loads(stdout.getvalue())["ok"])
 
-    def test_importer_read_schema_semantic_and_sequential_paths(self) -> None:
+    def test_importer_custom_schema_is_schema_only_and_sequential(self) -> None:
         importer = self.importer
         records = [
             {"schema_version": "2.0", "candidate_id": "schema-bad"},
-            {"schema_version": "2.0", "candidate_id": "semantic-bad"},
-            {"schema_version": "2.0", "candidate_id": "valid"},
+            {"schema_version": "2.0", "candidate_id": "custom-a"},
+            {"schema_version": "2.0", "candidate_id": "custom-b"},
         ]
 
         def result_key(record: dict[str, Any]) -> tuple[str, str, int, str]:
             return ("PLAN", str(record["candidate_id"]), 1, str(record["candidate_id"]))
 
-        valid = {
-            "schema_version": "1.0",
-            "benchmark_plan_id": "PLAN",
-            "candidate_id": "valid",
-            "repeat_index": 1,
-            "execution": {"run_id": "valid"},
-        }
         with (
             patch.object(importer, "load_json", return_value={"properties": {"schema_version": {"const": "2.0"}}}),
             patch.object(importer, "load_records", side_effect=[OSError("unreadable"), records]),
             patch.object(importer, "validate_record_schema", side_effect=[["schema failure"], [], []]),
-            patch.object(
-                importer, "validate_result", side_effect=[ValueError("semantic crash"), (valid, [], ["review"])]
-            ),
+            patch.object(importer, "validate_result") as semantic,
             patch.object(importer, "result_sort_key", side_effect=result_key),
         ):
             imported, report = importer.import_with_schema(
@@ -196,12 +187,49 @@ class ParallelControlPlaneEdgeTests(unittest.TestCase):
                 None,
                 workers=1,
             )
+        semantic.assert_not_called()
         self.assertFalse(report["ok"])
         self.assertEqual(report["validation_workers"], 1)
-        self.assertEqual([record["candidate_id"] for record in imported], ["valid"])
-        stages = [failure["stage"] for failure in report["failures"]]
-        self.assertEqual(stages, ["read", "schema", "semantic"])
-        self.assertIn("semantic validation failed", " ".join(report["failures"][-1]["errors"]))
+        self.assertEqual([record["candidate_id"] for record in imported], ["custom-a", "custom-b"])
+        self.assertEqual([failure["stage"] for failure in report["failures"]], ["read", "schema"])
+        self.assertTrue(all("nonqualifying" in record["validation"]["warnings"][0] for record in imported))
+        self.assertFalse(report["schema_version_rewrite_used"])
+
+    def test_importer_canonical_semantic_failure_is_structured(self) -> None:
+        importer = self.importer
+        raw = {"schema_version": "1.1", "candidate_id": "canonical"}
+        canonical = {
+            "schema_version": "1.1",
+            "benchmark_plan_id": "PLAN",
+            "candidate_id": "canonical",
+            "repeat_index": 1,
+            "execution": {"run_id": "canonical"},
+        }
+        schema = {
+            "$id": importer.contract.CANONICAL_SCHEMA_ID,
+            "properties": {"schema_version": {"const": "1.1"}},
+        }
+        with (
+            patch.object(importer, "load_json", return_value=schema),
+            patch.object(importer, "load_records", return_value=[raw]),
+            patch.object(importer.contract, "normalize_record", return_value=(canonical, {"migration": "none"})),
+            patch.object(importer, "validate_result", side_effect=ValueError("semantic crash")),
+            patch.object(
+                importer,
+                "result_sort_key",
+                return_value=("PLAN", "canonical", 1, "canonical"),
+            ),
+        ):
+            imported, report = importer.import_with_schema(
+                [Path("canonical.json")],
+                Path("schema.json"),
+                None,
+                workers=1,
+            )
+        self.assertEqual(imported, [])
+        self.assertFalse(report["ok"])
+        self.assertEqual(report["failures"][0]["stage"], "semantic")
+        self.assertIn("semantic validation failed", report["failures"][0]["errors"][0])
 
     def test_importer_main_success_and_initialization_failure(self) -> None:
         importer = self.importer

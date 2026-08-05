@@ -243,13 +243,18 @@ def qualify(
             errors.append(f"{candidate_id}: benchmark_plan_id mismatch")
         if document.get("engine") != campaign.get("engine"):
             errors.append(f"{candidate_id}: engine mismatch")
-        if document.get("evidence_source") != "real-engine-observation":
+        is_real = document.get("evidence_source") == "real-engine-observation"
+        has_missing = bool(document.get("missing_fields"))
+        if not is_real:
             holds.append(f"{candidate_id}: evidence_source is not real-engine-observation")
-        if document.get("parser_acceptance") != "PASS" or document.get("exit_status") != 0:
-            errors.append(f"{candidate_id}: parser or exit status not accepted")
+        parser_failed = document.get("parser_acceptance") != "PASS" or document.get("exit_status") != 0
+        if parser_failed:
+            message = f"{candidate_id}: parser or exit status not accepted"
+            (holds if not is_real or has_missing else errors).append(message)
         if not (document.get("convergence") or {}).get("achieved"):
-            errors.append(f"{candidate_id}: convergence was not achieved")
-        if document.get("missing_fields"):
+            message = f"{candidate_id}: convergence was not achieved"
+            (holds if not is_real or has_missing else errors).append(message)
+        if has_missing:
             holds.append(f"{candidate_id}: missing_fields is not empty")
         if document.get("build_fingerprint") is None:
             holds.append(f"{candidate_id}: build fingerprint is missing")

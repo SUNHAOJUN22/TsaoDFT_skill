@@ -31,7 +31,7 @@ class ComputeContractEvidenceTests(unittest.TestCase):
     def test_current_repository_is_machine_readable_external_hold(self) -> None:
         report = capture.build_report()
         self.assertTrue(report["ok"], report["errors"])
-        self.assertEqual(report["schema_version"], "1.2")
+        self.assertEqual(report["schema_version"], "1.3")
         self.assertEqual(report["state"], capture.EXTERNAL_HOLD)
         self.assertFalse(report["external_engine_invoked"])
         self.assertTrue(report["acceleration_registry"]["runtime_single_source"])
@@ -45,12 +45,21 @@ class ComputeContractEvidenceTests(unittest.TestCase):
         self.assertEqual(benchmark["unknown_or_mixed_input"], "FAIL_CLOSED")
         self.assertEqual(report["engine_capabilities"]["repository_template_state"], capture.EXTERNAL_HOLD)
         self.assertEqual(report["engine_capabilities"]["performance_qualification"], "NOT_ESTABLISHED")
-        self.assertEqual(report["compute_qualification"]["repository_state"], capture.EXTERNAL_HOLD)
-        self.assertEqual(report["compute_qualification"]["benchmark_result_contract"], "canonical-nested-v1.1")
-        self.assertFalse(report["compute_qualification"]["performance_evaluated"])
-        self.assertEqual(report["compute_qualification"]["workers_bounded_by"], 8)
+        qualification = report["compute_qualification"]
+        self.assertEqual(qualification["repository_state"], capture.EXTERNAL_HOLD)
+        self.assertEqual(qualification["benchmark_result_contract"], "canonical-nested-v1.1")
+        self.assertEqual(qualification["input_model"], "canonical-nested-v1.1-typed-accessor")
+        self.assertTrue(qualification["normalization_mandatory"])
+        self.assertTrue(qualification["native_semantic_validation"])
+        self.assertTrue(qualification["legacy_projection_retained"])
+        self.assertFalse(qualification["legacy_projection_consumed"])
+        self.assertEqual(qualification["legacy_projection_qualification_impact"], "NOT_ELIGIBLE")
+        self.assertEqual(len(qualification["identity_invariants"]), 7)
+        self.assertFalse(qualification["performance_evaluated"])
+        self.assertEqual(qualification["workers_bounded_by"], 8)
         self.assertFalse(report["performance_ratio_published"])
         self.assertTrue(any("No nested v1.0 semantic downgrade view" in item for item in report["non_claims"]))
+        self.assertTrue(any("diagnostic compatibility export" in item for item in report["non_claims"]))
 
     def test_capture_is_deterministic(self) -> None:
         first = capture.build_report()
@@ -65,7 +74,7 @@ class ComputeContractEvidenceTests(unittest.TestCase):
         self.assertEqual(report["state"], capture.UNQUALIFIED)
         self.assertTrue(any("validator failed" in error for error in report["errors"]))
 
-    def test_semantic_contract_drift_is_unqualified(self) -> None:
+    def test_semantic_and_projection_contract_drift_is_unqualified(self) -> None:
         reports = {
             "acceleration_registry": {
                 "ok": True,
@@ -92,6 +101,13 @@ class ComputeContractEvidenceTests(unittest.TestCase):
                 "repository_state": capture.EXTERNAL_HOLD,
                 "performance_evaluated": False,
                 "workers_bounded_by": 8,
+                "input_model": "legacy-flat",
+                "normalization_mandatory": False,
+                "native_semantic_validation": False,
+                "legacy_projection_retained": False,
+                "legacy_projection_consumed": True,
+                "legacy_projection_qualification_impact": "ELIGIBLE",
+                "identity_invariants": [],
             },
         }
 
@@ -103,9 +119,20 @@ class ComputeContractEvidenceTests(unittest.TestCase):
             report = capture.build_report()
         self.assertFalse(report["ok"])
         self.assertEqual(report["state"], capture.UNQUALIFIED)
-        self.assertTrue(any("not native" in error for error in report["errors"]))
-        self.assertTrue(any("compatibility view" in error for error in report["errors"]))
-        self.assertTrue(any("bypass" in error for error in report["errors"]))
+        rendered = " ".join(report["errors"])
+        for expected in (
+            "not native",
+            "compatibility view",
+            "bypass",
+            "input model",
+            "central normalization",
+            "native semantic validation",
+            "projection retention",
+            "still consumed",
+            "qualification-ineligible",
+            "identity invariants",
+        ):
+            self.assertIn(expected, rendered)
 
     def test_write_and_cli_outputs(self) -> None:
         capture.write_report(None, {"ok": True})
@@ -122,7 +149,7 @@ class ComputeContractEvidenceTests(unittest.TestCase):
             stdout = json.loads(completed.stdout)
             written = json.loads(output.read_text(encoding="utf-8"))
             self.assertEqual(stdout, written)
-            self.assertEqual(written["schema_version"], "1.2")
+            self.assertEqual(written["schema_version"], "1.3")
             self.assertEqual(written["state"], capture.EXTERNAL_HOLD)
 
 

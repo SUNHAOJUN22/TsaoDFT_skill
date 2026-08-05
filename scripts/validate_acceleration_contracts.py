@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate benchmark-result and scoped-L3 acceleration evidence contracts."""
+"""Validate the explicit legacy flat benchmark-result and scoped-L3 evidence contracts."""
 
 from __future__ import annotations
 
@@ -14,7 +14,13 @@ from jsonschema import Draft202012Validator, FormatChecker
 from jsonschema.exceptions import SchemaError
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_SCHEMA = ROOT / "templates" / "benchmark-result.schema.json"
+DEFAULT_SCHEMA = (
+    ROOT
+    / "skills"
+    / "tsao-dft-hpc-provenance"
+    / "templates"
+    / "benchmark-result-flat-v1.0.schema.json"
+)
 DEFAULT_POLICY = ROOT / "templates" / "performance-qualification-policy.yaml"
 
 REQUIRED_RESULT_FIELDS = {
@@ -74,9 +80,20 @@ def _reject_json_constant(value: str) -> None:
     raise ContractLoadError(f"non-finite JSON constant is forbidden: {value}")
 
 
+def _parse_finite_float(value: str) -> float:
+    parsed = float(value)
+    if not math.isfinite(parsed):
+        raise ContractLoadError(f"non-finite JSON number is forbidden: {value}")
+    return parsed
+
+
 def load_json_mapping(path: Path) -> dict[str, Any]:
     try:
-        loaded = json.loads(path.read_text(encoding="utf-8"), parse_constant=_reject_json_constant)
+        loaded = json.loads(
+            path.read_text(encoding="utf-8"),
+            parse_constant=_reject_json_constant,
+            parse_float=_parse_finite_float,
+        )
     except (OSError, UnicodeError, json.JSONDecodeError, ContractLoadError) as exc:
         raise ContractLoadError(f"cannot load JSON contract: {exc}") from exc
     if not isinstance(loaded, dict):

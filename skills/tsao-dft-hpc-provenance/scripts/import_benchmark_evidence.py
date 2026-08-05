@@ -22,24 +22,28 @@ from performance_evidence import (  # noqa: E402 -- standalone Skill import cont
     canonical_json,
     load_records,
     result_sort_key,
-    validate_result,
+    validate_canonical_result as validate_result,
 )
 from trust_boundary import load_json, validate_record_schema  # noqa: E402 -- standalone Skill import contract
 from utils import normalized_workers  # noqa: E402 -- standalone Skill import contract
 
-ValidationTask = tuple[str, int, str, dict[str, Any], dict[str, Any]]
+ValidationTask = tuple[str, int, dict[str, Any], dict[str, Any], bool]
 ValidationResult = tuple[str, int, dict[str, Any], list[str], list[str], dict[str, Any]]
 
 
 def semantic_validate(task: ValidationTask, artifact_root: Path | None) -> ValidationResult:
-    source, index, schema_version, compatibility, migration = task
+    source, index, record, migration, canonical_semantics = task
+    if not canonical_semantics:
+        normalized = json.loads(json.dumps(record, ensure_ascii=False))
+        warnings = ["custom schema record is nonqualifying and was not evaluated as canonical nested v1.1"]
+        normalized["validation"] = {"ok": True, "errors": [], "warnings": warnings}
+        return source, index, normalized, [], warnings, migration
     try:
-        normalized, semantic_errors, warnings = validate_result(compatibility, artifact_root)
+        normalized, semantic_errors, warnings = validate_result(record, artifact_root)
     except (OSError, UnicodeError, TypeError, ValueError) as exc:
-        normalized = compatibility
+        normalized = record
         semantic_errors = [f"semantic validation failed: {exc}"]
         warnings = []
-    normalized["schema_version"] = schema_version
     return source, index, normalized, semantic_errors, warnings, migration
 
 
@@ -92,9 +96,8 @@ def import_with_schema(
                             }
                         )
                         continue
-                    compatibility = json.loads(json.dumps(record, ensure_ascii=False))
                     schema_version = str(record["schema_version"])
-                    compatibility["schema_version"] = "1.0"
+                    normalized_input = json.loads(json.dumps(record, ensure_ascii=False))
                     migration = {
                         "source_contract": f"custom-{schema_version}",
                         "target_contract": f"custom-{schema_version}",
@@ -102,17 +105,17 @@ def import_with_schema(
                         "qualification_impact": "NOT_ELIGIBLE",
                         "missing_fields": [],
                     }
+                    canonical_semantics = False
                 else:
                     candidate_id = str(record.get("candidate_id", ""))
-                    canonical, migration = contract.normalize_record(
+                    normalized_input, migration = contract.normalize_record(
                         record,
                         role_hint=legacy_roles.get(candidate_id),
                     )
-                    compatibility = contract.semantic_compatibility_record(canonical)
-                    schema_version = contract.CANONICAL_SCHEMA_VERSION
+                    canonical_semantics = True
                 migration_name = str(migration.get("migration", "unknown"))
                 migrations[migration_name] = migrations.get(migration_name, 0) + 1
-                tasks.append((str(path), index, schema_version, compatibility, migration))
+                tasks.append((str(path), index, normalized_input, migration, canonical_semantics))
             except (KeyError, TypeError, ValueError, contract.BenchmarkContractError) as exc:
                 failures.append(
                     {
@@ -167,6 +170,8 @@ def import_with_schema(
         ),
         "contract_mode": contract_mode,
         "authoritative_contract_required": require_authoritative,
+        "canonical_semantic_schema_version": contract.CANONICAL_SCHEMA_VERSION,
+        "schema_version_rewrite_used": False,
         "migration_counts": migrations,
         "record_migrations": record_migrations,
     }
@@ -216,6 +221,8 @@ def main() -> int:
             "schema_version": None,
             "contract_mode": None,
             "authoritative_contract_required": False,
+            "canonical_semantic_schema_version": contract.CANONICAL_SCHEMA_VERSION,
+            "schema_version_rewrite_used": False,
             "migration_counts": {},
             "record_migrations": [],
         }

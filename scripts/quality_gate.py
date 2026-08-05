@@ -44,6 +44,15 @@ def stages(include_tests: bool = True) -> list[Stage]:
             (sys.executable, "scripts/validate_compute_qualification.py"),
         ),
         Stage(
+            "compute contract evidence",
+            (
+                sys.executable,
+                "scripts/capture_compute_contract_evidence.py",
+                "--out",
+                "compute-contract-evidence.json",
+            ),
+        ),
+        Stage(
             "compute architecture audit",
             (sys.executable, "scripts/audit_compute_architecture.py"),
         ),
@@ -65,7 +74,16 @@ def stages(include_tests: bool = True) -> list[Stage]:
             (sys.executable, "scripts/run_strict_type_checks.py"),
             timeout_seconds=900.0,
         ),
-        Stage("coverage", (sys.executable, "scripts/run_coverage.py"), timeout_seconds=1200.0),
+        Stage(
+            "coverage",
+            (
+                sys.executable,
+                "scripts/run_coverage.py",
+                "--contract-evidence",
+                "compute-contract-evidence.json",
+            ),
+            timeout_seconds=1200.0,
+        ),
         Stage("Bandit", (sys.executable, "scripts/run_bandit.py"), timeout_seconds=600.0),
         Stage("repository", (sys.executable, "scripts/validate_repo.py", "--strict")),
     ]

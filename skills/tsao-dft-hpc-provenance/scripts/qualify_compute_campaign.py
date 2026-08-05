@@ -11,8 +11,9 @@ import statistics
 import sys
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import yaml
 
@@ -22,6 +23,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 import benchmark_contract as contract  # noqa: E402 -- standalone Skill import contract
+import performance_evidence as performance  # noqa: E402 -- standalone Skill import contract
 
 ROOT = SCRIPT_PATH.parents[3] if len(SCRIPT_PATH.parents) > 3 else Path.cwd()
 DEFAULT_SCHEMA = contract.CANONICAL_SCHEMA_PATH
@@ -29,11 +31,160 @@ MAX_WORKERS = 8
 EXTERNAL_HOLD = "EXTERNAL_HOLD"
 UNQUALIFIED = "UNQUALIFIED"
 QUALIFIED_FOR_REVIEW = "QUALIFIED_FOR_REVIEW"
-ENGINES = {"gaussian", "vasp", "quantum-espresso", "cp2k", "ml-surrogate"}
+ENGINES = {"gaussian", "vasp", "quantum-espresso", "cp2k", "generic", "ml-surrogate"}
+GPU_BACKENDS = {"cuda", "openacc", "hip", "sycl", "metal"}
+STANDARD_RESULTS = {
+    "energy_ev": "energy",
+    "forces_ev_per_angstrom": "forces",
+    "stress_gpa": "stress",
+}
+PROJECTION_STATUS = "RETAINED_DIAGNOSTIC_NOT_ELIGIBLE"
 
 
 class QualificationLoadError(ValueError):
     """Raised when campaign or evidence documents cannot be decoded safely."""
+
+
+@dataclass(frozen=True)
+class CampaignDocument:
+    """Typed access to one centrally normalized canonical nested v1.1 result."""
+
+    source: str
+    record: dict[str, Any]
+    migration: dict[str, Any]
+    warnings: tuple[str, ...] = ()
+
+    @property
+    def schema_version(self) -> str:
+        return str(self.record["schema_version"])
+
+    @property
+    def benchmark_plan_id(self) -> str:
+        return str(self.record["benchmark_plan_id"])
+
+    @property
+    def candidate_id(self) -> str:
+        return str(self.record["candidate_id"])
+
+    @property
+    def role(self) -> str:
+        return str(self.record["role"])
+
+    @property
+    def repeat_index(self) -> int:
+        return int(self.record["repeat_index"])
+
+    @property
+    def engine_name(self) -> str:
+        return str(self.record["engine"]["name"])
+
+    @property
+    def engine_version(self) -> str:
+        return str(self.record["engine"]["version"])
+
+    @property
+    def engine_executable(self) -> str:
+        return str(self.record["engine"]["executable"])
+
+    @property
+    def build_fingerprint_id(self) -> str:
+        return str(self.record["engine"]["build_fingerprint_id"])
+
+    @property
+    def hardware_fingerprint_id(self) -> str:
+        return str(self.record["hardware"]["hardware_fingerprint_id"])
+
+    @property
+    def site_id(self) -> str:
+        return str(self.record["execution"]["site_id"])
+
+    @property
+    def run_id(self) -> str:
+        return str(self.record["execution"]["run_id"])
+
+    @property
+    def input_sha256(self) -> str:
+        return str(self.record["scientific"]["input_sha256"])
+
+    @property
+    def method_fingerprint_id(self) -> str:
+        return str(self.record["scientific"]["method_fingerprint_id"])
+
+    @property
+    def evidence_kind(self) -> str:
+        return str(self.record["evidence_source"]["kind"])
+
+    @property
+    def missing_fields(self) -> tuple[str, ...]:
+        return tuple(str(item) for item in self.record["evidence_source"]["missing_fields"])
+
+    @property
+    def parser_accepted(self) -> bool:
+        return self.record["scientific"]["parser_accepted"] is True
+
+    @property
+    def exit_status(self) -> int:
+        return int(self.record["execution"]["exit_status"])
+
+    @property
+    def wall_time_s(self) -> float:
+        return float(self.record["performance"]["wall_time_s"])
+
+    @property
+    def accelerator_backend(self) -> str:
+        return _backend_from_runtime(self.record["software"]["accelerator_runtime"])
+
+    @property
+    def gpu_uuids(self) -> tuple[str, ...]:
+        return tuple(str(item) for item in self.record["hardware"]["gpu_uuids"])
+
+    @property
+    def all_artifacts_verified(self) -> bool:
+        return performance.all_artifacts_verified(self.record)
+
+    @property
+    def scientific_identity(self) -> str:
+        return performance.scientific_identity(self.record)
+
+    @property
+    def candidate_execution_identity(self) -> tuple[Any, ...]:
+        engine = self.record["engine"]
+        software = self.record["software"]
+        hardware = self.record["hardware"]
+        return (
+            engine["version"],
+            engine["executable"],
+            engine["build_fingerprint_id"],
+            software["compiler"],
+            software["mpi"],
+            software["openmp_runtime"],
+            software["accelerator_runtime"],
+            hardware["site_id"],
+            hardware["hardware_fingerprint_id"],
+            hardware["nodes"],
+            hardware["ranks_per_node"],
+            hardware["threads_per_rank"],
+            hardware["gpu_vendor"],
+            hardware["gpu_model"],
+            tuple(hardware["gpu_uuids"]),
+            hardware["gpu_memory_gb"],
+            hardware["driver_version"],
+            hardware["gpu_binding"],
+        )
+
+    def scientific_observables(self) -> dict[str, Any]:
+        results = self.record["scientific"]["results"]
+        observables = {
+            key: value
+            for key, value in results.items()
+            if key in STANDARD_RESULTS and value is not None
+        }
+        properties = results.get("properties") or {}
+        collisions = sorted(set(properties) & set(STANDARD_RESULTS))
+        if collisions:
+            raise ValueError(f"scientific properties collide with standard result fields: {collisions}")
+        observables.update({str(key): value for key, value in properties.items()})
+        return observables
 
 
 def _reject_constant(value: str) -> None:
@@ -152,18 +303,82 @@ def validate_campaign(campaign: Any) -> list[str]:
     return errors
 
 
+def _backend_from_runtime(value: Any) -> str:
+    text = str(value or "none").lower()
+    for backend in sorted(GPU_BACKENDS):
+        if text.startswith(backend) or f"{backend};" in text:
+            return backend
+    return "none"
+
+
+def _expected_observable_names(record: dict[str, Any]) -> set[str]:
+    results = record["scientific"]["results"]
+    names = {
+        logical_name
+        for field, logical_name in STANDARD_RESULTS.items()
+        if results.get(field) is not None
+    }
+    names.update(str(key) for key in (results.get("properties") or {}))
+    return names
+
+
+def _campaign_semantic_errors(record: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
+    results = record["scientific"]["results"]
+    properties = results.get("properties") or {}
+    collisions = sorted(set(properties) & set(STANDARD_RESULTS))
+    if collisions:
+        errors.append(f"scientific properties collide with standard result fields: {collisions}")
+    if record["scientific"]["parser_accepted"] is True:
+        declared = set(str(item) for item in record["scientific"]["observable_set"])
+        observed = _expected_observable_names(record)
+        if declared != observed:
+            errors.append(
+                "scientific.observable_set does not match populated canonical result fields: "
+                f"declared={sorted(declared)} observed={sorted(observed)}"
+            )
+    return errors
+
+
+def prepare_document(
+    record: dict[str, Any],
+    *,
+    role_hint: str | None = None,
+    source: str = "<memory>",
+    artifact_root: Path | None = None,
+) -> CampaignDocument:
+    try:
+        canonical, migration = contract.normalize_record(record, role_hint=role_hint)
+        validated, semantic_errors, warnings = performance.validate_canonical_result(canonical, artifact_root)
+    except (TypeError, ValueError, contract.BenchmarkContractError) as exc:
+        raise QualificationLoadError(f"{source}: benchmark contract normalization failed: {exc}") from exc
+    validated.pop("validation", None)
+    semantic_errors = [*semantic_errors, *_campaign_semantic_errors(validated)]
+    if semantic_errors:
+        raise QualificationLoadError(f"{source}: canonical semantic validation failed: {'; '.join(semantic_errors)}")
+    return CampaignDocument(
+        source=source,
+        record=validated,
+        migration=dict(migration),
+        warnings=tuple(warnings),
+    )
+
+
 def _load_normalized(
     path: Path,
     role_hints: dict[str, str],
-) -> tuple[str, dict[str, Any] | None, list[str], dict[str, Any] | None]:
+) -> tuple[str, CampaignDocument | None, list[str]]:
     try:
-        document = load_json(path)
-        candidate_id = str(document.get("candidate_id", ""))
-        canonical, migration = contract.normalize_record(document, role_hint=role_hints.get(candidate_id))
-        view = contract.compute_qualification_view(canonical)
-    except (QualificationLoadError, contract.BenchmarkContractError, ValueError) as exc:
-        return path.as_posix(), None, [str(exc)], None
-    return path.as_posix(), view, [], migration
+        raw = load_json(path)
+        candidate_id = str(raw.get("candidate_id", ""))
+        document = prepare_document(
+            raw,
+            role_hint=role_hints.get(candidate_id),
+            source=path.as_posix(),
+        )
+    except (QualificationLoadError, ValueError) as exc:
+        return path.as_posix(), None, [str(exc)]
+    return path.as_posix(), document, []
 
 
 def load_results(
@@ -171,7 +386,7 @@ def load_results(
     schema: dict[str, Any],
     workers: int | None = None,
     role_hints: dict[str, str] | None = None,
-) -> tuple[list[dict[str, Any]], list[str]]:
+) -> tuple[list[CampaignDocument], list[str]]:
     if contract.approved_schema_kind(schema) != "canonical-nested-v1.1":
         return [], ["compute qualification requires the authoritative nested v1.1 schema"]
     ordered = sorted((Path(path) for path in paths), key=lambda path: path.as_posix())
@@ -182,9 +397,52 @@ def load_results(
     else:
         with ThreadPoolExecutor(max_workers=count, thread_name_prefix="tsao-qualify") as executor:
             loaded = list(executor.map(lambda path: _load_normalized(path, hints), ordered))
-    documents = [document for _, document, errors, _ in loaded if document is not None and not errors]
-    errors = [error for _, _, item_errors, _ in loaded for error in item_errors]
+    documents = [document for _, document, errors in loaded if document is not None and not errors]
+    errors = [error for _, _, item_errors in loaded for error in item_errors]
     return documents, errors
+
+
+def _role_hints(campaign: dict[str, Any]) -> dict[str, str]:
+    return {
+        str(campaign.get("reference_candidate_id")): "scientific-reference",
+        **{str(candidate): "acceleration-candidate" for candidate in (campaign.get("candidate_ids") or [])},
+    }
+
+
+def _coerce_documents(
+    campaign: dict[str, Any],
+    documents: list[CampaignDocument | dict[str, Any]],
+) -> tuple[list[CampaignDocument], list[str]]:
+    prepared: list[CampaignDocument] = []
+    errors: list[str] = []
+    hints = _role_hints(campaign)
+    for index, item in enumerate(documents):
+        try:
+            if isinstance(item, CampaignDocument):
+                checked = prepare_document(item.record, source=item.source)
+                migration = dict(item.migration)
+                if migration.get("target_contract") != "canonical-nested-v1.1":
+                    raise QualificationLoadError(f"{item.source}: migration target must be canonical-nested-v1.1")
+                checked = CampaignDocument(
+                    source=checked.source,
+                    record=checked.record,
+                    migration=migration,
+                    warnings=checked.warnings,
+                )
+            elif type(item) is dict:
+                candidate_id = str(item.get("candidate_id", ""))
+                checked = prepare_document(
+                    item,
+                    role_hint=hints.get(candidate_id),
+                    source=f"<memory:{index}>",
+                )
+            else:
+                raise QualificationLoadError(f"document {index} must be a CampaignDocument or mapping")
+        except (QualificationLoadError, TypeError, ValueError) as exc:
+            errors.append(str(exc))
+            continue
+        prepared.append(checked)
+    return prepared, errors
 
 
 def _compare(reference: Any, candidate: Any, absolute: float, relative: float, path: str) -> list[str]:
@@ -194,6 +452,8 @@ def _compare(reference: Any, candidate: Any, absolute: float, relative: float, p
     if isinstance(reference, (int, float)) and isinstance(candidate, (int, float)):
         ref = float(reference)
         value = float(candidate)
+        if not math.isfinite(ref) or not math.isfinite(value):
+            return [f"{path}: non-finite scientific values are forbidden"]
         limit = absolute + relative * abs(ref)
         if abs(value - ref) > limit:
             errors.append(f"{path}: numerical mismatch {value} vs {ref} exceeds {limit}")
@@ -211,17 +471,32 @@ def _compare(reference: Any, candidate: Any, absolute: float, relative: float, p
     return [f"{path}: scientific result type mismatch"]
 
 
+def _append_identity_drift(
+    rows: list[CampaignDocument],
+    getter: Callable[[CampaignDocument], Any],
+    label: str,
+    candidate_id: str,
+    errors: list[str],
+) -> None:
+    if len({getter(row) for row in rows}) != 1:
+        errors.append(f"{candidate_id}: {label} differs across repeats")
+
+
 def qualify(
-    campaign: dict[str, Any], documents: list[dict[str, Any]], load_errors: list[str] | None = None
+    campaign: dict[str, Any],
+    documents: list[CampaignDocument | dict[str, Any]],
+    load_errors: list[str] | None = None,
 ) -> dict[str, Any]:
-    errors = [*validate_campaign(campaign), *(load_errors or [])]
+    prepared, coercion_errors = _coerce_documents(campaign, documents)
+    errors = [*validate_campaign(campaign), *(load_errors or []), *coercion_errors]
     holds: list[str] = []
-    if not documents:
+    if not prepared:
         holds.append("no benchmark result documents were supplied")
     expected_ids = [campaign.get("reference_candidate_id"), *(campaign.get("candidate_ids") or [])]
-    groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for document in documents:
-        groups[str(document.get("candidate_id"))].append(document)
+    expected_roles = _role_hints(campaign)
+    groups: dict[str, list[CampaignDocument]] = defaultdict(list)
+    for document in prepared:
+        groups[document.candidate_id].append(document)
     unexpected = sorted(set(groups) - set(expected_ids))
     if unexpected:
         errors.append(f"unexpected candidate_ids: {unexpected}")
@@ -229,58 +504,104 @@ def qualify(
     raw_minimum_repeats = campaign.get("minimum_repeats")
     minimum_repeats = int(raw_minimum_repeats) if type(raw_minimum_repeats) is int else 3
     for candidate_id in expected_ids:
-        rows = sorted(groups.get(str(candidate_id), []), key=lambda item: int(item.get("repeat_index", 0)))
+        rows = sorted(groups.get(str(candidate_id), []), key=lambda item: item.repeat_index)
         if len(rows) < minimum_repeats:
             holds.append(f"{candidate_id}: requires at least {minimum_repeats} repeats")
             continue
-        indexes = [row.get("repeat_index") for row in rows]
+        indexes = [row.repeat_index for row in rows]
         if indexes != list(range(1, len(rows) + 1)):
             errors.append(f"{candidate_id}: repeat_index values must be contiguous from 1")
 
-    for document in documents:
-        candidate_id = str(document.get("candidate_id"))
-        if document.get("benchmark_plan_id") != campaign.get("benchmark_plan_id"):
-            errors.append(f"{candidate_id}: benchmark_plan_id mismatch")
-        if document.get("engine") != campaign.get("engine"):
-            errors.append(f"{candidate_id}: engine mismatch")
-        is_real = document.get("evidence_source") == "real-engine-observation"
-        has_missing = bool(document.get("missing_fields"))
-        if not is_real:
-            holds.append(f"{candidate_id}: evidence_source is not real-engine-observation")
-        parser_failed = document.get("parser_acceptance") != "PASS" or document.get("exit_status") != 0
-        if parser_failed:
-            message = f"{candidate_id}: parser or exit status not accepted"
-            (holds if not is_real or has_missing else errors).append(message)
-        if not (document.get("convergence") or {}).get("achieved"):
-            message = f"{candidate_id}: convergence was not achieved"
-            (holds if not is_real or has_missing else errors).append(message)
-        if has_missing:
-            holds.append(f"{candidate_id}: missing_fields is not empty")
-        if document.get("build_fingerprint") is None:
-            holds.append(f"{candidate_id}: build fingerprint is missing")
-        if document.get("hardware_fingerprint") is None:
-            holds.append(f"{candidate_id}: hardware fingerprint is missing")
+    run_ids = [document.run_id for document in prepared]
+    if len(run_ids) != len(set(run_ids)):
+        errors.append("execution.run_id values must be globally unique")
 
-    if documents:
-        input_hashes = {document.get("input_sha256") for document in documents}
-        method_ids = {document.get("method_fingerprint_id") for document in documents}
-        if len(input_hashes) != 1:
-            errors.append("input_sha256 differs across campaign results")
-        if len(method_ids) != 1:
-            errors.append("method_fingerprint_id differs across campaign results")
+    expected_engine = "generic" if campaign.get("engine") == "ml-surrogate" else campaign.get("engine")
+    for document in prepared:
+        candidate_id = document.candidate_id
+        is_real = document.evidence_kind == "real-engine"
+        has_missing = bool(document.missing_fields)
+        held_provenance = not is_real or has_missing
+        if document.schema_version != contract.CANONICAL_SCHEMA_VERSION:
+            errors.append(f"{candidate_id}: internal document is not canonical nested v1.1")
+        if document.benchmark_plan_id != campaign.get("benchmark_plan_id"):
+            errors.append(f"{candidate_id}: benchmark_plan_id mismatch")
+        if document.engine_name != expected_engine:
+            errors.append(f"{candidate_id}: engine mismatch")
+        if document.role != expected_roles.get(candidate_id):
+            errors.append(f"{candidate_id}: canonical role does not match campaign role")
+        if document.migration.get("qualification_impact") == EXTERNAL_HOLD:
+            holds.append(f"{candidate_id}: source migration forces EXTERNAL_HOLD")
+        if not is_real:
+            holds.append(f"{candidate_id}: evidence_source.kind is not real-engine")
+        if document.parser_accepted is not True or document.exit_status != 0:
+            message = f"{candidate_id}: parser or exit status not accepted"
+            (holds if held_provenance else errors).append(message)
+        if has_missing:
+            holds.append(f"{candidate_id}: evidence_source.missing_fields is not empty")
+        if document.build_fingerprint_id == "MISSING":
+            holds.append(f"{candidate_id}: build fingerprint is missing")
+        if document.hardware_fingerprint_id == "MISSING":
+            holds.append(f"{candidate_id}: hardware fingerprint is missing")
+        if document.site_id == "MISSING":
+            holds.append(f"{candidate_id}: site identity is missing")
+        if not document.all_artifacts_verified:
+            holds.append(f"{candidate_id}: artifacts are not fully VERIFIED")
+
+        hardware = document.record["hardware"]
+        backend = document.accelerator_backend
+        gpu_vendor = str(hardware["gpu_vendor"])
+        gpu_uuids = document.gpu_uuids
+        if document.role == "scientific-reference":
+            if backend != "none" or gpu_vendor != "none" or gpu_uuids:
+                message = f"{candidate_id}: reference role requires accelerator backend none and no GPU identity"
+                (holds if held_provenance else errors).append(message)
+        elif document.role == "acceleration-candidate":
+            if backend not in GPU_BACKENDS or gpu_vendor == "none" or not gpu_uuids:
+                message = f"{candidate_id}: acceleration role requires backend, vendor and GPU UUID identity"
+                (holds if held_provenance else errors).append(message)
+
+    if prepared:
+        if len({document.input_sha256 for document in prepared}) != 1:
+            errors.append("scientific.input_sha256 differs across campaign results")
+        if len({document.method_fingerprint_id for document in prepared}) != 1:
+            errors.append("scientific.method_fingerprint_id differs across campaign results")
+        if len({document.scientific_identity for document in prepared}) != 1:
+            errors.append("canonical scientific identity differs across campaign results")
+        if len({document.site_id for document in prepared}) != 1:
+            errors.append("execution.site_id differs across campaign results")
+
+    for candidate_id, rows in groups.items():
+        _append_identity_drift(
+            rows,
+            lambda row: row.candidate_execution_identity,
+            "build, software, hardware or GPU topology identity",
+            candidate_id,
+            errors,
+        )
+        _append_identity_drift(
+            rows,
+            lambda row: row.hardware_fingerprint_id,
+            "hardware_fingerprint_id",
+            candidate_id,
+            errors,
+        )
+        _append_identity_drift(
+            rows,
+            lambda row: row.gpu_uuids,
+            "multi-GPU UUID set",
+            candidate_id,
+            errors,
+        )
 
     reference_id = str(campaign.get("reference_candidate_id"))
-    reference_rows = sorted(groups.get(reference_id, []), key=lambda item: int(item.get("repeat_index", 0)))
+    reference_rows = sorted(groups.get(reference_id, []), key=lambda item: item.repeat_index)
     if reference_rows:
-        for row in reference_rows:
-            runtime = row.get("accelerator_runtime")
-            if runtime is not None and runtime.get("backend") != "none":
-                errors.append("reference candidate must use accelerator backend none")
-        reference_results = reference_rows[0].get("scientific_results") or {}
+        reference_results = reference_rows[0].scientific_observables()
         tolerances = campaign.get("numerical_tolerances") or {}
         for candidate_id in expected_ids:
             for row in groups.get(str(candidate_id), []):
-                results = row.get("scientific_results") or {}
+                results = row.scientific_observables()
                 if set(results) != set(reference_results):
                     errors.append(f"{candidate_id}: scientific observable set mismatch")
                     continue
@@ -295,18 +616,21 @@ def qualify(
                         _compare(reference_value, results[name], absolute, relative, f"{candidate_id}.{name}")
                     )
 
-    performance: dict[str, Any] = {"evaluated": False, "candidates": {}}
+    performance_report: dict[str, Any] = {"evaluated": False, "candidates": {}}
     can_evaluate = not errors and not holds and bool(reference_rows)
     if can_evaluate:
-        reference_median = statistics.median(float(row["wall_time_seconds"]) for row in reference_rows)
-        performance["evaluated"] = True
-        performance["reference_median_wall_time_seconds"] = reference_median
+        reference_median = statistics.median(row.wall_time_s for row in reference_rows)
+        performance_report["evaluated"] = True
+        performance_report["reference_median_wall_time_seconds"] = reference_median
         threshold = float(campaign["minimum_reference_over_candidate_ratio"])
         for candidate_id in campaign["candidate_ids"]:
             rows = groups[candidate_id]
-            candidate_median = statistics.median(float(row["wall_time_seconds"]) for row in rows)
+            candidate_median = statistics.median(row.wall_time_s for row in rows)
             ratio = reference_median / candidate_median
-            performance["candidates"][candidate_id] = {
+            if not math.isfinite(ratio):
+                errors.append(f"{candidate_id}: non-finite performance ratio")
+                continue
+            performance_report["candidates"][candidate_id] = {
                 "median_wall_time_seconds": candidate_median,
                 "reference_over_candidate_ratio": ratio,
                 "threshold": threshold,
@@ -317,7 +641,7 @@ def qualify(
 
     state = (
         QUALIFIED_FOR_REVIEW
-        if not errors and not holds and performance["evaluated"]
+        if not errors and not holds and performance_report["evaluated"]
         else EXTERNAL_HOLD
         if holds
         else UNQUALIFIED
@@ -327,16 +651,31 @@ def qualify(
         "state": state,
         "campaign_id": campaign.get("campaign_id"),
         "benchmark_result_contract": "canonical-nested-v1.1",
+        "input_model": "canonical-nested-v1.1-typed-accessor",
+        "normalization_mandatory": True,
+        "native_semantic_validation": True,
+        "legacy_projection_consumed": False,
+        "legacy_projection_status": PROJECTION_STATUS,
         "workers_bounded_by": MAX_WORKERS,
-        "document_count": len(documents),
-        "performance": performance,
+        "document_count": len(prepared),
+        "performance": performance_report,
         "holds": sorted(set(holds)),
         "errors": errors,
+        "identity_invariants": [
+            "campaign role equals canonical role",
+            "global execution.run_id uniqueness",
+            "single campaign site identity",
+            "stable per-candidate build/software/hardware identity",
+            "stable per-candidate multi-GPU UUID set",
+            "single canonical scientific identity",
+            "fully VERIFIED artifacts before ratio evaluation",
+        ],
         "non_claims": [
             "QUALIFIED_FOR_REVIEW is not signed L3 performance qualification.",
             "Performance ratios are emitted only from accepted real-engine observations.",
-            "Missing GPU, license, solver, build, or hardware evidence forces EXTERNAL_HOLD.",
+            "Missing GPU, license, solver, build, site, hardware or artifact evidence forces EXTERNAL_HOLD.",
             "Legacy flat v1.0 evidence with irrecoverable provenance gaps remains EXTERNAL_HOLD.",
+            "compute_qualification_view is retained only as a diagnostic compatibility export and is not eligible for qualification input.",
         ],
     }
 
@@ -352,15 +691,11 @@ def main() -> int:
     try:
         campaign = load_campaign(args.campaign)
         schema = load_json(args.schema)
-        roles = {
-            str(campaign.get("reference_candidate_id")): "scientific-reference",
-            **{str(candidate): "acceleration-candidate" for candidate in (campaign.get("candidate_ids") or [])},
-        }
         documents, load_errors = load_results(
             args.results,
             schema,
             workers=args.workers,
-            role_hints=roles,
+            role_hints=_role_hints(campaign),
         )
         report = qualify(campaign, documents, load_errors)
     except (QualificationLoadError, ValueError) as exc:

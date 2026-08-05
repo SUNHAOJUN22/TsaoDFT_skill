@@ -16,7 +16,12 @@ if (-not (Test-Path -LiteralPath $QualityGate -PathType Leaf)) {
     throw "quality gate entry point is missing"
 }
 
-$PythonCommand = Get-Command -Name "python" -CommandType Application -ErrorAction Stop
+$PythonCommand = Get-Command -Name "python" -CommandType Application -All -ErrorAction Stop |
+    Select-Object -First 1
+if ($null -eq $PythonCommand) {
+    throw "python executable is unavailable"
+}
+$PythonExecutable = [string]$PythonCommand.Source
 $Arguments = [System.Collections.Generic.List[string]]::new()
 $Arguments.Add($QualityGate)
 if ($SkipTests.IsPresent) {
@@ -32,7 +37,7 @@ if ($TimeoutSeconds -gt 0) {
 
 Push-Location -LiteralPath $RepositoryRoot
 try {
-    & $PythonCommand.Source @Arguments
+    & $PythonExecutable @Arguments
     $ExitCode = $LASTEXITCODE
 }
 finally {

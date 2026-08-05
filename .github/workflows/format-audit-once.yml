@@ -1,0 +1,39 @@
+name: One-shot audit formatting
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/format-audit-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@a3f0c85aaf31f6e17e55767b0908d7e5c2e53307 # v6.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Format changed Python files
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install ruff==0.15.22
+          python -m ruff format scripts/audit_compute_architecture.py tests/test_acceleration_registry.py tests/test_compute_architecture_audit.py
+          git rm .github/workflows/format-audit-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "style: format compute architecture audit"
+          git pull --rebase origin main
+          git push origin HEAD:main

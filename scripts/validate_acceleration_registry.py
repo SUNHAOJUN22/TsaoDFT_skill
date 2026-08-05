@@ -90,6 +90,13 @@ def validate() -> dict[str, Any]:
         if contract.normalize_library(alias) != target:
             errors.append(f"hardware optimizer alias {alias!r} does not normalize to {target!r}")
 
+    for path in (PLAN_PATH, CONTRACT_PATH):
+        source = path.read_text(encoding="utf-8")
+        if "def _library(" in source:
+            errors.append(f"{path.name} still defines a duplicated acceleration library catalog")
+        if "def _load_acceleration_registry()" not in source:
+            errors.append(f"{path.name} does not load acceleration_registry.py at runtime")
+
     report = registry.registry_report()
     report.update(
         {
@@ -100,6 +107,7 @@ def validate() -> dict[str, Any]:
                 "hardware_optimization_contract",
                 "backend_vendor_compatibility",
                 "planner_aliases",
+                "runtime_single_source",
             ],
         }
     )

@@ -19,6 +19,9 @@ HPC_ROOT = ROOT / "skills" / "tsao-dft-hpc-provenance"
 SCRIPTS = HPC_ROOT / "scripts"
 TEMPLATE = HPC_ROOT / "templates" / "benchmark-result.yaml"
 BRIDGE = SCRIPTS / "benchmark_bridge.py"
+IMPORTER = SCRIPTS / "import_benchmark_evidence.py"
+PERFORMANCE = SCRIPTS / "performance_evidence.py"
+CONTRACT = SCRIPTS / "benchmark_contract.py"
 
 
 def load_module(name: str, path: Path) -> ModuleType:
@@ -99,23 +102,28 @@ def validate() -> dict[str, Any]:
     template_migration: dict[str, Any] = {}
     legacy_migration: dict[str, Any] = {}
     try:
-        contract = load_module("tsao_benchmark_contract_validation", SCRIPTS / "benchmark_contract.py")
-        performance = load_module("tsao_benchmark_contract_semantics", SCRIPTS / "performance_evidence.py")
+        contract = load_module("tsao_benchmark_contract_validation", CONTRACT)
+        performance = load_module("tsao_benchmark_contract_semantics", PERFORMANCE)
         contract_report = contract.schema_contract_report()
         errors.extend(contract_report.get("errors") or [])
 
         template = yaml.safe_load(TEMPLATE.read_text(encoding="utf-8"))
         canonical, template_migration = contract.normalize_record(template)
-        compatibility = contract.semantic_compatibility_record(canonical)
-        _, semantic_errors, _ = performance.validate_result(compatibility)
-        if semantic_errors:
-            errors.append(f"canonical template failed semantic validation: {semantic_errors}")
+        native, semantic_errors, _ = performance.validate_canonical_result(canonical)
+        if semantic_errors or native.get("schema_version") != contract.CANONICAL_SCHEMA_VERSION:
+            errors.append(f"canonical template failed native v1.1 semantic validation: {semantic_errors}")
 
         old_nested = copy.deepcopy(canonical)
-        old_nested["schema_version"] = "1.0"
+        old_nested["schema_version"] = contract.LEGACY_NESTED_SCHEMA_VERSION
+        _, direct_legacy_errors, _ = performance.validate_canonical_result(old_nested)
+        if not any("schema_version must be 1.1" in item for item in direct_legacy_errors):
+            errors.append("native semantic validator accepted nested v1.0 without central migration")
         migrated_nested, nested_report = contract.normalize_record(old_nested)
         if migrated_nested != canonical or nested_report.get("migration") != "version-only-shape-preserving":
-            errors.append("legacy nested v1.0 is not migrated by a shape-preserving version transition")
+            errors.append("legacy nested v1.0 is not migrated by a shape-preserving central transition")
+        normalized_legacy, legacy_semantic_errors, _ = performance.validate_result(old_nested)
+        if legacy_semantic_errors or normalized_legacy.get("schema_version") != contract.CANONICAL_SCHEMA_VERSION:
+            errors.append("public semantic entrypoint did not route nested v1.0 through the central adapter")
 
         migrated_flat, legacy_migration = contract.normalize_record(
             legacy_flat_fixture(), role_hint="scientific-reference"
@@ -126,6 +134,12 @@ def validate() -> dict[str, Any]:
             errors.append("legacy flat v1.0 migration must record irrecoverable provenance gaps")
         if legacy_migration.get("qualification_impact") != "EXTERNAL_HOLD":
             errors.append("legacy flat v1.0 migration must force EXTERNAL_HOLD")
+        _, flat_semantic_errors, _ = performance.validate_canonical_result(migrated_flat)
+        if flat_semantic_errors:
+            errors.append(f"centrally migrated flat v1.0 is not a valid held v1.1 record: {flat_semantic_errors}")
+        _, bypass_errors, _ = performance.validate_result(legacy_flat_fixture())
+        if not any("explicit" in item for item in bypass_errors):
+            errors.append("legacy flat v1.0 bypass without an explicit role was accepted")
 
         mixed = copy.deepcopy(canonical)
         mixed["wall_time_seconds"] = 1.0
@@ -145,6 +159,18 @@ def validate() -> dict[str, Any]:
         else:
             errors.append("unknown nested schema version was accepted")
 
+        contract_source = CONTRACT.read_text(encoding="utf-8")
+        importer_source = IMPORTER.read_text(encoding="utf-8")
+        performance_source = PERFORMANCE.read_text(encoding="utf-8")
+        if "semantic_compatibility_record" in contract_source or "semantic_compatibility_record" in importer_source:
+            errors.append("nested v1.0 semantic compatibility view is still present")
+        if 'compatibility["schema_version"]' in importer_source or 'schema_version"] = "1.0"' in importer_source:
+            errors.append("benchmark importer still rewrites records to semantic schema v1.0")
+        if "def validate_canonical_result" not in performance_source:
+            errors.append("native canonical semantic validator is missing")
+        if "validate_canonical_result as validate_result" not in importer_source:
+            errors.append("formal importer is not wired directly to native canonical semantics")
+
         bridge_source = BRIDGE.read_text(encoding="utf-8")
         if '"schema_version": "1.1"' not in bridge_source:
             errors.append("benchmark bridge does not emit canonical nested v1.1")
@@ -156,6 +182,9 @@ def validate() -> dict[str, Any]:
         "canonical_contract": contract_report.get("canonical_contract"),
         "canonical_schema_sha256": contract_report.get("canonical_schema_sha256"),
         "root_mirror_synchronized": contract_report.get("root_mirror_synchronized"),
+        "native_semantic_schema_version": contract_report.get("native_semantic_schema_version"),
+        "compatibility_view_present": contract_report.get("compatibility_view_present"),
+        "legacy_semantic_bypass": contract_report.get("legacy_semantic_bypass"),
         "legacy_contracts": contract_report.get("legacy_contracts"),
         "template_migration": template_migration.get("migration"),
         "legacy_flat_migration": legacy_migration.get("migration"),
@@ -169,6 +198,7 @@ def validate() -> dict[str, Any]:
             "skills/tsao-dft-hpc-provenance/scripts/validate_benchmark_result.py",
             "skills/tsao-dft-hpc-provenance/scripts/qualify_performance_evidence.py",
             "skills/tsao-dft-hpc-provenance/scripts/qualify_compute_campaign.py",
+            "skills/tsao-dft-hpc-provenance/scripts/performance_evidence.py",
         ],
         "external_engine_invoked": False,
         "performance_ratio_published": False,

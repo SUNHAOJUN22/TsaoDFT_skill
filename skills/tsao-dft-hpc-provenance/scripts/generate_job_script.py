@@ -24,11 +24,37 @@ def q(value: Any) -> str:
     return shlex.quote(str(value))
 
 
+def ps_literal(value: Any) -> str:
+    """Return one PowerShell single-quoted literal."""
+
+    return "'" + str(value).replace("'", "''") + "'"
+
+
+def metadata_comment(value: Any) -> str:
+    """Render metadata into a single non-executable comment line."""
+
+    return str(value).replace("\r", " ").replace("\n", " ")
+
+
+def render_powershell_argv(value: list[str]) -> str:
+    if not value:
+        raise ValueError("argv must not be empty")
+    return "@(" + ", ".join(ps_literal(item) for item in value) + ")"
+
+
 def approval_guard(manifest: dict[str, Any]) -> list[str]:
     approval = str(manifest.get("approval", "pending"))
     if approval in {"approved", "not_required"}:
         return []
     return [f'echo "TsaoDFT execution blocked: manifest approval is {approval}" >&2', "exit 64"]
+
+
+def powershell_approval_guard(manifest: dict[str, Any]) -> list[str]:
+    approval = str(manifest.get("approval", "pending"))
+    if approval in {"approved", "not_required"}:
+        return []
+    message = ps_literal(f"TsaoDFT execution blocked: manifest approval is {approval}")
+    return [f"[Console]::Error.WriteLine({message})", "exit 64"]
 
 
 def launcher_argv(manifest: dict[str, Any]) -> list[str]:
@@ -132,7 +158,44 @@ def runtime_provenance(manifest: dict[str, Any]) -> list[str]:
     return lines
 
 
-def build(manifest: dict[str, Any]) -> str:
+def powershell_runtime_provenance(manifest: dict[str, Any]) -> list[str]:
+    acceleration = manifest.get("acceleration") or {}
+    if acceleration.get("enabled") is not True or acceleration.get("record_runtime", True) is False:
+        return []
+    record = ps_literal(acceleration.get("runtime_record", "tsao-acceleration-runtime.txt"))
+    fixed = (
+        f"profile_id={acceleration.get('profile_id', 'unknown')}",
+        f"build_fingerprint_id={acceleration.get('build_fingerprint_id', 'unknown')}",
+        f"benchmark_plan_id={acceleration.get('benchmark_plan_id', 'unknown')}",
+    )
+    lines = [
+        "$runtimeLines = [System.Collections.Generic.List[string]]::new()",
+        *[f"$runtimeLines.Add({ps_literal(item)})" for item in fixed],
+        '$runtimeLines.Add("SLURM_JOB_ID=$($env:SLURM_JOB_ID)")',
+        '$runtimeLines.Add("SLURM_LOCALID=$($env:SLURM_LOCALID)")',
+        '$runtimeLines.Add("CUDA_VISIBLE_DEVICES=$($env:CUDA_VISIBLE_DEVICES)")',
+        '$runtimeLines.Add("ROCR_VISIBLE_DEVICES=$($env:ROCR_VISIBLE_DEVICES)")',
+        '$runtimeLines.Add("ZE_AFFINITY_MASK=$($env:ZE_AFFINITY_MASK)")',
+        f"$runtimeLines | Set-Content -LiteralPath {record} -Encoding utf8NoBOM",
+    ]
+    if acceleration.get("gpu_vendor") == "nvidia":
+        inventory = ps_literal(acceleration.get("device_inventory", "tsao-nvidia-gpu-inventory.csv"))
+        lines.extend(
+            [
+                "$nvidiaSmi = Get-Command -Name 'nvidia-smi' -CommandType Application -ErrorAction SilentlyContinue",
+                "if ($null -ne $nvidiaSmi) {",
+                "  & $nvidiaSmi.Source '--query-gpu=name,uuid,pci.bus_id,driver_version,memory.total' "
+                f"'--format=csv,noheader' | Set-Content -LiteralPath {inventory} -Encoding utf8NoBOM",
+                "  if ($LASTEXITCODE -ne 0) { throw 'nvidia-smi inventory failed' }",
+                "} else {",
+                f"  'nvidia-smi unavailable' | Set-Content -LiteralPath {inventory} -Encoding utf8NoBOM",
+                "}",
+            ]
+        )
+    return lines
+
+
+def build_posix(manifest: dict[str, Any]) -> str:
     resources = manifest["resources"]
     scheduler = manifest["scheduler"]
     lines = ["#!/usr/bin/env bash", "set -euo pipefail"]
@@ -166,10 +229,11 @@ def build(manifest: dict[str, Any]) -> str:
     lines[1:1] = headers
     lines += [
         "",
-        f"# engine: {manifest['engine']} {manifest.get('engine_version', 'unknown')}",
-        f"# method_fingerprint_id: {manifest.get('method_fingerprint_id', 'unknown')}",
-        f"# support_level: {manifest.get('support_level', 'unknown')}",
-        f"# approval: {manifest.get('approval', 'pending')}",
+        f"# engine: {metadata_comment(manifest['engine'])} "
+        f"{metadata_comment(manifest.get('engine_version', 'unknown'))}",
+        f"# method_fingerprint_id: {metadata_comment(manifest.get('method_fingerprint_id', 'unknown'))}",
+        f"# support_level: {metadata_comment(manifest.get('support_level', 'unknown'))}",
+        f"# approval: {metadata_comment(manifest.get('approval', 'pending'))}",
     ]
     environment = manifest.get("environment") or {}
     for module in environment.get("modules", []):
@@ -225,10 +289,174 @@ def build(manifest: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _powershell_process_function() -> list[str]:
+    return [
+        "function Invoke-TsaoProcess {",
+        "  [CmdletBinding()]",
+        "  param(",
+        "    [Parameter(Mandatory = $true)][string[]]$Argv,",
+        "    [string]$StandardInputPath = '',",
+        "    [string]$StandardOutputPath = '',",
+        "    [string]$StandardErrorPath = ''",
+        "  )",
+        "  if ($Argv.Count -lt 1) { throw 'argv must not be empty' }",
+        "  $startInfo = [System.Diagnostics.ProcessStartInfo]::new()",
+        "  $startInfo.FileName = $Argv[0]",
+        "  $startInfo.UseShellExecute = $false",
+        "  $startInfo.CreateNoWindow = $true",
+        "  for ($index = 1; $index -lt $Argv.Count; $index++) {",
+        "    $null = $startInfo.ArgumentList.Add($Argv[$index])",
+        "  }",
+        "  $startInfo.RedirectStandardInput = $StandardInputPath.Length -gt 0",
+        "  $startInfo.RedirectStandardOutput = $StandardOutputPath.Length -gt 0",
+        "  $startInfo.RedirectStandardError = $StandardErrorPath.Length -gt 0",
+        "  $process = [System.Diagnostics.Process]::new()",
+        "  $process.StartInfo = $startInfo",
+        "  $inputStream = $null",
+        "  $outputStream = $null",
+        "  $errorStream = $null",
+        "  $outputTask = $null",
+        "  $errorTask = $null",
+        "  try {",
+        "    if ($startInfo.RedirectStandardInput) {",
+        "      $inputStream = [System.IO.File]::OpenRead($StandardInputPath)",
+        "    }",
+        "    if ($startInfo.RedirectStandardOutput) {",
+        "      $outputStream = [System.IO.File]::Open(",
+        "        $StandardOutputPath, [System.IO.FileMode]::Create,",
+        "        [System.IO.FileAccess]::Write, [System.IO.FileShare]::Read",
+        "      )",
+        "    }",
+        "    if ($startInfo.RedirectStandardError) {",
+        "      $errorStream = [System.IO.File]::Open(",
+        "        $StandardErrorPath, [System.IO.FileMode]::Create,",
+        "        [System.IO.FileAccess]::Write, [System.IO.FileShare]::Read",
+        "      )",
+        "    }",
+        "    if (-not $process.Start()) { throw 'process failed to start' }",
+        "    if ($null -ne $outputStream) {",
+        "      $outputTask = $process.StandardOutput.BaseStream.CopyToAsync($outputStream)",
+        "    }",
+        "    if ($null -ne $errorStream) {",
+        "      $errorTask = $process.StandardError.BaseStream.CopyToAsync($errorStream)",
+        "    }",
+        "    if ($null -ne $inputStream) {",
+        "      $inputStream.CopyTo($process.StandardInput.BaseStream)",
+        "      $process.StandardInput.Close()",
+        "    }",
+        "    $process.WaitForExit()",
+        "    $tasks = [System.Collections.Generic.List[System.Threading.Tasks.Task]]::new()",
+        "    if ($null -ne $outputTask) { $tasks.Add($outputTask) }",
+        "    if ($null -ne $errorTask) { $tasks.Add($errorTask) }",
+        "    if ($tasks.Count -gt 0) {",
+        "      [System.Threading.Tasks.Task]::WaitAll($tasks.ToArray())",
+        "    }",
+        "    return [int]$process.ExitCode",
+        "  } finally {",
+        "    if ($null -ne $inputStream) { $inputStream.Dispose() }",
+        "    if ($null -ne $outputStream) { $outputStream.Dispose() }",
+        "    if ($null -ne $errorStream) { $errorStream.Dispose() }",
+        "    $process.Dispose()",
+        "  }",
+        "}",
+    ]
+
+
+def build_powershell(manifest: dict[str, Any]) -> str:
+    if manifest.get("scheduler") != "local":
+        raise ValueError("PowerShell job scripts support only scheduler=local")
+    environment = manifest.get("environment") or {}
+    if environment.get("modules"):
+        raise ValueError("PowerShell local backend does not support environment.modules")
+    if environment.get("source"):
+        raise ValueError("PowerShell local backend does not support environment.source")
+
+    lines = [
+        "#requires -Version 7.0",
+        "Set-StrictMode -Version Latest",
+        "$ErrorActionPreference = 'Stop'",
+        "",
+        f"# engine: {metadata_comment(manifest['engine'])} "
+        f"{metadata_comment(manifest.get('engine_version', 'unknown'))}",
+        f"# method_fingerprint_id: {metadata_comment(manifest.get('method_fingerprint_id', 'unknown'))}",
+        f"# support_level: {metadata_comment(manifest.get('support_level', 'unknown'))}",
+        f"# approval: {metadata_comment(manifest.get('approval', 'pending'))}",
+        *_powershell_process_function(),
+        "",
+    ]
+    variables = environment.get("variables") or {}
+    for key, value in variables.items():
+        lines.append(f"$env:{key} = {ps_literal(value)}")
+    acceleration = manifest.get("acceleration") or {}
+    if (
+        acceleration.get("enabled")
+        and acceleration.get("gpu_vendor") == "nvidia"
+        and acceleration.get("device_order") == "pci_bus_id"
+        and "CUDA_DEVICE_ORDER" not in variables
+    ):
+        lines.append("$env:CUDA_DEVICE_ORDER = 'PCI_BUS_ID'")
+    scratch = manifest.get("scratch") or {}
+    if scratch.get("path"):
+        scratch_path = ps_literal(scratch["path"])
+        lines.append(f"$null = New-Item -ItemType Directory -Force -LiteralPath {scratch_path}")
+        if manifest["engine"] == "gaussian":
+            lines.append(f"$env:GAUSS_SCRDIR = {scratch_path}")
+    lines += ["", f"Set-Location -LiteralPath {ps_literal(manifest['workdir'])}"]
+    lines.extend(powershell_approval_guard(manifest))
+    lines.append('Write-Output "TsaoDFT job start: $((Get-Date).ToString(\'o\'))"')
+    lines.extend(powershell_runtime_provenance(manifest))
+
+    preflight = manifest["preflight"]
+    lines.append(f"# preflight: {render_powershell_argv(preflight['argv'])}")
+    if preflight.get("run_in_job") is True:
+        lines.extend(
+            [
+                f"$preflightArgv = {render_powershell_argv(preflight['argv'])}",
+                "$preflightRc = Invoke-TsaoProcess -Argv $preflightArgv",
+                "if ($preflightRc -ne 0) { exit $preflightRc }",
+            ]
+        )
+
+    engine = manifest["engine"]
+    stdout = str(manifest.get("stdout") or (Path(str(manifest["input"])).stem + ".stdout"))
+    stderr = str(manifest.get("stderr") or (Path(str(manifest["input"])).stem + ".stderr"))
+    lines.append(f"$engineArgv = {render_powershell_argv(execution_argv(manifest))}")
+    invoke = ["$engineRc = Invoke-TsaoProcess -Argv $engineArgv"]
+    if engine == "gaussian":
+        invoke.append(f"-StandardInputPath {ps_literal(manifest['input'])}")
+    if engine != "cp2k":
+        invoke.append(f"-StandardOutputPath {ps_literal(stdout)}")
+    invoke.append(f"-StandardErrorPath {ps_literal(stderr)}")
+    lines.append(" `\n  ".join(invoke))
+    lines.append('Write-Output "TsaoDFT job end: $((Get-Date).ToString(\'o\')) rc=$engineRc"')
+
+    parser_contract = manifest["parser"]
+    lines.append("$parserRc = 0")
+    if parser_contract.get("run_in_job") is True:
+        lines.extend(
+            [
+                f"$parserArgv = {render_powershell_argv(parser_contract['argv'])}",
+                "$parserRc = Invoke-TsaoProcess -Argv $parserArgv",
+                'Write-Output "TsaoDFT parser end: $((Get-Date).ToString(\'o\')) rc=$parserRc"',
+            ]
+        )
+    lines.extend(["if ($engineRc -ne 0) { exit $engineRc }", "exit $parserRc"])
+    return "\n".join(lines) + "\n"
+
+
+def build(manifest: dict[str, Any], *, shell: str = "posix") -> str:
+    if shell == "posix":
+        return build_posix(manifest)
+    if shell == "powershell":
+        return build_powershell(manifest)
+    raise ValueError("shell must be posix or powershell")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("manifest", type=Path)
     parser.add_argument("--approval-root", type=Path)
+    parser.add_argument("--shell", choices=("posix", "powershell"), default="posix")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     loaded = yaml.safe_load(args.manifest.read_text(encoding="utf-8")) or {}
@@ -239,9 +467,16 @@ def main() -> int:
     if errors:
         print(json.dumps({"ok": False, "errors": errors, "warnings": warnings}, indent=2))
         return 1
+    try:
+        script = build(loaded, shell=args.shell)
+    except ValueError as exc:
+        print(json.dumps({"ok": False, "errors": [str(exc)], "warnings": warnings}, indent=2))
+        return 1
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(build(loaded), encoding="utf-8")
-    args.out.chmod(0o755)
+    with args.out.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(script)
+    if args.shell == "posix":
+        args.out.chmod(0o755)
     print(args.out)
     return 0
 

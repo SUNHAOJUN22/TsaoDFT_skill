@@ -199,7 +199,8 @@ class ReleaseParserBridgeCoverageTests(unittest.TestCase):
 
             missing: list[str] = []
             source, relative = self.bridge._artifact_path(root, Path("out"), missing)
-            self.assertEqual((source, relative), (root / "out", "out"))
+            self.assertEqual(source, (root / "out").resolve())
+            self.assertEqual(relative, "out")
             outside = root.parent / "outside.out"
             _, relative = self.bridge._artifact_path(root, outside, missing)
             self.assertEqual(relative, "outside.out")

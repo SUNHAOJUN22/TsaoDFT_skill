@@ -73,9 +73,7 @@ def canonical_result(
             "compiler": "NVHPC 25.1",
             "mpi": "Open MPI 5.0.7",
             "openmp_runtime": "NVHPC OpenMP 25.1",
-            "accelerator_runtime": (
-                "cuda;toolkit=12.8;driver=600.1" if is_gpu else "none"
-            ),
+            "accelerator_runtime": ("cuda;toolkit=12.8;driver=600.1" if is_gpu else "none"),
         },
         "hardware": {
             "site_id": "SITE-1",

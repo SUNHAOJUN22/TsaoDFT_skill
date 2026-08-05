@@ -140,12 +140,20 @@ def complete_documents(candidate_wall: float = 5.0) -> list[dict[str, Any]]:
     return documents
 
 
+def role_hints() -> dict[str, str]:
+    return {
+        "CPU-REF": "scientific-reference",
+        "GPU-CANDIDATE": "acceleration-candidate",
+    }
+
+
 class ComputeQualificationTests(unittest.TestCase):
     def test_repository_workflow_is_bounded_and_external_hold(self) -> None:
         report = validator.validate()
         self.assertTrue(report["ok"], report["errors"])
         self.assertEqual(report["repository_state"], qualification.EXTERNAL_HOLD)
         self.assertFalse(report["performance_evaluated"])
+        self.assertEqual(report["benchmark_result_contract"], "canonical-nested-v1.1")
         self.assertEqual(report["workers_bounded_by"], 8)
 
     def test_real_repeated_equivalent_campaign_qualifies_for_review_only(self) -> None:
@@ -189,16 +197,52 @@ class ComputeQualificationTests(unittest.TestCase):
         mutated["minimum_repeats"] = 2
         self.assertIn("minimum_repeats must be an integer >= 3", qualification.validate_campaign(mutated))
 
-    def test_parallel_loader_is_deterministic_and_schema_validated(self) -> None:
+    def test_parallel_loader_is_deterministic_and_schema_migrated(self) -> None:
         schema = qualification.load_json(SCHEMA_PATH)
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             paths = [root / "z.json", root / "a.json"]
             paths[0].write_text(json.dumps(result("GPU-CANDIDATE", 1, 5.0, gpu=True)), encoding="utf-8")
             paths[1].write_text(json.dumps(result("CPU-REF", 1, 10.0, gpu=False)), encoding="utf-8")
-            documents, errors = qualification.load_results(paths, schema, workers=100)
+            documents, errors = qualification.load_results(
+                paths,
+                schema,
+                workers=100,
+                role_hints=role_hints(),
+            )
         self.assertEqual(errors, [])
         self.assertEqual([document["candidate_id"] for document in documents], ["CPU-REF", "GPU-CANDIDATE"])
+        self.assertTrue(all(document["_canonical_schema_version"] == "1.1" for document in documents))
+
+    def test_legacy_flat_loader_requires_explicit_roles(self) -> None:
+        schema = qualification.load_json(SCHEMA_PATH)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "legacy.json"
+            path.write_text(json.dumps(result("CPU-REF", 1, 10.0, gpu=False)), encoding="utf-8")
+            documents, errors = qualification.load_results([path], schema)
+        self.assertEqual(documents, [])
+        self.assertTrue(any("explicit" in error for error in errors))
+
+    def test_legacy_flat_campaign_remains_external_hold(self) -> None:
+        schema = qualification.load_json(SCHEMA_PATH)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = []
+            for document in complete_documents():
+                path = root / f"{document['candidate_id']}-{document['repeat_index']}.json"
+                path.write_text(json.dumps(document), encoding="utf-8")
+                paths.append(path)
+            documents, errors = qualification.load_results(
+                paths,
+                schema,
+                workers=8,
+                role_hints=role_hints(),
+            )
+        report = qualification.qualify(campaign(), documents, errors)
+        self.assertTrue(report["ok"], report["errors"])
+        self.assertEqual(report["state"], qualification.EXTERNAL_HOLD)
+        self.assertFalse(report["performance"]["evaluated"])
+        self.assertTrue(any("missing_fields" in hold for hold in report["holds"]))
 
     def test_json_loader_rejects_overflowed_nonfinite_numbers(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

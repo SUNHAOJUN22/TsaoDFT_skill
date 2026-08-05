@@ -136,6 +136,86 @@ class PowerShellLocalJobBackendTests(unittest.TestCase):
         )
         self.assertIn("exit 64", script)
 
+    def test_helper_edges_and_runtime_provenance_branches(self) -> None:
+        with self.assertRaisesRegex(ValueError, "argv must not be empty"):
+            self.generator.render_powershell_argv([])
+        with self.assertRaisesRegex(ValueError, "shell must be posix or powershell"):
+            self.generator.build(self.local_manifest(), shell="cmd")
+
+        generic = self.local_manifest()
+        generic["acceleration"].update(
+            {
+                "enabled": True,
+                "record_runtime": True,
+                "profile_id": "PROFILE-1",
+                "build_fingerprint_id": "BUILD-1",
+                "benchmark_plan_id": "PLAN-1",
+                "runtime_record": "runtime evidence.txt",
+                "gpu_vendor": "none",
+            }
+        )
+        generic_lines = self.generator.powershell_runtime_provenance(generic)
+        self.assertIn(
+            "$runtimeLines | Set-Content -LiteralPath 'runtime evidence.txt' -Encoding utf8NoBOM",
+            generic_lines,
+        )
+        self.assertFalse(any("nvidia-smi" in line for line in generic_lines))
+
+        nvidia = copy.deepcopy(generic)
+        nvidia["acceleration"].update(
+            {
+                "gpu_vendor": "nvidia",
+                "device_inventory": "gpu inventory.csv",
+            }
+        )
+        nvidia_lines = self.generator.powershell_runtime_provenance(nvidia)
+        self.assertTrue(any("nvidia-smi" in line for line in nvidia_lines))
+        self.assertTrue(any("gpu inventory.csv" in line for line in nvidia_lines))
+
+    def test_powershell_gpu_scratch_cp2k_and_pbs_branches(self) -> None:
+        gaussian = self.local_manifest(engine="gaussian")
+        gaussian["scratch"] = {"path": "scratch dir"}
+        gaussian["preflight"]["run_in_job"] = True
+        gaussian["parser"]["run_in_job"] = True
+        gaussian["acceleration"].update(
+            {
+                "enabled": True,
+                "gpu_vendor": "nvidia",
+                "device_order": "pci_bus_id",
+                "record_runtime": False,
+            }
+        )
+        gaussian_script = self.generator.build(gaussian, shell="powershell")
+        self.assertIn("$env:CUDA_DEVICE_ORDER = 'PCI_BUS_ID'", gaussian_script)
+        self.assertIn("New-Item -ItemType Directory", gaussian_script)
+        self.assertIn("$env:GAUSS_SCRDIR = 'scratch dir'", gaussian_script)
+        self.assertIn("$preflightArgv =", gaussian_script)
+        self.assertIn("$parserArgv =", gaussian_script)
+
+        generic = self.local_manifest()
+        generic["scratch"] = {"path": "generic scratch"}
+        generic_script = self.generator.build(generic, shell="powershell")
+        self.assertIn("New-Item -ItemType Directory", generic_script)
+        self.assertNotIn("GAUSS_SCRDIR", generic_script)
+
+        cp2k = self.local_manifest(engine="cp2k")
+        cp2k_script = self.generator.build(cp2k, shell="powershell")
+        engine_invocation = cp2k_script.split("$engineRc = Invoke-TsaoProcess", 1)[1].split(
+            "Write-Output \"TsaoDFT job end",
+            1,
+        )[0]
+        self.assertNotIn("-StandardOutputPath", engine_invocation)
+        self.assertIn("-StandardErrorPath", engine_invocation)
+
+        pbs = self.local_manifest()
+        pbs["scheduler"] = "pbs"
+        pbs["resources"]["queue"] = None
+        without_queue = self.generator.build(pbs, shell="posix")
+        self.assertNotIn("#PBS -q", without_queue)
+        pbs["resources"]["queue"] = "science"
+        with_queue = self.generator.build(pbs, shell="posix")
+        self.assertIn("#PBS -q science", with_queue)
+
     def test_cli_writes_lf_powershell_and_reports_unsupported_scheduler(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

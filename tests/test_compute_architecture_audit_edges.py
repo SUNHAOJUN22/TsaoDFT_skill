@@ -54,7 +54,7 @@ class ComputeArchitectureAuditEdgeTests(unittest.TestCase):
 
     def test_candidate_actions_cover_batch_parallel_and_threshold_paths(self) -> None:
         batch = SimpleNamespace(nested_loops=0, loops=0, file_reads=4, subprocess_calls=0)
-        parallel = SimpleNamespace(nested_loops=0, loops=0, file_reads=0, subprocess_calls=2)
+        parallel = SimpleNamespace(nested_loops=0, loops=0, file_reads=0, subprocess_calls=4)
         quiet = SimpleNamespace(nested_loops=0, loops=1, file_reads=0, subprocess_calls=0)
         batch_result = audit._candidate("batch.py", batch, False)
         parallel_result = audit._candidate("parallel.py", parallel, False)

@@ -6,9 +6,10 @@ import json
 import sys
 import tempfile
 import unittest
+from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable
+from typing import Any
 
 import yaml
 
@@ -31,6 +32,13 @@ def load_module(name: str, path: Path) -> ModuleType:
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
+
+
+def accelerate_reference(row: dict[str, Any]) -> None:
+    row["accelerator_runtime"].update(backend="cuda")
+    row["hardware_fingerprint"]["accelerators"].append(
+        {"vendor": "nvidia", "model": "H100", "stable_id": "GPU-A"}
+    )
 
 
 contract = load_module("tsao_benchmark_contract_tests", CONTRACT_PATH)
@@ -223,12 +231,7 @@ class BenchmarkContractTests(unittest.TestCase):
             (
                 "accelerated reference",
                 "scientific-reference",
-                lambda row: (
-                    row["accelerator_runtime"].update(backend="cuda"),
-                    row["hardware_fingerprint"]["accelerators"].append(
-                        {"vendor": "nvidia", "model": "H100", "stable_id": "GPU-A"}
-                    ),
-                ),
+                accelerate_reference,
                 "reference role contradicts accelerator runtime",
             ),
             (

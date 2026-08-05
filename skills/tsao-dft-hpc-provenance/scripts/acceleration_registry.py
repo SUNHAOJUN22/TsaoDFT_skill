@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Canonical acceleration-library and backend compatibility registry.
 
-This module is a planning contract.  It records what a library is for, which
-vendor/backend owns it, and how the two public planners should describe it.  It
+This module is a planning contract. It records what a library is for, which
+vendor/backend owns it, and how the two public planners should describe it. It
 does not inspect installations, invoke external tools, or establish speedup.
 """
 
@@ -271,16 +271,19 @@ LIBRARY_REGISTRY: dict[str, dict[str, str]] = {
     ),
 }
 
+PLAN_LIBRARY_NAMES = frozenset(LIBRARY_REGISTRY) - {"onnxruntime"}
+OPTIMIZER_LIBRARY_NAMES = frozenset(LIBRARY_REGISTRY) - {"cusolvermp", "cufftmp", "nvshmem", "cutlass"}
+SHARED_EXTRA_ALIASES = {
+    "pythonarrayapi": "arrayapi",
+    "onemathkernellibrary": "onemkl",
+    "metalperformanceshaders": "mps",
+}
+PLAN_EXTRA_ALIASES = {**SHARED_EXTRA_ALIASES, "rocmcollectivecommunicationlibrary": "rccl"}
+OPTIMIZER_EXTRA_ALIASES = {**SHARED_EXTRA_ALIASES, "onnxruntimegpu": "onnxruntime"}
+
 ALIASES = {re.sub(r"[^a-z0-9]", "", name.lower()): name for name in LIBRARY_REGISTRY}
-ALIASES.update(
-    {
-        "pythonarrayapi": "arrayapi",
-        "onemathkernellibrary": "onemkl",
-        "metalperformanceshaders": "mps",
-        "rocmcollectivecommunicationlibrary": "rccl",
-        "onnxruntimegpu": "onnxruntime",
-    }
-)
+ALIASES.update(PLAN_EXTRA_ALIASES)
+ALIASES.update(OPTIMIZER_EXTRA_ALIASES)
 
 
 def normalize_library(value: str) -> str:
@@ -288,26 +291,40 @@ def normalize_library(value: str) -> str:
     return ALIASES.get(normalized, normalized)
 
 
+def _surface_aliases(names: frozenset[str], extras: dict[str, str]) -> dict[str, str]:
+    aliases = {re.sub(r"[^a-z0-9]", "", name.lower()): name for name in names}
+    aliases.update(extras)
+    return aliases
+
+
+def plan_aliases() -> dict[str, str]:
+    return _surface_aliases(PLAN_LIBRARY_NAMES, PLAN_EXTRA_ALIASES)
+
+
+def optimizer_aliases() -> dict[str, str]:
+    return _surface_aliases(OPTIMIZER_LIBRARY_NAMES, OPTIMIZER_EXTRA_ALIASES)
+
+
 def plan_libraries() -> dict[str, dict[str, str]]:
     return {
         name: {
-            "vendor": spec["vendor"],
-            "backend": spec["backend"],
-            "category": spec["plan_category"],
-            "purpose": spec["plan_purpose"],
+            "vendor": LIBRARY_REGISTRY[name]["vendor"],
+            "backend": LIBRARY_REGISTRY[name]["backend"],
+            "category": LIBRARY_REGISTRY[name]["plan_category"],
+            "purpose": LIBRARY_REGISTRY[name]["plan_purpose"],
         }
-        for name, spec in LIBRARY_REGISTRY.items()
+        for name in sorted(PLAN_LIBRARY_NAMES)
     }
 
 
 def optimizer_libraries() -> dict[str, dict[str, str]]:
     return {
         name: {
-            "vendor": spec["vendor"],
-            "category": spec["optimizer_category"],
-            "purpose": spec["optimizer_purpose"],
+            "vendor": LIBRARY_REGISTRY[name]["vendor"],
+            "category": LIBRARY_REGISTRY[name]["optimizer_category"],
+            "purpose": LIBRARY_REGISTRY[name]["optimizer_purpose"],
         }
-        for name, spec in LIBRARY_REGISTRY.items()
+        for name in sorted(OPTIMIZER_LIBRARY_NAMES)
     }
 
 
@@ -352,6 +369,10 @@ def validate_registry(registry: Any = None, aliases: Any = None) -> list[str]:
             value = raw_spec.get(field)
             if not isinstance(value, str) or not value.strip():
                 errors.append(f"{name}: {field} must be a non-empty string")
+    for surface, names in (("plan", PLAN_LIBRARY_NAMES), ("optimizer", OPTIMIZER_LIBRARY_NAMES)):
+        missing_names = sorted(set(names) - set(selected))
+        if missing_names:
+            errors.append(f"{surface} surface targets unknown libraries: {missing_names}")
     for alias, target in sorted(selected_aliases.items(), key=lambda item: str(item[0])):
         if not isinstance(alias, str) or not alias or re.sub(r"[^a-z0-9]", "", alias.lower()) != alias:
             errors.append(f"invalid normalized alias: {alias!r}")
@@ -366,6 +387,8 @@ def registry_report() -> dict[str, Any]:
         "ok": not errors,
         "registry_version": REGISTRY_VERSION,
         "libraries": len(LIBRARY_REGISTRY),
+        "plan_libraries": len(PLAN_LIBRARY_NAMES),
+        "optimizer_libraries": len(OPTIMIZER_LIBRARY_NAMES),
         "aliases": len(ALIASES),
         "backends": sorted(BACKEND_VENDORS),
         "errors": errors,

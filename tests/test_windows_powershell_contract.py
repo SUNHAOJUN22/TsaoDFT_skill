@@ -18,8 +18,10 @@ class WindowsPowerShellContractTests(unittest.TestCase):
             '$ErrorActionPreference = "Stop"',
             "$PSScriptRoot",
             "Resolve-Path",
-            'Get-Command -Name "python" -CommandType Application',
-            "& $PythonCommand.Source @Arguments",
+            'Get-Command -Name "python" -CommandType Application -All',
+            "Select-Object -First 1",
+            "$PythonExecutable = [string]$PythonCommand.Source",
+            "& $PythonExecutable @Arguments",
             "$LASTEXITCODE",
             "Push-Location -LiteralPath",
             "Pop-Location",
@@ -31,6 +33,7 @@ class WindowsPowerShellContractTests(unittest.TestCase):
         for fragment in required:
             self.assertIn(fragment, text)
         for forbidden in (
+            "& $PythonCommand.Source @Arguments",
             "Invoke-Expression",
             "Start-Process",
             "cmd.exe",

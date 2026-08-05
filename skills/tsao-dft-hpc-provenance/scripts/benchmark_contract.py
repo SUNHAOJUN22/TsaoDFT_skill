@@ -27,6 +27,7 @@ LEGACY_FLAT_SHAPE = "flat"
 CANONICAL_SCHEMA_ID = "https://github.com/SUNHAOJUN22/TsaoDFT_skill/benchmark-result.schema.json"
 LEGACY_FLAT_SCHEMA_ID = "https://github.com/SUNHAOJUN22/TsaoDFT_skill/benchmark-result-flat-v1.0.schema.json"
 ROLES = {"scientific-reference", "acceleration-candidate"}
+GPU_BACKENDS = {"cuda", "openacc", "hip", "sycl", "metal"}
 
 
 class BenchmarkContractError(ValueError):
@@ -180,6 +181,13 @@ def _optional_float(value: Any) -> float | None:
     return None
 
 
+def _runtime_backend(runtime: Any) -> str:
+    if not isinstance(runtime, dict):
+        return "none"
+    backend = _text(runtime.get("backend"), "none").lower()
+    return backend if backend in {*GPU_BACKENDS, "none"} else "none"
+
+
 def _runtime_string(runtime: Any) -> str:
     if not isinstance(runtime, dict):
         return "MISSING"
@@ -213,22 +221,48 @@ def _legacy_flat_to_nested(record: dict[str, Any], role_hint: str | None) -> tup
     results = _mapping(record.get("scientific_results"))
     mpi = _mapping(record.get("mpi"))
     openmp = _mapping(record.get("openmp_runtime"))
+    runtime = _mapping(record.get("accelerator_runtime"))
+    runtime_backend = _runtime_backend(runtime)
+    source_kind = _text(record.get("evidence_source"), "unknown")
 
     if not record.get("engine_executable"):
         missing.add("engine executable unavailable in legacy flat v1.0")
+    if not build.get("id"):
+        missing.add("build fingerprint identity unavailable in legacy flat v1.0")
+    if not hardware.get("id"):
+        missing.add("hardware fingerprint identity unavailable in legacy flat v1.0")
     if not results.get("model_identity"):
         missing.add("model identity unavailable in legacy flat v1.0")
     if not results.get("convergence_thresholds"):
         missing.add("convergence thresholds unavailable in legacy flat v1.0")
     if not record.get("output_artifact_path"):
         missing.add("output artifact path unavailable in legacy flat v1.0")
+    if source_kind != "real-engine-observation":
+        missing.add(f"legacy source {source_kind} does not establish real-engine provenance")
     missing.add("execution site unavailable in legacy flat v1.0")
     missing.add("scratch type unavailable in legacy flat v1.0")
     missing.add("I/O byte count unavailable in legacy flat v1.0")
 
+    accelerator_vendors = {_text(item.get("vendor"), "none") for item in accelerators}
+    accelerator_models = {_text(item.get("model")) for item in accelerators}
+    if len(accelerator_vendors) > 1 or len(accelerator_models) > 1:
+        missing.add("heterogeneous accelerator inventory cannot be represented losslessly in nested v1.1")
+    if runtime_backend in GPU_BACKENDS and not accelerators:
+        missing.add("accelerator runtime contradicts empty hardware accelerator inventory")
+    if runtime_backend == "none" and accelerators:
+        missing.add("accelerator hardware inventory contradicts runtime backend none")
+    if role_hint == "scientific-reference" and runtime_backend in GPU_BACKENDS:
+        missing.add("scientific reference role contradicts accelerator runtime")
+    if role_hint == "acceleration-candidate" and runtime_backend == "none" and not accelerators:
+        missing.add("acceleration candidate role lacks accelerator runtime and hardware identity")
+    if engine_name == "ml-surrogate":
+        missing.add("legacy ml-surrogate engine is mapped to generic in canonical nested v1.1")
+
     parser_pass = record.get("parser_acceptance") == "PASS"
     exit_pass = record.get("exit_status") == 0
     convergence_pass = convergence.get("achieved") is True
+    if parser_pass and (not exit_pass or not convergence_pass):
+        missing.add("legacy parser acceptance contradicts exit or convergence evidence")
     parser_accepted = parser_pass and exit_pass and convergence_pass and not missing
 
     scientific_results: dict[str, Any] = {
@@ -314,7 +348,7 @@ def _legacy_flat_to_nested(record: dict[str, Any], role_hint: str | None) -> tup
                 if part
             )
             or "MISSING",
-            "accelerator_runtime": _runtime_string(record.get("accelerator_runtime")),
+            "accelerator_runtime": _runtime_string(runtime),
         },
         "hardware": {
             "site_id": _text(record.get("execution_site_id") or scheduler.get("site_id")),
@@ -328,13 +362,7 @@ def _legacy_flat_to_nested(record: dict[str, Any], role_hint: str | None) -> tup
             "gpu_model": _text(primary_accelerator.get("model"), "") or None,
             "gpu_uuids": gpu_uuids,
             "gpu_memory_gb": (sum(memory_values) / 1_000_000_000) if memory_values else None,
-            "driver_version": _text(
-                (record.get("accelerator_runtime") or {}).get("driver_version")
-                if isinstance(record.get("accelerator_runtime"), dict)
-                else None,
-                "",
-            )
-            or None,
+            "driver_version": _text(runtime.get("driver_version"), "") or None,
             "gpu_binding": _text(binding.get("accelerator"), "none"),
         },
         "execution": {
@@ -439,14 +467,6 @@ def normalize_record(record: dict[str, Any], role_hint: str | None = None) -> tu
     return _legacy_flat_to_nested(record, role_hint)
 
 
-def semantic_compatibility_record(canonical: dict[str, Any]) -> dict[str, Any]:
-    """Return the shape-identical internal v1.0 view used by the legacy semantic checker."""
-    normalized, _ = normalize_record(canonical)
-    compatibility = copy.deepcopy(normalized)
-    compatibility["schema_version"] = LEGACY_NESTED_SCHEMA_VERSION
-    return compatibility
-
-
 def _backend_from_runtime(value: Any) -> str:
     text = str(value or "none").lower()
     for backend in ("cuda", "openacc", "hip", "sycl", "metal"):
@@ -531,11 +551,14 @@ def schema_contract_report() -> dict[str, Any]:
         "canonical_schema_sha256": sha256_text(canonical_text) if canonical_text else None,
         "root_mirror_path": ROOT_SCHEMA_MIRROR_PATH.as_posix(),
         "root_mirror_synchronized": not any("root benchmark-result schema mirror" in item for item in errors),
+        "native_semantic_schema_version": CANONICAL_SCHEMA_VERSION,
+        "compatibility_view_present": False,
+        "legacy_semantic_bypass": "FAIL_CLOSED",
         "legacy_contracts": ["nested-v1.0", "flat-v1.0"],
         "legacy_flat_schema_id": legacy.get("$id"),
         "migration_policy": {
-            "nested-v1.0": "version-only-shape-preserving",
-            "flat-v1.0": "explicit-role field mapping; irrecoverable provenance forces EXTERNAL_HOLD",
+            "nested-v1.0": "central version-only shape-preserving adapter",
+            "flat-v1.0": "central explicit-role field mapping; irrecoverable provenance forces EXTERNAL_HOLD",
             "unknown_or_mixed": "fail-closed",
         },
         "external_engine_invoked": False,

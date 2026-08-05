@@ -80,6 +80,25 @@ def collect_coverage(config_file: Path) -> list[str]:
     return errors
 
 
+def load_contract_evidence(path: Path | None) -> tuple[dict[str, Any] | None, list[str]]:
+    if path is None:
+        return None, []
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        return None, [f"compute contract evidence could not be loaded: {exc}"]
+    if type(value) is not dict:
+        return None, ["compute contract evidence root must be a mapping"]
+    errors: list[str] = []
+    if value.get("ok") is not True:
+        errors.append("compute contract evidence is not valid")
+    if value.get("external_engine_invoked") is not False:
+        errors.append("compute contract evidence must not invoke external engines")
+    if value.get("performance_ratio_published") is not False:
+        errors.append("compute contract evidence must not publish an unqualified performance ratio")
+    return value, errors
+
+
 def write_report(path: Path | None, payload: dict[str, Any]) -> None:
     if path is None:
         return
@@ -87,15 +106,24 @@ def write_report(path: Path | None, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def _failure_payload(errors: list[str], evidence: dict[str, Any] | None) -> dict[str, Any]:
+    payload: dict[str, Any] = {"ok": False, "errors": errors}
+    if evidence is not None:
+        payload["contract_evidence"] = evidence
+    return payload
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", action="store_true", dest="json_output")
     parser.add_argument("--report", type=Path, default=Path("coverage-report.json"))
+    parser.add_argument("--contract-evidence", type=Path)
     parser.add_argument("--total-statement", type=float, default=90.0)
     parser.add_argument("--total-branch", type=float, default=80.0)
     parser.add_argument("--core-statement", type=float, default=100.0)
     parser.add_argument("--core-branch", type=float, default=95.0)
     args = parser.parse_args()
+    contract_evidence, contract_errors = load_contract_evidence(args.contract_evidence)
     with tempfile.TemporaryDirectory() as temporary:
         temporary_path = Path(temporary)
         data_file = temporary_path / ".coverage"
@@ -103,7 +131,7 @@ def main() -> int:
         write_coverage_config(config_file, data_file)
         collection_errors = collect_coverage(config_file)
         if collection_errors:
-            payload: dict[str, Any] = {"ok": False, "errors": collection_errors}
+            payload = _failure_payload([*contract_errors, *collection_errors], contract_evidence)
             write_report(args.report, payload)
             print(json.dumps(payload, ensure_ascii=False, indent=2))
             return 1
@@ -111,7 +139,10 @@ def main() -> int:
         try:
             coverage.combine(data_paths=[str(temporary_path)], strict=True)
         except Exception as exc:
-            payload = {"ok": False, "errors": [f"coverage combine failed: {exc}"]}
+            payload = _failure_payload(
+                [*contract_errors, f"coverage combine failed: {exc}"],
+                contract_evidence,
+            )
             write_report(args.report, payload)
             print(json.dumps(payload, ensure_ascii=False, indent=2))
             return 1
@@ -150,7 +181,7 @@ def main() -> int:
             }
         total_statement = percent(total_statements - total_missing, total_statements)
         total_branch = percent(total_branches - total_missing_branches, total_branches)
-        failures = []
+        failures = list(contract_errors)
         if total_statement < args.total_statement:
             failures.append(f"total statement coverage {total_statement:.2f} < {args.total_statement:.2f}")
         if total_branch < args.total_branch:
@@ -175,6 +206,7 @@ def main() -> int:
             },
             "trust_core": {path: per_file.get(path) for path in TRUST_CORE},
             "per_file": per_file,
+            "contract_evidence": contract_evidence,
             "failures": failures,
         }
         write_report(args.report, payload)

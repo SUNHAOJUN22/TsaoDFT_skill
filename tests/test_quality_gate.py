@@ -32,6 +32,7 @@ class QualityGateTests(unittest.TestCase):
         self.assertLess(names.index("CI constraints"), names.index("acceleration contracts"))
         self.assertLess(names.index("acceleration contracts"), names.index("acceleration registry"))
         self.assertLess(names.index("acceleration registry"), names.index("compute architecture audit"))
+        self.assertEqual(names.count("compute architecture audit"), 1)
         self.assertLess(names.index("compute architecture audit"), names.index("capability claims"))
         self.assertEqual(names[-1], "unit tests")
 

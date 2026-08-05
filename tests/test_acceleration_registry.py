@@ -11,7 +11,9 @@ from types import ModuleType
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-REGISTRY_PATH = ROOT / "skills" / "tsao-dft-hpc-provenance" / "scripts" / "acceleration_registry.py"
+REGISTRY_PATH = (
+    ROOT / "skills" / "tsao-dft-hpc-provenance" / "scripts" / "acceleration_registry.py"
+)
 VALIDATOR_PATH = ROOT / "scripts" / "validate_acceleration_registry.py"
 
 

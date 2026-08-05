@@ -35,6 +35,10 @@ DEMO_SPECS: dict[str, tuple[str, int, int]] = {
     "edge-hpc-closed-loop.svg": ("Edge to HPC scientific feedback loop", 1120, 500),
     "native-acceleration-roadmap.svg": ("Profile gated native acceleration roadmap", 1120, 500),
     "evidence-qualification-pipeline.svg": ("Scoped L3 acceleration evidence qualification pipeline", 1120, 500),
+    "acceleration-registry-governance.svg": ("Canonical acceleration registry governance", 1120, 520),
+    "backend-portability-stack.svg": ("Backend portability stack for TsaoDFT", 1120, 520),
+    "windows-linux-execution-matrix.svg": ("Windows and Linux execution matrix", 1120, 520),
+    "scientific-acceleration-funnel.svg": ("Scientific acceleration qualification funnel", 1120, 520),
 }
 DIMENSION_RE = re.compile(r"^(\d+)(?:px)?$")
 

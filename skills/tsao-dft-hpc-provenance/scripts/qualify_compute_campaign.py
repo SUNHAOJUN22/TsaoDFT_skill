@@ -175,11 +175,7 @@ class CampaignDocument:
 
     def scientific_observables(self) -> dict[str, Any]:
         results = self.record["scientific"]["results"]
-        observables = {
-            key: value
-            for key, value in results.items()
-            if key in STANDARD_RESULTS and value is not None
-        }
+        observables = {key: value for key, value in results.items() if key in STANDARD_RESULTS and value is not None}
         properties = results.get("properties") or {}
         collisions = sorted(set(properties) & set(STANDARD_RESULTS))
         if collisions:
@@ -314,11 +310,7 @@ def _backend_from_runtime(value: Any) -> str:
 
 def _expected_observable_names(record: dict[str, Any]) -> set[str]:
     results = record["scientific"]["results"]
-    names = {
-        logical_name
-        for field, logical_name in STANDARD_RESULTS.items()
-        if results.get(field) is not None
-    }
+    names = {logical_name for field, logical_name in STANDARD_RESULTS.items() if results.get(field) is not None}
     names.update(str(key) for key in (results.get("properties") or {}))
     return names
 

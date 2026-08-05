@@ -7,6 +7,8 @@ from types import ModuleType
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_BANDIT_ALLOWANCES = {
+    ("scripts/audit_compute_architecture.py", "B404"),
+    ("scripts/audit_compute_architecture.py", "B603"),
     ("scripts/benchmark_performance.py", "B404"),
     ("scripts/benchmark_performance.py", "B607"),
     ("scripts/benchmark_performance.py", "B603"),

@@ -35,6 +35,10 @@ def stages(include_tests: bool = True) -> list[Stage]:
             "acceleration registry",
             (sys.executable, "scripts/validate_acceleration_registry.py"),
         ),
+        Stage(
+            "compute architecture audit",
+            (sys.executable, "scripts/audit_compute_architecture.py"),
+        ),
         Stage("packaging model", (sys.executable, "scripts/validate_packaging_model.py")),
         Stage("catalog", (sys.executable, "scripts/validate_catalog.py")),
         Stage("Agent eval contracts", (sys.executable, "scripts/validate_agent_evals.py")),

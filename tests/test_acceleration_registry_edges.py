@@ -28,9 +28,11 @@ validator = load_module("tsao_acceleration_registry_edge_tests", VALIDATOR_PATH)
 
 class AccelerationRegistryEdgeTests(unittest.TestCase):
     def test_loader_and_validate_fail_closed_when_import_is_unavailable(self) -> None:
-        with patch.object(importlib.util, "spec_from_file_location", return_value=None):
-            with self.assertRaisesRegex(RuntimeError, "cannot import"):
-                validator.load_module("missing", Path("missing.py"))
+        with (
+            patch.object(importlib.util, "spec_from_file_location", return_value=None),
+            self.assertRaisesRegex(RuntimeError, "cannot import"),
+        ):
+            validator.load_module("missing", Path("missing.py"))
 
         with patch.object(validator, "load_module", side_effect=OSError("blocked")):
             report = validator.validate()

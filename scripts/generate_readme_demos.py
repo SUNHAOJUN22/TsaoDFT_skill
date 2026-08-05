@@ -30,6 +30,11 @@ DEMO_SPECS: dict[str, tuple[str, int, int]] = {
     "active-learning-loop.svg": ("DFT + ML active-learning loop", 1080, 480),
     "hpc-provenance.svg": ("HPC execution and provenance", 1120, 450),
     "multiscale-kinetics.svg": ("DFT to kinetics and multiscale models", 1120, 470),
+    "hybrid-compute-architecture.svg": ("Hybrid Python native and engine compute architecture", 1120, 520),
+    "cuda-x-decision-map.svg": ("CUDA-X library decision map for TsaoDFT", 1120, 520),
+    "edge-hpc-closed-loop.svg": ("Edge to HPC scientific feedback loop", 1120, 500),
+    "native-acceleration-roadmap.svg": ("Profile gated native acceleration roadmap", 1120, 500),
+    "evidence-qualification-pipeline.svg": ("Scoped L3 acceleration evidence qualification pipeline", 1120, 500),
 }
 DIMENSION_RE = re.compile(r"^(\d+)(?:px)?$")
 

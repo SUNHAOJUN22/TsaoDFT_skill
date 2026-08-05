@@ -24,6 +24,11 @@ REQUIRED_DEMOS = {
     "assets/demo/dft-ml-dashboard.svg",
     "assets/demo/periodic-dft-materials.svg",
     "assets/demo/multiscale-kinetics.svg",
+    "assets/demo/hybrid-compute-architecture.svg",
+    "assets/demo/cuda-x-decision-map.svg",
+    "assets/demo/edge-hpc-closed-loop.svg",
+    "assets/demo/native-acceleration-roadmap.svg",
+    "assets/demo/evidence-qualification-pipeline.svg",
 }
 
 

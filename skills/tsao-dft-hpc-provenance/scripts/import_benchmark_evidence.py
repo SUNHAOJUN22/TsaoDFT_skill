@@ -18,14 +18,14 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 import benchmark_contract as contract  # noqa: E402 -- standalone Skill import contract
-from performance_evidence import (  # noqa: E402 -- standalone Skill import contract
-    canonical_json,
-    load_records,
-    result_sort_key,
-    validate_canonical_result as validate_result,
-)
+import performance_evidence as performance  # noqa: E402 -- standalone Skill import contract
 from trust_boundary import load_json, validate_record_schema  # noqa: E402 -- standalone Skill import contract
 from utils import normalized_workers  # noqa: E402 -- standalone Skill import contract
+
+canonical_json = performance.canonical_json
+load_records = performance.load_records
+result_sort_key = performance.result_sort_key
+validate_result = performance.validate_canonical_result
 
 ValidationTask = tuple[str, int, dict[str, Any], dict[str, Any], bool]
 ValidationResult = tuple[str, int, dict[str, Any], list[str], list[str], dict[str, Any]]

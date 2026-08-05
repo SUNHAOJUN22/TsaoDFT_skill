@@ -1,10 +1,12 @@
-schema_version: "1.0"
+schema_version: "1.1"
 campaign_id: EXTERNAL-HOLD-CPU-GPU-CAMPAIGN
 benchmark_plan_id: EXTERNAL-HOLD-BENCHMARK-PLAN
 engine: vasp
-reference_candidate_id: CPU-FP64-REFERENCE
-candidate_ids:
-  - GPU-CANDIDATE
+participants:
+  - candidate_id: CPU-FP64-REFERENCE
+    role: scientific-reference
+  - candidate_id: GPU-CANDIDATE
+    role: acceleration-candidate
 minimum_repeats: 3
 minimum_reference_over_candidate_ratio: 1.05
 numerical_tolerances:

@@ -31,7 +31,7 @@ class ComputeContractEvidenceTests(unittest.TestCase):
     def test_current_repository_is_machine_readable_external_hold(self) -> None:
         report = capture.build_report()
         self.assertTrue(report["ok"], report["errors"])
-        self.assertEqual(report["schema_version"], "1.3")
+        self.assertEqual(report["schema_version"], "1.4")
         self.assertEqual(report["state"], capture.EXTERNAL_HOLD)
         self.assertFalse(report["external_engine_invoked"])
         self.assertTrue(report["acceleration_registry"]["runtime_single_source"])
@@ -41,25 +41,74 @@ class ComputeContractEvidenceTests(unittest.TestCase):
         self.assertEqual(benchmark["native_semantic_schema_version"], "1.1")
         self.assertFalse(benchmark["compatibility_view_present"])
         self.assertEqual(benchmark["legacy_semantic_bypass"], "FAIL_CLOSED")
-        self.assertEqual(benchmark["legacy_flat_qualification_impact"], capture.EXTERNAL_HOLD)
+        self.assertEqual(
+            benchmark["legacy_flat_qualification_impact"],
+            capture.EXTERNAL_HOLD,
+        )
         self.assertEqual(benchmark["unknown_or_mixed_input"], "FAIL_CLOSED")
-        self.assertEqual(report["engine_capabilities"]["repository_template_state"], capture.EXTERNAL_HOLD)
-        self.assertEqual(report["engine_capabilities"]["performance_qualification"], "NOT_ESTABLISHED")
+
+        campaign = report["campaign_contract"]
+        self.assertTrue(campaign["ok"])
+        self.assertEqual(
+            campaign["canonical_contract"],
+            "canonical-compute-campaign-v1.1",
+        )
+        self.assertEqual(campaign["canonical_schema_version"], "1.1")
+        self.assertTrue(campaign["root_mirror_synchronized"])
+        self.assertEqual(campaign["template_migration"], "none")
+        self.assertEqual(campaign["migration_qualification_impact"], "none")
+        self.assertEqual(campaign["defaults_applied"], [])
+        self.assertEqual(campaign["evidence_fields_added"], [])
+        self.assertEqual(campaign["unknown_or_mixed_input"], "FAIL_CLOSED")
+        self.assertTrue(campaign["immutable_mapping"])
+        self.assertEqual(
+            campaign["benchmark_result_boundary"],
+            "campaign-policy-independent-from-benchmark-result-evidence",
+        )
+
+        self.assertEqual(
+            report["engine_capabilities"]["repository_template_state"],
+            capture.EXTERNAL_HOLD,
+        )
+        self.assertEqual(
+            report["engine_capabilities"]["performance_qualification"],
+            "NOT_ESTABLISHED",
+        )
         qualification = report["compute_qualification"]
         self.assertEqual(qualification["repository_state"], capture.EXTERNAL_HOLD)
-        self.assertEqual(qualification["benchmark_result_contract"], "canonical-nested-v1.1")
-        self.assertEqual(qualification["input_model"], "canonical-nested-v1.1-typed-accessor")
+        self.assertEqual(
+            qualification["benchmark_result_contract"],
+            "canonical-nested-v1.1",
+        )
+        self.assertEqual(
+            qualification["input_model"],
+            "canonical-nested-v1.1-typed-accessor",
+        )
         self.assertTrue(qualification["normalization_mandatory"])
         self.assertTrue(qualification["native_semantic_validation"])
         self.assertTrue(qualification["legacy_projection_retained"])
         self.assertFalse(qualification["legacy_projection_consumed"])
-        self.assertEqual(qualification["legacy_projection_qualification_impact"], "NOT_ELIGIBLE")
+        self.assertEqual(
+            qualification["legacy_projection_qualification_impact"],
+            "NOT_ELIGIBLE",
+        )
         self.assertEqual(len(qualification["identity_invariants"]), 7)
         self.assertFalse(qualification["performance_evaluated"])
         self.assertEqual(qualification["workers_bounded_by"], 8)
         self.assertFalse(report["performance_ratio_published"])
-        self.assertTrue(any("No nested v1.0 semantic downgrade view" in item for item in report["non_claims"]))
-        self.assertTrue(any("diagnostic compatibility export" in item for item in report["non_claims"]))
+        self.assertTrue(
+            any(
+                "Campaign v1.0 migration" in item
+                and "creates no execution evidence" in item
+                for item in report["non_claims"]
+            )
+        )
+        self.assertTrue(
+            any("No nested v1.0 semantic downgrade view" in item for item in report["non_claims"])
+        )
+        self.assertTrue(
+            any("remains diagnostic" in item for item in report["non_claims"])
+        )
 
     def test_capture_is_deterministic(self) -> None:
         first = capture.build_report()
@@ -74,7 +123,7 @@ class ComputeContractEvidenceTests(unittest.TestCase):
         self.assertEqual(report["state"], capture.UNQUALIFIED)
         self.assertTrue(any("validator failed" in error for error in report["errors"]))
 
-    def test_semantic_and_projection_contract_drift_is_unqualified(self) -> None:
+    def test_semantic_campaign_and_projection_contract_drift_is_unqualified(self) -> None:
         reports = {
             "acceleration_registry": {
                 "ok": True,
@@ -101,6 +150,15 @@ class ComputeContractEvidenceTests(unittest.TestCase):
                 "repository_state": capture.EXTERNAL_HOLD,
                 "performance_evaluated": False,
                 "workers_bounded_by": 8,
+                "campaign_contract": "legacy-compute-campaign-v1.0",
+                "campaign_schema_version": "1.0",
+                "campaign_root_mirror_synchronized": False,
+                "campaign_unknown_or_mixed_input": "OPEN",
+                "campaign_migration_qualification_impact": "PROMOTES",
+                "campaign_defaults_applied": ["minimum_repeats"],
+                "campaign_evidence_fields_added": ["solver"],
+                "campaign_document_immutable": False,
+                "contract_boundary": "mixed",
                 "input_model": "legacy-flat",
                 "normalization_mandatory": False,
                 "native_semantic_validation": False,
@@ -124,6 +182,15 @@ class ComputeContractEvidenceTests(unittest.TestCase):
             "not native",
             "compatibility view",
             "bypass",
+            "campaign authority",
+            "campaign schema version",
+            "campaign schema mirror",
+            "campaign input",
+            "migration impact",
+            "applied defaults",
+            "fabricated evidence",
+            "document is not immutable",
+            "contract boundary",
             "input model",
             "central normalization",
             "native semantic validation",
@@ -145,11 +212,15 @@ class ComputeContractEvidenceTests(unittest.TestCase):
                 text=True,
                 check=False,
             )
-            self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+            self.assertEqual(
+                completed.returncode,
+                0,
+                completed.stdout + completed.stderr,
+            )
             stdout = json.loads(completed.stdout)
             written = json.loads(output.read_text(encoding="utf-8"))
             self.assertEqual(stdout, written)
-            self.assertEqual(written["schema_version"], "1.3")
+            self.assertEqual(written["schema_version"], "1.4")
             self.assertEqual(written["state"], capture.EXTERNAL_HOLD)
 
 

@@ -115,19 +115,25 @@ ENVIRONMENT_MARKERS = (
 )
 
 
+def _load_strict_numeric() -> Any:
+    path = Path(__file__).with_name("strict_numeric.py")
+    spec = importlib.util.spec_from_file_location("tsao_plan_strict_numeric", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot import {path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_NUMERIC = _load_strict_numeric()
+
+
 def normalize_library(value: str) -> str:
     return ALIASES.get(re.sub(r"[^a-z0-9]", "", value.lower()), re.sub(r"[^a-z0-9]", "", value.lower()))
 
 
 def integer(value: Any, name: str, errors: list[str], minimum: int = 0) -> int:
-    try:
-        result = int(value)
-    except (TypeError, ValueError):
-        errors.append(f"{name} must be an integer")
-        return minimum
-    if result < minimum:
-        errors.append(f"{name} must be >= {minimum}")
-    return result
+    return _NUMERIC.exact_int(value, name, errors, minimum=minimum, default=minimum)
 
 
 def selected_backend(profile: dict[str, Any]) -> str:
@@ -165,6 +171,23 @@ def validate(profile: dict[str, Any]) -> tuple[list[str], list[str]]:
     nodes = integer(hardware.get("nodes", 1), "hardware.nodes", errors, 1)
     gpus = integer(hardware.get("gpus_per_node", 0), "hardware.gpus_per_node", errors)
     integer(hardware.get("cpus_per_gpu", 8), "hardware.cpus_per_gpu", errors, 1)
+    if "tasks_per_node" in hardware:
+        integer(hardware["tasks_per_node"], "hardware.tasks_per_node", errors, 1)
+    if "cpus_per_task" in hardware:
+        integer(hardware["cpus_per_task"], "hardware.cpus_per_task", errors, 1)
+
+    engine_gpu_build = False
+    if "engine_gpu_build" in software:
+        engine_gpu_build = _NUMERIC.exact_bool(
+            software["engine_gpu_build"], "software.engine_gpu_build", errors
+        )
+    if "custom_engine_integration" in software:
+        _NUMERIC.exact_bool(
+            software["custom_engine_integration"], "software.custom_engine_integration", errors
+        )
+    if "require_cpu_fallback" in policy:
+        _NUMERIC.exact_bool(policy["require_cpu_fallback"], "policy.require_cpu_fallback", errors, default=True)
+
     if vendor == "none" and gpus:
         errors.append("hardware.gpus_per_node requires a non-none gpu_vendor")
     if vendor != "none" and gpus == 0:
@@ -195,7 +218,7 @@ def validate(profile: dict[str, Any]) -> tuple[list[str], list[str]]:
 
     if target == "edge" and stage == "engine":
         warnings.append("edge devices should normally orchestrate or infer, not host production DFT kernels")
-    if bool(software.get("engine_gpu_build")) and (vendor == "none" or gpus == 0):
+    if engine_gpu_build and (vendor == "none" or gpus == 0):
         errors.append("engine_gpu_build requires at least one GPU")
     return errors, warnings
 
@@ -213,7 +236,7 @@ def recommended_path(profile: dict[str, Any]) -> str:
         return "edge-orchestrated-remote-dft"
     if stage == "ml-surrogate" and vendor != "none":
         return f"{backend}-accelerated-atomistic-ml"
-    if stage == "engine" and vendor != "none" and bool(software.get("engine_gpu_build")):
+    if stage == "engine" and vendor != "none" and software.get("engine_gpu_build") is True:
         return "engine-native-gpu"
     return "cpu-mpi-openmp" if vendor == "none" else "portable-accelerator-benchmark"
 
@@ -227,8 +250,8 @@ def library_decision(name: str, profile: dict[str, Any]) -> tuple[str, str]:
     vendor = str(hardware.get("gpu_vendor", "none")).lower()
     gpus = int(hardware.get("gpus_per_node", 0))
     nodes = int(hardware.get("nodes", 1))
-    custom = bool(software.get("custom_engine_integration"))
-    gpu_build = bool(software.get("engine_gpu_build"))
+    custom = software.get("custom_engine_integration") is True
+    gpu_build = software.get("engine_gpu_build") is True
     model_family = str(software.get("model_family", "")).lower()
     library_vendor = LIBRARIES[name]["vendor"]
 
@@ -358,7 +381,7 @@ def engine_actions(profile: dict[str, Any]) -> list[str]:
         actions.append(f"Integrate {backend} kernels behind a stable interface and deterministic CPU fallback.")
     else:
         actions.append("Profile CPU MPI/OpenMP/BLAS layout before adding accelerators.")
-    if bool(software.get("engine_gpu_build")):
+    if software.get("engine_gpu_build") is True:
         actions.append("Record compiler, toolkit, MPI, math libraries, driver and engine build fingerprint.")
     return actions
 
@@ -389,8 +412,8 @@ def compatibility_contract(profile: dict[str, Any]) -> dict[str, Any]:
         "gpu_vendor": str(hardware.get("gpu_vendor", "none")).lower(),
         "backend": selected_backend(profile),
         "engine_build_owned_by": "external-engine-or-native-component",
-        "custom_integration": bool(software.get("custom_engine_integration")),
-        "cpu_fallback_required": bool(policy.get("require_cpu_fallback", True)),
+        "custom_integration": software.get("custom_engine_integration") is True,
+        "cpu_fallback_required": policy.get("require_cpu_fallback", True) is True,
     }
 
 

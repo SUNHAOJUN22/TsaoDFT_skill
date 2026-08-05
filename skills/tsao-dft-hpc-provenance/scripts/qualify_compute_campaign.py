@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Qualify reproducible CPU/accelerator campaigns from immutable benchmark evidence."""
+"""Qualify reproducible CPU/accelerator campaigns from canonical or explicit legacy evidence."""
 
 from __future__ import annotations
 
@@ -8,17 +8,23 @@ import json
 import math
 import os
 import statistics
+import sys
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
 import yaml
-from jsonschema import Draft202012Validator, FormatChecker
 
 SCRIPT_PATH = Path(__file__).resolve()
+SCRIPT_DIR = SCRIPT_PATH.parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+import benchmark_contract as contract  # noqa: E402 -- standalone Skill import contract
+
 ROOT = SCRIPT_PATH.parents[3] if len(SCRIPT_PATH.parents) > 3 else Path.cwd()
-DEFAULT_SCHEMA = ROOT / "templates" / "benchmark-result.schema.json"
+DEFAULT_SCHEMA = contract.CANONICAL_SCHEMA_PATH
 MAX_WORKERS = 8
 EXTERNAL_HOLD = "EXTERNAL_HOLD"
 UNQUALIFIED = "UNQUALIFIED"
@@ -146,35 +152,38 @@ def validate_campaign(campaign: Any) -> list[str]:
     return errors
 
 
-def _load_validated(path: Path, validator: Draft202012Validator) -> tuple[str, dict[str, Any] | None, list[str]]:
+def _load_normalized(
+    path: Path,
+    role_hints: dict[str, str],
+) -> tuple[str, dict[str, Any] | None, list[str], dict[str, Any] | None]:
     try:
         document = load_json(path)
-    except QualificationLoadError as exc:
-        return path.as_posix(), None, [str(exc)]
-    errors = sorted(
-        validator.iter_errors(document),
-        key=lambda error: tuple(str(part) for part in error.absolute_path),
-    )
-    rendered = [
-        f"{path.name}:{'.'.join(str(part) for part in error.absolute_path) or '<root>'}: {error.message}"
-        for error in errors
-    ]
-    return path.as_posix(), document, rendered
+        candidate_id = str(document.get("candidate_id", ""))
+        canonical, migration = contract.normalize_record(document, role_hint=role_hints.get(candidate_id))
+        view = contract.compute_qualification_view(canonical)
+    except (QualificationLoadError, contract.BenchmarkContractError, ValueError) as exc:
+        return path.as_posix(), None, [str(exc)], None
+    return path.as_posix(), view, [], migration
 
 
 def load_results(
-    paths: list[Path], schema: dict[str, Any], workers: int | None = None
+    paths: list[Path],
+    schema: dict[str, Any],
+    workers: int | None = None,
+    role_hints: dict[str, str] | None = None,
 ) -> tuple[list[dict[str, Any]], list[str]]:
+    if contract.approved_schema_kind(schema) != "canonical-nested-v1.1":
+        return [], ["compute qualification requires the authoritative nested v1.1 schema"]
     ordered = sorted((Path(path) for path in paths), key=lambda path: path.as_posix())
-    validator = Draft202012Validator(schema, format_checker=FormatChecker())
+    hints = role_hints or {}
     count = normalized_workers(workers, len(ordered))
     if count == 1:
-        loaded = [_load_validated(path, validator) for path in ordered]
+        loaded = [_load_normalized(path, hints) for path in ordered]
     else:
         with ThreadPoolExecutor(max_workers=count, thread_name_prefix="tsao-qualify") as executor:
-            loaded = list(executor.map(lambda path: _load_validated(path, validator), ordered))
-    documents = [document for _, document, errors in loaded if document is not None and not errors]
-    errors = [error for _, _, item_errors in loaded for error in item_errors]
+            loaded = list(executor.map(lambda path: _load_normalized(path, hints), ordered))
+    documents = [document for _, document, errors, _ in loaded if document is not None and not errors]
+    errors = [error for _, _, item_errors, _ in loaded for error in item_errors]
     return documents, errors
 
 
@@ -312,6 +321,7 @@ def qualify(
         "ok": not errors,
         "state": state,
         "campaign_id": campaign.get("campaign_id"),
+        "benchmark_result_contract": "canonical-nested-v1.1",
         "workers_bounded_by": MAX_WORKERS,
         "document_count": len(documents),
         "performance": performance,
@@ -321,6 +331,7 @@ def qualify(
             "QUALIFIED_FOR_REVIEW is not signed L3 performance qualification.",
             "Performance ratios are emitted only from accepted real-engine observations.",
             "Missing GPU, license, solver, build, or hardware evidence forces EXTERNAL_HOLD.",
+            "Legacy flat v1.0 evidence with irrecoverable provenance gaps remains EXTERNAL_HOLD.",
         ],
     }
 
@@ -336,7 +347,19 @@ def main() -> int:
     try:
         campaign = load_campaign(args.campaign)
         schema = load_json(args.schema)
-        documents, load_errors = load_results(args.results, schema, workers=args.workers)
+        roles = {
+            str(campaign.get("reference_candidate_id")): "scientific-reference",
+            **{
+                str(candidate): "acceleration-candidate"
+                for candidate in (campaign.get("candidate_ids") or [])
+            },
+        }
+        documents, load_errors = load_results(
+            args.results,
+            schema,
+            workers=args.workers,
+            role_hints=roles,
+        )
         report = qualify(campaign, documents, load_errors)
     except (QualificationLoadError, ValueError) as exc:
         report = {"ok": False, "state": UNQUALIFIED, "errors": [str(exc)]}

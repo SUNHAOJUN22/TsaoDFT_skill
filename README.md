@@ -12,13 +12,14 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-539%20passing-16A34A" alt="539 tests passing">
-  <img src="https://img.shields.io/badge/coverage-94.38%25%20stmt%20%7C%2084.41%25%20branch-16A34A" alt="94.38 percent statement and 84.41 percent branch coverage">
+  <img src="https://img.shields.io/badge/tests-559%20passing-16A34A" alt="559 tests passing">
+  <img src="https://img.shields.io/badge/Linux%20coverage-94.44%25%20stmt%20%7C%2084.61%25%20branch-16A34A" alt="Linux 94.44 percent statement and 84.61 percent branch coverage">
+  <img src="https://img.shields.io/badge/Windows%20PowerShell-PASS-1687FF" alt="Windows PowerShell control plane pass">
   <img src="https://img.shields.io/badge/public%20support-L2_VALIDATED_ADAPTER-6D5DFB" alt="Public support L2 validated adapter">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
 
-> **AI图像声明｜AI-GENERATED CONCEPTUAL ILLUSTRATION：** 下方总览图按照 UI/UX Pro Max 的 Hero-Centric + Evidence Bento 视觉方向生成。图中的分子、晶格、轨道形态、服务器和数据界面只用于表达研究场景，不是 Gaussian、VASP、Quantum ESPRESSO、CP2K、Multiwfn、VMD 或实验产生的结果。其余架构图为仓库控制、可复现的确定性 SVG；全部明确标注为合成示意，任何定量结论仍必须来自经过验收的源文件、计算产物和脚本。
+> **AI图像声明｜AI-GENERATED CONCEPTUAL ILLUSTRATION：** 下方总览图按照 UI/UX Pro Max 的 Hero-Centric + Evidence Bento 视觉方向生成。图中的分子、晶格、轨道形态、服务器和数据界面只用于表达研究场景，不是 Gaussian、VASP、Quantum ESPRESSO、CP2K、Multiwfn、VMD 或实验产生的结果。其余架构图采用 AI 辅助设计语言，但由仓库控制为可复现的确定性 SVG；全部明确标注为合成示意，任何定量结论仍必须来自经过验收的源文件、计算产物和脚本。
 
 <p align="center">
   <img src="assets/ai/hero/tsao-dft-hero.svg" width="100%" alt="TsaoDFT evidence-first DFT research operating system conceptual overview">
@@ -89,7 +90,7 @@ planned
 
 ## 加速计算架构图谱
 
-下列五张确定性 SVG 用于解释本仓库如何吸收 C++、OpenMP、Kokkos、CUDA‑X、边缘推理和真实引擎能力。它们采用 AI 辅助的视觉设计方向，但由仓库文本资产定义、可重复检查，并不构成性能或科学数据。
+以下九张确定性 SVG 解释本仓库如何吸收 C++、OpenMP、Kokkos、CUDA‑X、ROCm、oneAPI、Metal、边缘推理和真实引擎能力。它们采用 AI 辅助视觉设计方向，但由仓库文本资产定义、可重复检查，并不构成性能或科学数据。
 
 <table>
 <tr>
@@ -103,13 +104,50 @@ planned
 <tr>
 <td colspan="2"><img src="assets/demo/evidence-qualification-pipeline.svg" width="100%" alt="Scoped L3 acceleration evidence qualification pipeline"></td>
 </tr>
+<tr>
+<td><img src="assets/demo/acceleration-registry-governance.svg" width="100%" alt="Canonical acceleration registry governance"></td>
+<td><img src="assets/demo/backend-portability-stack.svg" width="100%" alt="Backend portability stack"></td>
+</tr>
+<tr>
+<td><img src="assets/demo/windows-linux-execution-matrix.svg" width="100%" alt="Windows and Linux execution matrix"></td>
+<td><img src="assets/demo/scientific-acceleration-funnel.svg" width="100%" alt="Scientific acceleration qualification funnel"></td>
+</tr>
 </table>
 
 视觉体系见 [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md)，AI 图治理见 [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md)。
 
+## 可执行加速注册表与架构审计
+
+加速库、后端和别名不再由多个规划器分别维护。权威事实源为：
+
+```text
+skills/tsao-dft-hpc-provenance/scripts/acceleration_registry.py
+```
+
+它统一管理 **27 个** CUDA‑X、ROCm、oneAPI、Metal 和可移植接口，并生成两个兼容视图：
+
+- `plan_acceleration.py`：面向引擎构建和候选方案；
+- `hardware_optimization_contract.py`：面向工作负载、边缘运行时和硬件决策。
+
+永久 Linux 与 Windows 质量门会逐字段比较 libraries、aliases、backend、vendor compatibility。任何一侧静默漂移都会在 capability claim 之前失败：
+
+```bash
+python scripts/validate_acceleration_registry.py --json
+```
+
+仓库还提供可执行静态架构审计：
+
+```bash
+python scripts/audit_compute_architecture.py \
+  --json-out build/compute-architecture.json \
+  --markdown-out build/compute-architecture.md
+```
+
+当前审计观察为 **Python 占被审计源码行的 99.48%，仓库内原生语言占 0.0%**。这只是源码组成，不是运行时间、瓶颈或“应把全仓改写成 C++”的证据。审计输出的 40 个候选也只是保守静态排序；必须用代表性 profile 证明热点后，才允许迁移到 C++、OpenMP、Kokkos、CUDA、HIP 或 SYCL。
+
 ## Python、C++ 与 GPU 的职责边界
 
-本项目确实以 Python 为主，但 Python 主要承担控制面，而不是重新实现专业 DFT 内核。
+本项目以 Python 为主是有意设计：Python 主要承担控制面，而不是重新实现专业 DFT 内核。
 
 | 层 | 推荐技术 | 负责内容 |
 |---|---|---|
@@ -125,12 +163,14 @@ planned
 
 | 库/路线 | 可以用于 | 不能被解释为 |
 |---|---|---|
-| cuBLAS / cuSOLVER | 大型、重复、已驻留 GPU 的密集矩阵与求解 | “Python 代码天然已加速” |
+| cuBLAS / cuSOLVER / cuSOLVERMp | 大型、重复、已驻留 GPU 的密集矩阵与分布式求解 | “Python 代码天然已加速” |
 | cuFFT / cuFFTMp | 支持该路径的外部引擎构建，或明确的自有 FFT 内核 | Python wrapper 自动加速 VASP/QE/CP2K |
 | cuSPARSE | 明确的稀疏矩阵热点 | 小型密集表格的通用优化 |
 | cuTENSOR | 经过 profile 的高阶张量收缩、置换和约化 | 外部 DFT 程序的通用开关 |
 | cuEquivariance | MACE、NequIP、e3nn 等已验收等变模型 | Kohn–Sham DFT 加速器 |
 | NCCL / NVSHMEM | 兼容构建中的多 GPU 通信与分布式工作负载 | 单 GPU、小文件或 Parser 优化 |
+| rocBLAS / rocSOLVER / rocFFT / RCCL | 明确支持 HIP/ROCm 的引擎或自有内核 | 把 NVIDIA 构建自动转换为 AMD 构建 |
+| oneMKL / oneCCL / OpenVINO | 明确的 SYCL/oneAPI 数值或边缘推理路径 | 未经验证的通用跨厂商替代 |
 | TensorRT / ONNX Runtime | 有 UQ/OOD 门和远程 DFT 回退的边缘 surrogate | 生产 DFT 的替代品 |
 
 ## 支持等级
@@ -269,16 +309,18 @@ python -m pip check
 python scripts/quality_gate.py
 ```
 
-当前 Linux 代码资格基线：**539 项测试、9 个隔离套件、0 个失败套件；94.38% statement / 84.41% branch coverage。**
+当前 Linux 代码资格基线：**559 项测试、9 个隔离套件、0 个失败套件；94.44% statement / 84.61% branch coverage。**
 
-Windows 永久门运行同一组 **539 项测试**，实测为 **94.32% statement / 84.22% branch coverage**；`generate_job_script.py` 在 Linux 与 Windows 均保持 **100% statement / 100% branch coverage**。
+Windows 永久门运行同一组 **559 项测试**，实测为 **94.38% statement / 84.42% branch coverage**；`generate_job_script.py` 在 Linux 与 Windows 均保持 **100% statement / 100% branch coverage**。
 
-当前永久质量门包括 9 个隔离测试套件、Python 3.10 / 3.12 / 3.13、Windows PowerShell、语句与分支覆盖率、18 个 mypy 目标、4 个严格信任边界类型目标、Ruff、Bandit、仓库审计、CodeQL、三层 `pip-audit` 和 CycloneDX JSON SBOM。供应链任务即使失败也会先保留完整审计 JSON 和 SBOM，再使工作流失败。
+当前永久质量门包括 9 个隔离测试套件、Python 3.10 / 3.12 / 3.13、Windows PowerShell、加速注册表漂移、可执行计算架构审计、语句与分支覆盖率、18 个 mypy 目标、4 个严格信任边界类型目标、Ruff、Bandit、仓库审计、CodeQL、三层 `pip-audit` 和 CycloneDX JSON SBOM。供应链任务即使失败也会先保留完整审计 JSON 和 SBOM，再使工作流失败。
 
 ```text
 assets and executable contracts
 → dependency and constraint validation
 → acceleration evidence schema/policy validation
+→ canonical acceleration registry drift validation
+→ executable compute architecture audit
 → governance, capability and security validators
 → Ruff lint and formatting
 → isolated mypy + strict trust-boundary mypy

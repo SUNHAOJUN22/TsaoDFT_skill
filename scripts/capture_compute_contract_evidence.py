@@ -138,9 +138,7 @@ def build_report() -> dict[str, Any]:
             "native_semantic_validation": qualification.get("native_semantic_validation"),
             "legacy_projection_retained": qualification.get("legacy_projection_retained"),
             "legacy_projection_consumed": qualification.get("legacy_projection_consumed"),
-            "legacy_projection_qualification_impact": qualification.get(
-                "legacy_projection_qualification_impact"
-            ),
+            "legacy_projection_qualification_impact": qualification.get("legacy_projection_qualification_impact"),
             "identity_invariants": qualification.get("identity_invariants"),
         },
         "performance_ratio_published": False,

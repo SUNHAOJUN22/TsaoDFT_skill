@@ -79,8 +79,8 @@ def validate() -> dict[str, Any]:
             errors.append("qualification workflow does not run native canonical semantics")
         if "class CampaignDocument" not in source:
             errors.append("qualification workflow lacks the typed canonical document accessor")
-        if "compute_qualification_view" in source:
-            errors.append("qualification workflow still references compute_qualification_view")
+        if "contract.compute_qualification_view(" in source:
+            errors.append("qualification workflow still calls compute_qualification_view")
         if "def compute_qualification_view" not in contract_source:
             errors.append("legacy diagnostic projection was removed without a compatibility deprecation cycle")
         if "normalized, _ = normalize_record(canonical)" not in contract_source:

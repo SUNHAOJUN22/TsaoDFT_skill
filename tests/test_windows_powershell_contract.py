@@ -85,16 +85,17 @@ class WindowsPowerShellContractTests(unittest.TestCase):
         executable = shutil.which("pwsh")
         if executable is None:
             self.skipTest("pwsh is not installed on this runner")
-        command = (
-            "$parseErrors = $null; $tokens = $null; "
-            "[System.Management.Automation.Language.Parser]::ParseFile("
-            "$args[0], [ref]$tokens, [ref]$parseErrors) | Out-Null; "
-            "if ($parseErrors.Count -ne 0) { "
-            "$parseErrors | ForEach-Object { Write-Error $_.Message }; exit 1 }; exit 0"
-        )
         for path in (QUALITY_GATE, WINDOWS_INVENTORY):
+            quoted_path = str(path).replace("'", "''")
+            command = (
+                "$parseErrors = $null; $tokens = $null; "
+                "[System.Management.Automation.Language.Parser]::ParseFile("
+                f"'{quoted_path}', [ref]$tokens, [ref]$parseErrors) | Out-Null; "
+                "if ($parseErrors.Count -ne 0) { "
+                "$parseErrors | ForEach-Object { Write-Error $_.Message }; exit 1 }; exit 0"
+            )
             completed = subprocess.run(
-                [executable, "-NoProfile", "-Command", command, str(path)],
+                [executable, "-NoProfile", "-Command", command],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,

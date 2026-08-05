@@ -201,7 +201,7 @@ class PowerShellLocalJobBackendTests(unittest.TestCase):
         cp2k = self.local_manifest(engine="cp2k")
         cp2k_script = self.generator.build(cp2k, shell="powershell")
         engine_invocation = cp2k_script.split("$engineRc = Invoke-TsaoProcess", 1)[1].split(
-            "Write-Output \"TsaoDFT job end",
+            'Write-Output "TsaoDFT job end',
             1,
         )[0]
         self.assertNotIn("-StandardOutputPath", engine_invocation)

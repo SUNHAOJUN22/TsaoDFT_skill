@@ -159,7 +159,7 @@ def validate_profile(profile: dict[str, Any]) -> tuple[list[str], list[str]]:
     if not isinstance(policy, dict):
         errors.append("policy must be a mapping")
         policy = {}
-    precisions = policy["precisions"] if "precisions" in policy else ["fp64"]
+    precisions = policy.get("precisions", ["fp64"])
     if not isinstance(precisions, list) or not precisions:
         errors.append("policy.precisions must be a non-empty list")
     else:

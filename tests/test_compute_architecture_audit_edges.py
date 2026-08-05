@@ -53,7 +53,7 @@ class ComputeArchitectureAuditEdgeTests(unittest.TestCase):
             self.assertIsNone(audit._read_text(root / "missing.txt"))
 
     def test_candidate_actions_cover_batch_parallel_and_threshold_paths(self) -> None:
-        batch = SimpleNamespace(nested_loops=0, loops=0, file_reads=3, subprocess_calls=0)
+        batch = SimpleNamespace(nested_loops=0, loops=0, file_reads=4, subprocess_calls=0)
         parallel = SimpleNamespace(nested_loops=0, loops=0, file_reads=0, subprocess_calls=2)
         quiet = SimpleNamespace(nested_loops=0, loops=1, file_reads=0, subprocess_calls=0)
         batch_result = audit._candidate("batch.py", batch, False)

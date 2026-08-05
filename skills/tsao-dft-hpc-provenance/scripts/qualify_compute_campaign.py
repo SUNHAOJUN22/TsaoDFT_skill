@@ -349,10 +349,7 @@ def main() -> int:
         schema = load_json(args.schema)
         roles = {
             str(campaign.get("reference_candidate_id")): "scientific-reference",
-            **{
-                str(candidate): "acceleration-candidate"
-                for candidate in (campaign.get("candidate_ids") or [])
-            },
+            **{str(candidate): "acceleration-candidate" for candidate in (campaign.get("candidate_ids") or [])},
         }
         documents, load_errors = load_results(
             args.results,

@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import ModuleType
+from typing import Any
 
 import yaml
 
@@ -21,7 +22,6 @@ MODULE_PATH = (
     / "engine_capability.py"
 )
 VALIDATOR_PATH = ROOT / "scripts" / "validate_engine_capabilities.py"
-TEMPLATE_DIR = ROOT / "skills" / "tsao-dft-hpc-provenance" / "templates"
 
 
 def load_module(name: str, path: Path) -> ModuleType:
@@ -38,7 +38,7 @@ capability = load_module("tsao_engine_capability_tests", MODULE_PATH)
 validator = load_module("tsao_engine_capability_validator_tests", VALIDATOR_PATH)
 
 
-def hold_document(engine: str = "vasp") -> dict[str, object]:
+def hold_document(engine: str = "vasp") -> dict[str, Any]:
     executable = {
         "vasp": "vasp_std",
         "quantum-espresso": "pw.x",

@@ -10,10 +10,11 @@ import os
 import statistics
 import sys
 from collections import defaultdict
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import yaml
 
@@ -556,10 +557,11 @@ def qualify(
             if backend != "none" or gpu_vendor != "none" or gpu_uuids:
                 message = f"{candidate_id}: reference role requires accelerator backend none and no GPU identity"
                 (holds if held_provenance else errors).append(message)
-        elif document.role == "acceleration-candidate":
-            if backend not in GPU_BACKENDS or gpu_vendor == "none" or not gpu_uuids:
-                message = f"{candidate_id}: acceleration role requires backend, vendor and GPU UUID identity"
-                (holds if held_provenance else errors).append(message)
+        elif document.role == "acceleration-candidate" and (
+            backend not in GPU_BACKENDS or gpu_vendor == "none" or not gpu_uuids
+        ):
+            message = f"{candidate_id}: acceleration role requires backend, vendor and GPU UUID identity"
+            (holds if held_provenance else errors).append(message)
 
     if prepared:
         if len({document.input_sha256 for document in prepared}) != 1:

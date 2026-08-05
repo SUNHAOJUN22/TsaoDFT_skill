@@ -107,7 +107,9 @@ def validate_schema_contract(schema: dict[str, Any]) -> list[str]:
         failures.append("benchmark result schema must reject unknown top-level fields")
 
     required = schema.get("required")
-    required_set = set(required) if isinstance(required, list) and all(isinstance(item, str) for item in required) else set()
+    required_set = (
+        set(required) if isinstance(required, list) and all(isinstance(item, str) for item in required) else set()
+    )
     missing = REQUIRED_RESULT_FIELDS - required_set
     if missing:
         failures.append(f"benchmark result schema is missing required fields: {sorted(missing)}")

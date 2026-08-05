@@ -1,0 +1,16 @@
+schema_version: "1.0"
+campaign_id: EXTERNAL-HOLD-CPU-GPU-CAMPAIGN
+benchmark_plan_id: EXTERNAL-HOLD-BENCHMARK-PLAN
+engine: vasp
+reference_candidate_id: CPU-FP64-REFERENCE
+candidate_ids:
+  - GPU-CANDIDATE
+minimum_repeats: 3
+minimum_reference_over_candidate_ratio: 1.05
+numerical_tolerances:
+  energy_ev:
+    absolute: 1.0e-6
+    relative: 1.0e-8
+  forces_ev_per_angstrom:
+    absolute: 1.0e-4
+    relative: 1.0e-6

@@ -200,6 +200,16 @@ class ComputeQualificationTests(unittest.TestCase):
         self.assertEqual(errors, [])
         self.assertEqual([document["candidate_id"] for document in documents], ["CPU-REF", "GPU-CANDIDATE"])
 
+    def test_json_loader_rejects_overflowed_nonfinite_numbers(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "overflow.json"
+            path.write_text('{"wall_time_seconds": 1e999}', encoding="utf-8")
+            with self.assertRaisesRegex(
+                qualification.QualificationLoadError,
+                "non-finite JSON number is forbidden",
+            ):
+                qualification.load_json(path)
+
 
 if __name__ == "__main__":
     unittest.main()

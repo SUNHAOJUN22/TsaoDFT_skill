@@ -12,20 +12,8 @@ from types import ModuleType
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-MODULE_PATH = (
-    ROOT
-    / "skills"
-    / "tsao-dft-hpc-provenance"
-    / "scripts"
-    / "qualify_compute_campaign.py"
-)
-CAMPAIGN_PATH = (
-    ROOT
-    / "skills"
-    / "tsao-dft-hpc-provenance"
-    / "templates"
-    / "compute-qualification-campaign.yaml"
-)
+MODULE_PATH = ROOT / "skills" / "tsao-dft-hpc-provenance" / "scripts" / "qualify_compute_campaign.py"
+CAMPAIGN_PATH = ROOT / "skills" / "tsao-dft-hpc-provenance" / "templates" / "compute-qualification-campaign.yaml"
 
 
 def load_module() -> ModuleType:

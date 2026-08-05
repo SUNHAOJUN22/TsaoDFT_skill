@@ -10,11 +10,18 @@ import math
 import re
 import shutil
 import statistics
+import sys
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, TypeGuard
 
 import yaml
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+import benchmark_contract as contract  # noqa: E402 -- standalone Skill import contract
 
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 ROLES = {"scientific-reference", "acceleration-candidate"}
@@ -266,14 +273,15 @@ def verify_artifacts(record: dict[str, Any], artifact_root: Path | None) -> tupl
     return verified, errors
 
 
-def validate_result(
+def validate_canonical_result(
     record: dict[str, Any], artifact_root: Path | None = None
 ) -> tuple[dict[str, Any], list[str], list[str]]:
+    """Validate only the authoritative canonical nested v1.1 semantic contract."""
     normalized = clone(record)
     errors: list[str] = []
     warnings: list[str] = []
-    if normalized.get("schema_version") != "1.0":
-        errors.append("schema_version must be 1.0")
+    if normalized.get("schema_version") != contract.CANONICAL_SCHEMA_VERSION:
+        errors.append(f"schema_version must be {contract.CANONICAL_SCHEMA_VERSION}")
     require_text(normalized, "benchmark_plan_id", "root", errors)
     require_text(normalized, "candidate_id", "root", errors)
     role = normalized.get("role")
@@ -379,14 +387,34 @@ def validate_result(
     if kind and kind not in SOURCE_KINDS:
         errors.append(f"evidence_source.kind must be one of {sorted(SOURCE_KINDS)}")
     require_text(evidence, "source_id", "evidence_source", errors)
-    if not isinstance(evidence.get("missing_fields"), list):
-        errors.append("evidence_source.missing_fields must be a list")
+    missing_fields = evidence.get("missing_fields")
+    if not isinstance(missing_fields, list) or not all(isinstance(item, str) for item in missing_fields):
+        errors.append("evidence_source.missing_fields must be a string list")
+    elif len(missing_fields) != len(set(missing_fields)):
+        errors.append("evidence_source.missing_fields must be unique")
     if kind != "real-engine":
         warnings.append("non-real evidence source is restricted to L2_ONLY")
     if nodes * ranks * threads < 1:
         errors.append("hardware allocation is invalid")
     normalized["validation"] = {"ok": not errors, "errors": sorted(set(errors)), "warnings": sorted(set(warnings))}
     return normalized, sorted(set(errors)), sorted(set(warnings))
+
+
+def validate_result(
+    record: dict[str, Any],
+    artifact_root: Path | None = None,
+    *,
+    role_hint: str | None = None,
+) -> tuple[dict[str, Any], list[str], list[str]]:
+    """Normalize through the central contract, then run native nested v1.1 semantics."""
+    try:
+        canonical, _ = contract.normalize_record(record, role_hint=role_hint)
+    except (TypeError, ValueError, contract.BenchmarkContractError) as exc:
+        normalized = clone(record)
+        errors = [f"benchmark contract normalization failed: {exc}"]
+        normalized["validation"] = {"ok": False, "errors": errors, "warnings": []}
+        return normalized, errors, []
+    return validate_canonical_result(canonical, artifact_root)
 
 
 def import_evidence(

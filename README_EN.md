@@ -12,8 +12,8 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-507%20passing-16A34A" alt="507 tests passing">
-  <img src="https://img.shields.io/badge/coverage-94.40%25%20stmt%20%7C%2084.38%25%20branch-16A34A" alt="94.40 percent statement and 84.38 percent branch coverage">
+  <img src="https://img.shields.io/badge/tests-539%20passing-16A34A" alt="539 tests passing">
+  <img src="https://img.shields.io/badge/coverage-94.38%25%20stmt%20%7C%2084.41%25%20branch-16A34A" alt="94.38 percent statement and 84.41 percent branch coverage">
   <img src="https://img.shields.io/badge/public%20support-L2_VALIDATED_ADAPTER-6D5DFB" alt="Public support L2 validated adapter">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
@@ -64,7 +64,7 @@ Every transition must identify the acceptance owner, supporting artifact, method
 | [`tsao-periodic-dft-materials`](skills/tsao-periodic-dft-materials/) | VASP, Quantum ESPRESSO and CP2K, including surfaces/defects, bands/DOS, NEB and convergence | Does not distribute POTCAR, pseudopotentials or restricted databases |
 | [`tsao-dft-ml-active-learning`](skills/tsao-dft-ml-active-learning/) | DFT-label audit, leakage prevention, applicability domain, uncertainty, active learning and inverse design | High R², SHAP or acquisition score does not prove mechanism or causality |
 | [`tsao-dft-kinetics-multiscale`](skills/tsao-dft-kinetics-multiscale/) | Eyring/TST, networks, detailed balance, uncertainty, microkinetics and reactor handoff | Consumes only accepted standard/reference-state evidence |
-| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | Local/Slurm/PBS, structured argv, inventory, tuning candidates, GPU planning, Parsers, real benchmarks, signed review and content-addressed evidence | GPU allocation, scheduler completion, self-reported L3 or synthetic fixtures prove neither real execution nor speedup |
+| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | Native Windows PowerShell local jobs, POSIX local jobs, Slurm/PBS, structured argv, inventory, tuning candidates, GPU planning, Parsers, real benchmarks, signed review and content-addressed evidence | GPU allocation, scheduler completion, self-reported L3 or synthetic fixtures prove neither real execution nor speedup |
 | [`tsao-dft-catalysis-profile`](skills/tsao-dft-catalysis-profile/) | DCS/MCSOMe/DMOS, Si–O/Si–C, Ti/TEA, Ziegler–Natta and polyolefin catalysis | Scoped profile; never auto-applied to unrelated catalysis |
 
 ## Scientific figures: conceptual and deterministic evidence stay separate
@@ -163,6 +163,39 @@ python scripts/install.py \
 
 The installer uses ownership markers, atomic staging/replacement, rollback and a concurrent-install lock. Production execution still requires legal engines, licences, pseudopotentials/basis libraries, a site guide and authorisation.
 
+## Native Windows local job scripts
+
+A Windows local workflow can generate and run a PowerShell 7 script without WSL and without converting structured arguments into a command string:
+
+```powershell
+python skills/tsao-dft-hpc-provenance/scripts/generate_job_script.py `
+  .\build\hpc-manifest.yaml `
+  --shell powershell `
+  --out .\build\job.ps1
+
+pwsh -NoProfile -File .\build\job.ps1
+```
+
+Linux, local POSIX, Slurm and PBS keep the original backend:
+
+```bash
+python skills/tsao-dft-hpc-provenance/scripts/generate_job_script.py \
+  build/hpc-manifest.yaml \
+  --shell posix \
+  --out build/job.sh
+```
+
+The PowerShell boundary is explicit:
+
+- only `scheduler: local` is accepted; Slurm/PBS remain POSIX/HPC execution paths;
+- `environment.modules` and `environment.source` are rejected rather than pretending Unix environment-module semantics are native Windows features;
+- structured argv is passed through `.NET ProcessStartInfo.ArgumentList`, while stdout/stderr use asynchronous stream copying;
+- `Invoke-Expression`, `cmd.exe` and shell-string interpolation are not used;
+- approval, preflight, Parser, stdin/stdout/stderr, environment variables, scratch, exit-code precedence and runtime-evidence contracts remain active;
+- Windows local execution compatibility is not Gaussian, VASP, QE, CP2K or GPU acceleration evidence.
+
+The permanent Windows job executes real `pwsh` tests for special-character arguments, Gaussian stdin, preflight, Parser, streams and failing exit codes.
+
 ## GPU, parallel and evidence-qualification entry point
 
 Perform non-invoking inventory, then create an acceleration plan and pending candidates:
@@ -231,9 +264,11 @@ python -m pip check
 python scripts/quality_gate.py
 ```
 
-Current code-qualification baseline: **507 tests, 9 isolated suites, 0 failed suites; 94.40% statement and 84.38% branch coverage.**
+Current Linux code-qualification baseline: **539 tests, 9 isolated suites, 0 failed suites; 94.38% statement and 84.41% branch coverage.**
 
-The permanent gate covers 9 isolated test suites, Python 3.10 / 3.12 / 3.13, statement and branch coverage, 18 mypy targets, 4 strict trust-boundary type targets, Ruff, Bandit, repository audit, CodeQL, three `pip-audit` modes and CycloneDX JSON SBOM. Supply-chain reports and the SBOM are preserved before a failing audit makes the workflow fail.
+The permanent Windows job runs the same **539 tests** and measures **94.32% statement / 84.22% branch coverage**. `generate_job_script.py` remains at **100% statement / 100% branch coverage** on Linux and Windows.
+
+The permanent gate covers 9 isolated test suites, Python 3.10 / 3.12 / 3.13, Windows PowerShell, statement and branch coverage, 18 mypy targets, 4 strict trust-boundary type targets, Ruff, Bandit, repository audit, CodeQL, three `pip-audit` modes and CycloneDX JSON SBOM. Supply-chain reports and the SBOM are preserved before a failing audit makes the workflow fail.
 
 ```text
 assets and executable contracts
@@ -242,9 +277,9 @@ assets and executable contracts
 → governance, capability and security validators
 → Ruff lint and formatting
 → isolated mypy + strict trust-boundary mypy
-→ statement and branch coverage
+→ Linux and Windows statement/branch coverage
 → Bandit + strict repository audit
-→ all isolated unittest suites
+→ all isolated unittest suites + real pwsh execution
 → pip-audit + SBOM + CodeQL
 ```
 

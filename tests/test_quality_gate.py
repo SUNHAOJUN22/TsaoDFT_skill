@@ -26,18 +26,25 @@ quality_gate = load_quality_gate()
 
 class QualityGateTests(unittest.TestCase):
     def test_dependency_contract_precedes_static_analysis(self):
-        names = [stage.name for stage in quality_gate.stages()]
+        stages = quality_gate.stages()
+        names = [stage.name for stage in stages]
         self.assertEqual(names[1], "dependency contract")
         self.assertLess(names.index("dependency contract"), names.index("Ruff lint"))
         self.assertLess(names.index("CI constraints"), names.index("acceleration contracts"))
         self.assertLess(names.index("acceleration contracts"), names.index("acceleration registry"))
         self.assertLess(names.index("acceleration registry"), names.index("engine capabilities"))
         self.assertLess(names.index("engine capabilities"), names.index("compute qualification"))
-        self.assertLess(names.index("compute qualification"), names.index("compute architecture audit"))
+        self.assertLess(names.index("compute qualification"), names.index("compute contract evidence"))
+        self.assertLess(names.index("compute contract evidence"), names.index("compute architecture audit"))
+        self.assertLess(names.index("compute contract evidence"), names.index("coverage"))
         self.assertEqual(names.count("compute architecture audit"), 1)
         self.assertEqual(names.count("engine capabilities"), 1)
         self.assertEqual(names.count("compute qualification"), 1)
+        self.assertEqual(names.count("compute contract evidence"), 1)
         self.assertLess(names.index("compute architecture audit"), names.index("capability claims"))
+        coverage = next(stage for stage in stages if stage.name == "coverage")
+        self.assertIn("--contract-evidence", coverage.command)
+        self.assertIn("compute-contract-evidence.json", coverage.command)
         self.assertEqual(names[-1], "unit tests")
 
     def test_skip_tests_removes_only_unit_test_stage(self):

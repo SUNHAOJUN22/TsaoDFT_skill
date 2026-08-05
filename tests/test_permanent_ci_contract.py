@@ -41,6 +41,46 @@ class PermanentCIContractTests(unittest.TestCase):
         self.assertNotIn("contents: write", text)
         self.assertNotIn("git push", text)
 
+    def test_supply_chain_reports_are_always_preserved_before_failure(self) -> None:
+        path = ROOT / ".github" / "workflows" / "ci.yml"
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        steps = data["jobs"]["supply-chain"]["steps"]
+        by_name = {step["name"]: step for step in steps}
+
+        capture = by_name["Capture all dependency audits and SBOM"]
+        self.assertEqual(capture["id"], "audit")
+        self.assertIn("set +e", capture["run"])
+        for output in (
+            "runtime_exit_code",
+            "development_exit_code",
+            "locked_exit_code",
+            "sbom_exit_code",
+        ):
+            self.assertIn(output, capture["run"])
+        self.assertIn("audit command did not produce a report", capture["run"])
+
+        upload = by_name["Upload supply-chain evidence"]
+        self.assertEqual(upload["if"], "always()")
+        self.assertEqual(upload["with"]["if-no-files-found"], "error")
+        for report in (
+            "pip-audit-runtime.json",
+            "pip-audit-development.json",
+            "pip-audit-locked.json",
+            "sbom.cdx.json",
+        ):
+            self.assertIn(report, upload["with"]["path"])
+
+        failure = by_name["Fail job when an audit or SBOM command fails"]
+        self.assertEqual(failure["run"], "exit 1")
+        condition = failure["if"]
+        for output in (
+            "runtime_exit_code",
+            "development_exit_code",
+            "locked_exit_code",
+            "sbom_exit_code",
+        ):
+            self.assertIn(f"steps.audit.outputs.{output}", condition)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import ast
 import json
+import shutil
 import subprocess
 from collections import Counter
 from pathlib import Path
@@ -162,16 +163,19 @@ class SignalVisitor(ast.NodeVisitor):
 
 
 def _tracked_paths(root: Path) -> list[Path]:
-    try:
-        completed = subprocess.run(
-            ["git", "ls-files", "-z"],
-            cwd=root,
-            check=False,
-            capture_output=True,
-            timeout=30,
-        )
-    except (OSError, subprocess.TimeoutExpired):
-        completed = None
+    git_executable = shutil.which("git")
+    completed = None
+    if git_executable is not None:
+        try:
+            completed = subprocess.run(
+                [git_executable, "ls-files", "-z"],
+                cwd=root,
+                check=False,
+                capture_output=True,
+                timeout=30,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            completed = None
     if completed is not None and completed.returncode == 0:
         candidates = [root / item for item in completed.stdout.decode("utf-8").split("\0") if item]
     else:

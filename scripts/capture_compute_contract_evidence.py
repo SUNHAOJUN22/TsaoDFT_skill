@@ -18,7 +18,7 @@ VALIDATORS = {
     "engine_capabilities": ROOT / "scripts" / "validate_engine_capabilities.py",
     "compute_qualification": ROOT / "scripts" / "validate_compute_qualification.py",
 }
-SCHEMA_VERSION = "1.2"
+SCHEMA_VERSION = "1.3"
 EXTERNAL_HOLD = "EXTERNAL_HOLD"
 UNQUALIFIED = "UNQUALIFIED"
 
@@ -82,6 +82,20 @@ def build_report() -> dict[str, Any]:
         errors.append("repository compute qualification must not evaluate performance")
     if qualification.get("workers_bounded_by") != 8:
         errors.append("compute qualification worker bound is not eight")
+    if qualification.get("input_model") != "canonical-nested-v1.1-typed-accessor":
+        errors.append("compute qualification input model is not native canonical typed access")
+    if qualification.get("normalization_mandatory") is not True:
+        errors.append("compute qualification does not require central normalization")
+    if qualification.get("native_semantic_validation") is not True:
+        errors.append("compute qualification does not require native semantic validation")
+    if qualification.get("legacy_projection_retained") is not True:
+        errors.append("legacy diagnostic projection retention is not explicit")
+    if qualification.get("legacy_projection_consumed") is not False:
+        errors.append("legacy diagnostic projection is still consumed by qualification")
+    if qualification.get("legacy_projection_qualification_impact") != "NOT_ELIGIBLE":
+        errors.append("legacy diagnostic projection is not explicitly qualification-ineligible")
+    if len(qualification.get("identity_invariants") or []) < 7:
+        errors.append("compute qualification identity invariants are incomplete")
 
     return {
         "ok": not errors,
@@ -119,6 +133,15 @@ def build_report() -> dict[str, Any]:
             "performance_evaluated": qualification.get("performance_evaluated"),
             "workers_bounded_by": qualification.get("workers_bounded_by"),
             "benchmark_result_contract": qualification.get("benchmark_result_contract"),
+            "input_model": qualification.get("input_model"),
+            "normalization_mandatory": qualification.get("normalization_mandatory"),
+            "native_semantic_validation": qualification.get("native_semantic_validation"),
+            "legacy_projection_retained": qualification.get("legacy_projection_retained"),
+            "legacy_projection_consumed": qualification.get("legacy_projection_consumed"),
+            "legacy_projection_qualification_impact": qualification.get(
+                "legacy_projection_qualification_impact"
+            ),
+            "identity_invariants": qualification.get("identity_invariants"),
         },
         "performance_ratio_published": False,
         "errors": errors,
@@ -128,6 +151,7 @@ def build_report() -> dict[str, Any]:
             "Legacy flat v1.0 migration does not recover missing provenance or qualify performance.",
             "Legacy nested v1.0 is centrally migrated before native v1.1 semantic validation.",
             "No nested v1.0 semantic downgrade view is used.",
+            "compute_qualification_view is a retained diagnostic compatibility export and is not qualification input.",
             "No CPU/GPU performance ratio is published without accepted real-engine results.",
         ],
     }

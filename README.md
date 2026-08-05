@@ -12,8 +12,8 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-500%2B%20gated-16A34A" alt="More than 500 gated tests">
-  <img src="https://img.shields.io/badge/coverage-measured%20in%20CI-16A34A" alt="Statement and branch coverage measured in CI">
+  <img src="https://img.shields.io/badge/tests-507%20passing-16A34A" alt="507 tests passing">
+  <img src="https://img.shields.io/badge/coverage-94.40%25%20stmt%20%7C%2084.38%25%20branch-16A34A" alt="94.40 percent statement and 84.38 percent branch coverage">
   <img src="https://img.shields.io/badge/public%20support-L2_VALIDATED_ADAPTER-6D5DFB" alt="Public support L2 validated adapter">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
@@ -235,6 +235,8 @@ python -m pip install -c constraints/py312.txt -r requirements-dev.txt
 python -m pip check
 python scripts/quality_gate.py
 ```
+
+当前代码资格基线：**507 项测试、9 个隔离套件、0 个失败套件；94.40% statement / 84.38% branch coverage。**
 
 当前永久质量门包括 9 个隔离测试套件、Python 3.10 / 3.12 / 3.13、语句与分支覆盖率、18 个 mypy 目标、4 个严格信任边界类型目标、Ruff、Bandit、仓库审计、CodeQL、三层 `pip-audit` 和 CycloneDX JSON SBOM。供应链任务即使失败也会先保留完整审计 JSON 和 SBOM，再使工作流失败。
 

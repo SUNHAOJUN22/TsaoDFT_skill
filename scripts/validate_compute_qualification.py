@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the bounded CPU/accelerator qualification workflow and hold template."""
+"""Validate the bounded canonical CPU/accelerator qualification workflow and hold template."""
 
 from __future__ import annotations
 
@@ -41,16 +41,21 @@ def validate() -> dict[str, Any]:
         errors.append("repository qualification template must not evaluate performance")
     if hold_report.get("workers_bounded_by") != module.MAX_WORKERS:
         errors.append("qualification worker bound is not stable")
+    if hold_report.get("benchmark_result_contract") != "canonical-nested-v1.1":
+        errors.append("compute qualification does not declare the canonical nested v1.1 contract")
     if module.normalized_workers(10_000, 10_000) != module.MAX_WORKERS:
         errors.append("qualification worker normalization does not enforce the hard bound")
     source = MODULE_PATH.read_text(encoding="utf-8")
     if "ThreadPoolExecutor" not in source or "executor.map" not in source:
         errors.append("qualification workflow lacks deterministic bounded concurrency")
+    if "benchmark_contract" not in source:
+        errors.append("qualification workflow does not use the benchmark contract adapter")
     return {
         "ok": not errors,
         "campaign": campaign.get("campaign_id"),
         "repository_state": hold_report.get("state"),
         "performance_evaluated": hold_report.get("performance", {}).get("evaluated"),
+        "benchmark_result_contract": hold_report.get("benchmark_result_contract"),
         "workers_bounded_by": module.MAX_WORKERS,
         "errors": errors,
     }

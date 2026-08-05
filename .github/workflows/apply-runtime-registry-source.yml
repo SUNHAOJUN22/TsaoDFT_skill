@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/apply-runtime-registry-source.yml"
+      - ".automation/runtime-registry-source.trigger"
   workflow_dispatch:
 
 permissions:
@@ -180,8 +181,10 @@ if __name__ == "__main__":
           )
           PY
 
-      - name: Remove one-shot workflow before governance checks
-        run: git rm .github/workflows/apply-runtime-registry-source.yml
+      - name: Remove one-shot controls before governance checks
+        run: |
+          git rm .github/workflows/apply-runtime-registry-source.yml
+          git rm .automation/runtime-registry-source.trigger
 
       - name: Format and validate milestone
         run: |
@@ -206,5 +209,3 @@ if __name__ == "__main__":
           git commit -m "refactor: load planners from canonical acceleration registry"
           git pull --rebase origin main
           git push origin HEAD:main
-
-# trigger: 2026-08-06T01:20+08:00

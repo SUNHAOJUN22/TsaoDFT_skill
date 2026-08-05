@@ -40,6 +40,10 @@ def stages(include_tests: bool = True) -> list[Stage]:
             (sys.executable, "scripts/validate_engine_capabilities.py"),
         ),
         Stage(
+            "compute qualification",
+            (sys.executable, "scripts/validate_compute_qualification.py"),
+        ),
+        Stage(
             "compute architecture audit",
             (sys.executable, "scripts/audit_compute_architecture.py"),
         ),

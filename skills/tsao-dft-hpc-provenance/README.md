@@ -66,6 +66,25 @@ python scripts/qualify_compute_campaign.py \
 
 Without real GPU, licensed solver, engine build, hardware identity and accepted result evidence, the workflow reports `EXTERNAL_HOLD` and does not calculate or publish a speedup. `QUALIFIED_FOR_REVIEW` is still not signed L3 evidence.
 
+## Machine-readable contract evidence
+
+The permanent quality gate writes `compute-contract-evidence.json` from the three validators above without invoking an external engine. The report records:
+
+- canonical registry validation and runtime single-source status;
+- VASP, Quantum ESPRESSO and CP2K template state;
+- repository performance qualification as `NOT_ESTABLISHED`;
+- compute campaign state as `EXTERNAL_HOLD`;
+- the eight-worker hard bound;
+- `external_engine_invoked: false` and `performance_ratio_published: false`.
+
+```bash
+python ../../scripts/capture_compute_contract_evidence.py \
+  --out compute-contract-evidence.json \
+  --json
+```
+
+The coverage stage must load this report and embeds it under `contract_evidence` in `coverage-report.json`. A missing, malformed, invalid, externally invoking or ratio-publishing report fails the quality gate. Existing CI coverage artifacts therefore carry both test coverage and the current non-qualification boundary.
+
 ## Permanent gates
 
 The root quality gate now runs, in order:
@@ -74,8 +93,9 @@ The root quality gate now runs, in order:
 2. canonical acceleration registry validation;
 3. EngineCapability validation;
 4. reproducible compute qualification validation;
-5. compute architecture audit;
-6. lint, formatting, typing, coverage, security and repository tests.
+5. machine-readable compute contract evidence capture;
+6. compute architecture audit;
+7. lint, formatting, typing, evidence-bound coverage, security and repository tests.
 
 ```bash
 python ../../scripts/quality_gate.py

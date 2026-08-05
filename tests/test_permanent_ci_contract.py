@@ -20,8 +20,12 @@ class PermanentCIContractTests(unittest.TestCase):
         self.assertEqual(data["name"], "TsaoDFT quality and security gates")
         self.assertEqual(data["permissions"], {"contents": "read"})
         self.assertEqual(data["concurrency"]["cancel-in-progress"], True)
-        self.assertEqual(set(data["jobs"]), {"quality-gate", "supply-chain", "codeql"})
+        self.assertEqual(
+            set(data["jobs"]),
+            {"quality-gate", "windows-control-plane", "supply-chain", "codeql"},
+        )
         self.assertEqual(data["jobs"]["quality-gate"]["timeout-minutes"], 25)
+        self.assertEqual(data["jobs"]["windows-control-plane"]["timeout-minutes"], 40)
         self.assertEqual(data["jobs"]["supply-chain"]["timeout-minutes"], 25)
         self.assertEqual(data["jobs"]["codeql"]["timeout-minutes"], 30)
         matrix = data["jobs"]["quality-gate"]["strategy"]["matrix"]["include"]
@@ -34,12 +38,76 @@ class PermanentCIContractTests(unittest.TestCase):
         )
         self.assertFalse(data["jobs"]["quality-gate"]["strategy"]["fail-fast"])
         self.assertIn("python scripts/quality_gate.py", text)
+        self.assertIn("scripts\\quality_gate.ps1", text)
+        self.assertIn("inspect_windows_environment.ps1", text)
         self.assertIn("coverage-report.json", text)
         self.assertIn("pip_audit", text)
         self.assertIn("cyclonedx-json", text)
         self.assertIn("security-extended", text)
         self.assertNotIn("contents: write", text)
         self.assertNotIn("git push", text)
+        self.assertNotIn("Invoke-Expression", text)
+        self.assertNotIn("Start-Process", text)
+
+    def test_windows_control_plane_is_real_private_and_evidence_preserving(self) -> None:
+        path = ROOT / ".github" / "workflows" / "ci.yml"
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        job = data["jobs"]["windows-control-plane"]
+        self.assertEqual(job["runs-on"], "windows-latest")
+        self.assertEqual(job["permissions"], {"contents": "read", "statuses": "write"})
+        steps = job["steps"]
+        by_name = {step["name"]: step for step in steps}
+
+        setup = by_name["Setup Python 3.12"]
+        self.assertEqual(setup["with"]["python-version"], "3.12")
+        self.assertIn("constraints/py312.txt", setup["with"]["cache-dependency-path"])
+
+        inventory = by_name["Capture privacy-bounded Windows inventory"]
+        self.assertEqual(inventory["shell"], "pwsh")
+        for fragment in (
+            "inspect_windows_environment.ps1",
+            "windows-environment.json",
+            "external_dft_engine_invoked",
+            "NOT_ELIGIBLE",
+            "hostname_recorded",
+            "username_recorded",
+            "home_path_recorded",
+            "environment_values_recorded",
+            "executable_paths_recorded",
+        ):
+            self.assertIn(fragment, inventory["run"])
+
+        capture = by_name["Capture complete PowerShell quality gate"]
+        self.assertEqual(capture["id"], "windows-gate")
+        self.assertEqual(capture["shell"], "pwsh")
+        for fragment in (
+            "quality_gate.ps1",
+            "windows-quality-gate.log",
+            "Tee-Object",
+            "$LASTEXITCODE",
+            "$env:GITHUB_OUTPUT",
+            "exit_code=$code",
+        ):
+            self.assertIn(fragment, capture["run"])
+
+        upload = by_name["Upload Windows control-plane evidence"]
+        self.assertEqual(upload["if"], "always()")
+        self.assertEqual(upload["with"]["if-no-files-found"], "error")
+        for report in (
+            "windows-environment.json",
+            "windows-quality-gate.log",
+            "coverage-report.json",
+        ):
+            self.assertIn(report, upload["with"]["path"])
+
+        status = by_name["Publish best-effort Windows compatibility summary"]
+        self.assertTrue(status["continue-on-error"])
+        self.assertIn("tsao-dft/windows-powershell", status["run"])
+        self.assertIn("GATE_EXIT_CODE", status["env"])
+
+        failure = by_name["Fail job when PowerShell quality gate fails"]
+        self.assertIn("steps.windows-gate.outputs.exit_code", failure["if"])
+        self.assertEqual(failure["run"], "exit 1")
 
     def test_supply_chain_reports_are_always_preserved_before_failure(self) -> None:
         path = ROOT / ".github" / "workflows" / "ci.yml"

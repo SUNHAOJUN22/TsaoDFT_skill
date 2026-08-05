@@ -5,7 +5,7 @@ description = "Auditable molecular and periodic DFT, scientific visualization, M
 requires-python = ">=3.10"
 dependencies = [
   "PyYAML>=6.0,<7",
-  "cryptography>=49,<50",
+  "cryptography>=50,<51",
   "defusedxml>=0.7.1,<0.8",
   "jsonschema[format]>=4.26,<5",
   "matplotlib>=3.8,<4",

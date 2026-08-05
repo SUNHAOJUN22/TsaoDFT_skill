@@ -12,8 +12,8 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-507%20passing-16A34A" alt="507 tests passing">
-  <img src="https://img.shields.io/badge/coverage-94.40%25%20stmt%20%7C%2084.38%25%20branch-16A34A" alt="94.40 percent statement and 84.38 percent branch coverage">
+  <img src="https://img.shields.io/badge/tests-539%20passing-16A34A" alt="539 tests passing">
+  <img src="https://img.shields.io/badge/coverage-94.38%25%20stmt%20%7C%2084.41%25%20branch-16A34A" alt="94.38 percent statement and 84.41 percent branch coverage">
   <img src="https://img.shields.io/badge/public%20support-L2_VALIDATED_ADAPTER-6D5DFB" alt="Public support L2 validated adapter">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
@@ -69,7 +69,7 @@ planned
 | [`tsao-periodic-dft-materials`](skills/tsao-periodic-dft-materials/) | VASP、Quantum ESPRESSO、CP2K，表面/缺陷、能带/DOS、NEB 与收敛 | 不分发 POTCAR、赝势或受限数据库；不混用不兼容能量 |
 | [`tsao-dft-ml-active-learning`](skills/tsao-dft-ml-active-learning/) | DFT 标签审计、泄漏防护、适用域、不确定度、主动学习与反向设计 | 高 R²、SHAP 或 acquisition score 不是机理或因果证据 |
 | [`tsao-dft-kinetics-multiscale`](skills/tsao-dft-kinetics-multiscale/) | Eyring/TST、反应网络、详细平衡、误差传播、微观动力学与反应器交接 | 只消费标准态、参考态和热化学校验通过的数据 |
-| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | 本地/Slurm/PBS、结构化 argv、硬件盘点、调优候选、GPU 规划、Parser、真实基准、签名审查和内容寻址证据 | GPU 分配、最快单次运行、自报 L3 或合成 fixture 都不等于真实加速 |
+| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | Windows 本地 PowerShell、POSIX 本地、Slurm/PBS、结构化 argv、硬件盘点、调优候选、GPU 规划、Parser、真实基准、签名审查和内容寻址证据 | GPU 分配、最快单次运行、自报 L3 或合成 fixture 都不等于真实加速 |
 | [`tsao-dft-catalysis-profile`](skills/tsao-dft-catalysis-profile/) | DCS/MCSOMe/DMOS、Si–O/Si–C、Ti/TEA、Ziegler–Natta 与聚烯烃催化 | 专用 Profile，不自动外推到无关体系 |
 
 ## 科研图件：概念视觉与确定性证据分轨
@@ -168,6 +168,39 @@ python scripts/install.py \
 
 安装器使用所有权 marker、原子暂存/替换、失败回滚和并发锁。真实生产计算仍需合法配置引擎、许可证、赝势/基组、场站指南和执行权限。
 
+## Windows 原生本地作业脚本
+
+Windows 本地工作流可直接生成 PowerShell 7 脚本，不依赖 WSL，也不会把结构化参数拼接为命令字符串：
+
+```powershell
+python skills/tsao-dft-hpc-provenance/scripts/generate_job_script.py `
+  .\build\hpc-manifest.yaml `
+  --shell powershell `
+  --out .\build\job.ps1
+
+pwsh -NoProfile -File .\build\job.ps1
+```
+
+Linux、本地 POSIX、Slurm 或 PBS 继续使用原有后端：
+
+```bash
+python skills/tsao-dft-hpc-provenance/scripts/generate_job_script.py \
+  build/hpc-manifest.yaml \
+  --shell posix \
+  --out build/job.sh
+```
+
+PowerShell 后端的边界是显式的：
+
+- 只接受 `scheduler: local`；Slurm/PBS 仍属于 POSIX/HPC 执行面；
+- 拒绝 `environment.modules` 和 `environment.source`，避免把 Unix 环境模块语义伪装成 Windows 支持；
+- 通过 `.NET ProcessStartInfo.ArgumentList` 传递结构化 argv，并以异步流复制处理 stdout/stderr；
+- 不使用 `Invoke-Expression`、`cmd.exe` 或 shell 字符串拼接；
+- 保留审批门、预检、Parser、stdin/stdout/stderr、环境变量、scratch、退出码优先级和运行证据合同；
+- Windows 本地执行能力不等于 Gaussian、VASP、QE、CP2K 或 GPU 得到加速。
+
+永久 Windows CI 会在真实 `pwsh` 下执行带特殊字符的参数、Gaussian stdin、预检、Parser、输出流和失败退出码测试。
+
 ## GPU、并行与证据资格入口
 
 先做无外部引擎调用的环境盘点，再生成加速规划与待审批候选：
@@ -236,9 +269,11 @@ python -m pip check
 python scripts/quality_gate.py
 ```
 
-当前代码资格基线：**507 项测试、9 个隔离套件、0 个失败套件；94.40% statement / 84.38% branch coverage。**
+当前 Linux 代码资格基线：**539 项测试、9 个隔离套件、0 个失败套件；94.38% statement / 84.41% branch coverage。**
 
-当前永久质量门包括 9 个隔离测试套件、Python 3.10 / 3.12 / 3.13、语句与分支覆盖率、18 个 mypy 目标、4 个严格信任边界类型目标、Ruff、Bandit、仓库审计、CodeQL、三层 `pip-audit` 和 CycloneDX JSON SBOM。供应链任务即使失败也会先保留完整审计 JSON 和 SBOM，再使工作流失败。
+Windows 永久门运行同一组 **539 项测试**，实测为 **94.32% statement / 84.22% branch coverage**；`generate_job_script.py` 在 Linux 与 Windows 均保持 **100% statement / 100% branch coverage**。
+
+当前永久质量门包括 9 个隔离测试套件、Python 3.10 / 3.12 / 3.13、Windows PowerShell、语句与分支覆盖率、18 个 mypy 目标、4 个严格信任边界类型目标、Ruff、Bandit、仓库审计、CodeQL、三层 `pip-audit` 和 CycloneDX JSON SBOM。供应链任务即使失败也会先保留完整审计 JSON 和 SBOM，再使工作流失败。
 
 ```text
 assets and executable contracts
@@ -247,9 +282,9 @@ assets and executable contracts
 → governance, capability and security validators
 → Ruff lint and formatting
 → isolated mypy + strict trust-boundary mypy
-→ statement and branch coverage
+→ Linux and Windows statement/branch coverage
 → Bandit + strict repository audit
-→ all isolated unittest suites
+→ all isolated unittest suites + real pwsh execution
 → pip-audit + SBOM + CodeQL
 ```
 

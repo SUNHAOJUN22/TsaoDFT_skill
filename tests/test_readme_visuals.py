@@ -16,11 +16,20 @@ CURATED_DEMOS = {
     "assets/demo/dft-ml-dashboard.svg",
     "assets/demo/periodic-dft-materials.svg",
     "assets/demo/multiscale-kinetics.svg",
+    "assets/demo/hybrid-compute-architecture.svg",
+    "assets/demo/cuda-x-decision-map.svg",
+    "assets/demo/edge-hpc-closed-loop.svg",
+    "assets/demo/native-acceleration-roadmap.svg",
+    "assets/demo/evidence-qualification-pipeline.svg",
+    "assets/demo/acceleration-registry-governance.svg",
+    "assets/demo/backend-portability-stack.svg",
+    "assets/demo/windows-linux-execution-matrix.svg",
+    "assets/demo/scientific-acceleration-funnel.svg",
 }
 
 
 def load_demo_validator():
-    path = ROOT / "scripts/generate_readme_demos.py"
+    path = ROOT / "scripts" / "generate_readme_demos.py"
     spec = importlib.util.spec_from_file_location("tsao_demo_validator", path)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"cannot import {path}")

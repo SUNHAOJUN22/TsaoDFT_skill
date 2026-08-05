@@ -12,8 +12,8 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-500%2B%20gated-16A34A" alt="More than 500 gated tests">
-  <img src="https://img.shields.io/badge/coverage-measured%20in%20CI-16A34A" alt="Statement and branch coverage measured in CI">
+  <img src="https://img.shields.io/badge/tests-507%20passing-16A34A" alt="507 tests passing">
+  <img src="https://img.shields.io/badge/coverage-94.40%25%20stmt%20%7C%2084.38%25%20branch-16A34A" alt="94.40 percent statement and 84.38 percent branch coverage">
   <img src="https://img.shields.io/badge/public%20support-L2_VALIDATED_ADAPTER-6D5DFB" alt="Public support L2 validated adapter">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
@@ -230,6 +230,8 @@ python -m pip install -c constraints/py312.txt -r requirements-dev.txt
 python -m pip check
 python scripts/quality_gate.py
 ```
+
+Current code-qualification baseline: **507 tests, 9 isolated suites, 0 failed suites; 94.40% statement and 84.38% branch coverage.**
 
 The permanent gate covers 9 isolated test suites, Python 3.10 / 3.12 / 3.13, statement and branch coverage, 18 mypy targets, 4 strict trust-boundary type targets, Ruff, Bandit, repository audit, CodeQL, three `pip-audit` modes and CycloneDX JSON SBOM. Supply-chain reports and the SBOM are preserved before a failing audit makes the workflow fail.
 

@@ -11,13 +11,7 @@ from types import ModuleType
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-MODULE_PATH = (
-    ROOT
-    / "skills"
-    / "tsao-dft-hpc-provenance"
-    / "scripts"
-    / "qualify_compute_campaign.py"
-)
+MODULE_PATH = ROOT / "skills" / "tsao-dft-hpc-provenance" / "scripts" / "qualify_compute_campaign.py"
 VALIDATOR_PATH = ROOT / "scripts" / "validate_compute_qualification.py"
 SCHEMA_PATH = ROOT / "templates" / "benchmark-result.schema.json"
 

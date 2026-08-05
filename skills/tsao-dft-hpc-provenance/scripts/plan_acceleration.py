@@ -21,66 +21,24 @@ TARGETS = {"edge", "workstation", "hpc"}
 GPU_VENDORS = {"none", "nvidia", "amd", "intel", "apple"}
 PRECISIONS = {"fp64", "mixed-validated", "mixed-experimental"}
 BACKENDS = {"none", "cuda", "hip", "sycl", "openacc", "openmp-offload", "metal"}
-BACKEND_BY_VENDOR = {
-    "none": "none",
-    "nvidia": "cuda",
-    "amd": "hip",
-    "intel": "sycl",
-    "apple": "metal",
-}
-BACKEND_VENDORS = {
-    "none": {"none"},
-    "cuda": {"nvidia"},
-    "openacc": {"nvidia"},
-    "hip": {"amd", "nvidia"},
-    "sycl": {"intel", "amd", "nvidia"},
-    "openmp-offload": {"amd", "intel", "nvidia"},
-    "metal": {"apple"},
-}
 
 
-def _library(vendor: str, backend: str, category: str, purpose: str) -> dict[str, str]:
-    return {"vendor": vendor, "backend": backend, "category": category, "purpose": purpose}
+def _load_acceleration_registry() -> Any:
+    path = Path(__file__).with_name("acceleration_registry.py")
+    spec = importlib.util.spec_from_file_location("tsao_plan_acceleration_registry", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot import {path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
-LIBRARIES: dict[str, dict[str, str]] = {
-    "cublas": _library("nvidia", "cuda", "dense-linear-algebra", "GPU BLAS for supported builds or CUDA kernels."),
-    "cusolver": _library("nvidia", "cuda", "dense-solvers", "GPU factorizations and eigensolvers."),
-    "cusolvermp": _library("nvidia", "cuda", "distributed-dense-solvers", "Multi-process multi-GPU solvers."),
-    "cufft": _library("nvidia", "cuda", "fft", "GPU FFT primitives for compatible plane-wave or custom code."),
-    "cufftmp": _library("nvidia", "cuda", "distributed-fft", "Explicit multi-process multi-GPU FFT integration."),
-    "cusparse": _library("nvidia", "cuda", "sparse-linear-algebra", "Sparse primitives for measured sparse paths."),
-    "nccl": _library("nvidia", "cuda", "collectives", "Topology-aware GPU collectives."),
-    "nvshmem": _library("nvidia", "cuda", "gpu-one-sided-communication", "GPU-initiated one-sided communication."),
-    "cutensor": _library("nvidia", "cuda", "tensor-contractions", "Tensor contractions, reductions and permutations."),
-    "cuequivariance": _library("nvidia", "cuda", "equivariant-ml", "Equivariant atomistic-ML operations."),
-    "cutlass": _library("nvidia", "cuda", "custom-kernels", "C++ templates for bespoke GEMM and tensor kernels."),
-    "tensorrt": _library("nvidia", "cuda", "edge-inference", "Validated neural-network inference deployment."),
-    "rocblas": _library("amd", "hip", "dense-linear-algebra", "HIP BLAS for supported AMD builds or kernels."),
-    "rocsolver": _library("amd", "hip", "dense-solvers", "HIP solver primitives for explicit integrations."),
-    "rocfft": _library("amd", "hip", "fft", "HIP FFT primitives for supported AMD builds or kernels."),
-    "rocsparse": _library("amd", "hip", "sparse-linear-algebra", "HIP sparse primitives for measured sparse paths."),
-    "rccl": _library("amd", "hip", "collectives", "ROCm multi-GPU and multi-node collectives."),
-    "hiptensor": _library("amd", "hip", "tensor-contractions", "HIP tensor contractions and reductions."),
-    "onemkl": _library("intel", "sycl", "math-kernels", "BLAS, LAPACK, FFT and sparse kernels for oneAPI targets."),
-    "oneccl": _library("intel", "sycl", "collectives", "Collectives for compatible oneAPI workloads."),
-    "openvino": _library("intel", "sycl", "edge-inference", "Validated ML inference on supported Intel targets."),
-    "accelerate": _library("apple", "metal", "cpu-math", "Apple vector, BLAS, LAPACK and FFT services."),
-    "mps": _library("apple", "metal", "gpu-ml-and-arrays", "Supported Metal array and ML operations."),
-    "kokkos": _library("portable", "portable", "performance-portability", "C++ portable kernels across backends."),
-    "arrayapi": _library("portable", "portable", "python-array-interface", "Backend-neutral Python array contract."),
-    "dlpack": _library("portable", "portable", "zero-copy-interchange", "Cross-framework tensor interchange contract."),
-}
+_REGISTRY = _load_acceleration_registry()
+BACKEND_BY_VENDOR = dict(_REGISTRY.BACKEND_BY_VENDOR)
+BACKEND_VENDORS = {name: set(_REGISTRY.BACKEND_VENDORS[name]) for name in BACKENDS}
+LIBRARIES: dict[str, dict[str, str]] = _REGISTRY.plan_libraries()
+ALIASES: dict[str, str] = _REGISTRY.plan_aliases()
 
-ALIASES = {re.sub(r"[^a-z0-9]", "", name.lower()): name for name in LIBRARIES}
-ALIASES.update(
-    {
-        "pythonarrayapi": "arrayapi",
-        "onemathkernellibrary": "onemkl",
-        "metalperformanceshaders": "mps",
-        "rocmcollectivecommunicationlibrary": "rccl",
-    }
-)
 COMMANDS = {
     "cmake": "cmake",
     "ninja": "ninja",

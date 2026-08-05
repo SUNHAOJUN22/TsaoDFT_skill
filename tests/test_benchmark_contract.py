@@ -36,9 +36,7 @@ def load_module(name: str, path: Path) -> ModuleType:
 
 def accelerate_reference(row: dict[str, Any]) -> None:
     row["accelerator_runtime"].update(backend="cuda")
-    row["hardware_fingerprint"]["accelerators"].append(
-        {"vendor": "nvidia", "model": "H100", "stable_id": "GPU-A"}
-    )
+    row["hardware_fingerprint"]["accelerators"].append({"vendor": "nvidia", "model": "H100", "stable_id": "GPU-A"})
 
 
 contract = load_module("tsao_benchmark_contract_tests", CONTRACT_PATH)

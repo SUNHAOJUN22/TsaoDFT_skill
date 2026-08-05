@@ -30,12 +30,12 @@ The first viewport must establish:
 
 ### Secondary pattern
 
-**Evidence Bento + Trust & Authority**
+**Evidence Bento + Technical Architecture Gallery + Trust & Authority**
 
 - a compact capability strip;
 - one six-stage evidence workflow;
-- three evidence bento cards;
-- a curated deterministic figure gallery below the cover;
+- a curated deterministic scientific-figure gallery;
+- a nine-figure acceleration architecture gallery;
 - support levels and quality-gate proof in the README body.
 
 ### Design dials
@@ -46,7 +46,7 @@ The first viewport must establish:
 
 ## 3. Style synthesis
 
-The v8 visual system combines:
+The v9 visual system combines:
 
 - **Dark OLED Scientific UI** for computational identity;
 - **Swiss Modernism 2.0** for hierarchy, alignment and typography;
@@ -69,12 +69,12 @@ It deliberately avoids a generic SaaS landing page, uncontrolled neon, crypto/cy
 | Grid | `#173052` | low-contrast technical grid |
 | Primary text | `#F3F8FF` | headings and critical labels |
 | Secondary text | `#A9BDD4` | descriptions |
-| Cyan | `#62D8FF` | molecular evidence |
-| Blue | `#4EA4FF` | HPC and engine context |
-| Violet | `#8A7CFF` | periodic evidence |
+| Cyan | `#62D8FF` | molecular evidence and portability interfaces |
+| Blue | `#4EA4FF` | Windows, HPC and engine context |
+| Violet | `#8A7CFF` | periodic evidence and registry authority |
 | Magenta | `#C277FF` | ML and analysis |
-| Teal | `#5BE3C5` | wavefunction and validation |
-| Orange | `#FF9A4D` | kinetics and scale |
+| Teal | `#5BE3C5` | validation, portability and accepted gates |
+| Orange | `#FF9A4D` | kinetics, transfer cost and scale |
 | Coral | `#FF725E` | catalysis / warning emphasis |
 
 Color is never the only state signal. Every color-coded region also carries a textual label.
@@ -86,13 +86,13 @@ Color is never the only state signal. Every color-coded region also carries a te
 - Cover title: 70 px at 1600 px canvas width.
 - Section labels: 24 px.
 - Card labels: 16 px.
-- Minimum text in the cover: 11 px at source resolution.
+- Minimum text in technical SVGs: 12 px at 1120 px canvas width.
 - README prose remains native Markdown/HTML rather than baked into raster images.
 
 ### Spacing and geometry
 
 - spacing scale: `8 / 12 / 16 / 24 / 32 / 48 px`;
-- card radius: `14–15 px`;
+- card radius: `14–22 px`;
 - hero radius: `22 px`;
 - border width: `1–1.5 px`;
 - shadow: low-opacity vertical depth only;
@@ -103,16 +103,31 @@ Color is never the only state signal. Every color-coded region also carries a te
 1. The governed AI asset is exactly one self-contained SVG cover.
 2. A fresh AI-generated molecular / lattice / HPC composition was used as visual direction; the repository cover reconstructs those motifs as deterministic vector geometry so it remains self-contained, crisp and reviewable.
 3. All project names, skill names, capability labels, states and disclaimers are vector text controlled by repository code—not generated-image text.
-4. The cover contains three layers:
-   - hero identity;
-   - capability strip;
-   - evidence workflow and bento.
+4. The cover contains three layers: hero identity, capability strip, and evidence workflow/bento.
 5. Quantitative scientific plots remain in deterministic demo SVGs, never in the AI cover.
-6. Both README languages embed the same governed cover and the same five required deterministic demos.
-7. The README body uses one 2×2 scientific gallery rather than an image wall.
-8. Detailed engineering and scientific content is linked to docs instead of overloading the first viewport.
+6. Both README languages embed the same governed cover and the same 14 required deterministic demonstrations.
+7. The repository validates 17 deterministic SVG demonstrations by exact dimensions and title; not every demonstration must be embedded.
+8. The README uses one 2×2 scientific gallery plus a structured nine-figure acceleration gallery, not an unstructured image wall.
+9. Detailed engineering and scientific content is linked to docs instead of overloading the first viewport.
+10. Every acceleration figure carries a visible non-data label and an accessible synthetic/non-scientific description.
 
-## 6. Anti-patterns
+## 6. Architecture-gallery semantics
+
+The nine acceleration figures are deliberately non-overlapping:
+
+1. hybrid control/native/GPU/external-engine architecture;
+2. CUDA-X workload decision map;
+3. edge-to-HPC uncertainty and fallback loop;
+4. profile-gated native migration roadmap;
+5. scoped-L3 evidence qualification pipeline;
+6. canonical registry governance and drift prevention;
+7. backend-neutral Array API / DLPack portability stack;
+8. Windows PowerShell versus Linux/HPC execution matrix;
+9. scientific acceleration qualification funnel.
+
+No diagram may imply that a library is installed, a GPU kernel executed, an external engine accelerated, or an L3 scope accepted.
+
+## 7. Anti-patterns
 
 The visual system rejects:
 
@@ -128,24 +143,25 @@ The visual system rejects:
 - unsupported L3 or “production-ready” claims;
 - external font, JavaScript or runtime image dependencies inside the SVG.
 
-## 7. Accessibility and pre-delivery checklist
+## 8. Accessibility and pre-delivery checklist
 
 - [x] Dark surfaces and primary text exceed the intended contrast threshold.
 - [x] `role="img"`, `<title>` and `<desc>` are present.
 - [x] The non-computational-data notice is visible inside the cover.
+- [x] Every deterministic SVG has a visible synthetic/non-scientific-data notice.
 - [x] The AI declaration appears immediately before the cover in both README files.
 - [x] No generated-image text is used as project truth.
 - [x] All capability colors also have labels.
 - [x] Cover dimensions and SHA-256 are recorded in the AI manifest.
-- [x] Full-width raster preview reviewed at 1600×900.
-- [x] Half-width readability reviewed by raster down-scaling.
-- [x] Both README files embed the same asset set.
+- [x] Deterministic assets are validated by exact title and dimensions.
+- [x] Both README files embed the same required asset set.
 - [x] All local links are intended to pass the offline link validator.
-- [x] The cover cannot be mistaken for a scientific result.
+- [x] The cover and architecture figures cannot be mistaken for scientific or performance results.
 
-## 8. Version
+## 9. Version
 
-- visual system: `uiux_pro_v8_hero_evidence_bento`;
+- visual system: `uiux_pro_v9_hero_evidence_architecture_gallery`;
 - cover size: `1600 × 900`;
+- deterministic demo canvases: fixed per `scripts/generate_readme_demos.py`;
 - generation record: [`assets/ai/prompts/README-ai-concept-montage.md`](../assets/ai/prompts/README-ai-concept-montage.md);
 - governance: [`AI_IMAGE_GOVERNANCE.md`](AI_IMAGE_GOVERNANCE.md).

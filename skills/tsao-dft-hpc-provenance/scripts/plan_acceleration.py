@@ -178,13 +178,9 @@ def validate(profile: dict[str, Any]) -> tuple[list[str], list[str]]:
 
     engine_gpu_build = False
     if "engine_gpu_build" in software:
-        engine_gpu_build = _NUMERIC.exact_bool(
-            software["engine_gpu_build"], "software.engine_gpu_build", errors
-        )
+        engine_gpu_build = _NUMERIC.exact_bool(software["engine_gpu_build"], "software.engine_gpu_build", errors)
     if "custom_engine_integration" in software:
-        _NUMERIC.exact_bool(
-            software["custom_engine_integration"], "software.custom_engine_integration", errors
-        )
+        _NUMERIC.exact_bool(software["custom_engine_integration"], "software.custom_engine_integration", errors)
     if "require_cpu_fallback" in policy:
         _NUMERIC.exact_bool(policy["require_cpu_fallback"], "policy.require_cpu_fallback", errors, default=True)
 

@@ -15,6 +15,13 @@ assets/demo/      # repository-controlled deterministic SVG demonstrations
 
 A separate AI raster gallery or AI module-card collection is not maintained. The single hero remains the only asset registered in `assets/ai/manifest.yaml`. Architecture, workflow and acceleration diagrams under `assets/demo/` may use an AI-assisted visual direction, but their actual SVG markup is repository-controlled, deterministic and reviewed as source code.
 
+The current governed visual model is:
+
+- **1** AI-assisted hero registered by digest in the AI manifest;
+- **17** deterministic SVG demonstrations validated by exact title and dimensions;
+- **14** curated deterministic demonstrations embedded in both README languages;
+- no remote image runtime, embedded raster payload, generated scientific plot or hidden executable content.
+
 ## Mandatory metadata for the governed hero
 
 The governed overview records:
@@ -70,13 +77,17 @@ All files in `assets/demo/` are standalone deterministic SVGs. They must:
 - be embedded in both README files when listed in `REQUIRED_DEMOS`;
 - distinguish recommendations and evidence gates from measured results.
 
-The acceleration gallery covers:
+The acceleration gallery now covers:
 
 - Python control plane versus native/GPU/external-engine compute planes;
-- workload-bounded CUDA-X library selection;
+- workload-bounded CUDA-X, ROCm, oneAPI, Metal and portable-library selection;
 - edge inference with uncertainty/OOD routing to remote DFT;
 - profile-gated Python → vectorised CPU → C++ → GPU migration;
-- scoped L3 evidence qualification without automatic public capability promotion.
+- scoped L3 evidence qualification without automatic public capability promotion;
+- one canonical acceleration registry feeding two validated planner views;
+- Array API / DLPack portability above optional vendor-native kernels;
+- Windows PowerShell and Linux/HPC execution under the same scientific contracts;
+- the rejection funnel from static candidate to signed scoped evidence.
 
 These diagrams explain contracts. They neither execute nor qualify acceleration.
 

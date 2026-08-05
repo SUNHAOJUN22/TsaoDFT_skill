@@ -53,7 +53,7 @@ class PerformanceEvidenceNumericsTests(unittest.TestCase):
         record["execution"]["exit_status"] = 0.0
         record["performance"]["scf_iterations"] = 12.5
         record["performance"]["io_bytes"] = 1024.5
-        _, validation_errors, _ = self.core.validate_result(record, self.artifact_root)
+        _, validation_errors, _ = self.core.validate_canonical_result(record, self.artifact_root)
         rendered = " ".join(validation_errors)
         self.assertIn("root.repeat_index must be an integer", rendered)
         self.assertIn("hardware.nodes must be an integer", rendered)
@@ -69,7 +69,7 @@ class PerformanceEvidenceNumericsTests(unittest.TestCase):
         record["scientific"]["results"]["forces_ev_per_angstrom"] = [0.0, float("inf"), 0.0]
         record["scientific"]["results"]["stress_gpa"] = [float("nan")]
         record["scientific"]["results"]["properties"] = {"band_gap_ev": float("inf")}
-        _, errors, _ = self.core.validate_result(record, self.artifact_root)
+        _, errors, _ = self.core.validate_canonical_result(record, self.artifact_root)
         rendered = " ".join(errors)
         self.assertIn("convergence_thresholds", rendered)
         self.assertIn("observable_set", rendered)

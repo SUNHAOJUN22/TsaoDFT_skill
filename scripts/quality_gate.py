@@ -27,6 +27,10 @@ def stages(include_tests: bool = True) -> list[Stage]:
         Stage("demo assets", (sys.executable, "scripts/generate_readme_demos.py")),
         Stage("dependency contract", (sys.executable, "scripts/validate_dependencies.py")),
         Stage("CI constraints", (sys.executable, "scripts/validate_constraints.py")),
+        Stage(
+            "acceleration contracts",
+            (sys.executable, "scripts/validate_acceleration_contracts.py"),
+        ),
         Stage("packaging model", (sys.executable, "scripts/validate_packaging_model.py")),
         Stage("catalog", (sys.executable, "scripts/validate_catalog.py")),
         Stage("Agent eval contracts", (sys.executable, "scripts/validate_agent_evals.py")),

@@ -18,7 +18,7 @@ VALIDATORS = {
     "engine_capabilities": ROOT / "scripts" / "validate_engine_capabilities.py",
     "compute_qualification": ROOT / "scripts" / "validate_compute_qualification.py",
 }
-SCHEMA_VERSION = "1.1"
+SCHEMA_VERSION = "1.2"
 EXTERNAL_HOLD = "EXTERNAL_HOLD"
 UNQUALIFIED = "UNQUALIFIED"
 
@@ -60,6 +60,12 @@ def build_report() -> dict[str, Any]:
         errors.append("benchmark-result authority is not canonical nested v1.1")
     if benchmark.get("root_mirror_synchronized") is not True:
         errors.append("root benchmark-result schema mirror is not synchronized")
+    if benchmark.get("native_semantic_schema_version") != "1.1":
+        errors.append("benchmark semantic validator is not native canonical nested v1.1")
+    if benchmark.get("compatibility_view_present") is not False:
+        errors.append("nested v1.0 semantic compatibility view remains present")
+    if benchmark.get("legacy_semantic_bypass") != "FAIL_CLOSED":
+        errors.append("legacy semantic bypass is not fail-closed")
     if benchmark.get("legacy_flat_qualification_impact") != EXTERNAL_HOLD:
         errors.append("legacy flat migration does not force EXTERNAL_HOLD")
     if benchmark.get("unknown_or_mixed_input") != "FAIL_CLOSED":
@@ -81,7 +87,7 @@ def build_report() -> dict[str, Any]:
         "ok": not errors,
         "schema_version": SCHEMA_VERSION,
         "state": EXTERNAL_HOLD if not errors else UNQUALIFIED,
-        "scope": "repository templates, schema migrations and permanent validators only",
+        "scope": "repository templates, canonical semantics, schema migrations and permanent validators only",
         "external_engine_invoked": False,
         "acceleration_registry": {
             "ok": registry.get("ok"),
@@ -94,6 +100,9 @@ def build_report() -> dict[str, Any]:
             "canonical_contract": benchmark.get("canonical_contract"),
             "canonical_schema_sha256": benchmark.get("canonical_schema_sha256"),
             "root_mirror_synchronized": benchmark.get("root_mirror_synchronized"),
+            "native_semantic_schema_version": benchmark.get("native_semantic_schema_version"),
+            "compatibility_view_present": benchmark.get("compatibility_view_present"),
+            "legacy_semantic_bypass": benchmark.get("legacy_semantic_bypass"),
             "legacy_contracts": benchmark.get("legacy_contracts"),
             "legacy_flat_qualification_impact": benchmark.get("legacy_flat_qualification_impact"),
             "unknown_or_mixed_input": benchmark.get("unknown_or_mixed_input"),
@@ -117,6 +126,8 @@ def build_report() -> dict[str, Any]:
             "This evidence captures repository contracts, not external engine execution.",
             "EXTERNAL_HOLD does not establish numerical or performance qualification.",
             "Legacy flat v1.0 migration does not recover missing provenance or qualify performance.",
+            "Legacy nested v1.0 is centrally migrated before native v1.1 semantic validation.",
+            "No nested v1.0 semantic downgrade view is used.",
             "No CPU/GPU performance ratio is published without accepted real-engine results.",
         ],
     }

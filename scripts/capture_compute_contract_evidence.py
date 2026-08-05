@@ -18,7 +18,7 @@ VALIDATORS = {
     "engine_capabilities": ROOT / "scripts" / "validate_engine_capabilities.py",
     "compute_qualification": ROOT / "scripts" / "validate_compute_qualification.py",
 }
-SCHEMA_VERSION = "1.3"
+SCHEMA_VERSION = "1.4"
 EXTERNAL_HOLD = "EXTERNAL_HOLD"
 UNQUALIFIED = "UNQUALIFIED"
 
@@ -82,6 +82,29 @@ def build_report() -> dict[str, Any]:
         errors.append("repository compute qualification must not evaluate performance")
     if qualification.get("workers_bounded_by") != 8:
         errors.append("compute qualification worker bound is not eight")
+    if qualification.get("campaign_contract") != "canonical-compute-campaign-v1.1":
+        errors.append("compute campaign authority is not canonical v1.1")
+    if qualification.get("campaign_schema_version") != "1.1":
+        errors.append("compute campaign schema version is not 1.1")
+    if qualification.get("campaign_root_mirror_synchronized") is not True:
+        errors.append("root compute-campaign schema mirror is not synchronized")
+    if qualification.get("campaign_unknown_or_mixed_input") != "FAIL_CLOSED":
+        errors.append("unknown or mixed compute-campaign input is not fail-closed")
+    if qualification.get("campaign_migration_qualification_impact") not in {
+        "none",
+        "NO_EVIDENCE_PROMOTION",
+    }:
+        errors.append("compute campaign migration impact is not explicitly non-promoting")
+    if qualification.get("campaign_defaults_applied") != []:
+        errors.append("compute campaign migration applied defaults")
+    if qualification.get("campaign_evidence_fields_added") != []:
+        errors.append("compute campaign migration fabricated evidence fields")
+    if qualification.get("campaign_document_immutable") is not True:
+        errors.append("compute campaign document is not immutable")
+    if qualification.get("contract_boundary") != (
+        "campaign-policy-independent-from-benchmark-result-evidence"
+    ):
+        errors.append("campaign and benchmark-result contract boundary is not explicit")
     if qualification.get("input_model") != "canonical-nested-v1.1-typed-accessor":
         errors.append("compute qualification input model is not native canonical typed access")
     if qualification.get("normalization_mandatory") is not True:
@@ -101,7 +124,10 @@ def build_report() -> dict[str, Any]:
         "ok": not errors,
         "schema_version": SCHEMA_VERSION,
         "state": EXTERNAL_HOLD if not errors else UNQUALIFIED,
-        "scope": "repository templates, canonical semantics, schema migrations and permanent validators only",
+        "scope": (
+            "repository templates, canonical semantics, closed campaign policy, "
+            "schema migrations and permanent validators only"
+        ),
         "external_engine_invoked": False,
         "acceleration_registry": {
             "ok": registry.get("ok"),
@@ -118,8 +144,33 @@ def build_report() -> dict[str, Any]:
             "compatibility_view_present": benchmark.get("compatibility_view_present"),
             "legacy_semantic_bypass": benchmark.get("legacy_semantic_bypass"),
             "legacy_contracts": benchmark.get("legacy_contracts"),
-            "legacy_flat_qualification_impact": benchmark.get("legacy_flat_qualification_impact"),
+            "legacy_flat_qualification_impact": benchmark.get(
+                "legacy_flat_qualification_impact"
+            ),
             "unknown_or_mixed_input": benchmark.get("unknown_or_mixed_input"),
+        },
+        "campaign_contract": {
+            "ok": qualification.get("ok"),
+            "canonical_contract": qualification.get("campaign_contract"),
+            "canonical_schema_version": qualification.get("campaign_schema_version"),
+            "canonical_schema_sha256": qualification.get("campaign_schema_sha256"),
+            "root_mirror_synchronized": qualification.get(
+                "campaign_root_mirror_synchronized"
+            ),
+            "template_source_contract": qualification.get("campaign_source_contract"),
+            "template_migration": qualification.get("campaign_migration"),
+            "migration_qualification_impact": qualification.get(
+                "campaign_migration_qualification_impact"
+            ),
+            "defaults_applied": qualification.get("campaign_defaults_applied"),
+            "evidence_fields_added": qualification.get(
+                "campaign_evidence_fields_added"
+            ),
+            "unknown_or_mixed_input": qualification.get(
+                "campaign_unknown_or_mixed_input"
+            ),
+            "immutable_mapping": qualification.get("campaign_document_immutable"),
+            "benchmark_result_boundary": qualification.get("contract_boundary"),
         },
         "engine_capabilities": {
             "ok": engine.get("ok"),
@@ -138,7 +189,9 @@ def build_report() -> dict[str, Any]:
             "native_semantic_validation": qualification.get("native_semantic_validation"),
             "legacy_projection_retained": qualification.get("legacy_projection_retained"),
             "legacy_projection_consumed": qualification.get("legacy_projection_consumed"),
-            "legacy_projection_qualification_impact": qualification.get("legacy_projection_qualification_impact"),
+            "legacy_projection_qualification_impact": qualification.get(
+                "legacy_projection_qualification_impact"
+            ),
             "identity_invariants": qualification.get("identity_invariants"),
         },
         "performance_ratio_published": False,
@@ -146,10 +199,12 @@ def build_report() -> dict[str, Any]:
         "non_claims": [
             "This evidence captures repository contracts, not external engine execution.",
             "EXTERNAL_HOLD does not establish numerical or performance qualification.",
-            "Legacy flat v1.0 migration does not recover missing provenance or qualify performance.",
-            "Legacy nested v1.0 is centrally migrated before native v1.1 semantic validation.",
+            "Campaign v1.0 migration expands role declarations but creates no execution evidence.",
+            "Campaign migration cannot remove benchmark-result provenance gaps or lift EXTERNAL_HOLD.",
+            "Legacy flat benchmark-result v1.0 migration does not recover missing provenance.",
+            "Legacy nested benchmark-result v1.0 is centrally migrated before v1.1 semantics.",
             "No nested v1.0 semantic downgrade view is used.",
-            "compute_qualification_view is a retained diagnostic compatibility export and is not qualification input.",
+            "compute_qualification_view remains diagnostic and is not qualification input.",
             "No CPU/GPU performance ratio is published without accepted real-engine results.",
         ],
     }
@@ -159,7 +214,10 @@ def write_report(path: Path | None, report: dict[str, Any]) -> None:
     if path is None:
         return
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
+        encoding="utf-8",
+    )
 
 
 def main() -> int:
@@ -170,7 +228,7 @@ def main() -> int:
     report = build_report()
     write_report(args.out, report)
     if args.json_output:
-        print(json.dumps(report, ensure_ascii=False, indent=2))
+        print(json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False))
     else:
         print(f"Compute contract evidence: {report['state']}")
     return 0 if report["ok"] else 1

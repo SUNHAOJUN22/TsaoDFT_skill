@@ -31,8 +31,12 @@ class QualityGateTests(unittest.TestCase):
         self.assertLess(names.index("dependency contract"), names.index("Ruff lint"))
         self.assertLess(names.index("CI constraints"), names.index("acceleration contracts"))
         self.assertLess(names.index("acceleration contracts"), names.index("acceleration registry"))
-        self.assertLess(names.index("acceleration registry"), names.index("compute architecture audit"))
+        self.assertLess(names.index("acceleration registry"), names.index("engine capabilities"))
+        self.assertLess(names.index("engine capabilities"), names.index("compute qualification"))
+        self.assertLess(names.index("compute qualification"), names.index("compute architecture audit"))
         self.assertEqual(names.count("compute architecture audit"), 1)
+        self.assertEqual(names.count("engine capabilities"), 1)
+        self.assertEqual(names.count("compute qualification"), 1)
         self.assertLess(names.index("compute architecture audit"), names.index("capability claims"))
         self.assertEqual(names[-1], "unit tests")
 
@@ -55,7 +59,7 @@ class QualityGateTests(unittest.TestCase):
 
     def test_non_positive_timeout_is_rejected_by_cli(self):
         result = subprocess.run(
-            [sys.executable, str(ROOT / "scripts/quality_gate.py"), "--timeout", "0"],
+            [sys.executable, str(ROOT / "scripts" / "quality_gate.py"), "--timeout", "0"],
             cwd=ROOT,
             capture_output=True,
             text=True,

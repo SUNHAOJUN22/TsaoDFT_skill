@@ -40,7 +40,12 @@ def main() -> int:
     parser.add_argument("--out-parent", type=Path, required=True)
     args = parser.parse_args()
     try:
-        records, import_report = import_with_schema(args.inputs, args.result_schema, args.artifact_root)
+        records, import_report = import_with_schema(
+            args.inputs,
+            args.result_schema,
+            args.artifact_root,
+            require_authoritative=True,
+        )
         policy = load_yaml(args.policy)
         policy_errors = validate_policy(policy, load_json(args.policy_schema))
         plan_id, isolation_errors = isolate_benchmark_plan(records)
@@ -72,6 +77,7 @@ def main() -> int:
                 qualified.append(candidate_id)
         qualification = {
             "schema_version": "1.0",
+            "benchmark_result_contract": "canonical-nested-v1.1",
             "policy_id": policy["policy_id"],
             "benchmark_plan_id": plan_id,
             "prequalification_root_sha256": root,

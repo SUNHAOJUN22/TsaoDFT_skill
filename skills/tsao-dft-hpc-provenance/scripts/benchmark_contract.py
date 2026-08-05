@@ -321,7 +321,7 @@ def _legacy_flat_to_nested(record: dict[str, Any], role_hint: str | None) -> tup
             "accelerator_runtime": _runtime_string(record.get("accelerator_runtime")),
         },
         "hardware": {
-            "site_id": _text((record.get("execution_site_id") or scheduler.get("site_id"))),
+            "site_id": _text(record.get("execution_site_id") or scheduler.get("site_id")),
             "hardware_fingerprint_id": _text(hardware.get("id")),
             "cpu_model": _text(cpu.get("model")),
             "cpu_arch": cpu_arch,
@@ -345,7 +345,7 @@ def _legacy_flat_to_nested(record: dict[str, Any], role_hint: str | None) -> tup
             "scheduler": _text(scheduler.get("kind"), "other"),
             "job_id": _text(scheduler.get("job_id"), _text(record.get("run_id"))),
             "run_id": _text(record.get("run_id")),
-            "site_id": _text((record.get("execution_site_id") or scheduler.get("site_id"))),
+            "site_id": _text(record.get("execution_site_id") or scheduler.get("site_id")),
             "filesystem": _text(filesystem.get("kind")),
             "scratch_type": "MISSING",
             "timestamp": _text(record.get("timestamp"), "1970-01-01T00:00:00Z"),

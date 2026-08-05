@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import itertools
 import json
 from pathlib import Path
@@ -16,45 +17,93 @@ SCHEMA_VERSION = "1.0"
 ENGINES = {"vasp", "quantum-espresso", "cp2k", "gaussian", "ml-surrogate"}
 GPU_VENDORS = {"none", "nvidia", "amd", "intel", "apple"}
 PRECISIONS = {"fp64", "fp32", "mixed-validated"}
+INTEGER_LIST_FIELDS = {
+    "cpu_tasks_per_node": [1, 2, 4, 8],
+    "openmp_threads": [1, 2, 4],
+    "ranks_per_gpu": [1],
+    "nsim": [4, 8, 16, 32],
+    "kpar": [1, 2, 4, 8],
+    "ncore": [1, 2, 4, 8],
+    "task_groups": [1, 2, 4],
+    "images": [1],
+    "pools": [1, 2, 4, 8],
+    "shared_memory_threads": [1, 2, 4, 8, 16],
+    "batch_sizes": [1, 4, 16, 64],
+}
+STRING_LIST_FIELDS = {"diagonalization", "eigensolver"}
+INTEGER_FIELDS = {"gpu_host_threads", "cpu_threads"}
+BOOLEAN_FIELDS = {"cosma", "vendor_gpu_feature_available"}
+
+
+def _load_strict_numeric() -> Any:
+    path = Path(__file__).with_name("strict_numeric.py")
+    spec = importlib.util.spec_from_file_location("tsao_autotune_strict_numeric", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot import {path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_NUMERIC = _load_strict_numeric()
 
 
 def positive_int(value: Any, name: str, errors: list[str], minimum: int = 1) -> int:
-    try:
-        result = int(value)
-    except (TypeError, ValueError):
-        errors.append(f"{name} must be an integer")
-        return minimum
-    if result < minimum:
-        errors.append(f"{name} must be >= {minimum}")
-    return result
+    return _NUMERIC.exact_int(value, name, errors, minimum=minimum, default=minimum)
 
 
 def positive_float(value: Any, name: str, errors: list[str], minimum: float = 0.0) -> float:
-    try:
-        result = float(value)
-    except (TypeError, ValueError):
-        errors.append(f"{name} must be numeric")
-        return minimum
-    if result < minimum:
-        errors.append(f"{name} must be >= {minimum}")
-    return result
+    return _NUMERIC.finite_float(value, name, errors, minimum=minimum, default=minimum)
 
 
-def sorted_unique_ints(values: Any, default: list[int], *, minimum: int = 1) -> list[int]:
-    raw = values if isinstance(values, list) and values else default
-    result: set[int] = set()
-    for value in raw:
-        try:
-            parsed = int(value)
-        except (TypeError, ValueError):
-            continue
-        if parsed >= minimum:
-            result.add(parsed)
-    return sorted(result) or default
+def sorted_unique_ints(
+    values: Any,
+    default: list[int],
+    *,
+    minimum: int = 1,
+    name: str = "values",
+    errors: list[str] | None = None,
+) -> list[int]:
+    target_errors = errors if errors is not None else []
+    return _NUMERIC.exact_int_list(values, name, target_errors, default, minimum=minimum)
 
 
 def divisors(value: int, candidates: list[int]) -> list[int]:
     return [item for item in candidates if item <= value and value % item == 0] or [1]
+
+
+def _validate_string_list(value: Any, name: str, errors: list[str]) -> None:
+    if not isinstance(value, list) or not value:
+        errors.append(f"{name} must be a non-empty list")
+        return
+    for index, item in enumerate(value):
+        if not isinstance(item, str) or not item.strip():
+            errors.append(f"{name}[{index}] must be a non-empty string")
+
+
+def _validate_tuning(tuning: Any, errors: list[str]) -> None:
+    if tuning is None:
+        return
+    if not isinstance(tuning, dict):
+        errors.append("tuning must be a mapping")
+        return
+    for field, default in INTEGER_LIST_FIELDS.items():
+        if field in tuning:
+            sorted_unique_ints(
+                tuning[field],
+                default,
+                name=f"tuning.{field}",
+                errors=errors,
+            )
+    for field in STRING_LIST_FIELDS:
+        if field in tuning:
+            _validate_string_list(tuning[field], f"tuning.{field}", errors)
+    for field in INTEGER_FIELDS:
+        if field in tuning:
+            positive_int(tuning[field], f"tuning.{field}", errors)
+    for field in BOOLEAN_FIELDS:
+        if field in tuning:
+            _NUMERIC.exact_bool(tuning[field], f"tuning.{field}", errors)
 
 
 def validate_profile(profile: dict[str, Any]) -> tuple[list[str], list[str]]:
@@ -63,14 +112,22 @@ def validate_profile(profile: dict[str, Any]) -> tuple[list[str], list[str]]:
     engine = str(profile.get("engine", "")).lower()
     if engine not in ENGINES:
         errors.append(f"engine must be one of {sorted(ENGINES)}")
+
     identity = profile.get("scientific_identity") or {}
+    if not isinstance(identity, dict):
+        errors.append("scientific_identity must be a mapping")
+        identity = {}
     for key in ("input_sha256", "method_fingerprint_id", "convergence_policy_id"):
         if not str(identity.get(key, "")).strip():
             errors.append(f"scientific_identity.{key} is required")
     digest = str(identity.get("input_sha256", ""))
     if digest and (len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest)):
         errors.append("scientific_identity.input_sha256 must be lowercase SHA-256")
+
     hardware = profile.get("hardware") or {}
+    if not isinstance(hardware, dict):
+        errors.append("hardware must be a mapping")
+        hardware = {}
     vendor = str(hardware.get("gpu_vendor", "none")).lower()
     if vendor not in GPU_VENDORS:
         errors.append(f"hardware.gpu_vendor must be one of {sorted(GPU_VENDORS)}")
@@ -78,25 +135,63 @@ def validate_profile(profile: dict[str, Any]) -> tuple[list[str], list[str]]:
     cpus = positive_int(hardware.get("cpus_per_node", 1), "hardware.cpus_per_node", errors)
     memory = positive_float(hardware.get("memory_gb_per_node", 1), "hardware.memory_gb_per_node", errors, 0.1)
     gpus = positive_int(hardware.get("gpus_per_node", 0), "hardware.gpus_per_node", errors, 0)
+    if "gpu_memory_gb" in hardware:
+        positive_float(hardware["gpu_memory_gb"], "hardware.gpu_memory_gb", errors, 0.0)
     if vendor == "none" and gpus:
         errors.append("hardware.gpus_per_node requires a non-none gpu_vendor")
     if vendor != "none" and gpus == 0:
         warnings.append("GPU vendor is declared but no GPU is available")
     if nodes * cpus <= 0 or memory <= 0:
         errors.append("hardware capacity must be positive")
+
+    workload = profile.get("workload") or {}
+    if not isinstance(workload, dict):
+        errors.append("workload must be a mapping")
+        workload = {}
+    for field in ("atoms", "kpoints"):
+        if field in workload:
+            positive_int(workload[field], f"workload.{field}", errors)
+    for field in ("estimated_host_memory_gb", "estimated_device_memory_gb"):
+        if field in workload:
+            positive_float(workload[field], f"workload.{field}", errors, 0.0)
+
     policy = profile.get("policy") or {}
+    if not isinstance(policy, dict):
+        errors.append("policy must be a mapping")
+        policy = {}
     precisions = policy.get("precisions") or ["fp64"]
     if not isinstance(precisions, list) or not precisions:
         errors.append("policy.precisions must be a non-empty list")
     else:
-        unknown = sorted({str(item).lower() for item in precisions} - PRECISIONS)
+        normalized: set[str] = set()
+        for index, item in enumerate(precisions):
+            if not isinstance(item, str) or not item.strip():
+                errors.append(f"policy.precisions[{index}] must be a non-empty string")
+            else:
+                normalized.add(item.lower())
+        unknown = sorted(normalized - PRECISIONS)
         if unknown:
             errors.append(f"unsupported precisions: {unknown}")
-    if not bool(policy.get("require_fp64_reference", True)):
+
+    require_fp64 = _NUMERIC.exact_bool(
+        policy.get("require_fp64_reference", True),
+        "policy.require_fp64_reference",
+        errors,
+        default=True,
+    )
+    if not require_fp64:
         errors.append("policy.require_fp64_reference must remain true")
+    if "allow_gpu_oversubscription" in policy:
+        _NUMERIC.exact_bool(
+            policy["allow_gpu_oversubscription"],
+            "policy.allow_gpu_oversubscription",
+            errors,
+        )
     max_candidates = positive_int(policy.get("max_candidates", 128), "policy.max_candidates", errors)
     if max_candidates > 1000:
         errors.append("policy.max_candidates must be <= 1000")
+
+    _validate_tuning(profile.get("tuning"), errors)
     return errors, warnings
 
 
@@ -211,7 +306,7 @@ def valid_layout(profile: dict[str, Any], candidate: dict[str, Any]) -> list[str
     ranks = int(resources["ranks_per_gpu"])
     if gpus and tasks != gpus * ranks:
         errors.append("GPU candidate tasks_per_node must equal gpus_per_node * ranks_per_gpu")
-    if ranks > 1 and not bool(policy.get("allow_gpu_oversubscription", False)):
+    if ranks > 1 and policy.get("allow_gpu_oversubscription", False) is not True:
         errors.append("ranks_per_gpu > 1 requires policy.allow_gpu_oversubscription=true")
     if gpus > int(hardware.get("gpus_per_node", 0)):
         errors.append("candidate requests more GPUs than declared hardware")
@@ -395,7 +490,7 @@ def cp2k_candidates(profile: dict[str, Any]) -> list[dict[str, Any]]:
                         "dbm_gpu": gpu_enabled,
                         "pw_gpu": gpu_enabled,
                         "eigensolver": solver,
-                        "cosma": bool(tuning.get("cosma", False)),
+                        "cosma": tuning.get("cosma", False) is True,
                         "openmp_threads": omp,
                     },
                 )
@@ -428,7 +523,7 @@ def gaussian_candidates(profile: dict[str, Any]) -> list[dict[str, Any]]:
                 tuning={"shared_memory_threads": threads, "vendor_supported_features_only": True},
             )
         )
-    if gpus and vendor == "nvidia" and bool(tuning.get("vendor_gpu_feature_available", False)):
+    if gpus and vendor == "nvidia" and tuning.get("vendor_gpu_feature_available", False) is True:
         result.append(
             make_candidate(
                 profile,

@@ -18,6 +18,16 @@ python ../../scripts/validate_acceleration_registry.py --json
 
 Registry membership is planning metadata. It does not prove that CUDA-X, ROCm, oneAPI, Metal or any external DFT engine is installed or executed.
 
+## Profile-gated software acceleration cores
+
+The repository keeps Python as the scientific control plane and does not treat a whole-repository C++ rewrite as an optimization strategy. The binding engineering authority is [`../../docs/ACCELERATION_ENGINEERING_DOCTRINE.md`](../../docs/ACCELERATION_ENGINEERING_DOCTRINE.md).
+
+The first implemented repository-owned numerical core is the governed neighbor-search layer in `../tsao-structure-prep/scripts/neighbor_list.py`. It preserves scalar and NumPy references, adds deterministic cell-list candidate reduction and supports non-periodic, orthogonal, triclinic and partial-periodic geometry. It does not select a GPU implicitly and does not establish DFT-engine speedup.
+
+The shared parser transport is `scripts/engine_scan_core.py`. It maps non-empty output artifacts read-only, calculates the mapped SHA-256 and exposes bounded literal/regex scans, last-marker resolution and block boundaries. `engine_parser_contract.py` consumes this core for Gaussian, VASP, Quantum ESPRESSO and CP2K. This reduces duplicated parser transport and preserves fatal-over-success semantics; it is parser/workflow acceleration, not electronic-structure acceleration.
+
+Native C++/OpenMP and CUDA/HIP/SYCL remain profile-, build- and equivalence-gated. A native sidecar or device backend cannot be claimed until it exists, builds on the governed platforms, falls back safely and matches the CPU reference under explicit scientific tolerances.
+
 ## Benchmark-result authority and migration
 
 The only authoritative production contract is the nested v1.1 Schema:
@@ -185,7 +195,7 @@ Without real GPU, licensed solver, engine build, site/run/hardware identity, ver
 
 ## Machine-readable contract evidence
 
-The permanent quality gate writes `compute-contract-evidence.json` from the acceleration registry, benchmark contract, EngineCapability and compute-qualification validators without invoking an external engine. Evidence Schema v1.4 records:
+The permanent quality gate writes `compute-contract-evidence.json` from the acceleration registry, benchmark contract, EngineCapability, compute-qualification validators and implemented software-acceleration architecture without invoking an external engine. Evidence Schema v1.5 records:
 
 - canonical acceleration registry validation and runtime single-source status;
 - nested v1.1 benchmark-result authority and root-mirror digest;
@@ -202,6 +212,10 @@ The permanent quality gate writes `compute-contract-evidence.json` from the acce
 - mandatory central normalization and native semantic validation;
 - diagnostic projection retained, not consumed, and `NOT_ELIGIBLE` for qualification;
 - explicit role, run, site, build, hardware, multi-GPU, scientific and artifact invariants;
+- profile-first Python control-plane doctrine;
+- implemented reference/NumPy/cell-list neighbor-search contract and periodicity coverage;
+- implemented shared read-only mmap Parser transport for four engines;
+- native sidecar and CUDA-kernel state without fabricating implementation;
 - VASP, Quantum ESPRESSO and CP2K template state;
 - repository performance qualification as `NOT_ESTABLISHED`;
 - compute campaign state as `EXTERNAL_HOLD`;
@@ -226,11 +240,11 @@ The root quality gate now runs, in order:
 4. EngineCapability validation;
 5. closed canonical compute-campaign contract, migration and immutable-access validation;
 6. native canonical compute qualification and projection-isolation validation;
-7. machine-readable compute contract evidence capture;
+7. machine-readable compute contract and software-architecture evidence capture;
 8. compute architecture audit;
 9. lint, formatting, typing, evidence-bound coverage, security and repository tests.
 
-The benchmark and compute-contract gates perform table-driven negative regression over canonical/legacy/custom evidence, canonical/legacy campaign policies, rare flat-field combinations, duplicate keys and identities, missing and contradictory provenance, role and version migration, site/run/build/hardware identity, multi-GPU UUID stability, artifact status, non-finite values, projection collision/equivalence boundaries and unknown or mixed shapes.
+The benchmark and compute-contract gates perform table-driven negative regression over canonical/legacy/custom evidence, canonical/legacy campaign policies, rare flat-field combinations, duplicate keys and identities, missing and contradictory provenance, role and version migration, site/run/build/hardware identity, multi-GPU UUID stability, artifact status, non-finite values, projection collision/equivalence boundaries and unknown or mixed shapes. The architecture evidence additionally fails closed if the doctrine, neighbor-search contract, inspector binding, shared mmap scanner or four-engine parser consumption drifts.
 
 ```bash
 python ../../scripts/quality_gate.py

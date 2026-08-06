@@ -111,7 +111,11 @@ def load_mapping(path: Path) -> dict[str, Any]:
                 parse_float=_parse_finite_float,
             )
         else:
-            loaded = yaml.load(text, Loader=_UniqueKeySafeLoader)
+            loader = _UniqueKeySafeLoader(text)
+            try:
+                loaded = loader.get_single_data()
+            finally:
+                loader.dispose()
     except (OSError, UnicodeError, json.JSONDecodeError, yaml.YAMLError, CampaignContractError) as exc:
         raise CampaignContractError(f"cannot load {path.name}: {exc}") from exc
     if type(loaded) is not dict:

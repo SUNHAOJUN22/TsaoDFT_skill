@@ -101,9 +101,7 @@ def build_report() -> dict[str, Any]:
         errors.append("compute campaign migration fabricated evidence fields")
     if qualification.get("campaign_document_immutable") is not True:
         errors.append("compute campaign document is not immutable")
-    if qualification.get("contract_boundary") != (
-        "campaign-policy-independent-from-benchmark-result-evidence"
-    ):
+    if qualification.get("contract_boundary") != ("campaign-policy-independent-from-benchmark-result-evidence"):
         errors.append("campaign and benchmark-result contract boundary is not explicit")
     if qualification.get("input_model") != "canonical-nested-v1.1-typed-accessor":
         errors.append("compute qualification input model is not native canonical typed access")
@@ -144,9 +142,7 @@ def build_report() -> dict[str, Any]:
             "compatibility_view_present": benchmark.get("compatibility_view_present"),
             "legacy_semantic_bypass": benchmark.get("legacy_semantic_bypass"),
             "legacy_contracts": benchmark.get("legacy_contracts"),
-            "legacy_flat_qualification_impact": benchmark.get(
-                "legacy_flat_qualification_impact"
-            ),
+            "legacy_flat_qualification_impact": benchmark.get("legacy_flat_qualification_impact"),
             "unknown_or_mixed_input": benchmark.get("unknown_or_mixed_input"),
         },
         "campaign_contract": {
@@ -154,21 +150,13 @@ def build_report() -> dict[str, Any]:
             "canonical_contract": qualification.get("campaign_contract"),
             "canonical_schema_version": qualification.get("campaign_schema_version"),
             "canonical_schema_sha256": qualification.get("campaign_schema_sha256"),
-            "root_mirror_synchronized": qualification.get(
-                "campaign_root_mirror_synchronized"
-            ),
+            "root_mirror_synchronized": qualification.get("campaign_root_mirror_synchronized"),
             "template_source_contract": qualification.get("campaign_source_contract"),
             "template_migration": qualification.get("campaign_migration"),
-            "migration_qualification_impact": qualification.get(
-                "campaign_migration_qualification_impact"
-            ),
+            "migration_qualification_impact": qualification.get("campaign_migration_qualification_impact"),
             "defaults_applied": qualification.get("campaign_defaults_applied"),
-            "evidence_fields_added": qualification.get(
-                "campaign_evidence_fields_added"
-            ),
-            "unknown_or_mixed_input": qualification.get(
-                "campaign_unknown_or_mixed_input"
-            ),
+            "evidence_fields_added": qualification.get("campaign_evidence_fields_added"),
+            "unknown_or_mixed_input": qualification.get("campaign_unknown_or_mixed_input"),
             "immutable_mapping": qualification.get("campaign_document_immutable"),
             "benchmark_result_boundary": qualification.get("contract_boundary"),
         },
@@ -189,9 +177,7 @@ def build_report() -> dict[str, Any]:
             "native_semantic_validation": qualification.get("native_semantic_validation"),
             "legacy_projection_retained": qualification.get("legacy_projection_retained"),
             "legacy_projection_consumed": qualification.get("legacy_projection_consumed"),
-            "legacy_projection_qualification_impact": qualification.get(
-                "legacy_projection_qualification_impact"
-            ),
+            "legacy_projection_qualification_impact": qualification.get("legacy_projection_qualification_impact"),
             "identity_invariants": qualification.get("identity_invariants"),
         },
         "performance_ratio_published": False,

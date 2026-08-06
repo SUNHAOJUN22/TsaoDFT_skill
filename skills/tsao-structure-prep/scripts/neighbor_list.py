@@ -11,8 +11,9 @@ from __future__ import annotations
 
 import itertools
 import math
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Any, Iterable, cast
+from typing import Any, cast
 
 import numpy as np
 
@@ -211,7 +212,7 @@ def _cell_space(
             count = 1
             width = axis_span if axis_span > 0 else 1.0
         else:
-            count = max(1, int(math.floor(axis_span / axis_reach)))
+            count = max(1, math.floor(axis_span / axis_reach))
             width = axis_span / count
         counts.append(count)
         widths[axis] = width
@@ -231,7 +232,7 @@ def _cell_index(
         if count == 1:
             values.append(0)
             continue
-        raw = int(math.floor((float(point[axis]) - float(origin[axis])) / float(widths[axis])))
+        raw = math.floor((float(point[axis]) - float(origin[axis])) / float(widths[axis]))
         if periodic[axis]:
             raw %= count
         else:
@@ -366,7 +367,7 @@ def nearest_pair_distance(
     sampled_pairs: set[tuple[int, int]] = set()
     for axis in range(3):
         order = np.argsort(working[:, axis], kind="mergesort")
-        for left, right in zip(order[:-1], order[1:]):
+        for left, right in itertools.pairwise(order):
             sampled_pairs.add(tuple(sorted((int(left), int(right)))))
         if periodic_axes[axis] and len(order) > 1:
             sampled_pairs.add(tuple(sorted((int(order[0]), int(order[-1])))))

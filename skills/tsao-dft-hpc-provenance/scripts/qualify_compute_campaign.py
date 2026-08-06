@@ -207,9 +207,7 @@ class CampaignDocument:
         collisions = sorted(set(properties) & set(STANDARD_RESULTS))
         if collisions:
             raise ValueError(f"scientific properties collide with standard result fields: {collisions}")
-        observables.update(
-            {str(key): campaign_policy.thaw_tree(value) for key, value in properties.items()}
-        )
+        observables.update({str(key): campaign_policy.thaw_tree(value) for key, value in properties.items()})
         return observables
 
 
@@ -290,11 +288,7 @@ def _backend_from_runtime(value: Any) -> str:
 
 def _expected_observable_names(record: dict[str, Any]) -> set[str]:
     results = record["scientific"]["results"]
-    names = {
-        logical_name
-        for field, logical_name in STANDARD_RESULTS.items()
-        if results.get(field) is not None
-    }
+    names = {logical_name for field, logical_name in STANDARD_RESULTS.items() if results.get(field) is not None}
     names.update(str(key) for key in (results.get("properties") or {}))
     return names
 
@@ -331,15 +325,11 @@ def prepare_document(
             artifact_root,
         )
     except (TypeError, ValueError, contract.BenchmarkContractError) as exc:
-        raise QualificationLoadError(
-            f"{source}: benchmark contract normalization failed: {exc}"
-        ) from exc
+        raise QualificationLoadError(f"{source}: benchmark contract normalization failed: {exc}") from exc
     validated.pop("validation", None)
     semantic_errors = [*semantic_errors, *_campaign_semantic_errors(validated)]
     if semantic_errors:
-        raise QualificationLoadError(
-            f"{source}: canonical semantic validation failed: {'; '.join(semantic_errors)}"
-        )
+        raise QualificationLoadError(f"{source}: canonical semantic validation failed: {'; '.join(semantic_errors)}")
     return CampaignDocument(
         source=source,
         record=validated,
@@ -384,11 +374,7 @@ def load_results(
             thread_name_prefix="tsao-qualify",
         ) as executor:
             loaded = list(executor.map(lambda path: _load_normalized(path, hints), ordered))
-    documents = [
-        document
-        for _, document, errors in loaded
-        if document is not None and not errors
-    ]
+    documents = [document for _, document, errors in loaded if document is not None and not errors]
     errors = [error for _, _, item_errors in loaded for error in item_errors]
     return documents, errors
 
@@ -410,9 +396,7 @@ def _coerce_documents(
                 checked = prepare_document(item.mutable_record(), source=item.source)
                 migration = item.migration_dict()
                 if migration.get("target_contract") != "canonical-nested-v1.1":
-                    raise QualificationLoadError(
-                        f"{item.source}: migration target must be canonical-nested-v1.1"
-                    )
+                    raise QualificationLoadError(f"{item.source}: migration target must be canonical-nested-v1.1")
                 checked = CampaignDocument(
                     source=checked.source,
                     record=checked.record,
@@ -427,9 +411,7 @@ def _coerce_documents(
                     source=f"<memory:{index}>",
                 )
             else:
-                raise QualificationLoadError(
-                    f"document {index} must be a CampaignDocument or mapping"
-                )
+                raise QualificationLoadError(f"document {index} must be a CampaignDocument or mapping")
         except (QualificationLoadError, TypeError, ValueError) as exc:
             errors.append(str(exc))
             continue
@@ -567,9 +549,7 @@ def qualify(
     for candidate_id in expected_ids:
         rows = sorted(groups.get(candidate_id, []), key=lambda item: item.repeat_index)
         if len(rows) < config.minimum_repeats:
-            holds.append(
-                f"{candidate_id}: requires at least {config.minimum_repeats} repeats"
-            )
+            holds.append(f"{candidate_id}: requires at least {config.minimum_repeats} repeats")
             continue
         indexes = [row.repeat_index for row in rows]
         if indexes != list(range(1, len(rows) + 1)):
@@ -617,17 +597,12 @@ def qualify(
         gpu_uuids = document.gpu_uuids
         if document.role == "scientific-reference":
             if backend != "none" or gpu_vendor != "none" or gpu_uuids:
-                message = (
-                    f"{candidate_id}: reference role requires accelerator backend none "
-                    "and no GPU identity"
-                )
+                message = f"{candidate_id}: reference role requires accelerator backend none and no GPU identity"
                 (holds if held_provenance else errors).append(message)
         elif document.role == "acceleration-candidate" and (
             backend not in GPU_BACKENDS or gpu_vendor == "none" or not gpu_uuids
         ):
-            message = (
-                f"{candidate_id}: acceleration role requires backend, vendor and GPU UUID identity"
-            )
+            message = f"{candidate_id}: acceleration role requires backend, vendor and GPU UUID identity"
             (holds if held_provenance else errors).append(message)
 
     if prepared:

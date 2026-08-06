@@ -216,7 +216,8 @@ def _cell_space(
             width = axis_span / count
         counts.append(count)
         widths[axis] = width
-    return working, origin, tuple(counts), widths
+    cell_counts = cast(tuple[int, int, int], tuple(counts))
+    return working, origin, cell_counts, widths
 
 
 def _cell_index(
@@ -296,6 +297,7 @@ def cell_list_pairs(
             if neighbor not in cells or neighbor < cell:
                 continue
             right_indices = cells[neighbor]
+            candidates: Iterable[tuple[int, int]]
             if neighbor == cell:
                 candidates = (
                     (left_indices[a], left_indices[b])
@@ -368,9 +370,13 @@ def nearest_pair_distance(
     for axis in range(3):
         order = np.argsort(working[:, axis], kind="mergesort")
         for left, right in itertools.pairwise(order):
-            sampled_pairs.add(tuple(sorted((int(left), int(right)))))
+            left_index = int(left)
+            right_index = int(right)
+            sampled_pairs.add((min(left_index, right_index), max(left_index, right_index)))
         if periodic_axes[axis] and len(order) > 1:
-            sampled_pairs.add(tuple(sorted((int(order[0]), int(order[-1])))))
+            left_index = int(order[0])
+            right_index = int(order[-1])
+            sampled_pairs.add((min(left_index, right_index), max(left_index, right_index)))
     sampled_pairs.add((0, 1))
 
     upper = min(_distance(points[i], points[j], box_matrix, inverse_box, periodic_axes) for i, j in sampled_pairs)

@@ -340,6 +340,45 @@ def thaw_tree(value: Any) -> Any:
     raise CampaignContractError(f"frozen campaign contract contains a non-JSON value: {type(value).__name__}")
 
 
+class CampaignRecord(dict[str, Any]):
+    """Detached canonical record carrying validated migration metadata across revalidation."""
+
+    def __init__(self, value: dict[str, Any], migration: dict[str, Any]) -> None:
+        super().__init__(value)
+        self.campaign_migration = migration
+
+
+def _validated_migration(value: Any) -> dict[str, Any]:
+    if type(value) is not dict:
+        raise CampaignContractError("campaign migration metadata must be a mapping")
+    expected = {
+        "source_contract",
+        "target_contract",
+        "migration",
+        "qualification_impact",
+        "defaults_applied",
+        "evidence_fields_added",
+    }
+    if set(value) != expected:
+        raise CampaignContractError("campaign migration metadata fields are invalid")
+    if value.get("target_contract") != CANONICAL_CONTRACT:
+        raise CampaignContractError("campaign migration target must be canonical v1.1")
+    if value.get("defaults_applied") != [] or value.get("evidence_fields_added") != []:
+        raise CampaignContractError("campaign migration must not apply defaults or add evidence fields")
+    source = value.get("source_contract")
+    if source == CANONICAL_CONTRACT:
+        if value.get("migration") != "none" or value.get("qualification_impact") != "none":
+            raise CampaignContractError("canonical campaign migration metadata is contradictory")
+    elif source == LEGACY_CONTRACT:
+        if value.get("migration") != "reference-and-candidate-fields-to-explicit-participants":
+            raise CampaignContractError("legacy campaign migration identifier is invalid")
+        if value.get("qualification_impact") != NO_EVIDENCE_PROMOTION:
+            raise CampaignContractError("legacy campaign migration must not promote evidence")
+    else:
+        raise CampaignContractError("campaign migration source contract is unsupported")
+    return cast(dict[str, Any], thaw_tree(value))
+
+
 @dataclass(frozen=True)
 class CampaignConfig:
     """Immutable typed view of one canonical compute-campaign v1.1 configuration."""
@@ -403,14 +442,21 @@ class CampaignConfig:
         )
 
     def to_dict(self) -> dict[str, Any]:
-        return cast(dict[str, Any], thaw_tree(self.record))
+        return CampaignRecord(
+            cast(dict[str, Any], thaw_tree(self.record)),
+            self.migration_dict(),
+        )
 
     def migration_dict(self) -> dict[str, Any]:
         return cast(dict[str, Any], thaw_tree(self.migration))
 
 
 def prepare_campaign(record: dict[str, Any], *, source: str = "<memory>") -> CampaignConfig:
-    canonical, migration = normalize_campaign(record)
+    preserved_migration = getattr(record, "campaign_migration", None)
+    raw_record = dict(record) if isinstance(record, CampaignRecord) else record
+    canonical, migration = normalize_campaign(raw_record)
+    if preserved_migration is not None:
+        migration = _validated_migration(preserved_migration)
     return CampaignConfig(
         source=source,
         record=cast(Mapping[str, Any], freeze_tree(canonical)),

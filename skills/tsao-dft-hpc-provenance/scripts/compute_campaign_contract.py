@@ -340,12 +340,13 @@ def thaw_tree(value: Any) -> Any:
     raise CampaignContractError(f"frozen campaign contract contains a non-JSON value: {type(value).__name__}")
 
 
-class CampaignRecord(dict[str, Any]):
-    """Detached canonical record carrying validated migration metadata across revalidation."""
+class CampaignVersion(str):
+    """String-compatible schema version carrying validated migration metadata."""
 
-    def __init__(self, value: dict[str, Any], migration: dict[str, Any]) -> None:
-        super().__init__(value)
-        self.campaign_migration = migration
+    def __new__(cls, value: str, migration: dict[str, Any]) -> CampaignVersion:
+        instance = cast(CampaignVersion, super().__new__(cls, value))
+        instance.campaign_migration = migration
+        return instance
 
 
 def _validated_migration(value: Any) -> dict[str, Any]:
@@ -442,18 +443,23 @@ class CampaignConfig:
         )
 
     def to_dict(self) -> dict[str, Any]:
-        return CampaignRecord(
-            cast(dict[str, Any], thaw_tree(self.record)),
+        value = cast(dict[str, Any], thaw_tree(self.record))
+        value["schema_version"] = CampaignVersion(
+            str(value["schema_version"]),
             self.migration_dict(),
         )
+        return value
 
     def migration_dict(self) -> dict[str, Any]:
         return cast(dict[str, Any], thaw_tree(self.migration))
 
 
 def prepare_campaign(record: dict[str, Any], *, source: str = "<memory>") -> CampaignConfig:
-    preserved_migration = getattr(record, "campaign_migration", None)
-    raw_record = dict(record) if isinstance(record, CampaignRecord) else record
+    version = record.get("schema_version") if isinstance(record, dict) else None
+    preserved_migration = getattr(version, "campaign_migration", None)
+    raw_record = dict(record)
+    if preserved_migration is not None:
+        raw_record["schema_version"] = str(version)
     canonical, migration = normalize_campaign(raw_record)
     if preserved_migration is not None:
         migration = _validated_migration(preserved_migration)

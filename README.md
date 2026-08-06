@@ -2,7 +2,7 @@
 
 <p align="center">
   <strong>面向分子与周期体系的 DFT-first、证据锁定、可审计科研操作系统</strong><br>
-  从结构准备、真实引擎与科学验收，到 ML、动力学、边缘计算、GPU/HPC 加速和可追溯论文主张
+  Python 科学控制面 + 可验证数值内核 + 外部专业引擎 + 不可伪造的资格边界
 </p>
 
 <p align="center">
@@ -12,31 +12,40 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-559%20passing-16A34A" alt="559 tests passing">
-  <img src="https://img.shields.io/badge/Linux%20coverage-94.44%25%20stmt%20%7C%2084.61%25%20branch-16A34A" alt="Linux 94.44 percent statement and 84.61 percent branch coverage">
-  <img src="https://img.shields.io/badge/Windows%20PowerShell-PASS-1687FF" alt="Windows PowerShell control plane pass">
-  <img src="https://img.shields.io/badge/public%20support-L2_VALIDATED_ADAPTER-6D5DFB" alt="Public support L2 validated adapter">
+  <img src="https://img.shields.io/badge/tests-629%20passing-16A34A" alt="629 tests passing">
+  <img src="https://img.shields.io/badge/Linux%20coverage-93.87%25%20stmt%20%7C%2083.86%25%20branch-16A34A" alt="Linux 93.87 percent statement and 83.86 percent branch coverage">
+  <img src="https://img.shields.io/badge/Windows%20coverage-93.81%25%20stmt%20%7C%2083.70%25%20branch-1687FF" alt="Windows 93.81 percent statement and 83.70 percent branch coverage">
+  <img src="https://img.shields.io/badge/external%20qualification-EXTERNAL__HOLD-B45309" alt="External qualification EXTERNAL HOLD">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
 
-> **AI图像声明｜AI-GENERATED CONCEPTUAL ILLUSTRATION：** 下方总览图按照 UI/UX Pro Max 的 Hero-Centric + Evidence Bento 视觉方向生成。图中的分子、晶格、轨道形态、服务器和数据界面只用于表达研究场景，不是 Gaussian、VASP、Quantum ESPRESSO、CP2K、Multiwfn、VMD 或实验产生的结果。其余架构图采用 AI 辅助设计语言，但由仓库控制为可复现的确定性 SVG；全部明确标注为合成示意，任何定量结论仍必须来自经过验收的源文件、计算产物和脚本。
+> **AI图像声明｜AI-GENERATED CONCEPTUAL ILLUSTRATION：** 下方唯一 AI 封面只表达研究场景和系统概念。分子、晶格、轨道、服务器与界面均不是 Gaussian、VASP、Quantum ESPRESSO、CP2K、Multiwfn、VMD 或实验产生的数据。其余架构图是仓库脚本治理的确定性 SVG，并明确标注为合成示意；定量结论必须来自通过验收的源文件、计算产物和机器证据。
 
 <p align="center">
   <img src="assets/ai/hero/tsao-dft-hero.svg" width="100%" alt="TsaoDFT evidence-first DFT research operating system conceptual overview">
 </p>
 
+## 最高工程原则
+
+本仓库遵循 [`docs/ACCELERATION_ENGINEERING_DOCTRINE.md`](docs/ACCELERATION_ENGINEERING_DOCTRINE.md)：
+
+1. **Python 是科学控制面，不是需要整体替换的缺陷。** 它负责工作流、Schema、方法指纹、调度、解析、证据和报告。
+2. **不重写专业 DFT 内核。** FFT、对角化、积分、SCF、MPI/OpenMP/GPU 内核由 VASP、QE、CP2K、Gaussian 等专业程序承担。
+3. **只迁移被代表性 profiling 证明的窄热点。** 顺序是 CPU reference → NumPy/算法优化 → 可选 C++/OpenMP → 可选 CUDA/HIP/SYCL。
+4. **任何新后端必须保留确定性参考、失败回退和数值等价门。** 启动、进程、数据搬运和 kernel 开销必须计入端到端成本。
+5. **技术感知不等于真实执行。** 注册表中理解 CUDA-X、ROCm、oneAPI、Metal，不代表库、硬件或兼容引擎构建已经使用。
+6. **没有真实求解器、许可证、固定输入、稳定硬件身份、科学容差和重复运行，就不发布加速比。** 外部资格保持 `EXTERNAL_HOLD`。
+
 ## 30 秒看懂 TsaoDFT
 
 <table>
 <tr>
-<td width="25%" valign="top"><strong>DFT-first</strong><br><sub>研究问题先落到结构、方法指纹、参考态与验收条件，再进入执行。</sub></td>
-<td width="25%" valign="top"><strong>Evidence graph</strong><br><sub>计算、产物、图件和论文主张之间建立显式 support edge，失败尝试也保留。</sub></td>
-<td width="25%" valign="top"><strong>Multi-engine</strong><br><sub>分子侧覆盖 Gaussian / Multiwfn / VMD；周期侧覆盖 VASP / QE / CP2K。</sub></td>
-<td width="25%" valign="top"><strong>Scale with provenance</strong><br><sub>CPU/GPU、加速库、ML、动力学和 HPC 只能消费已验收证据。</sub></td>
+<td width="25%" valign="top"><strong>DFT-first</strong><br><sub>先定义结构、方法指纹、参考态与验收条件，再进入执行。</sub></td>
+<td width="25%" valign="top"><strong>Evidence graph</strong><br><sub>计算、产物、图件与主张之间建立显式支持边，失败尝试也保留。</sub></td>
+<td width="25%" valign="top"><strong>Multi-engine</strong><br><sub>分子侧覆盖 Gaussian；周期侧覆盖 VASP、QE、CP2K，并保持许可证与进程边界。</sub></td>
+<td width="25%" valign="top"><strong>Profile-gated acceleration</strong><br><sub>CPU/GPU、原生层、ML 和 HPC 只有在等价与证据门之后才可升级。</sub></td>
 </tr>
 </table>
-
-`TsaoDFT_skill` 不是一组松散提示词，也不把“程序正常结束”“图像漂亮”“GPU 已分配”或“模型分数高”直接升级为科学结论：
 
 ```text
 planned
@@ -47,322 +56,256 @@ planned
 → claim accepted
 ```
 
-## 从科研问题到可发表主张
-
 <p align="center">
   <img src="assets/demo/workflow-architecture.svg" width="100%" alt="TsaoDFT auditable research loop synthetic demonstration">
 </p>
 
-每一次状态跃迁都必须回答：
-
-1. **谁负责验收？**
-2. **哪一个产物支持该决定？**
-3. **使用了什么方法指纹、软件版本和运行环境？**
-4. **还有哪些假设、不确定度与主张边界没有关闭？**
-
 ## 八个 Skills，一条证据链
 
-| Skill | 适用于什么工作 | 不可越过的边界 |
+| Skill | 核心职责 | 不可越过的边界 |
 |---|---|---|
-| [`tsao-dft-suite`](skills/tsao-dft-suite/) | DFT-first 总入口、任务 DAG、跨 Skill 路由、成本与审批门 | 负责协调，不替代引擎级科学判断 |
-| [`tsao-structure-prep`](skills/tsao-structure-prep/) | 分子、构象、晶体、表面、缺陷、吸附结构和原子映射 | 不静默决定电荷、自旋、氧化态、终止面或质子化状态 |
-| [`tsao-dft-researcher`](skills/tsao-dft-researcher/) | Gaussian 分子 DFT/TDDFT、Opt/Freq、TS/IRC、热化学、NMR、Multiwfn、VMD | 真实程序、许可证和执行环境由用户提供 |
-| [`tsao-periodic-dft-materials`](skills/tsao-periodic-dft-materials/) | VASP、Quantum ESPRESSO、CP2K，表面/缺陷、能带/DOS、NEB 与收敛 | 不分发 POTCAR、赝势或受限数据库；不混用不兼容能量 |
-| [`tsao-dft-ml-active-learning`](skills/tsao-dft-ml-active-learning/) | DFT 标签审计、泄漏防护、适用域、不确定度、主动学习与反向设计 | 高 R²、SHAP 或 acquisition score 不是机理或因果证据 |
-| [`tsao-dft-kinetics-multiscale`](skills/tsao-dft-kinetics-multiscale/) | Eyring/TST、反应网络、详细平衡、误差传播、微观动力学与反应器交接 | 只消费标准态、参考态和热化学校验通过的数据 |
-| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | Windows 本地 PowerShell、POSIX 本地、Slurm/PBS、结构化 argv、硬件盘点、调优候选、GPU 规划、Parser、真实基准、签名审查和内容寻址证据 | GPU 分配、最快单次运行、自报 L3 或合成 fixture 都不等于真实加速 |
-| [`tsao-dft-catalysis-profile`](skills/tsao-dft-catalysis-profile/) | DCS/MCSOMe/DMOS、Si–O/Si–C、Ti/TEA、Ziegler–Natta 与聚烯烃催化 | 专用 Profile，不自动外推到无关体系 |
+| [`tsao-dft-suite`](skills/tsao-dft-suite/) | DFT-first 总入口、DAG、跨 Skill 路由、成本与审批门 | 协调，不替代引擎级科学判断 |
+| [`tsao-structure-prep`](skills/tsao-structure-prep/) | 分子、晶体、表面、缺陷、吸附、原子映射、邻居搜索 | 不静默决定电荷、自旋、氧化态、终止面或质子化 |
+| [`tsao-dft-researcher`](skills/tsao-dft-researcher/) | Gaussian DFT/TDDFT、Opt/Freq、TS/IRC、热化学、NMR、Multiwfn、VMD | 真实程序、许可证和执行环境由用户提供 |
+| [`tsao-periodic-dft-materials`](skills/tsao-periodic-dft-materials/) | VASP、Quantum ESPRESSO、CP2K、表面/缺陷、能带/DOS、NEB 与收敛 | 不分发受限数据，不混用不兼容能量 |
+| [`tsao-dft-ml-active-learning`](skills/tsao-dft-ml-active-learning/) | DFT 标签审计、泄漏防护、适用域、不确定度、主动学习 | 高分数不是机理或因果证据 |
+| [`tsao-dft-kinetics-multiscale`](skills/tsao-dft-kinetics-multiscale/) | Eyring/TST、反应网络、详细平衡、误差传播与反应器交接 | 只消费标准态和热化学校验通过的数据 |
+| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | Windows/POSIX、Slurm/PBS、硬件盘点、Parser、基准、签名与内容寻址证据 | GPU 分配、最快单次或合成 fixture 不等于真实加速 |
+| [`tsao-dft-catalysis-profile`](skills/tsao-dft-catalysis-profile/) | 催化与聚合物专用 Profile | 不自动外推到无关体系 |
 
-## 科研图件：概念视觉与确定性证据分轨
+## 已实现的软件加速层
 
-下面图件由仓库脚本和固定合成数据控制，全部标注 `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`。它们展示图件合同、证据组织和系统架构，不是生产计算结果。
+### 1. 结构邻居搜索
 
-<table>
-<tr>
-<td width="50%"><img src="assets/demo/wavefunction-esp-gallery.svg" width="100%" alt="Wavefunction and ESP figure contract"></td>
-<td width="50%"><img src="assets/demo/periodic-dft-materials.svg" width="100%" alt="Periodic DFT evidence chain"></td>
-</tr>
-<tr>
-<td><img src="assets/demo/dft-ml-dashboard.svg" width="100%" alt="DFT ML provenance-aware dashboard"></td>
-<td><img src="assets/demo/multiscale-kinetics.svg" width="100%" alt="DFT to kinetics multiscale handoff"></td>
-</tr>
-</table>
+`skills/tsao-structure-prep/scripts/neighbor_list.py` 是仓库首个受治理的自有数值核心：
 
-## 加速计算架构图谱
+- `reference`：标量全对参考；
+- `numpy`：有界内存的逐行向量化；
+- `cell-list`：只枚举占用网格的相邻候选；
+- `auto`：中型结构选择 NumPy，大型结构选择 cell-list；
+- 支持非周期、正交周期、三斜周期和部分周期轴；
+- 所有后端共享 minimum-image 定义和确定性 pair 排序；
+- 坐标、cutoff、周期标志和盒矩阵严格 fail-closed；
+- 不隐式选择 GPU。
 
-以下九张确定性 SVG 解释本仓库如何吸收 C++、OpenMP、Kokkos、CUDA‑X、ROCm、oneAPI、Metal、边缘推理和真实引擎能力。它们采用 AI 辅助视觉设计方向，但由仓库文本资产定义、可重复检查，并不构成性能或科学数据。
+```bash
+python skills/tsao-structure-prep/scripts/inspect_xyz.py structure.xyz \
+  --backend cell-list \
+  --json
 
-<table>
-<tr>
-<td width="50%"><img src="assets/demo/hybrid-compute-architecture.svg" width="100%" alt="Hybrid Python native and external-engine architecture"></td>
-<td width="50%"><img src="assets/demo/cuda-x-decision-map.svg" width="100%" alt="CUDA-X library decision map"></td>
-</tr>
-<tr>
-<td><img src="assets/demo/edge-hpc-closed-loop.svg" width="100%" alt="Edge to HPC scientific feedback loop"></td>
-<td><img src="assets/demo/native-acceleration-roadmap.svg" width="100%" alt="Profile-gated native acceleration roadmap"></td>
-</tr>
-<tr>
-<td colspan="2"><img src="assets/demo/evidence-qualification-pipeline.svg" width="100%" alt="Scoped L3 acceleration evidence qualification pipeline"></td>
-</tr>
-<tr>
-<td><img src="assets/demo/acceleration-registry-governance.svg" width="100%" alt="Canonical acceleration registry governance"></td>
-<td><img src="assets/demo/backend-portability-stack.svg" width="100%" alt="Backend portability stack"></td>
-</tr>
-<tr>
-<td><img src="assets/demo/windows-linux-execution-matrix.svg" width="100%" alt="Windows and Linux execution matrix"></td>
-<td><img src="assets/demo/scientific-acceleration-funnel.svg" width="100%" alt="Scientific acceleration qualification funnel"></td>
-</tr>
-</table>
+python skills/tsao-structure-prep/scripts/inspect_xyz.py periodic.xyz \
+  --backend cell-list \
+  --periodic xyz \
+  --box 10 0 0 0 10 0 0 0 10 \
+  --json
+```
 
-视觉体系见 [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md)，AI 图治理见 [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md)。
+报告中的 `pair_count` 与 `evaluated_pair_count` 只证明候选枚举变化，不构成 DFT 引擎性能证据。
 
-## 可执行加速注册表与架构审计
+### 2. 共享 mmap Parser
 
-加速库、后端和别名不再由多个规划器分别维护。权威事实源为：
+`skills/tsao-dft-hpc-provenance/scripts/engine_scan_core.py` 提供：
+
+- 只读 mmap；
+- 映射工件 SHA-256；
+- 有界 literal/regex 扫描；
+- last-marker 和 block 边界；
+- 确定性资源释放。
+
+`engine_parser_contract.py` 的 Gaussian、VASP、QE、CP2K 路径全部消费该核心，并保留 fatal-over-success、最终 Link1、非有限数值拒绝和旧公共入口兼容。Parser I/O 优化不等于电子结构计算加速。
+
+## 当前与未来计算分层
+
+| 层 | 状态 | 技术 | 证据要求 |
+|---|---|---|---|
+| 科学控制面 | 已实现 | Python、JSON Schema、YAML、结构化 argv | 永久 Linux/Windows 门 |
+| CPU 数值参考 | 已实现 | 标量、NumPy、BLAS/LAPACK | 确定性、有限数值、回归等价 |
+| cell-list 邻居核 | 已实现 | NumPy + 网格候选缩减 | reference/NumPy/cell-list 等价 |
+| mmap Parser 传输 | 已实现 | mmap、bytes regex、SHA-256 | 四引擎状态机回归 |
+| C++/OpenMP sidecar | 未建立 | C++20、窄 JSON/file 协议 | profiling、Windows/Linux build、sanitizer、fallback |
+| CUDA/HIP/SYCL | 未建立 | 可选设备插件 | 明确 device、CPU/GPU 等价、端到端基准 |
+| 外部引擎加速 | `EXTERNAL_HOLD` | 引擎官方 GPU/MPI 构建 | 许可证、build/site/run/hardware、≥3 repeats、verified artifacts |
+
+<p align="center">
+  <img src="assets/demo/hybrid-compute-architecture.svg" width="100%" alt="Hybrid Python native and external-engine architecture">
+</p>
+
+## 加速注册表与技术解释
+
+权威注册表：
 
 ```text
 skills/tsao-dft-hpc-provenance/scripts/acceleration_registry.py
 ```
 
-它统一管理 **27 个** CUDA‑X、ROCm、oneAPI、Metal 和可移植接口，并生成两个兼容视图：
+它统一管理后端、供应商、别名、可用工作负载和禁止解释。永久门拒绝规划器重新维护镜像目录。
 
-- `plan_acceleration.py`：面向引擎构建和候选方案；
-- `hardware_optimization_contract.py`：面向工作负载、边缘运行时和硬件决策。
+| 路线 | 合法用途 | 禁止解释 |
+|---|---|---|
+| cuBLAS / cuSOLVER | 大型重复密集线代，数据已驻留设备 | “Python 自动变快” |
+| cuSPARSE | 经 profiling 证明的稀疏问题 | 小型密集表格通用优化 |
+| cuFFT / cuFFTMp | 引擎官方集成或自有 FFT 内核 | wrapper 自动加速 VASP/QE/CP2K |
+| cuTENSOR | 自有高阶张量 contraction | 外部 DFT 通用开关 |
+| cuEquivariance | 已验收的 MACE/NequIP/e3nn 类模型 | Kohn–Sham DFT 加速器 |
+| NCCL / NVSHMEM | 兼容构建的多 GPU/分布式通信 | Parser、小文件或单 GPU 通用优化 |
+| ROCm / oneAPI / Metal | 对应供应商与工作负载的显式路线 | 自动移植另一供应商构建 |
 
-永久 Linux 与 Windows 质量门会逐字段比较 libraries、aliases、backend、vendor compatibility。任何一侧静默漂移都会在 capability claim 之前失败：
+<table>
+<tr>
+<td width="50%"><img src="assets/demo/cuda-x-decision-map.svg" width="100%" alt="CUDA-X library decision map"></td>
+<td width="50%"><img src="assets/demo/acceleration-registry-governance.svg" width="100%" alt="Canonical acceleration registry governance"></td>
+</tr>
+<tr>
+<td><img src="assets/demo/backend-portability-stack.svg" width="100%" alt="Backend portability stack"></td>
+<td><img src="assets/demo/native-acceleration-roadmap.svg" width="100%" alt="Profile-gated native acceleration roadmap"></td>
+</tr>
+</table>
+
+## 外部专业引擎边界
+
+- **VASP：** 只认可对应版本的官方 GPU/OpenACC 构建、CUDA-aware MPI、GPU/rank 绑定和完整 build fingerprint。
+- **Quantum ESPRESSO：** 记录版本、编译器、GPU 支持、MPI、pool/task-group 与对角化路径。
+- **CP2K：** 记录官方 CUDA/HIP/OpenCL 构建能力和真实运行身份。
+- **Gaussian：** 仓库负责预检、Parser、批处理与证据；除非安装产品明确支持，否则不得声称加速电子结构核心。
+
+不同引擎、build、site 或硬件身份不能合并成一个 speedup campaign。
+
+<p align="center">
+  <img src="assets/demo/windows-linux-execution-matrix.svg" width="100%" alt="Windows and Linux execution matrix">
+</p>
+
+## 证据合同与资格链
+
+核心机器合同：
+
+- benchmark-result canonical nested v1.1；
+- compute-campaign canonical v1.1；
+- legacy v1.0 只能通过中央迁移；
+- custom Schema 不具资格；
+- `CampaignConfig` 与 `CampaignDocument` 递归冻结；
+- role、run、site、build、hardware、多 GPU、scientific identity、artifact 全部显式核验；
+- unknown/mixed、额外字段、重复键、类型混淆、NaN/Infinity 全部 fail-closed；
+- 迁移不补默认值、不生成 evidence、不提升资格。
 
 ```bash
-python scripts/validate_acceleration_registry.py --json
+python scripts/validate_benchmark_contract.py --json
+python scripts/validate_compute_qualification.py --json
+python scripts/capture_compute_contract_evidence.py --json
 ```
 
-仓库还提供可执行静态架构审计：
+机器证据 Schema v1.5 同时记录：
 
-```bash
-python scripts/audit_compute_architecture.py \
-  --json-out build/compute-architecture.json \
-  --markdown-out build/compute-architecture.md
+```text
+python_control_plane: true
+whole_repo_cpp_rewrite: NOT_RECOMMENDED
+neighbor_search.implemented: true
+parser_scan.implemented: true
+native_sidecar.implemented: false
+cuda_kernels.implemented: false
+external_engine_acceleration: EXTERNAL_HOLD
+external_engine_invoked: false
+performance_ratio_published: false
 ```
 
-当前审计观察为 **Python 占被审计源码行的 99.48%，仓库内原生语言占 0.0%**。这只是源码组成，不是运行时间、瓶颈或“应把全仓改写成 C++”的证据。审计输出的 40 个候选也只是保守静态排序；必须用代表性 profile 证明热点后，才允许迁移到 C++、OpenMP、Kokkos、CUDA、HIP 或 SYCL。
+<p align="center">
+  <img src="assets/demo/evidence-qualification-pipeline.svg" width="100%" alt="Scoped acceleration evidence qualification pipeline">
+</p>
 
-## Python、C++ 与 GPU 的职责边界
+<p align="center">
+  <img src="assets/demo/scientific-acceleration-funnel.svg" width="100%" alt="Scientific acceleration qualification funnel">
+</p>
 
-本项目以 Python 为主是有意设计：Python 主要承担控制面，而不是重新实现专业 DFT 内核。
+## ML、动力学与边缘计算
 
-| 层 | 推荐技术 | 负责内容 |
-|---|---|---|
-| 科研控制面 | Python、JSON Schema、YAML、结构化 argv | 工作流、预检、方法指纹、证据、调度、解析与报告 |
-| 数值基线 | NumPy、BLAS、LAPACK | 确定性 CPU 参考、向量化、矩阵求解与科学等价基线 |
-| 可选原生层 | C++20、OpenMP、Kokkos、窄 C ABI | 真实 profile 证明的邻居表、几何、扫描或批量数值热点 |
-| 可选 GPU 层 | CUDA、HIP、SYCL、Array API、DLPack | 大型重复数值内核，且必须计入数据搬运和启动开销 |
-| 外部计算面 | VASP、QE、CP2K、Gaussian | FFT、对角化、积分、SCF、MPI/OpenMP/GPU 等专业内核 |
+边缘路线不是“在边缘设备运行完整生产 DFT”，而是：
 
-原则是：**先剖析，后向量化；先保留 CPU 参考，再引入原生层；只有端到端收益和数值等价同时成立，才接受 GPU 或 C++ 后端。**
+```text
+结构与条件
+→ 已验收 surrogate
+→ uncertainty / OOD gate
+→ 安全域内推理
+→ 域外远程真实 DFT
+→ 结果回流受治理数据集
+```
 
-## CUDA‑X 与其他加速库如何进入
+必须保存模型版本、训练数据哈希、特征定义、校准、OOD 阈值和 fallback；surrogate 与真实 DFT 是不同证据等级。
 
-| 库/路线 | 可以用于 | 不能被解释为 |
-|---|---|---|
-| cuBLAS / cuSOLVER / cuSOLVERMp | 大型、重复、已驻留 GPU 的密集矩阵与分布式求解 | “Python 代码天然已加速” |
-| cuFFT / cuFFTMp | 支持该路径的外部引擎构建，或明确的自有 FFT 内核 | Python wrapper 自动加速 VASP/QE/CP2K |
-| cuSPARSE | 明确的稀疏矩阵热点 | 小型密集表格的通用优化 |
-| cuTENSOR | 经过 profile 的高阶张量收缩、置换和约化 | 外部 DFT 程序的通用开关 |
-| cuEquivariance | MACE、NequIP、e3nn 等已验收等变模型 | Kohn–Sham DFT 加速器 |
-| NCCL / NVSHMEM | 兼容构建中的多 GPU 通信与分布式工作负载 | 单 GPU、小文件或 Parser 优化 |
-| rocBLAS / rocSOLVER / rocFFT / RCCL | 明确支持 HIP/ROCm 的引擎或自有内核 | 把 NVIDIA 构建自动转换为 AMD 构建 |
-| oneMKL / oneCCL / OpenVINO | 明确的 SYCL/oneAPI 数值或边缘推理路径 | 未经验证的通用跨厂商替代 |
-| TensorRT / ONNX Runtime | 有 UQ/OOD 门和远程 DFT 回退的边缘 surrogate | 生产 DFT 的替代品 |
+<table>
+<tr>
+<td width="50%"><img src="assets/demo/dft-ml-dashboard.svg" width="100%" alt="DFT ML provenance-aware dashboard"></td>
+<td width="50%"><img src="assets/demo/edge-hpc-closed-loop.svg" width="100%" alt="Edge to HPC scientific feedback loop"></td>
+</tr>
+<tr>
+<td><img src="assets/demo/multiscale-kinetics.svg" width="100%" alt="DFT to kinetics multiscale handoff"></td>
+<td><img src="assets/demo/periodic-dft-materials.svg" width="100%" alt="Periodic DFT evidence chain"></td>
+</tr>
+</table>
 
-## 支持等级
+## 科研图件治理
 
-| 等级 | 含义 | 报告边界 |
-|---|---|---|
-| `L0_REFERENCE` | 方法、边界和参考说明 | 只能作为方法参考 |
-| `L1_HANDOFF` | 能生成结构化 Manifest 或下游交接文件 | 需下游验证 |
-| `L2_VALIDATED_ADAPTER` | 有确定性预检、Parser、验证脚本和仓库测试 | 可报告“适配器已验证”，不能声称真实引擎已回归 |
-| `L3_EXECUTION_TESTED` | L2 + 真实引擎、版本、构建、场站、硬件和不可变回归证据 | 只能在记录的明确范围内报告真实执行覆盖 |
+下列图件均为 `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`，用于展示图件合同和证据组织，不是生产结果。
 
-Gaussian、VASP、Quantum ESPRESSO 和 CP2K 当前提供选定字段的 **L2 适配器**。公开能力仍是 `L2_VALIDATED_ADAPTER`。`QUALIFIED_FOR_SCOPED_L3_PERFORMANCE_EVIDENCE` 只表示某个证据包具备审查资格，绝不自动改变公开能力登记。
+<table>
+<tr>
+<td width="50%"><img src="assets/demo/wavefunction-esp-gallery.svg" width="100%" alt="Wavefunction and ESP figure contract"></td>
+<td width="50%"><img src="assets/demo/scientific-acceleration-funnel.svg" width="100%" alt="Scientific evidence funnel"></td>
+</tr>
+</table>
 
-## 快速开始
+视觉体系见 [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md)，AI 图治理见 [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md)。
+
+## 安装与快速验证
 
 ```bash
-python scripts/install.py --list
-
 python scripts/install.py \
   --agent codex \
-  --scope user \
+  --scope project \
   --skill all \
   --dry-run \
   --validate
-```
 
-正式安装：
-
-```bash
-python scripts/install.py \
-  --agent codex \
-  --scope user \
-  --skill all
-```
-
-安装器使用所有权 marker、原子暂存/替换、失败回滚和并发锁。真实生产计算仍需合法配置引擎、许可证、赝势/基组、场站指南和执行权限。
-
-## Windows 原生本地作业脚本
-
-Windows 本地工作流可直接生成 PowerShell 7 脚本，不依赖 WSL，也不会把结构化参数拼接为命令字符串：
-
-```powershell
-python skills/tsao-dft-hpc-provenance/scripts/generate_job_script.py `
-  .\build\hpc-manifest.yaml `
-  --shell powershell `
-  --out .\build\job.ps1
-
-pwsh -NoProfile -File .\build\job.ps1
-```
-
-Linux、本地 POSIX、Slurm 或 PBS 继续使用原有后端：
-
-```bash
-python skills/tsao-dft-hpc-provenance/scripts/generate_job_script.py \
-  build/hpc-manifest.yaml \
-  --shell posix \
-  --out build/job.sh
-```
-
-PowerShell 后端的边界是显式的：
-
-- 只接受 `scheduler: local`；Slurm/PBS 仍属于 POSIX/HPC 执行面；
-- 拒绝 `environment.modules` 和 `environment.source`，避免把 Unix 环境模块语义伪装成 Windows 支持；
-- 通过 `.NET ProcessStartInfo.ArgumentList` 传递结构化 argv，并以异步流复制处理 stdout/stderr；
-- 不使用 `Invoke-Expression`、`cmd.exe` 或 shell 字符串拼接；
-- 保留审批门、预检、Parser、stdin/stdout/stderr、环境变量、scratch、退出码优先级和运行证据合同；
-- Windows 本地执行能力不等于 Gaussian、VASP、QE、CP2K 或 GPU 得到加速。
-
-永久 Windows CI 会在真实 `pwsh` 下执行带特殊字符的参数、Gaussian stdin、预检、Parser、输出流和失败退出码测试。
-
-## GPU、并行与证据资格入口
-
-先做无外部引擎调用的环境盘点，再生成加速规划与待审批候选：
-
-```bash
-python skills/tsao-dft-hpc-provenance/scripts/plan_acceleration.py \
-  --inspect-environment --out build/acceleration-environment.json
-
-python skills/tsao-dft-hpc-provenance/scripts/plan_acceleration.py \
-  skills/tsao-dft-hpc-provenance/templates/acceleration-profile.yaml \
-  --out build/acceleration-plan.json
-
-python skills/tsao-dft-hpc-provenance/scripts/materialize_acceleration_campaign.py \
-  skills/tsao-dft-hpc-provenance/templates/vasp-gpu-hpc-manifest.yaml \
-  skills/tsao-dft-hpc-provenance/templates/acceleration-profile.yaml \
-  --manifest-out build/vasp-h100.yaml \
-  --matrix-out build/benchmark-matrix.csv \
-  --candidate-dir build/candidates \
-  --plan-out build/acceleration-plan.json
-```
-
-所有候选强制为 `approval: pending`；工具只写文件，不提交作业。正式命令、launcher、preflight 和 Parser 使用结构化 argv；审批必须绑定 Manifest 哈希、计划、候选和方法指纹。
-
-### 验证单个真实 benchmark 结果
-
-根目录中的 benchmark Schema 和 L3 policy 已纳入永久质量门。可独立验证结果文件：
-
-```bash
-python scripts/validate_acceleration_contracts.py \
-  --result build/benchmark-result.json \
-  --json
-```
-
-该门会拒绝零墙钟时间、NaN/Inf、布尔整数、非小写 SHA‑256、未知字段、无效时间戳和缺失的构建/硬件/科学结果身份。
-
-### 导入、资格化与验证证据包
-
-```bash
-python skills/tsao-dft-hpc-provenance/scripts/import_benchmark_evidence.py \
-  results/* \
-  --schema skills/tsao-dft-hpc-provenance/templates/benchmark-result.schema.json \
-  --artifact-root run-artifacts \
-  --out build/evidence.jsonl
-
-python skills/tsao-dft-hpc-provenance/scripts/qualify_performance_evidence.py \
-  results/* \
-  --result-schema skills/tsao-dft-hpc-provenance/templates/benchmark-result.schema.json \
-  --policy skills/tsao-dft-hpc-provenance/templates/performance-qualification-policy.yaml \
-  --policy-schema skills/tsao-dft-hpc-provenance/templates/performance-qualification-policy.schema.json \
-  --artifact-root run-artifacts \
-  --review signed-review-attestation.json \
-  --review-public-key reviewer-ed25519-public.pem \
-  --out-parent build/performance-evidence
-
-python skills/tsao-dft-hpc-provenance/scripts/verify_evidence_bundle.py \
-  build/performance-evidence/evidence-<root_sha256>
-```
-
-正式比较只允许一个 benchmark plan。在计算有效加速比前，必须通过 Schema、输入、方法、构建、硬件、拓扑、Parser 和数值等价性。Review 必须采用 Ed25519 签名并绑定 Policy、计划、候选和证据根；证据目录在暂存校验后原子发布。
-
-## 工程质量与一键验收
-
-```bash
-python -m pip install -c constraints/py312.txt -r requirements-dev.txt
-python -m pip check
 python scripts/quality_gate.py
 ```
 
-当前 Linux 代码资格基线：**559 项测试、9 个隔离套件、0 个失败套件；94.44% statement / 84.61% branch coverage。**
+PowerShell：
 
-Windows 永久门运行同一组 **559 项测试**，实测为 **94.38% statement / 84.42% branch coverage**；`generate_job_script.py` 在 Linux 与 Windows 均保持 **100% statement / 100% branch coverage**。
-
-当前永久质量门包括 9 个隔离测试套件、Python 3.10 / 3.12 / 3.13、Windows PowerShell、加速注册表漂移、可执行计算架构审计、语句与分支覆盖率、18 个 mypy 目标、4 个严格信任边界类型目标、Ruff、Bandit、仓库审计、CodeQL、三层 `pip-audit` 和 CycloneDX JSON SBOM。供应链任务即使失败也会先保留完整审计 JSON 和 SBOM，再使工作流失败。
-
-```text
-assets and executable contracts
-→ dependency and constraint validation
-→ acceleration evidence schema/policy validation
-→ canonical acceleration registry drift validation
-→ executable compute architecture audit
-→ governance, capability and security validators
-→ Ruff lint and formatting
-→ isolated mypy + strict trust-boundary mypy
-→ Linux and Windows statement/branch coverage
-→ Bandit + strict repository audit
-→ all isolated unittest suites + real pwsh execution
-→ pip-audit + SBOM + CodeQL
+```powershell
+pwsh -NoProfile -File .\scripts\quality_gate.ps1
 ```
 
-工程审计见：
+更多合同：
 
-- [`docs/REPOSITORY_FULL_AUDIT.md`](docs/REPOSITORY_FULL_AUDIT.md)
-- [`docs/CODE_QUALITY_AUDIT.md`](docs/CODE_QUALITY_AUDIT.md)
-- [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md)
-- [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md)
-- [`docs/SCIENTIFIC_CLAIM_POLICY.yaml`](docs/SCIENTIFIC_CLAIM_POLICY.yaml)
+- [`docs/ENGINE_SUPPORT_MATRIX.md`](docs/ENGINE_SUPPORT_MATRIX.md)
+- [`docs/DFT_VALIDATION_LADDER.md`](docs/DFT_VALIDATION_LADDER.md)
+- [`docs/CROSS_SKILL_HANDOFF.md`](docs/CROSS_SKILL_HANDOFF.md)
+- [`docs/CAPABILITY_STATUS.yaml`](docs/CAPABILITY_STATUS.yaml)
 
-## 科学边界
+## 永久资格门
 
-本仓库：
+每个 `main` HEAD 必须通过：
 
-- 不分发或绕过任何受限引擎、许可证、POTCAR、赝势或基组/势函数库；
-- 不把 AI 概念图或合成 SVG 描述为计算或实验结果；
-- 不把正常终止、调度成功、模型分数、漂亮图形、GPU 分配或托管 fixture 等同于科学接受；
-- 不接受普通 `approved` 字段代替签名审批；
-- 不在缺少真实引擎、构建、硬件、重复运行、内容寻址证据根、签名独立审查和显式注册时宣称 `L3_EXECUTION_TESTED`。
+```text
+Python 3.10
+Python 3.12
+Python 3.13
+Windows PowerShell
+Dependency audit + CycloneDX SBOM
+CodeQL
+28/28 repository quality stages
+629 tests / 9 suites
+```
 
-## 文档地图
+当前正式证据：
 
-| 文档 | 内容 |
-|---|---|
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | 总体架构和状态流 |
-| [`docs/ENGINE_SUPPORT_MATRIX.md`](docs/ENGINE_SUPPORT_MATRIX.md) | 引擎覆盖与支持等级 |
-| [`docs/CAPABILITY_STATUS.yaml`](docs/CAPABILITY_STATUS.yaml) | 机器可读能力状态 |
-| [`docs/SCIENTIFIC_BOUNDARIES.md`](docs/SCIENTIFIC_BOUNDARIES.md) | 科学边界与非主张 |
-| [`docs/SCIENTIFIC_CLAIM_POLICY.yaml`](docs/SCIENTIFIC_CLAIM_POLICY.yaml) | 通用与加速 L3 证据合同 |
-| [`docs/CROSS_SKILL_HANDOFF.md`](docs/CROSS_SKILL_HANDOFF.md) | 跨 Skill 交接合同 |
-| [`docs/REPOSITORY_FULL_AUDIT.md`](docs/REPOSITORY_FULL_AUDIT.md) | 全仓库安全、供应链与 Agent Skill 审计 |
-| [`docs/CODE_QUALITY_AUDIT.md`](docs/CODE_QUALITY_AUDIT.md) | 代码、测试、coverage 与 CI 审计 |
-| [`docs/SUPPLY_CHAIN_POLICY.md`](docs/SUPPLY_CHAIN_POLICY.md) | 依赖锁定、漏洞审计、SBOM 与发布策略 |
-| [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md) | AI 图像和确定性示意图治理 |
-| [`docs/PERFORMANCE_GUIDE.md`](docs/PERFORMANCE_GUIDE.md) | 执行、加速与签名证据边界 |
-| [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) | 测试和工程验收 |
+| 平台 | Statement | Branch | 结果 |
+|---|---:|---:|---|
+| Linux Python 3.12 | 93.87% | 83.86% | PASS |
+| Windows Python 3.12 | 93.81% | 83.70% | PASS |
+| `engine_parser_contract.py` | 100.00% | 100.00% | core gate PASS |
+| `neighbor_list.py` | 98.29% | 95.10% | equivalence gate PASS |
 
-仓库策略：**只在 `main` 工作，不创建功能、修复或临时分支；发布快照使用 Tag / Release。**
+这些数字证明软件工件通过测试，不证明外部 DFT 引擎加速。外部执行与速度资格继续保持 `EXTERNAL_HOLD`。
+
+---
+
+**TsaoDFT 的目标不是让每一个文件看起来更“底层”，而是让每一次科学结论、性能结论和工程迁移都有可复核的证据边界。**

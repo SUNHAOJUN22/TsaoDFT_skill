@@ -100,9 +100,11 @@ class EngineParserContractTests(unittest.TestCase):
             self.assert_schema(result)
 
     def test_loader_hash_and_finalize_compatibility_paths(self):
-        with patch.object(self.core.importlib.util, "spec_from_file_location", return_value=None):
-            with self.assertRaisesRegex(RuntimeError, "cannot import"):
-                self.core._load_scan_core()
+        with (
+            patch.object(self.core.importlib.util, "spec_from_file_location", return_value=None),
+            self.assertRaisesRegex(RuntimeError, "cannot import"),
+        ):
+            self.core._load_scan_core()
 
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "artifact.out"

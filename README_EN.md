@@ -1,8 +1,8 @@
 # TsaoDFT Skill
 
 <p align="center">
-  <strong>An evidence-locked, auditable DFT-first research operating system for molecular and periodic systems</strong><br>
-  Python scientific control plane + verifiable numerical cores + professional external engines + non-fabricable qualification boundaries
+  <strong>A DFT-first, mathematical, evidence-locked and auditable research operating system for molecular and periodic systems</strong><br>
+  Python scientific control plane + verifiable numerical cores + professional external engines + machine-readable qualification boundaries
 </p>
 
 <p align="center">
@@ -13,153 +13,266 @@
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
   <img src="https://img.shields.io/badge/tests-629%20passing-16A34A" alt="629 tests passing">
-  <img src="https://img.shields.io/badge/Linux%20coverage-93.87%25%20stmt%20%7C%2083.86%25%20branch-16A34A" alt="Linux 93.87 percent statement and 83.86 percent branch coverage">
-  <img src="https://img.shields.io/badge/Windows%20coverage-93.81%25%20stmt%20%7C%2083.70%25%20branch-1687FF" alt="Windows 93.81 percent statement and 83.70 percent branch coverage">
+  <img src="https://img.shields.io/badge/quality%20gates-29%2F29-16A34A" alt="29 of 29 quality gates">
+  <img src="https://img.shields.io/badge/software-SOFTWARE__ACCEPTANCE__READY-16A34A" alt="Software acceptance ready">
   <img src="https://img.shields.io/badge/external%20qualification-EXTERNAL__HOLD-B45309" alt="External qualification EXTERNAL HOLD">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
 
-> **AI image declaration | AI-GENERATED CONCEPTUAL ILLUSTRATION:** The single AI cover below communicates research context and system concepts only. Its molecules, lattices, orbitals, servers and interfaces are not data produced by Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD or experiments. All other architecture figures are deterministic SVG assets governed by repository scripts and visibly marked as synthetic demonstrations. Quantitative claims must come from accepted source files, computation artifacts and machine evidence.
+> **AI image declaration | AI-GENERATED CONCEPTUAL ILLUSTRATION:** The governed AI cover and AI-assisted SVGs communicate system architecture, mathematical contracts and usage strategy only. Molecules, lattices, orbitals, bands, energy surfaces, servers and interfaces are not data produced by Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD or experiments. Every technical figure is labelled `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`; quantitative claims must come from accepted inputs, outputs, parsers, hashes and machine evidence.
 
 <p align="center">
   <img src="assets/ai/hero/tsao-dft-hero.svg" width="100%" alt="TsaoDFT evidence-first DFT research operating system conceptual overview">
 </p>
 
+## Acceptance state and modification specification
+
+- Repository software, Schemas, documentation and permanent CI: `SOFTWARE_ACCEPTANCE_READY`;
+- Real Gaussian/VASP/QE/CP2K correctness and performance: `EXTERNAL_HOLD`;
+- Machine acceptance: `python scripts/build_release_acceptance.py --out release-acceptance.json --json`;
+- Reusable modification prompt: [`docs/ACCEPTANCE_REWRITE_PROMPT.md`](docs/ACCEPTANCE_REWRITE_PROMPT.md);
+- Governing doctrine: [`docs/ACCELERATION_ENGINEERING_DOCTRINE.md`](docs/ACCELERATION_ENGINEERING_DOCTRINE.md).
+
+```bash
+python scripts/capture_compute_contract_evidence.py --out compute-contract-evidence.json --json
+python scripts/build_release_acceptance.py --out release-acceptance.json --json
+python scripts/quality_gate.py
+```
+
 ## Governing engineering doctrine
 
-The repository follows [`docs/ACCELERATION_ENGINEERING_DOCTRINE.md`](docs/ACCELERATION_ENGINEERING_DOCTRINE.md):
-
-1. **Python is the scientific control plane, not a defect requiring wholesale replacement.** It owns workflow, Schemas, method identity, scheduling, parsing, evidence and reporting.
-2. **Professional DFT kernels are not reimplemented here.** FFTs, eigensolvers, integrals, SCF, MPI/OpenMP and GPU kernels belong to VASP, QE, CP2K, Gaussian and other scientific engines.
-3. **Only narrow hotspots proven by representative profiling may migrate.** The order is CPU reference → NumPy/algorithmic optimization → optional C++/OpenMP → optional CUDA/HIP/SYCL.
-4. **Every new backend retains a deterministic reference, failure fallback and numerical-equivalence gate.** Process startup, transfers and kernel overhead are part of end-to-end cost.
-5. **Technology awareness is not execution evidence.** Understanding CUDA-X, ROCm, oneAPI or Metal does not prove that a library, device or compatible engine build was used.
-6. **No speedup is published without a real solver, license, fixed input, stable hardware identity, scientific tolerance and repeated runs.** External qualification remains `EXTERNAL_HOLD`.
-
-## Capability levels are evidence contracts
-
-Public capability statements use four levels:
-
-- `L0_REFERENCE`: reference material, templates or method guidance; no executable adapter claim.
-- `L1_HANDOFF`: produces a structured handoff, while execution and scientific acceptance remain downstream responsibilities.
-- `L2_VALIDATED_ADAPTER`: the adapter, Schema, strict input boundary and regression suite are validated; this is not proof of execution on a real licensed scientific engine or target device.
-- `L3_EXECUTION_TESTED`: must bind real engine/version/site/run_id and immutable artifact SHA-256. HPC or acceleration L3 additionally binds build/hardware identity, a CPU reference, at least three repeats, numerical equivalence, parser acceptance, performance policy, a content-addressed evidence root and independent signed review.
-
-The governed neighbor-search and mmap parser cores are permanently tested software artifacts. They do not automatically promote VASP, QE, CP2K or Gaussian to `L3_EXECUTION_TESTED`.
-
-## TsaoDFT in 30 seconds
-
-<table>
-<tr>
-<td width="25%" valign="top"><strong>DFT-first</strong><br><sub>Define structures, method fingerprints, references and acceptance conditions before execution.</sub></td>
-<td width="25%" valign="top"><strong>Evidence graph</strong><br><sub>Computations, artifacts, figures and claims are linked by explicit support edges; failures remain visible.</sub></td>
-<td width="25%" valign="top"><strong>Multi-engine</strong><br><sub>Gaussian for molecular work; VASP, QE and CP2K for periodic work, with license and process boundaries preserved.</sub></td>
-<td width="25%" valign="top"><strong>Profile-gated acceleration</strong><br><sub>CPU/GPU, native code, ML and HPC advance only after equivalence and evidence gates.</sub></td>
-</tr>
-</table>
-
-```text
-planned
-→ prepared
-→ completed
-→ technically validated
-→ scientifically accepted
-→ claim accepted
-```
+1. **Python is the scientific control plane.** It owns workflow, Schemas, method identity, scheduling, parsing, evidence and reporting; it is not a defect requiring a wholesale C++ rewrite.
+2. **Professional DFT kernels remain external.** FFTs, eigensolvers, integrals, SCF and MPI/OpenMP/GPU kernels belong to versioned Gaussian/VASP/QE/CP2K builds.
+3. **Only profiled narrow hotspots may migrate.** CPU reference → NumPy/algorithm → optional C++/OpenMP → optional CUDA/HIP/SYCL.
+4. **Every backend retains a deterministic reference, finite-number boundary, safe fallback and equivalence gate.**
+5. **Technology awareness is not execution evidence.** CUDA-X awareness, a detected GPU or a generated job is not speedup evidence.
+6. **Correctness qualification precedes performance qualification.** No speed ratio is published without a fixed input, real engine, license, stable build/site/run/hardware identity, scientific tolerances and repeated runs.
 
 <p align="center">
   <img src="assets/demo/workflow-architecture.svg" width="100%" alt="TsaoDFT auditable research loop synthetic demonstration">
 </p>
 
+## Mathematical core: mapping equations to software contracts
+
+The equations below explain workflow and validation contracts. They are not scientific outputs already computed by this repository.
+
+### 1. Kohn–Sham equation and electron density
+
+$$
+\hat H_{\mathrm{KS}}[\rho]\,\psi_i(\mathbf r)=\varepsilon_i\psi_i(\mathbf r),
+\qquad
+\rho(\mathbf r)=\sum_i f_i\lvert\psi_i(\mathbf r)\rvert^2.
+$$
+
+Repository strategy:
+
+- `method_fingerprint_id` freezes functional, basis/pseudopotential, dispersion, relativity, cutoffs and convergence settings;
+- `observable_set` declares energies, forces, stresses and additional properties;
+- results from different engines, pseudopotential families or standard states are never silently merged.
+
+### 2. Total-energy functional and SCF fixed point
+
+$$
+E[\rho]=T_s[\rho]+\int v_{\mathrm{ext}}(\mathbf r)\rho(\mathbf r)\,d\mathbf r
++E_H[\rho]+E_{\mathrm{xc}}[\rho]+E_{\mathrm{II}},
+$$
+
+$$
+\rho^{(n+1)}=\mathcal F[\rho^{(n)}],
+\qquad
+R_n=\left\|\rho^{(n+1)}-\rho^{(n)}\right\|,
+\qquad
+R_n\le \tau_\rho.
+$$
+
+The evidence contract requires parser acceptance, zero exit status, convergence and finite values. An earlier success marker cannot override a later fatal marker.
+
+### 3. Forces, stress and geometry acceptance
+
+$$
+\mathbf F_I=-\frac{\partial E}{\partial \mathbf R_I},
+\qquad
+\sigma_{\alpha\beta}=\frac{1}{\Omega}\frac{\partial E}{\partial\epsilon_{\alpha\beta}}.
+$$
+
+Geometry optimization must be accepted together with gradients, displacements, frequencies or constraints. A transition state is not accepted from optimization convergence alone; it normally requires one targeted imaginary mode and IRC or equivalent path evidence.
+
+### 4. Periodic systems, plane waves and Brillouin-zone integration
+
+$$
+A=\frac{1}{\Omega_{\mathrm{BZ}}}\int_{\mathrm{BZ}}A(\mathbf k)\,d\mathbf k
+\approx \sum_{\mathbf k}w_{\mathbf k}A(\mathbf k),
+$$
+
+$$
+\frac{\lvert\mathbf k+\mathbf G\rvert^2}{2}\le E_{\mathrm{cut}}.
+$$
+
+k-point meshes, cutoff energy, smearing, pseudopotentials, magnetism and supercell identity remain explicit. Band/DOS convergence and total-energy convergence are accepted separately.
+
+### 5. Periodic minimum image and cell lists
+
+For fractional-coordinate difference $\Delta\mathbf s=\mathbf s_j-\mathbf s_i$:
+
+$$
+\Delta\mathbf s_{\mathrm{MIC}}=\Delta\mathbf s-\operatorname{round}(\Delta\mathbf s),
+\qquad
+\Delta\mathbf r=\mathbf H\Delta\mathbf s_{\mathrm{MIC}},
+\qquad
+d_{ij}=\lVert\Delta\mathbf r\rVert_2.
+$$
+
+The all-pairs reference is $O(N^2)$. At finite density and fixed cutoff, the average cell-list candidate cost approaches
+
+$$
+O\!\left(N+N\,\bar n_{\mathrm{cell}}\right).
+$$
+
+`neighbor_list.py` requires the `reference`, `numpy` and `cell-list` backends to return the same deterministically ordered pair set.
+
+### 6. Numerical equivalence, tolerances and performance qualification
+
+$$
+\lvert x-x_{\mathrm{ref}}\rvert
+\le a_{\mathrm{tol}}+r_{\mathrm{tol}}\lvert x_{\mathrm{ref}}\rvert,
+$$
+
+$$
+S=\frac{\operatorname{median}(t_{\mathrm{reference}})}
+        {\operatorname{median}(t_{\mathrm{candidate}})},
+\qquad n_{\mathrm{repeat}}\ge 3.
+$$
+
+$S$ is reviewable only after stable input/method/build/hardware/site identity, unique run IDs, accepted parsers, `VERIFIED` artifacts and scientific equivalence. Otherwise the state remains `EXTERNAL_HOLD`.
+
+### 7. Kinetics and detailed balance
+
+$$
+k(T)=\kappa\frac{k_{\mathrm B}T}{h}\exp\!\left(-\frac{\Delta G^\ddagger}{RT}\right),
+$$
+
+$$
+\frac{k_f}{k_r}=\exp\!\left(-\frac{\Delta G_{\mathrm{rxn}}}{RT}\right).
+$$
+
+`tsao-dft-kinetics-multiscale` consumes only accepted standard-state and thermochemical evidence. Incompatible standard states or uncorrected free energies are not concatenated.
+
+### 8. ML uncertainty and OOD gating
+
+For ensemble predictions $\{\hat y_m(\mathbf x)\}$:
+
+$$
+\bar y(\mathbf x)=\frac1M\sum_{m=1}^M\hat y_m(\mathbf x),
+\qquad
+u^2(\mathbf x)=\frac1{M-1}\sum_{m=1}^M\left(\hat y_m-\bar y\right)^2.
+$$
+
+If $u(\mathbf x)>u_{\max}$ or the OOD score exceeds its threshold, execution falls back to remote real DFT instead of emitting a high-confidence fabricated result.
+
+<p align="center">
+  <img src="assets/demo/dft-mathematical-core.svg" width="100%" alt="Kohn-Sham mathematics mapped to TsaoDFT software contracts">
+</p>
+
+<p align="center">
+  <img src="assets/demo/qualification-mathematics.svg" width="100%" alt="Numerical equivalence and performance qualification mathematics">
+</p>
+
 ## Eight Skills, one evidence chain
 
-| Skill | Primary responsibility | Boundary that cannot be bypassed |
+| Skill | Primary responsibility | Acceptance boundary |
 |---|---|---|
-| [`tsao-dft-suite`](skills/tsao-dft-suite/) | DFT-first entry point, DAGs, cross-Skill routing, cost and approval gates | Coordinates work; does not replace engine-level scientific judgment |
-| [`tsao-structure-prep`](skills/tsao-structure-prep/) | Molecules, crystals, surfaces, defects, adsorption, atom mapping and neighbor search | Does not silently decide charge, spin, oxidation state, termination or protonation |
-| [`tsao-dft-researcher`](skills/tsao-dft-researcher/) | Gaussian DFT/TDDFT, Opt/Freq, TS/IRC, thermochemistry, NMR, Multiwfn and VMD | Real programs, licenses and execution environments are supplied by the user |
-| [`tsao-periodic-dft-materials`](skills/tsao-periodic-dft-materials/) | VASP, Quantum ESPRESSO, CP2K, surfaces/defects, bands/DOS, NEB and convergence | Does not redistribute restricted data or mix incompatible energies |
-| [`tsao-dft-ml-active-learning`](skills/tsao-dft-ml-active-learning/) | DFT-label audit, leakage control, applicability domain, uncertainty and active learning | High scores are not mechanisms or causal evidence |
-| [`tsao-dft-kinetics-multiscale`](skills/tsao-dft-kinetics-multiscale/) | Eyring/TST, reaction networks, detailed balance, uncertainty propagation and reactor handoff | Consumes only standard-state and thermochemical evidence that passed validation |
-| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | Windows/POSIX, Slurm/PBS, hardware inventory, parsers, benchmarks, signatures and content-addressed evidence | GPU allocation, a fastest single run or a synthetic fixture is not real acceleration |
-| [`tsao-dft-catalysis-profile`](skills/tsao-dft-catalysis-profile/) | Catalysis and polymer-specific profiles | Does not automatically generalize to unrelated systems |
+| [`tsao-dft-suite`](skills/tsao-dft-suite/) | DFT-first entry point, DAGs, approvals and cross-Skill routing | Coordinates work; does not replace engine science |
+| [`tsao-structure-prep`](skills/tsao-structure-prep/) | Molecules, crystals, surfaces, defects, adsorption, atom mapping and neighbor search | Does not silently choose charge, spin, oxidation state, termination or protonation |
+| [`tsao-dft-researcher`](skills/tsao-dft-researcher/) | Gaussian DFT/TDDFT, Opt/Freq, TS/IRC, thermochemistry, NMR, Multiwfn and VMD | The user supplies real programs, licenses and execution environments |
+| [`tsao-periodic-dft-materials`](skills/tsao-periodic-dft-materials/) | VASP, QE, CP2K, surfaces/defects, bands/DOS, NEB and convergence | Does not mix incompatible energies or pseudopotential identities |
+| [`tsao-dft-ml-active-learning`](skills/tsao-dft-ml-active-learning/) | Label audit, leakage control, applicability domain, uncertainty and active learning | High scores are not mechanisms or causal evidence |
+| [`tsao-dft-kinetics-multiscale`](skills/tsao-dft-kinetics-multiscale/) | Eyring/TST, reaction networks, detailed balance and uncertainty propagation | Consumes only accepted standard-state and thermochemical data |
+| [`tsao-dft-hpc-provenance`](skills/tsao-dft-hpc-provenance/) | Windows/POSIX, Slurm/PBS, hardware inventory, parsers, benchmarks and signatures | GPU allocation or one fastest run is not real speedup |
+| [`tsao-dft-catalysis-profile`](skills/tsao-dft-catalysis-profile/) | Catalysis and polymer profiles | Does not automatically generalize to unrelated systems |
 
-## Implemented software-acceleration layers
+## Executable usage strategies
 
-### 1. Structure neighbor search
-
-`skills/tsao-structure-prep/scripts/neighbor_list.py` is the first governed repository-owned numerical core:
-
-- `reference`: scalar all-pairs reference;
-- `numpy`: bounded-memory row-vectorized execution;
-- `cell-list`: neighboring occupied-cell candidate enumeration;
-- `auto`: NumPy for medium structures and cell-list for large structures;
-- non-periodic, orthogonal periodic, triclinic periodic and partially periodic cells;
-- one minimum-image definition and deterministic pair order across all backends;
-- fail-closed coordinates, cutoffs, periodic flags and cell matrices;
-- no implicit GPU selection.
+### Strategy A: structure preparation and neighbor search
 
 ```bash
 python skills/tsao-structure-prep/scripts/inspect_xyz.py structure.xyz \
-  --backend cell-list \
-  --json
-
+  --backend reference --json
+python skills/tsao-structure-prep/scripts/inspect_xyz.py structure.xyz \
+  --backend numpy --json
 python skills/tsao-structure-prep/scripts/inspect_xyz.py periodic.xyz \
-  --backend cell-list \
-  --periodic xyz \
-  --box 10 0 0 0 10 0 0 0 10 \
-  --json
+  --backend cell-list --periodic xyz \
+  --box 10 0 0 0 10 0 0 0 10 --json
 ```
 
-`pair_count` and `evaluated_pair_count` establish a change in candidate enumeration only. They are not DFT-engine performance evidence.
+Use `reference` to establish small-system truth, then check `numpy` and `cell-list` equivalence. `evaluated_pair_count` is not DFT speedup evidence.
 
-### 2. Shared mmap parser transport
+### Strategy B: unified parsers and artifact hashes
 
-`skills/tsao-dft-hpc-provenance/scripts/engine_scan_core.py` provides:
+```bash
+python skills/tsao-dft-hpc-provenance/scripts/engine_parser_contract.py \
+  --engine gaussian --input job.log --json
+python skills/tsao-dft-hpc-provenance/scripts/engine_parser_contract.py \
+  --engine vasp --input OUTCAR --json
+```
 
-- read-only mmap;
-- SHA-256 of the mapped artifact;
-- bounded literal and regular-expression scans;
-- last-marker and block boundaries;
-- deterministic resource disposal.
+The parser uses read-only mmap, bounded scans and mapped-artifact SHA-256. Fatal markers outrank earlier success markers.
 
-The Gaussian, VASP, QE and CP2K paths in `engine_parser_contract.py` all consume this core while preserving fatal-over-success precedence, final-Link1 semantics, non-finite rejection and compatibility with retained public entry points. Parser I/O optimization is not electronic-structure acceleration.
+### Strategy C: Gaussian molecular workflow
 
-## Current and future compute layers
+1. Freeze charge, multiplicity, solvent, functional, basis, dispersion and integration grid;
+2. Run preflight before Opt/Freq;
+3. A minimum requires no imaginary frequency; a TS normally requires one targeted imaginary mode plus IRC/path evidence;
+4. Wavefunction/ESP/Multiwfn/VMD figures retain source-artifact hashes.
 
-| Layer | State | Technology | Evidence required |
+### Strategy D: VASP / QE / CP2K periodic workflow
+
+1. Converge cutoff, k points, smearing, magnetism, supercell and pseudopotential identity;
+2. Then execute geometry, bands/DOS, defects, surfaces, NEB or phonons;
+3. GPU routes require official version-matched builds and complete build/hardware/site/run identity;
+4. Different engines, builds or sites never share one speedup campaign.
+
+### Strategy E: HPC and Windows/Linux
+
+```bash
+python skills/tsao-dft-hpc-provenance/scripts/generate_job_script.py \
+  --shell bash --scheduler slurm --json
+pwsh -NoProfile -File .\scripts\quality_gate.ps1
+```
+
+External programs cross structured argv, versioned JSON, files, return codes and content hashes; untrusted shell concatenation is not allowed.
+
+### Strategy F: qualification evidence
+
+```bash
+python scripts/validate_benchmark_contract.py --json
+python scripts/validate_compute_qualification.py --json
+python scripts/capture_compute_contract_evidence.py --out compute-contract-evidence.json --json
+python scripts/build_release_acceptance.py --out release-acceptance.json --json
+```
+
+<p align="center">
+  <img src="assets/demo/evidence-qualification-pipeline.svg" width="100%" alt="Scoped acceleration evidence qualification pipeline">
+</p>
+
+<p align="center">
+  <img src="assets/demo/scientific-acceleration-funnel.svg" width="100%" alt="Scientific acceleration qualification funnel">
+</p>
+
+## Implemented software acceleration layers
+
+| Layer | State | Implementation | Non-claim |
 |---|---|---|---|
-| Scientific control plane | Implemented | Python, JSON Schema, YAML, structured argv | Permanent Linux and Windows gates |
-| CPU numerical reference | Implemented | Scalar code, NumPy, BLAS/LAPACK | Determinism, finite values, regression equivalence |
-| Cell-list neighbor core | Implemented | NumPy + grid candidate reduction | Reference/NumPy/cell-list equivalence |
-| mmap parser transport | Implemented | mmap, byte regex, SHA-256 | Four-engine state-machine regression |
-| C++/OpenMP sidecar | Not established | C++20, narrow JSON/file protocol | Profiling, Windows/Linux builds, sanitizers, fallback |
-| CUDA/HIP/SYCL | Not established | Optional device plugins | Explicit device identity, CPU/GPU equivalence, end-to-end benchmark |
-| External-engine acceleration | `EXTERNAL_HOLD` | Official engine GPU/MPI builds | License, build/site/run/hardware, ≥3 repeats, verified artifacts |
+| Python scientific control plane | Implemented | Schemas, DAG, argv, parsers, evidence | Not an electronic-structure kernel |
+| CPU reference | Implemented | Scalar, NumPy, BLAS/LAPACK | Not automatically optimal performance |
+| neighbor list | Implemented | reference / NumPy / cell-list | Not external DFT speedup |
+| mmap parser | Implemented | read-only mmap, byte regex, SHA-256 | Does not accelerate SCF/FFT/eigensolvers |
+| C++/OpenMP sidecar | Not established | profile-gated | Must not be documented as complete |
+| CUDA/HIP/SYCL | Not established | optional device plugins | GPU presence does not enable it |
+| external-engine performance | `EXTERNAL_HOLD` | official engine GPU/MPI builds | no speed ratio published |
 
 <p align="center">
   <img src="assets/demo/hybrid-compute-architecture.svg" width="100%" alt="Hybrid Python native and external-engine architecture">
 </p>
-
-## Acceleration registry and interpretation
-
-Canonical source:
-
-```text
-skills/tsao-dft-hpc-provenance/scripts/acceleration_registry.py
-```
-
-It centralizes backends, vendors, aliases, eligible workloads and invalid interpretations. Permanent gates reject planners that reintroduce mirror catalogs.
-
-| Route | Valid use | Invalid interpretation |
-|---|---|---|
-| cuBLAS / cuSOLVER | Large repeated dense linear algebra with data resident on device | “Python is automatically accelerated” |
-| cuSPARSE | Profiled sparse problems | Generic optimization for small dense tables |
-| cuFFT / cuFFTMp | Official engine integration or an explicit repository-owned FFT kernel | A wrapper automatically accelerates VASP/QE/CP2K |
-| cuTENSOR | Profiled custom high-order tensor contraction | A universal external-DFT switch |
-| cuEquivariance | Accepted MACE/NequIP/e3nn-class models | A Kohn–Sham DFT accelerator |
-| NCCL / NVSHMEM | Compatible multi-GPU and distributed communication | Generic parser, small-file or single-GPU optimization |
-| ROCm / oneAPI / Metal | Explicit vendor and workload routes | Automatic conversion of another vendor's build |
 
 <table>
 <tr>
@@ -172,63 +285,18 @@ It centralizes backends, vendors, aliases, eligible workloads and invalid interp
 </tr>
 </table>
 
-## Professional external-engine boundary
+## Windows, Linux and external-engine boundary
 
-- **VASP:** only a version-matched official GPU/OpenACC build, CUDA-aware MPI, GPU/rank binding and complete build fingerprint are eligible.
-- **Quantum ESPRESSO:** records version, compiler, GPU support, MPI, pool/task-group and diagonalization path.
-- **CP2K:** records official CUDA/HIP/OpenCL build capability and real execution identity.
-- **Gaussian:** the repository owns preflight, parsing, batching and evidence; it does not claim electronic-structure acceleration unless the installed product explicitly provides such a route.
-
-Different engines, builds, sites or hardware identities cannot be merged into one speedup campaign.
+- VASP: only version-matched official OpenACC/GPU builds, CUDA-aware MPI, GPU/rank binding and build fingerprints are eligible;
+- Quantum ESPRESSO: records version, compiler, GPU support, MPI, pool/task-group and diagonalization path;
+- CP2K: records official CUDA/HIP/OpenCL build capability and real execution identity;
+- Gaussian: the repository owns preflight, parsing, batching and evidence, not an unproven electronic-structure acceleration claim.
 
 <p align="center">
   <img src="assets/demo/windows-linux-execution-matrix.svg" width="100%" alt="Windows and Linux execution matrix">
 </p>
 
-## Evidence contracts and qualification chain
-
-The machine contracts enforce:
-
-- canonical nested benchmark-result v1.1;
-- canonical compute-campaign v1.1;
-- legacy v1.0 only through central migration;
-- custom Schemas are not qualification inputs;
-- recursively frozen `CampaignConfig` and `CampaignDocument`;
-- explicit role, run, site, build, hardware, multi-GPU, scientific-identity and artifact invariants;
-- fail-closed unknown/mixed versions, additional fields, duplicate keys, type confusion and NaN/Infinity;
-- migrations apply no defaults, create no evidence and cannot promote qualification.
-
-```bash
-python scripts/validate_benchmark_contract.py --json
-python scripts/validate_compute_qualification.py --json
-python scripts/capture_compute_contract_evidence.py --json
-```
-
-Machine-evidence Schema v1.5 records:
-
-```text
-python_control_plane: true
-whole_repo_cpp_rewrite: NOT_RECOMMENDED
-neighbor_search.implemented: true
-parser_scan.implemented: true
-native_sidecar.implemented: false
-cuda_kernels.implemented: false
-external_engine_acceleration: EXTERNAL_HOLD
-external_engine_invoked: false
-performance_ratio_published: false
-```
-
-<p align="center">
-  <img src="assets/demo/evidence-qualification-pipeline.svg" width="100%" alt="Scoped acceleration evidence qualification pipeline">
-</p>
-
-<p align="center">
-  <img src="assets/demo/scientific-acceleration-funnel.svg" width="100%" alt="Scientific acceleration qualification funnel">
-</p>
-
-## ML, kinetics and edge computing
-
-The accepted edge path is not full production DFT on an edge device. It is:
+## ML, kinetics and edge loop
 
 ```text
 structure and conditions
@@ -238,8 +306,6 @@ structure and conditions
 → remote real-DFT fallback outside the domain
 → accepted results returned to the governed dataset
 ```
-
-Model version, training-data hash, feature definition, calibration, OOD threshold and fallback are mandatory. Surrogate inference and real DFT remain separate evidence classes.
 
 <table>
 <tr>
@@ -254,7 +320,7 @@ Model version, training-data hash, feature definition, calibration, OOD threshol
 
 ## Scientific-figure governance
 
-The following figures are marked `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`. They demonstrate figure contracts and evidence organization, not production results.
+The following figures are synthetic demonstrations, not production computational results:
 
 <table>
 <tr>
@@ -263,18 +329,13 @@ The following figures are marked `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`. They d
 </tr>
 </table>
 
-See [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md) for the visual system and [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md) for AI-image governance.
+See [`docs/README_VISUAL_DESIGN_SYSTEM.md`](docs/README_VISUAL_DESIGN_SYSTEM.md) and [`docs/AI_IMAGE_GOVERNANCE.md`](docs/AI_IMAGE_GOVERNANCE.md).
 
-## Install and validate
+## Install, validate and accept
 
 ```bash
-python scripts/install.py \
-  --agent codex \
-  --scope project \
-  --skill all \
-  --dry-run \
-  --validate
-
+python scripts/install.py --agent codex --scope project --skill all --dry-run --validate
+python scripts/validate_readme_math.py --json
 python scripts/quality_gate.py
 ```
 
@@ -284,39 +345,10 @@ PowerShell:
 pwsh -NoProfile -File .\scripts\quality_gate.ps1
 ```
 
-Additional contracts:
+Permanent CI must pass Python 3.10/3.12/3.13, Windows PowerShell, dependency audit + CycloneDX SBOM, CodeQL, 29/29 repository quality stages and 629 tests / 9 suites.
 
-- [`docs/ENGINE_SUPPORT_MATRIX.md`](docs/ENGINE_SUPPORT_MATRIX.md)
-- [`docs/DFT_VALIDATION_LADDER.md`](docs/DFT_VALIDATION_LADDER.md)
-- [`docs/CROSS_SKILL_HANDOFF.md`](docs/CROSS_SKILL_HANDOFF.md)
-- [`docs/CAPABILITY_STATUS.yaml`](docs/CAPABILITY_STATUS.yaml)
-
-## Permanent qualification gates
-
-Every `main` HEAD must pass:
-
-```text
-Python 3.10
-Python 3.12
-Python 3.13
-Windows PowerShell
-Dependency audit + CycloneDX SBOM
-CodeQL
-28/28 repository quality stages
-629 tests / 9 suites
-```
-
-Current formal software evidence:
-
-| Platform | Statement | Branch | Result |
-|---|---:|---:|---|
-| Linux Python 3.12 | 93.87% | 83.86% | PASS |
-| Windows Python 3.12 | 93.81% | 83.70% | PASS |
-| `engine_parser_contract.py` | 100.00% | 100.00% | core gate PASS |
-| `neighbor_list.py` | 98.29% | 95.10% | equivalence gate PASS |
-
-These figures establish tested software artifacts. They do not establish acceleration of an external DFT engine. External execution and performance qualification remain `EXTERNAL_HOLD`.
+The software baseline proves repository artifacts passed validation. It does not prove that an external DFT engine was executed or accelerated. External qualification remains `EXTERNAL_HOLD`.
 
 ---
 
-**TsaoDFT does not optimize for making every file look more “low level.” It optimizes for making every scientific claim, performance claim and engineering migration reviewable against an explicit evidence boundary.**
+**TsaoDFT is not designed to make every file look lower-level. It is designed to make every equation, parameter, computation, figure, performance claim and engineering migration auditable.**

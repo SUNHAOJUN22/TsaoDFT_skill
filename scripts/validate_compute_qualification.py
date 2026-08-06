@@ -95,7 +95,7 @@ def validate() -> dict[str, Any]:
             {"properties": {"schema_version": {"const": "9.9"}}},
         )
         if custom_documents or not any("authoritative nested v1.1" in item for item in custom_errors):
-            errors.append("custom result schema input was not rejected from compute qualification")
+            errors.append("custom schema result input was not rejected from compute qualification")
 
         bypass = module.qualify(
             campaign,

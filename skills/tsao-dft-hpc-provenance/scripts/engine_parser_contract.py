@@ -135,9 +135,7 @@ def parse_gaussian(path: Path) -> dict[str, Any]:
         final_start = 0 if final_start < 0 else final_start
         result = base_result("gaussian", path)
         result["job_index"] = _SCAN.count(data, b"Entering Link 1") + 1
-        result["engine_version"] = _SCAN.decode(
-            _SCAN.first_group(data, GAUSSIAN_VERSION_RE, start=final_start)
-        )
+        result["engine_version"] = _SCAN.decode(_SCAN.first_group(data, GAUSSIAN_VERSION_RE, start=final_start))
         normal = _SCAN.contains(data, b"Normal termination of Gaussian", start=final_start)
         error = _SCAN.contains(data, b"Error termination", start=final_start)
         result["normal_termination"] = normal and not error
@@ -175,9 +173,7 @@ def parse_gaussian(path: Path) -> dict[str, Any]:
             result["parser_acceptance_reasons"].append("frequency result is a higher-order saddle candidate")
         else:
             result["parser_accepted"] = True
-            result["parser_acceptance_reasons"].append(
-                "final Link1 job passed termination and route-specific gates"
-            )
+            result["parser_acceptance_reasons"].append("final Link1 job passed termination and route-specific gates")
         if result["job_index"] > 1:
             result["warnings"].append("multiple Link1 jobs detected; only the final job determines acceptance")
         return _finalize(result, artifact)
@@ -233,9 +229,7 @@ def parse_vasp(path: Path) -> dict[str, Any]:
             result["parser_acceptance_reasons"].append("electronic convergence marker is missing")
         else:
             result["parser_accepted"] = True
-            result["parser_acceptance_reasons"].append(
-                "termination and electronic convergence gates passed"
-            )
+            result["parser_acceptance_reasons"].append("termination and electronic convergence gates passed")
         return _finalize(result, artifact)
 
 
@@ -249,14 +243,15 @@ def parse_qe(path: Path) -> dict[str, Any]:
         routine_error = bool(re.search(rb"Error in routine", data, re.IGNORECASE))
         nonconverged = _SCAN.contains(data, b"convergence NOT achieved")
         done = _SCAN.contains(data, b"JOB DONE.")
-        result["fatal_marker"] = (
-            "ERROR_IN_ROUTINE" if routine_error else "SCF_NOT_CONVERGED" if nonconverged else None
-        )
+        result["fatal_marker"] = "ERROR_IN_ROUTINE" if routine_error else "SCF_NOT_CONVERGED" if nonconverged else None
         result["normal_termination"] = done and result["fatal_marker"] is None
-        result["electronic_converged"] = _SCAN.contains(
-            data,
-            b"convergence has been achieved",
-        ) and not nonconverged
+        result["electronic_converged"] = (
+            _SCAN.contains(
+                data,
+                b"convergence has been achieved",
+            )
+            and not nonconverged
+        )
         result["geometry_converged"] = _SCAN.contains(
             data,
             b"End of BFGS Geometry Optimization",
@@ -273,9 +268,7 @@ def parse_qe(path: Path) -> dict[str, Any]:
             result["stress"]["values"] = [_float(pressure) * KBAR_TO_GPA]
         if result["fatal_marker"]:
             result["failed_stage"] = "engine" if routine_error else "electronic"
-            result["parser_acceptance_reasons"].append(
-                f"QE fatal marker detected: {result['fatal_marker']}"
-            )
+            result["parser_acceptance_reasons"].append(f"QE fatal marker detected: {result['fatal_marker']}")
         elif not done:
             result["failed_stage"] = "termination"
             result["parser_acceptance_reasons"].append("JOB DONE marker is missing")
@@ -315,9 +308,7 @@ def parse_cp2k(path: Path) -> dict[str, Any]:
             result["forces"]["values"] = [_float(gradient) * HARTREE_TO_EV / 0.529177210903]
         if result["fatal_marker"]:
             result["failed_stage"] = "engine" if abort else "electronic"
-            result["parser_acceptance_reasons"].append(
-                f"CP2K fatal marker detected: {result['fatal_marker']}"
-            )
+            result["parser_acceptance_reasons"].append(f"CP2K fatal marker detected: {result['fatal_marker']}")
         elif not ended:
             result["failed_stage"] = "termination"
             result["parser_acceptance_reasons"].append("PROGRAM ENDED AT marker is missing")

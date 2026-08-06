@@ -7,12 +7,14 @@ This script does not assign bond orders, charge, multiplicity, protonation, or o
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import math
 import re
+import sys
 from collections import Counter
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -48,8 +50,23 @@ COVALENT = {
     "Au": 1.36,
 }
 VALID = re.compile(r"^[A-Z][a-z]?$")
-PAIR_BACKENDS = ("auto", "python", "numpy")
+PAIR_BACKENDS = ("auto", "python", "numpy", "cell-list")
 AUTO_NUMPY_ATOMS = 512
+AUTO_CELL_LIST_ATOMS = 2048
+
+
+def _load_neighbor_list() -> Any:
+    path = Path(__file__).with_name("neighbor_list.py")
+    spec = importlib.util.spec_from_file_location("tsao_structure_neighbor_list", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot import {path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+_NEIGHBORS = _load_neighbor_list()
 
 
 def parse_xyz(path: Path) -> tuple[str, list[dict[str, Any]]]:
@@ -91,14 +108,16 @@ def _pair_findings_python(
     atoms: list[dict[str, Any]],
     clash_scale: float,
     bond_scale: float,
-) -> tuple[list[str], list[dict[str, Any]], float | None]:
+) -> tuple[list[str], list[dict[str, Any]], float | None, int]:
     errors: list[str] = []
     bonds: list[dict[str, Any]] = []
     minimum: float | None = None
+    evaluated = 0
     for index, atom in enumerate(atoms):
         radius_a = COVALENT.get(atom["element"])
         for other in atoms[index + 1 :]:
             separation = distance(atom, other)
+            evaluated += 1
             if not math.isfinite(separation):
                 errors.append(f"non-finite distance: atoms {atom['index']} and {other['index']}")
                 continue
@@ -119,21 +138,22 @@ def _pair_findings_python(
                             "heuristic_only": True,
                         }
                     )
-    return errors, bonds, minimum
+    return errors, bonds, minimum, evaluated
 
 
 def _pair_findings_numpy(
     atoms: list[dict[str, Any]],
     clash_scale: float,
     bond_scale: float,
-) -> tuple[list[str], list[dict[str, Any]], float | None]:
+) -> tuple[list[str], list[dict[str, Any]], float | None, int]:
     """Vectorize pair distances while preserving deterministic pair ordering."""
 
     errors: list[str] = []
     bonds: list[dict[str, Any]] = []
     minimum: float | None = None
+    evaluated = 0
     if len(atoms) < 2:
-        return errors, bonds, minimum
+        return errors, bonds, minimum, evaluated
 
     coordinates = np.asarray([[atom["x"], atom["y"], atom["z"]] for atom in atoms], dtype=np.float64)
     radii = np.asarray([COVALENT.get(atom["element"], np.nan) for atom in atoms], dtype=np.float64)
@@ -142,6 +162,7 @@ def _pair_findings_numpy(
         delta = coordinates[index + 1 :] - coordinates[index]
         separations = np.einsum("ij,ij->i", delta, delta)
         np.sqrt(separations, out=separations)
+        evaluated += int(separations.size)
         finite = np.isfinite(separations)
         for offset in np.flatnonzero(~finite):
             other = atoms[index + 1 + int(offset)]
@@ -179,7 +200,72 @@ def _pair_findings_numpy(
                     "heuristic_only": True,
                 }
             )
-    return errors, bonds, minimum
+    return errors, bonds, minimum, evaluated
+
+
+def _neighbor_backend_name(backend: str) -> str:
+    return {"python": "reference", "numpy": "numpy", "cell-list": "cell-list"}[backend]
+
+
+def _pair_findings_neighbor(
+    atoms: list[dict[str, Any]],
+    clash_scale: float,
+    bond_scale: float,
+    backend: str,
+    *,
+    box: Any,
+    periodic: Any,
+) -> tuple[list[str], list[dict[str, Any]], float | None, int]:
+    coordinates = np.asarray([[atom["x"], atom["y"], atom["z"]] for atom in atoms], dtype=np.float64)
+    maximum_reference = 2.0 * max(COVALENT.values())
+    search_cutoff = max(1e-6, bond_scale * maximum_reference)
+    search = _NEIGHBORS.pairs_within_cutoff(
+        coordinates,
+        search_cutoff,
+        box=box,
+        periodic=periodic,
+        backend=_neighbor_backend_name(backend),
+    )
+    minimum = _NEIGHBORS.nearest_pair_distance(
+        coordinates,
+        box=box,
+        periodic=periodic,
+        backend=_neighbor_backend_name(backend),
+    )
+    errors: list[str] = []
+    bonds: list[dict[str, Any]] = []
+    for pair in search.pairs:
+        atom = atoms[pair.i]
+        other = atoms[pair.j]
+        separation = pair.distance_angstrom
+        if separation < 1e-6:
+            errors.append(f"duplicate coordinates: atoms {atom['index']} and {other['index']}")
+        radius_a = COVALENT.get(atom["element"])
+        radius_b = COVALENT.get(other["element"])
+        if radius_a and radius_b:
+            reference = radius_a + radius_b
+            if separation < clash_scale * reference:
+                errors.append(f"severe contact {atom['index']}-{other['index']}: {separation:.3f} Å")
+            if separation <= bond_scale * reference:
+                bonds.append(
+                    {
+                        "i": atom["index"],
+                        "j": other["index"],
+                        "distance_angstrom": round(separation, 6),
+                        "heuristic_only": True,
+                    }
+                )
+    return errors, bonds, minimum, search.evaluated_pairs
+
+
+def _periodic_axes(value: Any) -> tuple[bool, bool, bool]:
+    if value is None:
+        return (False, False, False)
+    if isinstance(value, bool):
+        return (value, value, value)
+    if not isinstance(value, (tuple, list)) or len(value) != 3 or not all(isinstance(item, bool) for item in value):
+        raise ValueError("periodic must be a bool or exactly three booleans")
+    return cast(tuple[bool, bool, bool], tuple(value))
 
 
 def inspect(
@@ -187,6 +273,9 @@ def inspect(
     clash_scale: float = 0.55,
     bond_scale: float = 1.25,
     backend: str = "auto",
+    *,
+    box: Any = None,
+    periodic: Any = None,
 ) -> dict[str, Any]:
     errors: list[str] = []
     warnings: list[str] = []
@@ -199,18 +288,40 @@ def inspect(
     if backend not in PAIR_BACKENDS:
         errors.append(f"backend must be one of {PAIR_BACKENDS}")
         backend = "python"
+    try:
+        periodic_axes = _periodic_axes(periodic)
+    except ValueError as exc:
+        errors.append(str(exc))
+        periodic_axes = (False, False, False)
 
     for atom in atoms:
         if atom["element"] not in COVALENT:
             warnings.append(f"no covalent radius for {atom['element']}; pair heuristics incomplete")
 
-    selected_backend = (
-        "numpy" if backend == "numpy" or (backend == "auto" and len(atoms) >= AUTO_NUMPY_ATOMS) else "python"
-    )
-    if selected_backend == "numpy":
-        pair_errors, bonds, minimum = _pair_findings_numpy(atoms, clash_scale, bond_scale)
+    if backend == "cell-list" or (backend == "auto" and len(atoms) >= AUTO_CELL_LIST_ATOMS):
+        selected_backend = "cell-list"
+    elif backend == "numpy" or (backend == "auto" and len(atoms) >= AUTO_NUMPY_ATOMS):
+        selected_backend = "numpy"
     else:
-        pair_errors, bonds, minimum = _pair_findings_python(atoms, clash_scale, bond_scale)
+        selected_backend = "python"
+
+    use_neighbor_contract = selected_backend == "cell-list" or box is not None or any(periodic_axes)
+    try:
+        if use_neighbor_contract:
+            pair_errors, bonds, minimum, evaluated = _pair_findings_neighbor(
+                atoms,
+                clash_scale,
+                bond_scale,
+                selected_backend,
+                box=box,
+                periodic=periodic_axes,
+            )
+        elif selected_backend == "numpy":
+            pair_errors, bonds, minimum, evaluated = _pair_findings_numpy(atoms, clash_scale, bond_scale)
+        else:
+            pair_errors, bonds, minimum, evaluated = _pair_findings_python(atoms, clash_scale, bond_scale)
+    except (TypeError, ValueError, np.linalg.LinAlgError) as exc:
+        pair_errors, bonds, minimum, evaluated = [str(exc)], [], None, 0
     errors.extend(pair_errors)
 
     degree = {atom["index"]: 0 for atom in atoms}
@@ -226,6 +337,7 @@ def inspect(
         if atoms
         else {}
     )
+    pair_count = len(atoms) * (len(atoms) - 1) // 2
     return {
         "ok": not errors,
         "errors": sorted(set(errors)),
@@ -237,9 +349,23 @@ def inspect(
         "minimum_pair_distance_angstrom": minimum,
         "heuristic_bonds": bonds,
         "pair_backend": selected_backend,
-        "pair_count": len(atoms) * (len(atoms) - 1) // 2,
+        "pair_count": pair_count,
+        "evaluated_pair_count": evaluated,
+        "periodic_axes": {"x": periodic_axes[0], "y": periodic_axes[1], "z": periodic_axes[2]},
+        "box_angstrom": np.asarray(box, dtype=np.float64).tolist() if box is not None else None,
         "note": "Bond list is a geometry heuristic, not electronic-structure evidence.",
     }
+
+
+def _periodic_cli(value: str) -> tuple[bool, bool, bool]:
+    normalized = value.strip().lower()
+    if normalized in {"", "none"}:
+        return (False, False, False)
+    if normalized in {"all", "xyz"}:
+        return (True, True, True)
+    if any(character not in "xyz" for character in normalized) or len(set(normalized)) != len(normalized):
+        raise argparse.ArgumentTypeError("periodic axes must be none, all, xyz, or a unique subset of x/y/z")
+    return cast(tuple[bool, bool, bool], tuple(axis in normalized for axis in "xyz"))
 
 
 def main() -> int:
@@ -248,10 +374,13 @@ def main() -> int:
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--out", type=Path)
     parser.add_argument("--backend", choices=PAIR_BACKENDS, default="auto")
+    parser.add_argument("--box", nargs=9, type=float, metavar=("AX", "AY", "AZ", "BX", "BY", "BZ", "CX", "CY", "CZ"))
+    parser.add_argument("--periodic", type=_periodic_cli, default=(False, False, False))
     args = parser.parse_args()
     try:
         comment, atoms = parse_xyz(args.xyz)
-        result = inspect(atoms, backend=args.backend)
+        box = np.asarray(args.box, dtype=np.float64).reshape(3, 3).tolist() if args.box else None
+        result = inspect(atoms, backend=args.backend, box=box, periodic=args.periodic)
         result["comment"] = comment
         result["source"] = str(args.xyz.resolve())
     except (OSError, UnicodeError, ValueError) as exc:

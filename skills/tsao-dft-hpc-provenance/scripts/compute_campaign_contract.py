@@ -203,12 +203,7 @@ def _semantic_errors(record: dict[str, Any]) -> list[str]:
     if isinstance(repeats, bool) or not isinstance(repeats, int) or repeats < 3:
         errors.append("minimum_repeats must be an integer >= 3")
     ratio = record.get("minimum_reference_over_candidate_ratio")
-    if (
-        isinstance(ratio, bool)
-        or not isinstance(ratio, (int, float))
-        or not math.isfinite(float(ratio))
-        or ratio <= 1
-    ):
+    if isinstance(ratio, bool) or not isinstance(ratio, (int, float)) or not math.isfinite(float(ratio)) or ratio <= 1:
         errors.append("minimum_reference_over_candidate_ratio must be finite and > 1")
 
     participants = record.get("participants")
@@ -354,7 +349,14 @@ class CampaignVersion(str):
 def _validated_migration(value: Any) -> dict[str, Any]:
     if type(value) is not dict:
         raise CampaignContractError("campaign migration metadata must be a mapping")
-    expected = {"source_contract", "target_contract", "migration", "qualification_impact", "defaults_applied", "evidence_fields_added"}
+    expected = {
+        "source_contract",
+        "target_contract",
+        "migration",
+        "qualification_impact",
+        "defaults_applied",
+        "evidence_fields_added",
+    }
     if set(value) != expected:
         raise CampaignContractError("campaign migration metadata fields are invalid")
     if value.get("target_contract") != CANONICAL_CONTRACT:

@@ -93,7 +93,11 @@ def missing_result(engine: str, path: Path) -> dict[str, Any]:
 
 
 def _finalize(result: dict[str, Any], artifact: Any) -> dict[str, Any]:
-    result["source_artifact"]["sha256"] = artifact.sha256
+    if isinstance(artifact, Path):
+        digest = sha256_file(artifact) if artifact.is_file() else None
+    else:
+        digest = getattr(artifact, "sha256", None)
+    result["source_artifact"]["sha256"] = digest
     result["parser_acceptance_reasons"] = sorted(set(result["parser_acceptance_reasons"]))
     result["warnings"] = sorted(set(result["warnings"]))
     return result

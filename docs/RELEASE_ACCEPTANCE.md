@@ -23,7 +23,7 @@ Generate it with:
 python scripts/build_release_acceptance.py --out release-acceptance.json --json
 ```
 
-The permanent quality gate generates the same artifact before coverage, security and final unit-test stages. A successful CI run binds the generated file to the workflow commit through the GitHub Actions artifact name and run metadata.
+The permanent quality gate deterministically generates and validates the same file before coverage, security and final unit-test stages. The accepted commit SHA and successful CI run bind the verified generator, Schema and input contracts; the operator should regenerate and retain `release-acceptance.json` from that exact accepted commit as part of the handoff package.
 
 ## Software-side acceptance scope
 
@@ -56,8 +56,8 @@ Correctness qualification must pass before performance qualification. Repository
 
 For repository acceptance, deliver together:
 
-1. `release-acceptance.json` from the accepted commit;
-2. `compute-contract-evidence.json`;
+1. `release-acceptance.json` regenerated from the exact accepted commit;
+2. `compute-contract-evidence.json` regenerated from the same commit;
 3. `coverage-report.json` for Linux Python 3.12;
 4. the Windows control-plane artifact;
 5. dependency-audit JSON and CycloneDX SBOM;

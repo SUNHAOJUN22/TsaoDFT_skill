@@ -52,6 +52,17 @@ python scripts/quality_gate.py
   <img src="assets/demo/workflow-architecture.svg" width="100%" alt="TsaoDFT auditable research loop synthetic demonstration">
 </p>
 
+## Capability levels are evidence contracts
+
+Public capability statements use four evidence levels:
+
+- `L0_REFERENCE`: reference material, templates or method guidance; no executable-adapter claim.
+- `L1_HANDOFF`: produces a structured handoff while execution and scientific acceptance remain downstream responsibilities.
+- `L2_VALIDATED_ADAPTER`: the adapter, Schema, strict input boundary and regression suite are validated; this is not proof of execution on a real licensed professional engine or target device.
+- `L3_EXECUTION_TESTED`: must bind real `engine/version/site/run_id` and immutable artifact SHA-256. HPC or acceleration L3 additionally binds build/hardware identity, a CPU reference, at least three repeats, numerical equivalence, parser acceptance, performance policy, a content-addressed evidence root and independent signed review.
+
+The repository neighbor-list, mmap parser, contract validators and release-acceptance builder are permanently tested software artifacts. They do not automatically promote external Gaussian, VASP, QE or CP2K capability to `L3_EXECUTION_TESTED`.
+
 ## Mathematical core: mapping equations to software contracts
 
 The equations below explain workflow and validation contracts. They are not scientific outputs already computed by this repository.

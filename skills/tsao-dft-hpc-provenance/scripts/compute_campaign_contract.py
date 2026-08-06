@@ -198,6 +198,19 @@ def _semantic_errors(record: dict[str, Any]) -> list[str]:
             errors.append(f"{field} must be a non-empty non-whitespace string")
     if record.get("engine") not in ENGINES:
         errors.append(f"engine must be one of {sorted(ENGINES)}")
+
+    repeats = record.get("minimum_repeats")
+    if isinstance(repeats, bool) or not isinstance(repeats, int) or repeats < 3:
+        errors.append("minimum_repeats must be an integer >= 3")
+    ratio = record.get("minimum_reference_over_candidate_ratio")
+    if (
+        isinstance(ratio, bool)
+        or not isinstance(ratio, (int, float))
+        or not math.isfinite(float(ratio))
+        or ratio <= 1
+    ):
+        errors.append("minimum_reference_over_candidate_ratio must be finite and > 1")
+
     participants = record.get("participants")
     if not isinstance(participants, list):
         errors.append("participants must be a list")
@@ -227,11 +240,27 @@ def _semantic_errors(record: dict[str, Any]) -> list[str]:
         errors.append("campaign must declare exactly one scientific-reference participant")
     if candidates < 1:
         errors.append("campaign must declare at least one acceleration-candidate participant")
+
     tolerances = record.get("numerical_tolerances")
-    if isinstance(tolerances, dict):
-        for name in tolerances:
+    if not isinstance(tolerances, dict) or not tolerances:
+        errors.append("numerical_tolerances must be a non-empty mapping")
+    else:
+        for name, tolerance in tolerances.items():
             if not isinstance(name, str) or not name.strip():
                 errors.append("numerical_tolerances keys must be non-empty non-whitespace strings")
+                continue
+            if type(tolerance) is not dict or set(tolerance) != {"absolute", "relative"}:
+                errors.append(f"numerical_tolerances.{name} must contain only absolute and relative")
+                continue
+            for field in ("absolute", "relative"):
+                value = tolerance[field]
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(value, (int, float))
+                    or not math.isfinite(float(value))
+                    or value < 0
+                ):
+                    errors.append(f"numerical_tolerances.{name}.{field} must be finite and >= 0")
     return errors
 
 
@@ -293,18 +322,22 @@ def freeze_tree(value: Any) -> Any:
     """Recursively freeze JSON-compatible data into mapping proxies and tuples."""
     if isinstance(value, Mapping):
         return MappingProxyType({str(key): freeze_tree(item) for key, item in value.items()})
-    if isinstance(value, list):
+    if isinstance(value, (list, tuple)):
         return tuple(freeze_tree(item) for item in value)
-    return copy.deepcopy(value)
+    if value is None or type(value) in {str, bool, int, float}:
+        return value
+    raise CampaignContractError(f"campaign contract contains a non-JSON value: {type(value).__name__}")
 
 
 def thaw_tree(value: Any) -> Any:
     """Return a detached mutable JSON-compatible copy of frozen contract data."""
     if isinstance(value, Mapping):
         return {str(key): thaw_tree(item) for key, item in value.items()}
-    if isinstance(value, tuple):
+    if isinstance(value, (tuple, list)):
         return [thaw_tree(item) for item in value]
-    return copy.deepcopy(value)
+    if value is None or type(value) in {str, bool, int, float}:
+        return value
+    raise CampaignContractError(f"frozen campaign contract contains a non-JSON value: {type(value).__name__}")
 
 
 @dataclass(frozen=True)

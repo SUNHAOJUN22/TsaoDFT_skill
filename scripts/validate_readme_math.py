@@ -22,7 +22,7 @@ COMMON_TOKENS = (
     "SOFTWARE_ACCEPTANCE_READY",
     "EXTERNAL_HOLD",
     "release-acceptance.json",
-    "Kohn–Sham",
+    "Kohn\u2013Sham",
     "neighbor_list.py",
     "engine_parser_contract.py",
     "scripts/quality_gate.py",

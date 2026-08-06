@@ -122,6 +122,11 @@ class EngineParserContractTests(unittest.TestCase):
         result = self.core._finalize(self.core.base_result("vasp", Path("missing")), object())
         self.assertIsNone(result["source_artifact"]["sha256"])
 
+    def test_nonfinite_engine_numbers_fail_closed(self):
+        for value in (b"NaN", b"Infinity", b"-Infinity"):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "non-finite"):
+                self.core._float(value)
+
 
 if __name__ == "__main__":
     unittest.main()

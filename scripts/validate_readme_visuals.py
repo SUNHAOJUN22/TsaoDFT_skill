@@ -5,8 +5,11 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import re
+import sys
 from pathlib import Path
+from types import ModuleType
 
 import yaml
 from defusedxml import ElementTree as ET
@@ -15,6 +18,7 @@ ROOT = Path(__file__).resolve().parents[1]
 README = ROOT / "README.md"
 README_EN = ROOT / "README_EN.md"
 AI_MANIFEST = ROOT / "assets/ai/manifest.yaml"
+MATH_VALIDATOR = ROOT / "scripts/validate_readme_math.py"
 
 MD_IMAGE_RE = re.compile(r"!\[[^\]]*\]\(([^)\s]+)(?:\s+[^)]*)?\)")
 HTML_IMAGE_RE = re.compile(r"<img\s+[^>]*src=[\"']([^\"']+)[\"'][^>]*>", re.IGNORECASE)
@@ -33,6 +37,8 @@ REQUIRED_DEMOS = {
     "assets/demo/backend-portability-stack.svg",
     "assets/demo/windows-linux-execution-matrix.svg",
     "assets/demo/scientific-acceleration-funnel.svg",
+    "assets/demo/dft-mathematical-core.svg",
+    "assets/demo/qualification-mathematics.svg",
 }
 
 
@@ -42,6 +48,16 @@ def digest(path: Path) -> str:
 
 def image_refs(text: str) -> set[str]:
     return set(MD_IMAGE_RE.findall(text)) | set(HTML_IMAGE_RE.findall(text))
+
+
+def load_math_validator() -> ModuleType:
+    spec = importlib.util.spec_from_file_location("tsao_readme_math_validation", MATH_VALIDATOR)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot import {MATH_VALIDATOR}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def validate() -> tuple[list[str], list[str]]:
@@ -135,6 +151,15 @@ def validate() -> tuple[list[str], list[str]]:
         for phrase in forbidden_phrases:
             if phrase.lower() in text.lower():
                 failures.append(f"{name} contains forbidden AI-result wording: {phrase}")
+
+    try:
+        report = load_math_validator().validate()
+    except (OSError, ImportError, RuntimeError, AttributeError) as exc:
+        failures.append(f"README math validator unavailable: {exc}")
+    else:
+        failures.extend(f"README math contract: {error}" for error in report.get("errors", []))
+        if report.get("ok") is not True:
+            failures.append("README math contract did not pass")
 
     return failures, warnings
 

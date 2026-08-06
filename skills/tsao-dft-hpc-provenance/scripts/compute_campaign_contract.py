@@ -26,12 +26,8 @@ ROOT_SCHEMA_MIRROR_PATH = REPOSITORY_ROOT / "templates" / "compute-qualification
 TEMPLATE_PATH = SKILL_ROOT / "templates" / "compute-qualification-campaign.yaml"
 CANONICAL_SCHEMA_VERSION = "1.1"
 LEGACY_SCHEMA_VERSION = "1.0"
-CANONICAL_SCHEMA_ID = (
-    "https://github.com/SUNHAOJUN22/TsaoDFT_skill/compute-qualification-campaign.schema.json"
-)
-LEGACY_SCHEMA_ID = (
-    "https://github.com/SUNHAOJUN22/TsaoDFT_skill/compute-qualification-campaign-v1.0.schema.json"
-)
+CANONICAL_SCHEMA_ID = "https://github.com/SUNHAOJUN22/TsaoDFT_skill/compute-qualification-campaign.schema.json"
+LEGACY_SCHEMA_ID = "https://github.com/SUNHAOJUN22/TsaoDFT_skill/compute-qualification-campaign-v1.0.schema.json"
 CANONICAL_CONTRACT = "canonical-compute-campaign-v1.1"
 LEGACY_CONTRACT = "legacy-compute-campaign-v1.0"
 NO_EVIDENCE_PROMOTION = "NO_EVIDENCE_PROMOTION"
@@ -250,10 +246,7 @@ def _legacy_to_canonical(record: dict[str, Any]) -> tuple[dict[str, Any], dict[s
         "engine": record["engine"],
         "participants": [
             {"candidate_id": reference, "role": "scientific-reference"},
-            *(
-                {"candidate_id": candidate_id, "role": "acceleration-candidate"}
-                for candidate_id in candidates
-            ),
+            *({"candidate_id": candidate_id, "role": "acceleration-candidate"} for candidate_id in candidates),
         ],
         "minimum_repeats": record["minimum_repeats"],
         "minimum_reference_over_candidate_ratio": record["minimum_reference_over_candidate_ratio"],
@@ -261,7 +254,9 @@ def _legacy_to_canonical(record: dict[str, Any]) -> tuple[dict[str, Any], dict[s
     }
     semantic_errors = _semantic_errors(canonical)
     if semantic_errors:
-        raise CampaignContractError(f"legacy compute campaign v1.0 semantic validation failed: {'; '.join(semantic_errors)}")
+        raise CampaignContractError(
+            f"legacy compute campaign v1.0 semantic validation failed: {'; '.join(semantic_errors)}"
+        )
     _validate_or_raise(canonical, canonical_schema(), "migrated canonical compute campaign v1.1")
     return canonical, {
         "source_contract": LEGACY_CONTRACT,
@@ -281,7 +276,9 @@ def normalize_campaign(record: dict[str, Any]) -> tuple[dict[str, Any], dict[str
     _validate_or_raise(canonical, canonical_schema(), "canonical compute campaign v1.1")
     semantic_errors = _semantic_errors(canonical)
     if semantic_errors:
-        raise CampaignContractError(f"canonical compute campaign v1.1 semantic validation failed: {'; '.join(semantic_errors)}")
+        raise CampaignContractError(
+            f"canonical compute campaign v1.1 semantic validation failed: {'; '.join(semantic_errors)}"
+        )
     return canonical, {
         "source_contract": CANONICAL_CONTRACT,
         "target_contract": CANONICAL_CONTRACT,
@@ -400,12 +397,7 @@ def _explicit_diagnostics(record: Any) -> list[str]:
     if isinstance(repeats, bool) or not isinstance(repeats, int) or repeats < 3:
         errors.append("minimum_repeats must be an integer >= 3")
     ratio = record.get("minimum_reference_over_candidate_ratio")
-    if (
-        isinstance(ratio, bool)
-        or not isinstance(ratio, (int, float))
-        or not math.isfinite(float(ratio))
-        or ratio <= 1
-    ):
+    if isinstance(ratio, bool) or not isinstance(ratio, (int, float)) or not math.isfinite(float(ratio)) or ratio <= 1:
         errors.append("minimum_reference_over_candidate_ratio must be finite and > 1")
     return errors
 

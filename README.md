@@ -36,6 +36,17 @@
 5. **技术感知不等于真实执行。** 注册表中理解 CUDA-X、ROCm、oneAPI、Metal，不代表库、硬件或兼容引擎构建已经使用。
 6. **没有真实求解器、许可证、固定输入、稳定硬件身份、科学容差和重复运行，就不发布加速比。** 外部资格保持 `EXTERNAL_HOLD`。
 
+## 能力等级不是宣传标签
+
+公开能力使用四级合同：
+
+- `L0_REFERENCE`：参考资料、模板或方法说明；不宣称可执行适配器。
+- `L1_HANDOFF`：能生成结构化交接物，但执行与科学验收仍由下游工具完成。
+- `L2_VALIDATED_ADAPTER`：适配器、Schema、严格输入边界和回归测试已经验证；它仍不等于在真实专业软件、许可证和目标硬件上完成执行。
+- `L3_EXECUTION_TESTED`：必须绑定真实 engine/version/site/run_id 与不可变 artifact SHA-256。HPC/加速 L3 还必须绑定 build/hardware、CPU reference、至少三次重复、数值等价、Parser 验收、性能政策、内容寻址 evidence root 和独立签名审查。
+
+当前仓库中的结构邻居核和 mmap Parser 是通过永久门的软件工件；它们不会自动把外部 VASP、QE、CP2K 或 Gaussian 能力提升到 `L3_EXECUTION_TESTED`。
+
 ## 30 秒看懂 TsaoDFT
 
 <table>

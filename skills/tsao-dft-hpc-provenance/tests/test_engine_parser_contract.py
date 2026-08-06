@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import tempfile
 import unittest
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 
 from jsonschema import Draft202012Validator, FormatChecker
 
@@ -96,6 +98,20 @@ class EngineParserContractTests(unittest.TestCase):
             self.assertEqual(result["fatal_marker"], "ABORT")
             self.assertFalse(result["parser_accepted"])
             self.assert_schema(result)
+
+    def test_loader_hash_and_finalize_compatibility_paths(self):
+        with patch.object(self.core.importlib.util, "spec_from_file_location", return_value=None):
+            with self.assertRaisesRegex(RuntimeError, "cannot import"):
+                self.core._load_scan_core()
+
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "artifact.out"
+            payload = b"abcdef"
+            path.write_bytes(payload)
+            expected = hashlib.sha256(payload).hexdigest()
+            self.assertEqual(self.core.sha256_file(path, chunk_size=2), expected)
+            result = self.core._finalize(self.core.base_result("vasp", path), path)
+            self.assertEqual(result["source_artifact"]["sha256"], expected)
 
 
 if __name__ == "__main__":

@@ -145,7 +145,7 @@ class ComputeContractEvidenceTests(unittest.TestCase):
         self.assertTrue(any("validator failed" in error for error in report["errors"]))
 
     def test_implementation_drift_is_unqualified(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
+        with tempfile.TemporaryDirectory(dir=ROOT) as directory:
             root = Path(directory)
             paths = dict(capture.IMPLEMENTATION_PATHS)
             paths["doctrine"] = root / "missing-doctrine.md"

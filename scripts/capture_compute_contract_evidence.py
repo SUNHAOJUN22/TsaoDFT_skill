@@ -90,11 +90,7 @@ def implementation_report(errors: list[str]) -> dict[str, Any]:
         errors.append("engine parser numeric extraction is not fail-closed for non-finite values")
 
     native_cmake = ROOT / "native" / "CMakeLists.txt"
-    cuda_sources = sorted(
-        path.relative_to(ROOT).as_posix()
-        for path in ROOT.rglob("*.cu")
-        if ".git" not in path.parts
-    )
+    cuda_sources = sorted(path.relative_to(ROOT).as_posix() for path in ROOT.rglob("*.cu") if ".git" not in path.parts)
     native_implemented = native_cmake.is_file()
     cuda_implemented = bool(cuda_sources)
 
@@ -122,7 +118,9 @@ def implementation_report(errors: list[str]) -> dict[str, Any]:
         "native_sidecar": {
             "implemented": native_implemented,
             "cmake_path": native_cmake.relative_to(ROOT).as_posix(),
-            "status": "PRESENT_REQUIRES_BUILD_AND_EQUIVALENCE_EVIDENCE" if native_implemented else "PROFILE_AND_BUILD_GATED",
+            "status": "PRESENT_REQUIRES_BUILD_AND_EQUIVALENCE_EVIDENCE"
+            if native_implemented
+            else "PROFILE_AND_BUILD_GATED",
         },
         "cuda_kernels": {
             "implemented": cuda_implemented,

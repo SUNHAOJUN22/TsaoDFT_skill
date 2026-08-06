@@ -68,7 +68,7 @@ class NeighborListTests(unittest.TestCase):
         for result in (numpy_result, cell_list):
             actual = [(pair.i, pair.j, pair.distance_angstrom) for pair in result.pairs]
             self.assertEqual([(i, j) for i, j, _ in actual], [(i, j) for i, j, _ in expected])
-            for (_, _, left), (_, _, right) in zip(expected, actual):
+            for (_, _, left), (_, _, right) in zip(expected, actual, strict=True):
                 self.assertAlmostEqual(left, right, places=12)
 
     def test_nonperiodic_backends_are_exactly_equivalent(self) -> None:

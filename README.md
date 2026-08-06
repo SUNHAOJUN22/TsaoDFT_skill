@@ -52,6 +52,17 @@ python scripts/quality_gate.py
   <img src="assets/demo/workflow-architecture.svg" width="100%" alt="TsaoDFT auditable research loop synthetic demonstration">
 </p>
 
+## 能力等级不是宣传标签
+
+公开能力使用四级证据合同：
+
+- `L0_REFERENCE`：参考资料、模板或方法说明；不宣称存在可执行适配器。
+- `L1_HANDOFF`：生成结构化交接物，但执行与科学验收仍由下游工具完成。
+- `L2_VALIDATED_ADAPTER`：适配器、Schema、严格输入边界和回归测试已经验证；它不等于已在真实授权专业软件、许可证和目标硬件上完成执行。
+- `L3_EXECUTION_TESTED`：必须绑定真实 `engine/version/site/run_id` 与不可变 artifact SHA-256。HPC 或加速 L3 还必须绑定 build/hardware identity、CPU reference、至少三次重复、数值等价、Parser 验收、性能政策、内容寻址 evidence root 和独立签名审查。
+
+当前仓库的 neighbor-list、mmap Parser、合同 validator 和 release acceptance 是永久门验证过的软件工件；它们不会自动把外部 Gaussian、VASP、QE 或 CP2K 提升为 `L3_EXECUTION_TESTED`。
+
 ## 数理核心：公式如何映射到代码合同
 
 这些公式用于解释工作流、校验项和证据边界；它们不是仓库已经执行出的科学结果。

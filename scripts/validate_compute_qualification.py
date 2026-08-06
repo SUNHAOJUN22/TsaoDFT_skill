@@ -14,15 +14,11 @@ from typing import Any, cast
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "skills" / "tsao-dft-hpc-provenance" / "scripts" / "qualify_compute_campaign.py"
 CONTRACT_PATH = ROOT / "skills" / "tsao-dft-hpc-provenance" / "scripts" / "benchmark_contract.py"
-CAMPAIGN_CONTRACT_PATH = (
-    ROOT / "skills" / "tsao-dft-hpc-provenance" / "scripts" / "compute_campaign_contract.py"
-)
+CAMPAIGN_CONTRACT_PATH = ROOT / "skills" / "tsao-dft-hpc-provenance" / "scripts" / "compute_campaign_contract.py"
 CAMPAIGN_SCHEMA_PATH = (
     ROOT / "skills" / "tsao-dft-hpc-provenance" / "templates" / "compute-qualification-campaign.schema.json"
 )
-CAMPAIGN_PATH = (
-    ROOT / "skills" / "tsao-dft-hpc-provenance" / "templates" / "compute-qualification-campaign.yaml"
-)
+CAMPAIGN_PATH = ROOT / "skills" / "tsao-dft-hpc-provenance" / "templates" / "compute-qualification-campaign.yaml"
 
 
 def load_module() -> ModuleType:
@@ -75,9 +71,7 @@ def validate() -> dict[str, Any]:
             errors.append("compute qualification does not declare canonical campaign v1.1")
         if hold_report.get("campaign_schema_version") != "1.1":
             errors.append("compute qualification campaign schema version is not 1.1")
-        if hold_report.get("contract_boundary") != (
-            "campaign-policy-independent-from-benchmark-result-evidence"
-        ):
+        if hold_report.get("contract_boundary") != ("campaign-policy-independent-from-benchmark-result-evidence"):
             errors.append("campaign and benchmark-result contracts are not explicitly independent")
         if hold_report.get("benchmark_result_contract") != "canonical-nested-v1.1":
             errors.append("compute qualification does not declare the canonical nested v1.1 contract")
@@ -100,9 +94,7 @@ def validate() -> dict[str, Any]:
             [],
             {"properties": {"schema_version": {"const": "9.9"}}},
         )
-        if custom_documents or not any(
-            "authoritative nested v1.1" in item for item in custom_errors
-        ):
+        if custom_documents or not any("authoritative nested v1.1" in item for item in custom_errors):
             errors.append("custom result schema input was not rejected from compute qualification")
 
         bypass = module.qualify(
@@ -119,19 +111,13 @@ def validate() -> dict[str, Any]:
             campaign_contract = policy.contract_report()
             if campaign_contract.get("ok") is not True:
                 errors.append("compute-campaign contract report failed")
-            if campaign_contract.get("canonical_contract") != (
-                "canonical-compute-campaign-v1.1"
-            ):
+            if campaign_contract.get("canonical_contract") != ("canonical-compute-campaign-v1.1"):
                 errors.append("campaign contract authority is not canonical v1.1")
             if campaign_contract.get("root_mirror_synchronized") is not True:
                 errors.append("root compute-campaign schema mirror is not synchronized")
-            if campaign_contract.get("migration_qualification_impact") != (
-                "NO_EVIDENCE_PROMOTION"
-            ):
+            if campaign_contract.get("migration_qualification_impact") != ("NO_EVIDENCE_PROMOTION"):
                 errors.append("legacy campaign migration impact is not non-promoting")
-            if campaign_contract.get("benchmark_result_contract_boundary") != (
-                "independent-canonical-nested-v1.1"
-            ):
+            if campaign_contract.get("benchmark_result_contract_boundary") != ("independent-canonical-nested-v1.1"):
                 errors.append("campaign contract boundary does not name benchmark-result independence")
 
             canonical_config = module.load_campaign_config(CAMPAIGN_PATH)
@@ -147,13 +133,9 @@ def validate() -> dict[str, Any]:
             legacy_migration = legacy_config.migration_dict()
             if legacy_config.schema_version != "1.1":
                 errors.append("legacy campaign did not migrate to canonical v1.1")
-            if legacy_migration.get("source_contract") != (
-                "legacy-compute-campaign-v1.0"
-            ):
+            if legacy_migration.get("source_contract") != ("legacy-compute-campaign-v1.0"):
                 errors.append("legacy campaign source contract is not explicit")
-            if legacy_migration.get("qualification_impact") != (
-                "NO_EVIDENCE_PROMOTION"
-            ):
+            if legacy_migration.get("qualification_impact") != ("NO_EVIDENCE_PROMOTION"):
                 errors.append("legacy campaign migration can promote evidence")
             if legacy_migration.get("defaults_applied") != []:
                 errors.append("legacy campaign migration applied defaults")
@@ -191,15 +173,10 @@ def validate() -> dict[str, Any]:
         if "contract.compute_qualification_view(" in source:
             errors.append("qualification workflow still calls compute_qualification_view")
         if "def compute_qualification_view" not in contract_source:
-            errors.append(
-                "legacy diagnostic projection was removed without a compatibility deprecation cycle"
-            )
+            errors.append("legacy diagnostic projection was removed without a compatibility deprecation cycle")
         if "normalized, _ = normalize_record(canonical)" not in contract_source:
             errors.append("legacy diagnostic projection no longer routes through central normalization")
-        if (
-            '"additionalProperties": false' not in campaign_schema_source
-            or "normalize_campaign" not in campaign_source
-        ):
+        if '"additionalProperties": false' not in campaign_schema_source or "normalize_campaign" not in campaign_source:
             errors.append("campaign contract is not closed and centrally normalized")
         if len(hold_report.get("identity_invariants") or []) < 7:
             errors.append("compute qualification identity invariants are incomplete")
@@ -215,15 +192,11 @@ def validate() -> dict[str, Any]:
         "campaign_schema_version": hold_report.get("campaign_schema_version"),
         "campaign_source_contract": hold_report.get("campaign_source_contract"),
         "campaign_migration": hold_report.get("campaign_migration"),
-        "campaign_migration_qualification_impact": hold_report.get(
-            "campaign_migration_qualification_impact"
-        ),
+        "campaign_migration_qualification_impact": hold_report.get("campaign_migration_qualification_impact"),
         "campaign_defaults_applied": hold_report.get("campaign_defaults_applied"),
         "campaign_evidence_fields_added": hold_report.get("campaign_evidence_fields_added"),
         "campaign_schema_sha256": campaign_contract.get("canonical_schema_sha256"),
-        "campaign_root_mirror_synchronized": campaign_contract.get(
-            "root_mirror_synchronized"
-        ),
+        "campaign_root_mirror_synchronized": campaign_contract.get("root_mirror_synchronized"),
         "campaign_unknown_or_mixed_input": "FAIL_CLOSED",
         "campaign_document_immutable": hold_report.get("campaign_document_immutable"),
         "contract_boundary": hold_report.get("contract_boundary"),

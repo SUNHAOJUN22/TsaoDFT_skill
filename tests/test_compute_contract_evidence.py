@@ -98,17 +98,12 @@ class ComputeContractEvidenceTests(unittest.TestCase):
         self.assertFalse(report["performance_ratio_published"])
         self.assertTrue(
             any(
-                "Campaign v1.0 migration" in item
-                and "creates no execution evidence" in item
+                "Campaign v1.0 migration" in item and "creates no execution evidence" in item
                 for item in report["non_claims"]
             )
         )
-        self.assertTrue(
-            any("No nested v1.0 semantic downgrade view" in item for item in report["non_claims"])
-        )
-        self.assertTrue(
-            any("remains diagnostic" in item for item in report["non_claims"])
-        )
+        self.assertTrue(any("No nested v1.0 semantic downgrade view" in item for item in report["non_claims"]))
+        self.assertTrue(any("remains diagnostic" in item for item in report["non_claims"]))
 
     def test_capture_is_deterministic(self) -> None:
         first = capture.build_report()

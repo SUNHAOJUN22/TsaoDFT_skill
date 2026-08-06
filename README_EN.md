@@ -36,6 +36,17 @@ The repository follows [`docs/ACCELERATION_ENGINEERING_DOCTRINE.md`](docs/ACCELE
 5. **Technology awareness is not execution evidence.** Understanding CUDA-X, ROCm, oneAPI or Metal does not prove that a library, device or compatible engine build was used.
 6. **No speedup is published without a real solver, license, fixed input, stable hardware identity, scientific tolerance and repeated runs.** External qualification remains `EXTERNAL_HOLD`.
 
+## Capability levels are evidence contracts
+
+Public capability statements use four levels:
+
+- `L0_REFERENCE`: reference material, templates or method guidance; no executable adapter claim.
+- `L1_HANDOFF`: produces a structured handoff, while execution and scientific acceptance remain downstream responsibilities.
+- `L2_VALIDATED_ADAPTER`: the adapter, Schema, strict input boundary and regression suite are validated; this is not proof of execution on a real licensed scientific engine or target device.
+- `L3_EXECUTION_TESTED`: must bind real engine/version/site/run_id and immutable artifact SHA-256. HPC or acceleration L3 additionally binds build/hardware identity, a CPU reference, at least three repeats, numerical equivalence, parser acceptance, performance policy, a content-addressed evidence root and independent signed review.
+
+The governed neighbor-search and mmap parser cores are permanently tested software artifacts. They do not automatically promote VASP, QE, CP2K or Gaussian to `L3_EXECUTION_TESTED`.
+
 ## TsaoDFT in 30 seconds
 
 <table>

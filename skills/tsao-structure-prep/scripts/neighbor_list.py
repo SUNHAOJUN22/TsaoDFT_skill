@@ -373,10 +373,7 @@ def nearest_pair_distance(
             sampled_pairs.add(tuple(sorted((int(order[0]), int(order[-1])))))
     sampled_pairs.add((0, 1))
 
-    upper = min(
-        _distance(points[i], points[j], box_matrix, inverse_box, periodic_axes)
-        for i, j in sampled_pairs
-    )
+    upper = min(_distance(points[i], points[j], box_matrix, inverse_box, periodic_axes) for i, j in sampled_pairs)
     if upper <= 0:
         return 0.0
     result = pairs_within_cutoff(

@@ -115,6 +115,10 @@ class EngineParserContractTests(unittest.TestCase):
             result = self.core._finalize(self.core.base_result("vasp", path), path)
             self.assertEqual(result["source_artifact"]["sha256"], expected)
 
+            missing = Path(temporary) / "missing.out"
+            result = self.core._finalize(self.core.base_result("vasp", missing), missing)
+            self.assertIsNone(result["source_artifact"]["sha256"])
+
         result = self.core._finalize(self.core.base_result("vasp", Path("missing")), object())
         self.assertIsNone(result["source_artifact"]["sha256"])
 

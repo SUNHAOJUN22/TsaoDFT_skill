@@ -16,13 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_DIR = ROOT / "skills" / "tsao-dft-hpc-provenance" / "scripts"
 CONTRACT_PATH = SCRIPT_DIR / "compute_campaign_contract.py"
 QUALIFICATION_PATH = SCRIPT_DIR / "qualify_compute_campaign.py"
-TEMPLATE_PATH = (
-    ROOT
-    / "skills"
-    / "tsao-dft-hpc-provenance"
-    / "templates"
-    / "compute-qualification-campaign.yaml"
-)
+TEMPLATE_PATH = ROOT / "skills" / "tsao-dft-hpc-provenance" / "templates" / "compute-qualification-campaign.yaml"
 SUPPORT_PATH = ROOT / "tests" / "test_compute_qualification.py"
 
 

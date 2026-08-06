@@ -87,7 +87,7 @@ class EngineScanCoreTests(unittest.TestCase):
                 start, end = bounds
                 self.assertEqual(artifact.data[start:end], b"BLOCK second line\nvalue\n")
                 self.assertIsNone(self.core.last_block(artifact.data, b"MISSING", b"END"))
-                self.assertEqual(self.core.decode(b"CP2K \xff"), "CP2K �")
+                self.assertEqual(self.core.decode(b"CP2K \xff"), "CP2K \ufffd")
                 self.assertIsNone(self.core.decode(None))
 
     def test_empty_marker_is_rejected(self) -> None:

@@ -31,7 +31,7 @@ class ComputeContractEvidenceTests(unittest.TestCase):
     def test_current_repository_is_machine_readable_external_hold(self) -> None:
         report = capture.build_report()
         self.assertTrue(report["ok"], report["errors"])
-        self.assertEqual(report["schema_version"], "1.4")
+        self.assertEqual(report["schema_version"], "1.5")
         self.assertEqual(report["state"], capture.EXTERNAL_HOLD)
         self.assertFalse(report["external_engine_invoked"])
         self.assertTrue(report["acceleration_registry"]["runtime_single_source"])
@@ -95,6 +95,30 @@ class ComputeContractEvidenceTests(unittest.TestCase):
         self.assertEqual(len(qualification["identity_invariants"]), 7)
         self.assertFalse(qualification["performance_evaluated"])
         self.assertEqual(qualification["workers_bounded_by"], 8)
+
+        architecture = report["implementation_architecture"]
+        self.assertEqual(architecture["doctrine"], "python-control-plane-profile-first")
+        self.assertTrue(architecture["python_control_plane"])
+        self.assertEqual(architecture["whole_repo_cpp_rewrite"], "NOT_RECOMMENDED")
+        self.assertTrue(architecture["neighbor_search"]["implemented"])
+        self.assertEqual(
+            architecture["neighbor_search"]["backends"],
+            ["reference", "numpy", "cell-list"],
+        )
+        self.assertFalse(architecture["neighbor_search"]["implicit_gpu_selection"])
+        self.assertEqual(
+            architecture["neighbor_search"]["qualification_impact"],
+            "NOT_PERFORMANCE_EVIDENCE",
+        )
+        self.assertTrue(architecture["parser_scan"]["implemented"])
+        self.assertEqual(architecture["parser_scan"]["transport"], "read-only-mmap")
+        self.assertEqual(architecture["parser_scan"]["nonfinite_numeric_input"], "FAIL_CLOSED")
+        self.assertFalse(architecture["native_sidecar"]["implemented"])
+        self.assertEqual(architecture["native_sidecar"]["status"], "PROFILE_AND_BUILD_GATED")
+        self.assertFalse(architecture["cuda_kernels"]["implemented"])
+        self.assertEqual(architecture["cuda_kernels"]["status"], "NOT_ESTABLISHED")
+        self.assertEqual(architecture["external_engine_acceleration"], capture.EXTERNAL_HOLD)
+
         self.assertFalse(report["performance_ratio_published"])
         self.assertTrue(
             any(
@@ -104,6 +128,8 @@ class ComputeContractEvidenceTests(unittest.TestCase):
         )
         self.assertTrue(any("No nested v1.0 semantic downgrade view" in item for item in report["non_claims"]))
         self.assertTrue(any("remains diagnostic" in item for item in report["non_claims"]))
+        self.assertTrue(any("neighbor-list and mmap parser" in item for item in report["non_claims"]))
+        self.assertTrue(any("No native sidecar or CUDA kernel" in item for item in report["non_claims"]))
 
     def test_capture_is_deterministic(self) -> None:
         first = capture.build_report()
@@ -117,6 +143,34 @@ class ComputeContractEvidenceTests(unittest.TestCase):
         self.assertFalse(report["ok"])
         self.assertEqual(report["state"], capture.UNQUALIFIED)
         self.assertTrue(any("validator failed" in error for error in report["errors"]))
+
+    def test_implementation_drift_is_unqualified(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = dict(capture.IMPLEMENTATION_PATHS)
+            paths["doctrine"] = root / "missing-doctrine.md"
+            paths["neighbor_core"] = root / "broken-neighbor.py"
+            paths["neighbor_core"].write_text("pass\n", encoding="utf-8")
+            paths["structure_inspector"] = root / "broken-inspector.py"
+            paths["structure_inspector"].write_text("pass\n", encoding="utf-8")
+            paths["scan_core"] = root / "broken-scan.py"
+            paths["scan_core"].write_text("pass\n", encoding="utf-8")
+            paths["parser_contract"] = root / "broken-parser.py"
+            paths["parser_contract"].write_text("pass\n", encoding="utf-8")
+            with patch.object(capture, "IMPLEMENTATION_PATHS", paths):
+                report = capture.build_report()
+        self.assertFalse(report["ok"])
+        self.assertEqual(report["state"], capture.UNQUALIFIED)
+        rendered = " ".join(report["errors"])
+        for expected in (
+            "cannot read acceleration doctrine",
+            "neighbor-search core",
+            "structure inspector",
+            "engine scan core",
+            "do not all consume",
+            "not fail-closed",
+        ):
+            self.assertIn(expected, rendered)
 
     def test_semantic_campaign_and_projection_contract_drift_is_unqualified(self) -> None:
         reports = {
@@ -215,7 +269,7 @@ class ComputeContractEvidenceTests(unittest.TestCase):
             stdout = json.loads(completed.stdout)
             written = json.loads(output.read_text(encoding="utf-8"))
             self.assertEqual(stdout, written)
-            self.assertEqual(written["schema_version"], "1.4")
+            self.assertEqual(written["schema_version"], "1.5")
             self.assertEqual(written["state"], capture.EXTERNAL_HOLD)
 
 

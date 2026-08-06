@@ -343,6 +343,8 @@ def thaw_tree(value: Any) -> Any:
 class CampaignVersion(str):
     """String-compatible schema version carrying validated migration metadata."""
 
+    campaign_migration: dict[str, Any]
+
     def __new__(cls, value: str, migration: dict[str, Any]) -> CampaignVersion:
         instance = cast(CampaignVersion, super().__new__(cls, value))
         instance.campaign_migration = migration
@@ -352,14 +354,7 @@ class CampaignVersion(str):
 def _validated_migration(value: Any) -> dict[str, Any]:
     if type(value) is not dict:
         raise CampaignContractError("campaign migration metadata must be a mapping")
-    expected = {
-        "source_contract",
-        "target_contract",
-        "migration",
-        "qualification_impact",
-        "defaults_applied",
-        "evidence_fields_added",
-    }
+    expected = {"source_contract", "target_contract", "migration", "qualification_impact", "defaults_applied", "evidence_fields_added"}
     if set(value) != expected:
         raise CampaignContractError("campaign migration metadata fields are invalid")
     if value.get("target_contract") != CANONICAL_CONTRACT:

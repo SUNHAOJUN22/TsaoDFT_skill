@@ -261,16 +261,23 @@ def ci_contract(errors: list[str]) -> dict[str, Any]:
 
 
 def validate_public_acceptance_text(errors: list[str]) -> None:
-    required = (SOFTWARE_READY, EXTERNAL_HOLD, "release-acceptance.json")
-    for path in (*README_PATHS, ACCEPTANCE_DOC_PATH):
+    for path in README_PATHS:
         try:
             text = path.read_text(encoding="utf-8")
         except (OSError, UnicodeError) as exc:
             errors.append(f"cannot read acceptance text {path.name}: {exc}")
             continue
-        for token in required:
-            if token not in text:
-                errors.append(f"{path.name} does not explain acceptance token: {token}")
+        if EXTERNAL_HOLD not in text:
+            errors.append(f"{path.name} does not preserve the EXTERNAL_HOLD public boundary")
+
+    try:
+        acceptance_text = ACCEPTANCE_DOC_PATH.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as exc:
+        errors.append(f"cannot read acceptance text {ACCEPTANCE_DOC_PATH.name}: {exc}")
+        return
+    for token in (SOFTWARE_READY, EXTERNAL_HOLD, "release-acceptance.json"):
+        if token not in acceptance_text:
+            errors.append(f"{ACCEPTANCE_DOC_PATH.name} does not explain acceptance token: {token}")
 
 
 def schema_failures(report: dict[str, Any]) -> list[str]:

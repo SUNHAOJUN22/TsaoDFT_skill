@@ -131,9 +131,7 @@ def _exact_minimum_image_single(
         shift = np.asarray(values, dtype=np.float64)
         residual = delta - shift @ basis
         squared = float(np.dot(residual, residual))
-        if squared < best_squared - tolerance or (
-            abs(squared - best_squared) <= tolerance and values < best_shift
-        ):
+        if squared < best_squared - tolerance or (abs(squared - best_squared) <= tolerance and values < best_shift):
             best = residual
             best_squared = squared
             best_shift = values

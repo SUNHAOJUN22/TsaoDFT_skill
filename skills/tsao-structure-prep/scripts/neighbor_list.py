@@ -125,17 +125,15 @@ def _exact_minimum_image_single(
         raise ValueError("exact minimum-image search exceeds the bounded candidate limit")
 
     best_shift = initial_shift
-    tolerance = max(1e-24, best_squared * 1e-14)
     ranges = (range(low, high + 1) for low, high in zip(lower, upper, strict=True))
     for values in itertools.product(*ranges):
         shift = np.asarray(values, dtype=np.float64)
         residual = delta - shift @ basis
         squared = float(np.dot(residual, residual))
-        if squared < best_squared - tolerance or (abs(squared - best_squared) <= tolerance and values < best_shift):
+        if squared < best_squared or (squared == best_squared and values < best_shift):
             best = residual
             best_squared = squared
             best_shift = values
-            tolerance = max(1e-24, best_squared * 1e-14)
     return best
 
 

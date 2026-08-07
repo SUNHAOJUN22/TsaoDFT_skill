@@ -145,6 +145,31 @@ class NeighborListTests(unittest.TestCase):
                 )
                 self.assertAlmostEqual(nearest, brute, places=12)
 
+        near_half_box = np.asarray(
+            [
+                [1.0, 0.0, 0.0],
+                [0.1, 1.0, 0.0],
+                [0.0, 0.0, 1.0],
+            ]
+        )
+        near_half_coordinates = np.asarray(
+            [
+                [0.0, 0.0, 0.0],
+                [0.500000000000001, 0.0, 0.0],
+            ]
+        )
+        for backend in ("reference", "numpy", "cell-list"):
+            with self.subTest(near_half_backend=backend):
+                result = self.neighbors.pairs_within_cutoff(
+                    near_half_coordinates,
+                    0.5,
+                    box=near_half_box,
+                    periodic=(True, False, False),
+                    backend=backend,
+                )
+                self.assertEqual([(pair.i, pair.j) for pair in result.pairs], [(0, 1)])
+                self.assertLess(result.pairs[0].distance_angstrom, 0.5)
+
     def test_cell_list_reduces_sparse_candidate_evaluations(self) -> None:
         axis = np.arange(0.0, 200.0, 2.0)
         coordinates = np.column_stack((axis, np.zeros_like(axis), np.zeros_like(axis)))

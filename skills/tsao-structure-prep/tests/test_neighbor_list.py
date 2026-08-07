@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import itertools
 import json
 import subprocess
 import sys
@@ -94,6 +95,55 @@ class NeighborListTests(unittest.TestCase):
         for periodic in (True, (True, False, True)):
             with self.subTest(periodic=periodic):
                 self.assert_equivalent(coordinates, 1.4, box=box, periodic=periodic)
+
+    def test_skewed_triclinic_uses_true_closest_lattice_image(self) -> None:
+        box = np.asarray(
+            [
+                [5.0, 0.0, 0.0],
+                [1.13077409, 5.0, 0.0],
+                [-1.13995997, 4.87265737, 5.0],
+            ]
+        )
+        fractional = np.asarray([0.96167068, 0.37108397, 0.30091855])
+        coordinates = np.vstack([np.zeros(3), fractional @ box])
+        delta = coordinates[1] - coordinates[0]
+        cases = (
+            (True, (0, 1, 2)),
+            ((True, True, False), (0, 1)),
+        )
+        for periodic, axes in cases:
+            with self.subTest(periodic=periodic):
+                distances: list[float] = []
+                for values in itertools.product(range(-2, 3), repeat=len(axes)):
+                    shift = np.zeros(3)
+                    for axis, value in zip(axes, values, strict=True):
+                        shift[axis] = value
+                    distances.append(float(np.linalg.norm(delta - shift @ box)))
+                brute = min(distances)
+
+                rounded = fractional.copy()
+                for axis in axes:
+                    rounded[axis] -= np.rint(rounded[axis])
+                rounded_distance = float(np.linalg.norm(rounded @ box))
+                self.assertGreater(rounded_distance, 3.0)
+                self.assertLess(brute, 3.0)
+
+                for backend in ("reference", "numpy", "cell-list"):
+                    result = self.neighbors.pairs_within_cutoff(
+                        coordinates,
+                        3.0,
+                        box=box,
+                        periodic=periodic,
+                        backend=backend,
+                    )
+                    self.assertEqual([(pair.i, pair.j) for pair in result.pairs], [(0, 1)])
+                    self.assertAlmostEqual(result.pairs[0].distance_angstrom, brute, places=12)
+                nearest = self.neighbors.nearest_pair_distance(
+                    coordinates,
+                    box=box,
+                    periodic=periodic,
+                )
+                self.assertAlmostEqual(nearest, brute, places=12)
 
     def test_cell_list_reduces_sparse_candidate_evaluations(self) -> None:
         axis = np.arange(0.0, 200.0, 2.0)

@@ -109,7 +109,7 @@ def _exact_minimum_image_single(
     continuous_shift = np.linalg.lstsq(basis.T, delta, rcond=None)[0]
     if not np.isfinite(continuous_shift).all():
         raise ValueError("periodic minimum-image projection must be finite")
-    initial_shift = tuple(int(round(float(value))) for value in continuous_shift)
+    initial_shift = tuple(round(float(value)) for value in continuous_shift)
     initial_vector = np.asarray(initial_shift, dtype=np.float64)
     perpendicular = delta - continuous_shift @ basis
     best = delta - initial_vector @ basis

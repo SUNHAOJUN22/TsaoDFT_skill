@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-629%20passing-16A34A" alt="629 tests passing">
+  <img src="https://img.shields.io/badge/tests-630%20passing-16A34A" alt="630 tests passing">
   <img src="https://img.shields.io/badge/quality%20gates-29%2F29-16A34A" alt="29 of 29 quality gates">
   <img src="https://img.shields.io/badge/software-SOFTWARE__ACCEPTANCE__READY-16A34A" alt="Software acceptance ready">
   <img src="https://img.shields.io/badge/external%20qualification-EXTERNAL__HOLD-B45309" alt="External qualification EXTERNAL HOLD">
@@ -123,23 +123,36 @@ $$
 
 ### 5. 周期 minimum-image 与 cell-list
 
-令分数坐标差为 $\Delta\mathbf s=\mathbf s_j-\mathbf s_i$，周期轴上执行：
+代码采用 NumPy **行向量**约定：晶格基矢是 $\mathbf H$ 的行，笛卡尔位移满足 $\Delta\mathbf r=\Delta\mathbf s\mathbf H$。对任意三斜胞，逐分量 `round()` 只在正交盒等特殊情形保证最近周期像；通用定义必须在启用周期轴集合 $\mathcal P$ 上求最近格点：
 
 $$
-\Delta\mathbf s_{\mathrm{MIC}}=\Delta\mathbf s-\operatorname{round}(\Delta\mathbf s),
+\mathbf n^\star=
+\operatorname*{arg\,min}_{\mathbf n\in\mathbb Z_{\mathcal P}}
+\left\|\Delta\mathbf r-\mathbf n\mathbf H\right\|_2,
 \qquad
-\Delta\mathbf r=\mathbf H\Delta\mathbf s_{\mathrm{MIC}},
-\qquad
-d_{ij}=\lVert\Delta\mathbf r\rVert_2.
+\Delta\mathbf r_{\mathrm{MIC}}
+=\Delta\mathbf r-\mathbf n^\star\mathbf H.
 $$
 
-全对参考复杂度为 $O(N^2)$；有限密度和固定 cutoff 下，cell-list 的平均候选复杂度接近：
+对于正交盒，上式退化为快速路径：
+
+$$
+\Delta\mathbf s_{\mathrm{MIC}}
+=\Delta\mathbf s-\operatorname{round}_{\mathcal P}(\Delta\mathbf s),
+\qquad
+\Delta\mathbf r_{\mathrm{MIC}}
+=\Delta\mathbf s_{\mathrm{MIC}}\mathbf H,
+\qquad
+d_{ij}=\lVert\Delta\mathbf r_{\mathrm{MIC}}\rVert_2.
+$$
+
+`neighbor_list.py` 对倾斜晶胞使用有界最近格点枚举，并以 `MAX_MINIMUM_IMAGE_CANDIDATES` 对病态晶胞实施资源上限；超过上限时失败关闭，而不是退回可能错误的逐分量舍入。全对参考复杂度为 $O(N^2)$；有限密度和固定 cutoff 下，cell-list 的平均候选复杂度接近：
 
 $$
 O\!\left(N+N\,\bar n_{\mathrm{cell}}\right),
 $$
 
-其中 $\bar n_{\mathrm{cell}}$ 是局部相邻网格候选数。`neighbor_list.py` 的 `reference`、`numpy`、`cell-list` 必须返回相同、确定性排序的 pair 集合。
+其中 $\bar n_{\mathrm{cell}}$ 是局部相邻网格候选数。`reference`、`numpy`、`cell-list` 必须返回相同、确定性排序的 pair 集合。
 
 ### 6. 数值等价、容差与性能资格
 
@@ -356,7 +369,7 @@ PowerShell：
 pwsh -NoProfile -File .\scripts\quality_gate.ps1
 ```
 
-永久 CI 必须通过：Python 3.10、3.12、3.13、Windows PowerShell、dependency audit + CycloneDX SBOM、CodeQL、29/29 repository quality stages、629 tests / 9 suites。
+永久 CI 必须通过：Python 3.10、3.12、3.13、Windows PowerShell、dependency audit + CycloneDX SBOM、CodeQL、29/29 repository quality stages、630 tests / 9 suites。
 
 当前软件基线证明仓库工件通过测试；它不证明外部 DFT 引擎已经运行或获得加速。外部资格继续为 `EXTERNAL_HOLD`。
 

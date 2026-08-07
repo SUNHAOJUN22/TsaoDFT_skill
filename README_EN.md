@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-629%20passing-16A34A" alt="629 tests passing">
+  <img src="https://img.shields.io/badge/tests-630%20passing-16A34A" alt="630 tests passing">
   <img src="https://img.shields.io/badge/quality%20gates-29%2F29-16A34A" alt="29 of 29 quality gates">
   <img src="https://img.shields.io/badge/software-SOFTWARE__ACCEPTANCE__READY-16A34A" alt="Software acceptance ready">
   <img src="https://img.shields.io/badge/external%20qualification-EXTERNAL__HOLD-B45309" alt="External qualification EXTERNAL HOLD">
@@ -123,23 +123,36 @@ k-point meshes, cutoff energy, smearing, pseudopotentials, magnetism and superce
 
 ### 5. Periodic minimum image and cell lists
 
-For fractional-coordinate difference $\Delta\mathbf s=\mathbf s_j-\mathbf s_i$:
+The implementation uses NumPy **row-vector** convention: lattice vectors are rows of $\mathbf H$, so Cartesian displacements satisfy $\Delta\mathbf r=\Delta\mathbf s\mathbf H$. For a general triclinic cell, component-wise `round()` is guaranteed to select the closest periodic image only in special cases such as orthogonal boxes. The general definition is a closest-lattice-point problem over the enabled periodic axes $\mathcal P$:
 
 $$
-\Delta\mathbf s_{\mathrm{MIC}}=\Delta\mathbf s-\operatorname{round}(\Delta\mathbf s),
+\mathbf n^\star=
+\operatorname*{arg\,min}_{\mathbf n\in\mathbb Z_{\mathcal P}}
+\left\|\Delta\mathbf r-\mathbf n\mathbf H\right\|_2,
 \qquad
-\Delta\mathbf r=\mathbf H\Delta\mathbf s_{\mathrm{MIC}},
-\qquad
-d_{ij}=\lVert\Delta\mathbf r\rVert_2.
+\Delta\mathbf r_{\mathrm{MIC}}
+=\Delta\mathbf r-\mathbf n^\star\mathbf H.
 $$
 
-The all-pairs reference is $O(N^2)$. At finite density and fixed cutoff, the average cell-list candidate cost approaches
+For orthogonal boxes, that reduces to the fast path
+
+$$
+\Delta\mathbf s_{\mathrm{MIC}}
+=\Delta\mathbf s-\operatorname{round}_{\mathcal P}(\Delta\mathbf s),
+\qquad
+\Delta\mathbf r_{\mathrm{MIC}}
+=\Delta\mathbf s_{\mathrm{MIC}}\mathbf H,
+\qquad
+d_{ij}=\lVert\Delta\mathbf r_{\mathrm{MIC}}\rVert_2.
+$$
+
+`neighbor_list.py` uses a bounded closest-lattice enumeration for skewed cells and enforces `MAX_MINIMUM_IMAGE_CANDIDATES` as a resource ceiling; pathological cells fail closed instead of falling back to an incorrect component-wise rounding approximation. The all-pairs reference is $O(N^2)$. At finite density and fixed cutoff, the average cell-list candidate cost approaches
 
 $$
 O\!\left(N+N\,\bar n_{\mathrm{cell}}\right).
 $$
 
-`neighbor_list.py` requires the `reference`, `numpy` and `cell-list` backends to return the same deterministically ordered pair set.
+The `reference`, `numpy` and `cell-list` backends must return the same deterministically ordered pair set.
 
 ### 6. Numerical equivalence, tolerances and performance qualification
 
@@ -356,7 +369,7 @@ PowerShell:
 pwsh -NoProfile -File .\scripts\quality_gate.ps1
 ```
 
-Permanent CI must pass Python 3.10/3.12/3.13, Windows PowerShell, dependency audit + CycloneDX SBOM, CodeQL, 29/29 repository quality stages and 629 tests / 9 suites.
+Permanent CI must pass Python 3.10/3.12/3.13, Windows PowerShell, dependency audit + CycloneDX SBOM, CodeQL, 29/29 repository quality stages and 630 tests / 9 suites.
 
 The software baseline proves repository artifacts passed validation. It does not prove that an external DFT engine was executed or accelerated. External qualification remains `EXTERNAL_HOLD`.
 

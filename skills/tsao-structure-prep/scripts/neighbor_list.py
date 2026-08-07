@@ -3,7 +3,7 @@
 
 The module is a geometry acceleration layer, not electronic-structure evidence.
 It supports non-periodic coordinates and full or partial periodicity in
-orthogonal or triclinic cells. All backends use the same minimum-image
+orthogonal or triclinic cells. All backends use the same exact minimum-image
 definition and return lexicographically ordered zero-based pairs.
 """
 
@@ -20,6 +20,8 @@ import numpy as np
 BACKENDS = ("auto", "reference", "numpy", "cell-list")
 AUTO_CELL_LIST_ATOMS = 2048
 BOX_DETERMINANT_EPSILON = 1e-12
+MAX_MINIMUM_IMAGE_CANDIDATES = 100_000
+MIC_BOUND_EPSILON = 1e-12
 
 
 @dataclass(frozen=True)
@@ -83,6 +85,62 @@ def _cutoff(value: Any) -> float:
     return cutoff
 
 
+def _orthogonal_box(box: np.ndarray) -> bool:
+    gram = box @ box.T
+    diagonal = np.diag(np.diag(gram))
+    scale = max(1.0, float(np.max(np.abs(np.diag(gram)))))
+    return bool(np.allclose(gram, diagonal, rtol=0.0, atol=1e-12 * scale))
+
+
+def _exact_minimum_image_single(
+    delta: np.ndarray,
+    box: np.ndarray,
+    periodic: tuple[bool, bool, bool],
+) -> np.ndarray:
+    periodic_axes = tuple(axis for axis, enabled in enumerate(periodic) if enabled)
+    basis = box[list(periodic_axes), :]
+    singular_values = np.linalg.svd(basis, compute_uv=False)
+    sigma_max = float(singular_values[0])
+    sigma_min = float(singular_values[-1])
+    singular_limit = np.finfo(np.float64).eps * max(1.0, sigma_max) * 64.0
+    if not math.isfinite(sigma_min) or sigma_min <= singular_limit:
+        raise ValueError("periodic box basis is numerically singular")
+
+    continuous_shift = np.linalg.lstsq(basis.T, delta, rcond=None)[0]
+    if not np.isfinite(continuous_shift).all():
+        raise ValueError("periodic minimum-image projection must be finite")
+    initial_shift = tuple(int(round(float(value))) for value in continuous_shift)
+    initial_vector = np.asarray(initial_shift, dtype=np.float64)
+    perpendicular = delta - continuous_shift @ basis
+    best = delta - initial_vector @ basis
+    best_squared = float(np.dot(best, best))
+    perpendicular_squared = float(np.dot(perpendicular, perpendicular))
+
+    movable_squared = max(0.0, best_squared - perpendicular_squared)
+    radius = math.nextafter(math.sqrt(movable_squared) / sigma_min, math.inf) + MIC_BOUND_EPSILON
+    lower = tuple(math.floor(float(value) - radius) for value in continuous_shift)
+    upper = tuple(math.ceil(float(value) + radius) for value in continuous_shift)
+    candidate_count = math.prod(high - low + 1 for low, high in zip(lower, upper, strict=True))
+    if candidate_count > MAX_MINIMUM_IMAGE_CANDIDATES:
+        raise ValueError("exact minimum-image search exceeds the bounded candidate limit")
+
+    best_shift = initial_shift
+    tolerance = max(1e-24, best_squared * 1e-14)
+    ranges = (range(low, high + 1) for low, high in zip(lower, upper, strict=True))
+    for values in itertools.product(*ranges):
+        shift = np.asarray(values, dtype=np.float64)
+        residual = delta - shift @ basis
+        squared = float(np.dot(residual, residual))
+        if squared < best_squared - tolerance or (
+            abs(squared - best_squared) <= tolerance and values < best_shift
+        ):
+            best = residual
+            best_squared = squared
+            best_shift = values
+            tolerance = max(1e-24, best_squared * 1e-14)
+    return best
+
+
 def _minimum_image(
     delta: np.ndarray,
     box: np.ndarray | None,
@@ -91,11 +149,22 @@ def _minimum_image(
 ) -> np.ndarray:
     if box is None or inverse_box is None or not any(periodic):
         return delta
-    fractional = delta @ inverse_box
-    for axis, enabled in enumerate(periodic):
-        if enabled:
-            fractional[..., axis] -= np.rint(fractional[..., axis])
-    return fractional @ box
+
+    if _orthogonal_box(box):
+        fractional = delta @ inverse_box
+        for axis, enabled in enumerate(periodic):
+            if enabled:
+                fractional[..., axis] -= np.rint(fractional[..., axis])
+        return fractional @ box
+
+    array = np.asarray(delta, dtype=np.float64)
+    if array.shape == (3,):
+        return _exact_minimum_image_single(array, box, periodic)
+    flat = array.reshape((-1, 3))
+    if len(flat) == 0:
+        return array.copy()
+    reduced = np.vstack([_exact_minimum_image_single(vector, box, periodic) for vector in flat])
+    return reduced.reshape(array.shape)
 
 
 def _distance(

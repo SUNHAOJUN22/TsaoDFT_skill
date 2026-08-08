@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   stage-1:
-    if: github.event.issue.number == 12 && github.event.comment.body == '/run-six-hour-active-v1'
+    if: github.event.issue.number == 12 && github.event.comment.body == '/run-six-hour-active-v2'
     runs-on: ubuntu-24.04
     timeout-minutes: 210
     outputs:
@@ -81,7 +81,7 @@ jobs:
           TESTED_SHA: "${{ steps.target.outputs.tested_sha }}"
         run: |
           set -euo pipefail
-          mkdir -p six-hour-evidence
+          mkdir -p "$RUNNER_TEMP/six-hour-evidence"
           python - <<'PY'
           import json
           import os
@@ -89,7 +89,7 @@ jobs:
           import time
           from pathlib import Path
 
-          evidence_dir = Path("six-hour-evidence")
+          evidence_dir = Path(os.environ["RUNNER_TEMP"]) / "six-hour-evidence"
           stage = int(os.environ["STAGE_NUMBER"])
           active_ns = int(os.environ["ACTIVE_INITIAL_NS"])
           target_ns = int(os.environ["ACTIVE_TARGET_NS"])
@@ -165,13 +165,13 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: TsaoDFT-six-hour-stage-1-${{ github.run_id }}
-          path: six-hour-evidence/
+          path: ${{ runner.temp }}/six-hour-evidence/
           if-no-files-found: error
           retention-days: 30
 
   stage-2:
     needs: stage-1
-    if: github.event.issue.number == 12 && github.event.comment.body == '/run-six-hour-active-v1'
+    if: github.event.issue.number == 12 && github.event.comment.body == '/run-six-hour-active-v2'
     runs-on: ubuntu-24.04
     timeout-minutes: 300
     outputs:
@@ -218,7 +218,7 @@ jobs:
           TESTED_SHA: "${{ needs.stage-1.outputs.tested_sha }}"
         run: |
           set -euo pipefail
-          mkdir -p six-hour-evidence
+          mkdir -p "$RUNNER_TEMP/six-hour-evidence"
           python - <<'PY'
           import json
           import os
@@ -226,7 +226,7 @@ jobs:
           import time
           from pathlib import Path
 
-          evidence_dir = Path("six-hour-evidence")
+          evidence_dir = Path(os.environ["RUNNER_TEMP"]) / "six-hour-evidence"
           stage = int(os.environ["STAGE_NUMBER"])
           active_ns = int(os.environ["ACTIVE_INITIAL_NS"])
           target_ns = int(os.environ["ACTIVE_TARGET_NS"])
@@ -302,13 +302,13 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: TsaoDFT-six-hour-stage-2-${{ github.run_id }}
-          path: six-hour-evidence/
+          path: ${{ runner.temp }}/six-hour-evidence/
           if-no-files-found: error
           retention-days: 30
 
   duration-gate:
     needs: [stage-1, stage-2]
-    if: always() && github.event.issue.number == 12 && github.event.comment.body == '/run-six-hour-active-v1'
+    if: always() && github.event.issue.number == 12 && github.event.comment.body == '/run-six-hour-active-v2'
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:

@@ -21,6 +21,17 @@
 
 > **AI图像声明｜AI-GENERATED CONCEPTUAL ILLUSTRATION：** 唯一 AI 封面与 AI-assisted SVG 只表达系统结构、数理合同和使用策略。分子、晶格、轨道、能带、势能面、服务器与界面都不是 Gaussian、VASP、Quantum ESPRESSO、CP2K、Multiwfn、VMD 或实验产生的数据。所有技术图均标注 `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`；定量结论只能来自通过验收的输入、输出、Parser、哈希与机器证据。
 
+<!-- LOCALIZED_VISION_ZH:START -->
+## 中文项目愿景图：从 Kohn–Sham 方程到材料与分子证据链
+
+<p align="center">
+  <img src="docs/localized-vision/tsao-dft-vision-zh.svg" width="100%" alt="TsaoDFT 中文第一性原理工作流与数理证据架构">
+</p>
+
+> 图中公式用于解释代码中的方法身份、周期几何、Parser、SCF 与证据门；图不是电子密度、能带、轨道或真实 DFT 计算结果。
+
+<!-- LOCALIZED_VISION_ZH:END -->
+
 <p align="center">
   <img src="assets/ai/hero/tsao-dft-hero.svg" width="100%" alt="TsaoDFT evidence-first DFT research operating system conceptual overview">
 </p>

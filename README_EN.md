@@ -21,6 +21,17 @@
 
 > **AI image declaration | AI-GENERATED CONCEPTUAL ILLUSTRATION:** The governed AI cover and AI-assisted SVGs communicate system architecture, mathematical contracts and usage strategy only. Molecules, lattices, orbitals, bands, energy surfaces, servers and interfaces are not data produced by Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD or experiments. Every technical figure is labelled `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`; quantitative claims must come from accepted inputs, outputs, parsers, hashes and machine evidence.
 
+<!-- LOCALIZED_VISION_EN:START -->
+## Project vision: from Kohn–Sham equations to molecular and materials evidence
+
+<p align="center">
+  <img src="docs/localized-vision/tsao-dft-vision-en.svg" width="100%" alt="TsaoDFT English first-principles workflow and mathematical evidence architecture">
+</p>
+
+> The equations explain method identity, periodic geometry, parsing, SCF and evidence gates in the code. The figure is not electron density, a band structure, an orbital or a real DFT result.
+
+<!-- LOCALIZED_VISION_EN:END -->
+
 <p align="center">
   <img src="assets/ai/hero/tsao-dft-hero.svg" width="100%" alt="TsaoDFT evidence-first DFT research operating system conceptual overview">
 </p>

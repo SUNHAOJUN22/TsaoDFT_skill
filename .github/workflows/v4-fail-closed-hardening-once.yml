@@ -1,0 +1,142 @@
+name: V4 fail-closed hardening once
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: v4-fail-closed-hardening-once
+  cancel-in-progress: false
+
+jobs:
+  harden:
+    if: >-
+      github.event.issue.pull_request == null &&
+      github.event.comment.user.login == github.repository_owner &&
+      contains(github.event.comment.body, '/v4-fail-closed-hardening')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+            constraints/py312.txt
+      - name: Install constrained validation environment
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -c constraints/py312.txt -r requirements-dev.txt
+          python -m pip check
+      - name: Convert delayed and best-effort failures into direct failures
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('.github/workflows/ci.yml')
+          text = path.read_text(encoding='utf-8')
+
+          def replace_once(pattern: str, replacement: str, label: str) -> None:
+              global text
+              updated, count = re.subn(pattern, replacement, text, count=1, flags=re.DOTALL)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected one match, found {count}')
+              text = updated
+
+          replace_once(
+              r"      - name: Capture complete quality gate\n.*?(?=      - name: Upload failure log)",
+              """      - name: Run complete quality gate\n        shell: bash\n        run: |\n          set -euo pipefail\n          python scripts/quality_gate.py 2>&1 | tee quality-gate.log\n\n""",
+              'Linux quality capture',
+          )
+          text = text.replace(
+              "        if: always() && steps.gate.outputs.exit_code != '0'\n",
+              "        if: failure()\n",
+              1,
+          )
+          replace_once(
+              r"\n      - name: Publish best-effort compatibility summary\n.*?\n  windows-control-plane:",
+              "\n  windows-control-plane:",
+              'Linux best-effort status block',
+          )
+          replace_once(
+              r"      - name: Capture complete PowerShell quality gate\n.*?(?=      - name: Upload Windows control-plane evidence)",
+              """      - name: Run complete PowerShell quality gate\n        shell: pwsh\n        run: |\n          $pwsh = (Get-Command -Name \"pwsh\" -CommandType Application -ErrorAction Stop).Source\n          & $pwsh -NoProfile -File \".\\scripts\\quality_gate.ps1\" *>&1 |\n            Tee-Object -FilePath \"windows-quality-gate.log\"\n          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\n\n""",
+              'Windows quality capture',
+          )
+          replace_once(
+              r"\n      - name: Publish best-effort Windows compatibility summary\n.*?\n  supply-chain:",
+              "\n  supply-chain:",
+              'Windows best-effort status block',
+          )
+          replace_once(
+              r"      - name: Capture all dependency audits and SBOM\n.*?(?=      - name: Upload supply-chain evidence)",
+              """      - name: Run dependency audits and generate SBOM\n        shell: bash\n        run: |\n          set -euo pipefail\n          python -m pip_audit -r requirements.txt --format json --output pip-audit-runtime.json\n          python -m pip_audit -r requirements-dev.txt --format json --output pip-audit-development.json\n          python -m pip_audit --no-deps -r constraints/py312.txt --format json --output pip-audit-locked.json\n          python -m pip_audit --no-deps -r constraints/py312.txt --format cyclonedx-json --output sbom.cdx.json\n          for report in pip-audit-runtime.json pip-audit-development.json pip-audit-locked.json sbom.cdx.json; do\n            test -s \"$report\"\n          done\n\n""",
+              'supply-chain capture',
+          )
+          replace_once(
+              r"\n      - name: Fail job when an audit or SBOM command fails\n.*?\n  codeql:",
+              "\n  codeql:",
+              'delayed supply-chain failure block',
+          )
+          for forbidden in (
+              'continue-on-error:',
+              'set +e',
+              'steps.gate.outputs',
+              'steps.windows-gate.outputs',
+              'steps.audit.outputs',
+          ):
+              if forbidden in text:
+                  raise SystemExit(f'forbidden delayed-failure construct remains: {forbidden}')
+          path.write_text(text, encoding='utf-8', newline='\n')
+          PY
+          rm .github/workflows/v4-fail-closed-hardening-once.yml
+          git diff --check
+      - name: Create exact controller-free candidate
+        id: candidate
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A .github/workflows/ci.yml .github/workflows/v4-fail-closed-hardening-once.yml
+          git commit -m 'ci: propagate DFT qualification failures directly'
+          echo 'sha='"$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Qualify exact Linux candidate
+        run: |
+          set -euo pipefail
+          python scripts/quality_gate.py
+          git diff --exit-code
+          git diff --check
+      - name: Publish exact qualified candidate
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          expected_parent="$(git rev-parse HEAD^)"
+          remote_main="$(git rev-parse origin/main)"
+          if [[ "$expected_parent" != "$remote_main" ]]; then
+            echo "STALE_MAIN expected_parent=$expected_parent remote_main=$remote_main" >&2
+            exit 3
+          fi
+          git push origin HEAD:main
+      - name: Publish machine result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ github.event.issue.number }}
+          OUTCOME: ${{ job.status }}
+          CANDIDATE: ${{ steps.candidate.outputs.sha }}
+        run: |
+          gh issue comment "$ISSUE" --body "V4_FAIL_CLOSED_HARDENING outcome=${OUTCOME} candidate=${CANDIDATE:-UNPUBLISHED} run=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} controller=self_removed delayed_failure=removed supply_chain=blocking"

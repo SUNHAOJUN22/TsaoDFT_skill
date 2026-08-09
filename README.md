@@ -387,3 +387,36 @@ pwsh -NoProfile -File .\scripts\quality_gate.ps1
 ---
 
 **TsaoDFT 的目标不是让每个文件看起来更底层，而是让每个公式、参数、计算、图件、性能结论和工程迁移都有可复核的证据边界。**
+
+<!-- CURRENT_MAIN_ACCEPTANCE_V2:START -->
+## 当前 `main`：代码—数学—证据闭环
+
+<p align="center"><img src="docs/current-main/tsao-dft-current-main-zh.svg" width="100%" alt="当前 `main`：代码—数学—证据闭环"></p>
+
+> 该图由当前代码合同生成，是概念设计，不是电子结构运行数据。
+
+### 核心数理合同
+
+$$
+[-½∇² + V_eff[n]] ψᵢ = εᵢ ψᵢ
+$$
+
+$$
+n* = argminₙ ‖A(s − n)‖₂
+$$
+
+$$
+|ΔE| ≤ τ_E ∧ maxᵢ ‖ΔFᵢ‖₂ ≤ τ_F
+$$
+
+### 使用策略
+
+1. 先冻结结构、晶胞、周期性和单位，再生成引擎输入。
+2. SCF、能量、力和应力只有在有限、收敛且方法身份完整时才可验收。
+3. 探测、模板与解析器结果不得升级为真实 DFT 计算证据。
+4. 任何新提交都会使旧 SHA 的六小时软件证据失效。
+
+> **责任边界：** 软件门禁只验证控制面、参考数值与证据合同；Gaussian、VASP、QE、CP2K 等外部引擎未在此自动执行，保持 EXTERNAL_HOLD。
+
+执行提示词: [SIX_REPOSITORY_PARALLEL_6H_ACCEPTANCE_PROMPT_V2.md](docs/SIX_REPOSITORY_PARALLEL_6H_ACCEPTANCE_PROMPT_V2.md)
+<!-- CURRENT_MAIN_ACCEPTANCE_V2:END -->

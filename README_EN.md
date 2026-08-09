@@ -387,3 +387,36 @@ The software baseline proves repository artifacts passed validation. It does not
 ---
 
 **TsaoDFT is not designed to make every file look lower-level. It is designed to make every equation, parameter, computation, figure, performance claim and engineering migration auditable.**
+
+<!-- CURRENT_MAIN_ACCEPTANCE_V2:START -->
+## Current `main`: code–mathematics–evidence loop
+
+<p align="center"><img src="docs/current-main/tsao-dft-current-main-en.svg" width="100%" alt="Current `main`: code–mathematics–evidence loop"></p>
+
+> This figure is generated from current code contracts and is conceptual documentation, not electronic-structure run data.
+
+### Core mathematical contracts
+
+$$
+[-½∇² + V_eff[n]] ψᵢ = εᵢ ψᵢ
+$$
+
+$$
+n* = argminₙ ‖A(s − n)‖₂
+$$
+
+$$
+|ΔE| ≤ τ_E ∧ maxᵢ ‖ΔFᵢ‖₂ ≤ τ_F
+$$
+
+### Usage strategy
+
+1. Freeze structure, cell, periodicity and units before generating engine input.
+2. Accept SCF, energy, forces and stress only when finite, converged and method identity is complete.
+3. Discovery, templates and parser outputs must not be promoted to real DFT execution evidence.
+4. Any new commit invalidates six-hour software evidence bound to an older SHA.
+
+> **Responsibility boundary：** Software gates validate the control plane, reference numerics and evidence contracts only; external engines such as Gaussian, VASP, QE and CP2K are not executed here and remain EXTERNAL_HOLD.
+
+Execution prompt: [SIX_REPOSITORY_PARALLEL_6H_ACCEPTANCE_PROMPT_V2.md](docs/SIX_REPOSITORY_PARALLEL_6H_ACCEPTANCE_PROMPT_V2.md)
+<!-- CURRENT_MAIN_ACCEPTANCE_V2:END -->

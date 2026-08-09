@@ -19,7 +19,7 @@ const P = {
     boundary: 'Software gates validate the control plane, reference numerics and evidence contracts only; external engines such as Gaussian, VASP, QE and CP2K are not executed here and remain EXTERNAL_HOLD.',
   },
   formulas: [
-    '[-½∇² + V_eff[n](r)] ψᵢ(r) = εᵢ ψᵢ(r)',
+    '[-½∇² + V_eff[n]] ψᵢ = εᵢ ψᵢ',
     'n* = argminₙ ‖A(s − n)‖₂',
     '|ΔE| ≤ τ_E ∧ maxᵢ ‖ΔFᵢ‖₂ ≤ τ_F',
   ],

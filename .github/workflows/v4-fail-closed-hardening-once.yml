@@ -17,7 +17,7 @@ jobs:
     if: >-
       github.event.issue.pull_request == null &&
       github.event.comment.user.login == github.repository_owner &&
-      contains(github.event.comment.body, '/v4-fail-closed-hardening-v3')
+      contains(github.event.comment.body, '/v4-fail-closed-hardening-v4')
     runs-on: ubuntu-24.04
     timeout-minutes: 150
     steps:
@@ -43,18 +43,17 @@ jobs:
           python -m pip install --disable-pip-version-check --upgrade pip
           python -m pip install -c constraints/py312.txt -r requirements-dev.txt
           python -m pip check
-      - name: Convert delayed and best-effort failures into direct failures
+      - name: Build direct-failure CI and aligned governance tests
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
           import re
 
-          path = Path('.github/workflows/ci.yml')
-          text = path.read_text(encoding='utf-8')
+          workflow_path = Path('.github/workflows/ci.yml')
+          workflow = workflow_path.read_text(encoding='utf-8')
 
-          def replace_once(pattern: str, replacement: str, label: str) -> None:
-              global text
+          def replace_once(text: str, pattern: str, replacement: str, label: str) -> str:
               updated, count = re.subn(
                   pattern,
                   lambda _match: replacement,
@@ -64,41 +63,92 @@ jobs:
               )
               if count != 1:
                   raise SystemExit(f'{label}: expected one match, found {count}')
-              text = updated
+              return updated
 
-          replace_once(
+          workflow = replace_once(
+              workflow,
               r"      - name: Capture complete quality gate\n.*?(?=      - name: Upload failure log)",
-              """      - name: Run complete quality gate\n        shell: bash\n        run: |\n          set -euo pipefail\n          python scripts/quality_gate.py 2>&1 | tee quality-gate.log\n\n""",
+              """      - name: Run complete quality gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/quality_gate.py 2>&1 | tee quality-gate.log
+
+""",
               'Linux quality capture',
           )
-          text = text.replace(
+          workflow = workflow.replace(
               "        if: always() && steps.gate.outputs.exit_code != '0'\n",
               "        if: failure()\n",
               1,
           )
-          replace_once(
-              r"\n      - name: Publish best-effort compatibility summary\n.*?\n  windows-control-plane:",
-              "\n  windows-control-plane:",
-              'Linux best-effort status block',
+          workflow = replace_once(
+              workflow,
+              r"\n      - name: Publish best-effort compatibility summary\n.*?\n      - name: Fail job when quality gate fails\n.*?(?=\n  windows-control-plane:)",
+              "",
+              'Linux delayed status and failure blocks',
           )
-          replace_once(
+          workflow = replace_once(
+              workflow,
               r"      - name: Capture complete PowerShell quality gate\n.*?(?=      - name: Upload Windows control-plane evidence)",
-              """      - name: Run complete PowerShell quality gate\n        shell: pwsh\n        run: |\n          $pwsh = (Get-Command -Name \"pwsh\" -CommandType Application -ErrorAction Stop).Source\n          & $pwsh -NoProfile -File \".\\scripts\\quality_gate.ps1\" *>&1 |\n            Tee-Object -FilePath \"windows-quality-gate.log\"\n          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }\n\n""",
+              """      - name: Run complete PowerShell quality gate
+        shell: pwsh
+        run: |
+          $pwsh = (Get-Command -Name "pwsh" -CommandType Application -ErrorAction Stop).Source
+          & $pwsh -NoProfile -File ".\\scripts\\quality_gate.ps1" *>&1 |
+            Tee-Object -FilePath "windows-quality-gate.log"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+""",
               'Windows quality capture',
           )
-          replace_once(
-              r"\n      - name: Publish best-effort Windows compatibility summary\n.*?\n  supply-chain:",
-              "\n  supply-chain:",
-              'Windows best-effort status block',
+          workflow = replace_once(
+              workflow,
+              r"\n      - name: Publish best-effort Windows compatibility summary\n.*?\n      - name: Fail job when PowerShell quality gate fails\n.*?(?=\n  supply-chain:)",
+              "",
+              'Windows delayed status and failure blocks',
           )
-          replace_once(
+          workflow = replace_once(
+              workflow,
               r"      - name: Capture all dependency audits and SBOM\n.*?(?=      - name: Upload supply-chain evidence)",
-              """      - name: Run dependency audits and generate SBOM\n        shell: bash\n        run: |\n          set -euo pipefail\n          python -m pip_audit -r requirements.txt --format json --output pip-audit-runtime.json\n          python -m pip_audit -r requirements-dev.txt --format json --output pip-audit-development.json\n          python -m pip_audit --no-deps -r constraints/py312.txt --format json --output pip-audit-locked.json\n          python -m pip_audit --no-deps -r constraints/py312.txt --format cyclonedx-json --output sbom.cdx.json\n          for report in pip-audit-runtime.json pip-audit-development.json pip-audit-locked.json sbom.cdx.json; do\n            test -s \"$report\"\n          done\n\n""",
-              'supply-chain capture',
+              """      - name: Audit runtime dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip_audit -r requirements.txt --format json --output pip-audit-runtime.json
+          test -s pip-audit-runtime.json
+
+      - name: Audit development dependencies
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip_audit -r requirements-dev.txt --format json --output pip-audit-development.json
+          test -s pip-audit-development.json
+
+      - name: Audit locked constraints
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip_audit --no-deps -r constraints/py312.txt --format json --output pip-audit-locked.json
+          test -s pip-audit-locked.json
+
+      - name: Generate CycloneDX SBOM
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip_audit --no-deps -r constraints/py312.txt --format cyclonedx-json --output sbom.cdx.json
+          test -s sbom.cdx.json
+
+""",
+              'supply-chain capture block',
           )
-          replace_once(
-              r"\n      - name: Fail job when an audit or SBOM command fails\n.*?\n  codeql:",
-              "\n  codeql:",
+          workflow = replace_once(
+              workflow,
+              r"\n      - name: Fail job when an audit or SBOM command fails\n.*?(?=\n  codeql:)",
+              "",
               'delayed supply-chain failure block',
           )
           for forbidden in (
@@ -108,10 +158,114 @@ jobs:
               'steps.windows-gate.outputs',
               'steps.audit.outputs',
               'best-effort compatibility summary',
+              'Fail job when',
           ):
-              if forbidden in text:
+              if forbidden in workflow:
                   raise SystemExit(f'forbidden delayed-failure construct remains: {forbidden}')
-          path.write_text(text, encoding='utf-8', newline='\n')
+          workflow_path.write_text(workflow, encoding='utf-8', newline='\n')
+
+          tests_path = Path('tests/test_permanent_ci_contract.py')
+          tests = tests_path.read_text(encoding='utf-8')
+          windows_method = '''    def test_windows_control_plane_is_real_private_and_evidence_preserving(self) -> None:
+        path = ROOT / ".github" / "workflows" / "ci.yml"
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        job = data["jobs"]["windows-control-plane"]
+        self.assertEqual(job["runs-on"], "windows-latest")
+        self.assertEqual(job["permissions"], {"contents": "read", "statuses": "write"})
+        steps = job["steps"]
+        by_name = {step["name"]: step for step in steps}
+
+        setup = by_name["Setup Python 3.12"]
+        self.assertEqual(setup["with"]["python-version"], "3.12")
+        self.assertIn("constraints/py312.txt", setup["with"]["cache-dependency-path"])
+
+        inventory = by_name["Capture privacy-bounded Windows inventory"]
+        self.assertEqual(inventory["shell"], "pwsh")
+        for fragment in (
+            "inspect_windows_environment.ps1",
+            "windows-environment.json",
+            "external_dft_engine_invoked",
+            "NOT_ELIGIBLE",
+            "hostname_recorded",
+            "username_recorded",
+            "home_path_recorded",
+            "environment_values_recorded",
+            "executable_paths_recorded",
+        ):
+            self.assertIn(fragment, inventory["run"])
+
+        gate = by_name["Run complete PowerShell quality gate"]
+        self.assertNotIn("id", gate)
+        self.assertEqual(gate["shell"], "pwsh")
+        for fragment in (
+            "quality_gate.ps1",
+            "windows-quality-gate.log",
+            "Tee-Object",
+            "$LASTEXITCODE",
+            "exit $LASTEXITCODE",
+        ):
+            self.assertIn(fragment, gate["run"])
+        self.assertNotIn("GITHUB_OUTPUT", gate["run"])
+
+        upload = by_name["Upload Windows control-plane evidence"]
+        self.assertEqual(upload["if"], "always()")
+        self.assertEqual(upload["with"]["if-no-files-found"], "error")
+        for report in (
+            "windows-environment.json",
+            "windows-quality-gate.log",
+            "coverage-report.json",
+        ):
+            self.assertIn(report, upload["with"]["path"])
+
+        self.assertNotIn("Publish best-effort Windows compatibility summary", by_name)
+        self.assertNotIn("Fail job when PowerShell quality gate fails", by_name)
+
+'''
+          tests = replace_once(
+              tests,
+              r"    def test_windows_control_plane_is_real_private_and_evidence_preserving\(self\) -> None:\n.*?(?=    def test_supply_chain_reports_are_always_preserved_before_failure)",
+              windows_method,
+              'Windows governance test',
+          )
+          supply_method = '''    def test_supply_chain_reports_are_always_preserved_before_failure(self) -> None:
+        path = ROOT / ".github" / "workflows" / "ci.yml"
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        steps = data["jobs"]["supply-chain"]["steps"]
+        by_name = {step["name"]: step for step in steps}
+
+        direct_steps = (
+            ("Audit runtime dependencies", "pip-audit-runtime.json"),
+            ("Audit development dependencies", "pip-audit-development.json"),
+            ("Audit locked constraints", "pip-audit-locked.json"),
+            ("Generate CycloneDX SBOM", "sbom.cdx.json"),
+        )
+        for index, (name, report) in enumerate(direct_steps):
+            step = by_name[name]
+            if index:
+                self.assertEqual(step["if"], "always()")
+            self.assertEqual(step["shell"], "bash")
+            self.assertIn("set -euo pipefail", step["run"])
+            self.assertIn(report, step["run"])
+            self.assertNotIn("set +e", step["run"])
+            self.assertNotIn("GITHUB_OUTPUT", step["run"])
+
+        upload = by_name["Upload supply-chain evidence"]
+        self.assertEqual(upload["if"], "always()")
+        self.assertEqual(upload["with"]["if-no-files-found"], "error")
+        for _, report in direct_steps:
+            self.assertIn(report, upload["with"]["path"])
+
+        self.assertNotIn("Capture all dependency audits and SBOM", by_name)
+        self.assertNotIn("Fail job when an audit or SBOM command fails", by_name)
+'''
+          tests = replace_once(
+              tests,
+              r"    def test_supply_chain_reports_are_always_preserved_before_failure\(self\) -> None:\n.*?(?=\n\nif __name__)",
+              supply_method,
+              'supply-chain governance test',
+          )
+          tests_path.write_text(tests, encoding='utf-8', newline='\n')
+
           for controller in (
               Path('.github/workflows/v4-fail-closed-hardening-once.yml'),
               Path('.github/workflows/v4-strict-hardening-once.yml'),
@@ -126,12 +280,13 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          git commit -m 'ci: propagate DFT qualification failures directly'
+          git commit -m 'ci: make DFT evidence gates directly fail closed'
           echo 'sha='"$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - name: Qualify exact DFT candidate
         run: |
           set -euo pipefail
           node scripts/refresh-current-main-readme.mjs --check
+          python -m pytest -q tests/test_permanent_ci_contract.py
           python scripts/quality_gate.py
           python -m pytest -q
           python scripts/build_release_acceptance.py --help >/dev/null
@@ -173,8 +328,9 @@ jobs:
           set -euo pipefail
           bundle="$RUNNER_TEMP/dft-v4-candidate"
           rm -rf "$bundle"
-          mkdir -p "$bundle/.github/workflows"
+          mkdir -p "$bundle/.github/workflows" "$bundle/tests"
           cp .github/workflows/ci.yml "$bundle/.github/workflows/ci.yml"
+          cp tests/test_permanent_ci_contract.py "$bundle/tests/test_permanent_ci_contract.py"
           printf '%s\n' \
             '.github/workflows/v4-fail-closed-hardening-once.yml' \
             '.github/workflows/v4-strict-hardening-once.yml' \
@@ -210,4 +366,4 @@ jobs:
           OUTCOME: ${{ job.status }}
           CANDIDATE: ${{ steps.candidate.outputs.sha }}
         run: |
-          gh issue comment "$ISSUE" --body "V4_FAIL_CLOSED_HARDENING_V3 outcome=${OUTCOME} candidate=${CANDIDATE:-UNPUBLISHED} run=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} bundle=uploaded controllers=removed delayed_failure=removed supply_chain=blocking workflows=ci-only branch=main-only"
+          gh issue comment "$ISSUE" --body "V4_FAIL_CLOSED_HARDENING_V4 outcome=${OUTCOME} candidate=${CANDIDATE:-UNPUBLISHED} run=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} bundle=uploaded controllers=removed direct_failure=true evidence_upload=preserved workflows=ci-only branch=main-only"

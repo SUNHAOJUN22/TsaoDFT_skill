@@ -126,7 +126,7 @@ def main() -> int:
 
     tests_path = ROOT / "tests" / "test_permanent_ci_contract.py"
     tests = tests_path.read_text(encoding="utf-8")
-    windows_method = '''    def test_windows_control_plane_is_real_private_and_evidence_preserving(self) -> None:
+    windows_method = """    def test_windows_control_plane_is_real_private_and_evidence_preserving(self) -> None:
         path = ROOT / ".github" / "workflows" / "ci.yml"
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
         job = data["jobs"]["windows-control-plane"]
@@ -161,14 +161,14 @@ def main() -> int:
         self.assertNotIn("Publish best-effort Windows compatibility summary", by_name)
         self.assertNotIn("Fail job when PowerShell quality gate fails", by_name)
 
-'''
+"""
     tests = replace_pattern(
         tests,
         r"    def test_windows_control_plane_is_real_private_and_evidence_preserving\(self\) -> None:\n.*?(?=    def test_supply_chain_reports_are_always_preserved_before_failure)",
         windows_method,
         "Windows governance test",
     )
-    supply_method = '''    def test_supply_chain_reports_are_always_preserved_before_failure(self) -> None:
+    supply_method = """    def test_supply_chain_reports_are_always_preserved_before_failure(self) -> None:
         path = ROOT / ".github" / "workflows" / "ci.yml"
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
         steps = data["jobs"]["supply-chain"]["steps"]
@@ -198,7 +198,7 @@ def main() -> int:
 
         self.assertNotIn("Capture all dependency audits and SBOM", by_name)
         self.assertNotIn("Fail job when an audit or SBOM command fails", by_name)
-'''
+"""
     tests = replace_pattern(
         tests,
         r"    def test_supply_chain_reports_are_always_preserved_before_failure\(self\) -> None:\n.*?(?=\n\nif __name__)",

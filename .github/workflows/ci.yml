@@ -59,18 +59,14 @@ jobs:
           python -m pip install -c "${{ matrix.constraint }}" -r requirements-dev.txt
           python -m pip check
 
-      - name: Capture complete quality gate
-        id: gate
+      - name: Run complete quality gate
         shell: bash
         run: |
-          set +e
+          set -euo pipefail
           python scripts/quality_gate.py 2>&1 | tee quality-gate.log
-          code=${PIPESTATUS[0]}
-          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
-          exit 0
 
       - name: Upload failure log
-        if: always() && steps.gate.outputs.exit_code != '0'
+        if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: quality-gate-python-${{ matrix.python-version }}
@@ -86,37 +82,6 @@ jobs:
           path: coverage-report.json
           if-no-files-found: error
           retention-days: 30
-
-      - name: Publish best-effort compatibility summary
-        if: always() && github.event_name != 'pull_request'
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GATE_EXIT_CODE: ${{ steps.gate.outputs.exit_code }}
-          PYTHON_VERSION: ${{ matrix.python-version }}
-        shell: bash
-        run: |
-          state=failure
-          description='TsaoDFT quality gate failed'
-          if [ "$GATE_EXIT_CODE" = '0' ]; then
-            state=success
-            description='TsaoDFT quality gate passed'
-          fi
-          for attempt in 1 2 3; do
-            if gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" \
-              -f state="$state" \
-              -f context="tsao-dft/python-$PYTHON_VERSION" \
-              -f description="$description" \
-              -f target_url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"; then
-              exit 0
-            fi
-            sleep $((attempt * 2))
-          done
-          exit 1
-
-      - name: Fail job when quality gate fails
-        if: always() && steps.gate.outputs.exit_code != '0'
-        run: exit 1
 
   windows-control-plane:
     name: Windows PowerShell control plane
@@ -181,16 +146,13 @@ jobs:
             }
           }
 
-      - name: Capture complete PowerShell quality gate
-        id: windows-gate
+      - name: Run complete PowerShell quality gate
         shell: pwsh
         run: |
           $pwsh = (Get-Command -Name "pwsh" -CommandType Application -ErrorAction Stop).Source
           & $pwsh -NoProfile -File ".\scripts\quality_gate.ps1" *>&1 |
             Tee-Object -FilePath "windows-quality-gate.log"
-          $code = $LASTEXITCODE
-          Add-Content -LiteralPath $env:GITHUB_OUTPUT -Value "exit_code=$code" -Encoding utf8
-          exit 0
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Upload Windows control-plane evidence
         if: always()
@@ -203,38 +165,6 @@ jobs:
             coverage-report.json
           if-no-files-found: error
           retention-days: 30
-
-      - name: Publish best-effort Windows compatibility summary
-        if: always() && github.event_name != 'pull_request'
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GATE_EXIT_CODE: ${{ steps.windows-gate.outputs.exit_code }}
-        shell: pwsh
-        run: |
-          $state = "failure"
-          $description = "TsaoDFT Windows PowerShell gate failed"
-          if ($env:GATE_EXIT_CODE -eq "0") {
-            $state = "success"
-            $description = "TsaoDFT Windows PowerShell gate passed"
-          }
-          for ($attempt = 1; $attempt -le 3; $attempt++) {
-            gh api --method POST "repos/$env:GITHUB_REPOSITORY/statuses/$env:GITHUB_SHA" `
-              -f "state=$state" `
-              -f "context=tsao-dft/windows-powershell" `
-              -f "description=$description" `
-              -f "target_url=https://github.com/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"
-            if ($LASTEXITCODE -eq 0) {
-              exit 0
-            }
-            Start-Sleep -Seconds ($attempt * 2)
-          }
-          exit 1
-
-      - name: Fail job when PowerShell quality gate fails
-        if: always() && steps.windows-gate.outputs.exit_code != '0'
-        shell: pwsh
-        run: exit 1
 
   supply-chain:
     name: Dependency audit and SBOM
@@ -266,36 +196,36 @@ jobs:
           python -m pip install -c constraints/py312.txt -r requirements-dev.txt
           python -m pip check
 
-      - name: Capture all dependency audits and SBOM
-        id: audit
+      - name: Audit runtime dependencies
         shell: bash
         run: |
-          set +e
-          runtime_code=0
-          development_code=0
-          locked_code=0
-          sbom_code=0
-
+          set -euo pipefail
           python -m pip_audit -r requirements.txt --format json --output pip-audit-runtime.json
-          runtime_code=$?
+          test -s pip-audit-runtime.json
+
+      - name: Audit development dependencies
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
           python -m pip_audit -r requirements-dev.txt --format json --output pip-audit-development.json
-          development_code=$?
+          test -s pip-audit-development.json
+
+      - name: Audit locked constraints
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
           python -m pip_audit --no-deps -r constraints/py312.txt --format json --output pip-audit-locked.json
-          locked_code=$?
+          test -s pip-audit-locked.json
+
+      - name: Generate CycloneDX SBOM
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
           python -m pip_audit --no-deps -r constraints/py312.txt --format cyclonedx-json --output sbom.cdx.json
-          sbom_code=$?
-
-          for report in pip-audit-runtime.json pip-audit-development.json pip-audit-locked.json sbom.cdx.json; do
-            if [ ! -s "$report" ]; then
-              printf '{"error":"audit command did not produce a report"}\n' > "$report"
-            fi
-          done
-
-          echo "runtime_exit_code=$runtime_code" >> "$GITHUB_OUTPUT"
-          echo "development_exit_code=$development_code" >> "$GITHUB_OUTPUT"
-          echo "locked_exit_code=$locked_code" >> "$GITHUB_OUTPUT"
-          echo "sbom_exit_code=$sbom_code" >> "$GITHUB_OUTPUT"
-          exit 0
+          test -s sbom.cdx.json
 
       - name: Upload supply-chain evidence
         if: always()
@@ -309,15 +239,6 @@ jobs:
             sbom.cdx.json
           if-no-files-found: error
           retention-days: 30
-
-      - name: Fail job when an audit or SBOM command fails
-        if: >-
-          always() &&
-          (steps.audit.outputs.runtime_exit_code != '0' ||
-           steps.audit.outputs.development_exit_code != '0' ||
-           steps.audit.outputs.locked_exit_code != '0' ||
-           steps.audit.outputs.sbom_exit_code != '0')
-        run: exit 1
 
   codeql:
     name: CodeQL Python analysis

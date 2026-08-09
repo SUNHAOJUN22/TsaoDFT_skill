@@ -44,10 +44,12 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -c constraints/py312.txt -r requirements-dev.txt
           python -m pip check
-      - name: Generate and validate localized current-main design
+      - name: Generate localized design and restore single-workflow policy
         run: |
+          set -euo pipefail
           node scripts/refresh-current-main-readme.mjs --write
           node scripts/refresh-current-main-readme.mjs --check
+          rm .github/workflows/current-main-readme-refresh.yml
           git diff --check
       - name: Create local exact-tree candidate
         id: candidate
@@ -56,13 +58,14 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add README.md README_EN.md docs/CURRENT_MAIN_ACCEPTANCE.md docs/current-main
-          if git diff --cached --quiet; then
-            echo 'changed=false' >> "$GITHUB_OUTPUT"
-          else
-            git commit -m 'docs: refresh current-main bilingual acceptance design'
-            echo 'changed=true' >> "$GITHUB_OUTPUT"
-          fi
+          git add -A \
+            .github/workflows/current-main-readme-refresh.yml \
+            README.md \
+            README_EN.md \
+            docs/CURRENT_MAIN_ACCEPTANCE.md \
+            docs/current-main
+          git commit -m 'docs: publish current-main bilingual acceptance design'
+          echo 'changed=true' >> "$GITHUB_OUTPUT"
       - name: Run complete DFT quality, numerical and evidence gate
         run: |
           set -euo pipefail
@@ -72,7 +75,6 @@ jobs:
           python scripts/capture_compute_contract_evidence.py --help >/dev/null
           git diff --check
       - name: Rebase and publish candidate
-        if: steps.candidate.outputs.changed == 'true'
         run: |
           set -euo pipefail
           git fetch origin main
@@ -86,4 +88,4 @@ jobs:
           OUTCOME: ${{ job.status }}
           CHANGED: ${{ steps.candidate.outputs.changed }}
         run: |
-          gh issue comment "$ISSUE" --body "CURRENT_MAIN_README_REFRESH_V2 outcome=${OUTCOME} changed=${CHANGED:-unknown} run=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          gh issue comment "$ISSUE" --body "CURRENT_MAIN_README_REFRESH_V2 outcome=${OUTCOME} changed=${CHANGED:-unknown} run=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} controller=self_removed"

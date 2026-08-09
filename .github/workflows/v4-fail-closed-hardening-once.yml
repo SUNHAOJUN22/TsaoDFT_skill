@@ -17,7 +17,7 @@ jobs:
     if: >-
       github.event.issue.pull_request == null &&
       github.event.comment.user.login == github.repository_owner &&
-      contains(github.event.comment.body, '/v4-fail-closed-hardening-v2')
+      contains(github.event.comment.body, '/v4-fail-closed-hardening-v3')
     runs-on: ubuntu-24.04
     timeout-minutes: 150
     steps:
@@ -55,7 +55,13 @@ jobs:
 
           def replace_once(pattern: str, replacement: str, label: str) -> None:
               global text
-              updated, count = re.subn(pattern, replacement, text, count=1, flags=re.DOTALL)
+              updated, count = re.subn(
+                  pattern,
+                  lambda _match: replacement,
+                  text,
+                  count=1,
+                  flags=re.DOTALL,
+              )
               if count != 1:
                   raise SystemExit(f'{label}: expected one match, found {count}')
               text = updated
@@ -160,7 +166,32 @@ jobs:
           if refs != ['refs/heads/main']:
               raise SystemExit(f'unexpected remote branches: {refs}')
           PY
-      - name: Publish exact qualified candidate
+      - name: Package exact qualified DFT candidate
+        id: bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundle="$RUNNER_TEMP/dft-v4-candidate"
+          rm -rf "$bundle"
+          mkdir -p "$bundle/.github/workflows"
+          cp .github/workflows/ci.yml "$bundle/.github/workflows/ci.yml"
+          printf '%s\n' \
+            '.github/workflows/v4-fail-closed-hardening-once.yml' \
+            '.github/workflows/v4-strict-hardening-once.yml' \
+            > "$bundle/DELETIONS.txt"
+          git rev-parse HEAD^ > "$bundle/PARENT_SHA.txt"
+          git rev-parse HEAD > "$bundle/CANDIDATE_SHA.txt"
+          git diff-tree --no-commit-id --name-status -r HEAD > "$bundle/CHANGES.tsv"
+          echo "path=$bundle" >> "$GITHUB_OUTPUT"
+      - name: Upload exact qualified DFT candidate bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: dft-v4-exact-candidate-${{ steps.candidate.outputs.sha }}
+          path: ${{ steps.bundle.outputs.path }}
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 30
+      - name: Attempt native exact-parent publication
         run: |
           set -euo pipefail
           git fetch origin main
@@ -179,4 +210,4 @@ jobs:
           OUTCOME: ${{ job.status }}
           CANDIDATE: ${{ steps.candidate.outputs.sha }}
         run: |
-          gh issue comment "$ISSUE" --body "V4_FAIL_CLOSED_HARDENING_V2 outcome=${OUTCOME} candidate=${CANDIDATE:-UNPUBLISHED} run=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} controllers=removed delayed_failure=removed supply_chain=blocking workflows=ci-only branch=main-only"
+          gh issue comment "$ISSUE" --body "V4_FAIL_CLOSED_HARDENING_V3 outcome=${OUTCOME} candidate=${CANDIDATE:-UNPUBLISHED} run=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} bundle=uploaded controllers=removed delayed_failure=removed supply_chain=blocking workflows=ci-only branch=main-only"

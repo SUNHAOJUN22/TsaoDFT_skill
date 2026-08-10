@@ -63,9 +63,7 @@ class PermanentCIContractTests(unittest.TestCase):
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
         job = data["jobs"]["windows-control-plane"]
         self.assertEqual(job["runs-on"], "windows-latest")
-        self.assertEqual(
-            job["permissions"], {"contents": "read", "statuses": "write"}
-        )
+        self.assertEqual(job["permissions"], {"contents": "read", "statuses": "write"})
         steps = job["steps"]
         by_name = {step["name"]: step for step in steps}
 

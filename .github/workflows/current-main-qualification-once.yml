@@ -186,9 +186,9 @@ jobs:
       - name: Record exact permanent-gate outcome
         env:
           GH_TOKEN: ${{ github.token }}
-          LINUX: ${{ needs.linux-quality.result }}
-          WINDOWS: ${{ needs.windows-control-plane.result }}
-          SUPPLY: ${{ needs.supply-chain.result }}
+          LINUX: ${{ needs['linux-quality'].result }}
+          WINDOWS: ${{ needs['windows-control-plane'].result }}
+          SUPPLY: ${{ needs['supply-chain'].result }}
           CODEQL: ${{ needs.codeql.result }}
           PUBLISH: ${{ needs.publish.result }}
         shell: bash

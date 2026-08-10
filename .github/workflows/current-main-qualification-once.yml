@@ -164,7 +164,6 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
       - name: Publish exact qualified clean tree
-        id: publish
         shell: bash
         run: |
           set -euo pipefail
@@ -175,16 +174,27 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'chore(ci): remove completed current-main qualifier'
-          qualified="$(git rev-parse HEAD)"
           test "$(git rev-parse HEAD^)" = "$parent"
           git push origin HEAD:main
-          echo "qualified=$qualified" >> "$GITHUB_OUTPUT"
-      - name: Record machine result
-        if: always()
+
+  record:
+    needs: [linux-quality, windows-control-plane, supply-chain, codeql, publish]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Record exact permanent-gate outcome
         env:
           GH_TOKEN: ${{ github.token }}
-          OUTCOME: ${{ job.status }}
-          QUALIFIED: ${{ steps.publish.outputs.qualified }}
+          LINUX: ${{ needs.linux-quality.result }}
+          WINDOWS: ${{ needs.windows-control-plane.result }}
+          SUPPLY: ${{ needs.supply-chain.result }}
+          CODEQL: ${{ needs.codeql.result }}
+          PUBLISH: ${{ needs.publish.result }}
         shell: bash
         run: |
-          gh issue comment 13 --body "CURRENT_MAIN_EXACT_QUALIFICATION outcome=${OUTCOME} tested_parent=${GITHUB_SHA} qualified=${QUALIFIED:-UNPUBLISHED} run=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} linux=py310+py312+py313 windows=control-plane supply_chain=strict codeql=security-extended controller=self-removed external_engines=EXTERNAL_HOLD"
+          set -euo pipefail
+          outcome=failure
+          if [[ "$LINUX" == success && "$WINDOWS" == success && "$SUPPLY" == success && "$CODEQL" == success && "$PUBLISH" == success ]]; then outcome=success; fi
+          gh issue comment 13 --body "CURRENT_MAIN_EXACT_QUALIFICATION outcome=${outcome} tested_parent=${GITHUB_SHA} run=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID} linux=${LINUX} windows=${WINDOWS} supply_chain=${SUPPLY} codeql=${CODEQL} publish=${PUBLISH} controller=self-removed-on-success external_engines=EXTERNAL_HOLD"
+          test "$outcome" = success

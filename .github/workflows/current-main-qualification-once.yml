@@ -17,16 +17,16 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  linux-quality:
+  linux_quality:
     strategy:
       fail-fast: false
       matrix:
         include:
-          - python-version: '3.10'
+          - python_version: '3.10'
             constraint: constraints/py310.txt
-          - python-version: '3.12'
+          - python_version: '3.12'
             constraint: constraints/py312.txt
-          - python-version: '3.13'
+          - python_version: '3.13'
             constraint: constraints/py313.txt
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -36,7 +36,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ matrix.python_version }}
           cache: pip
           cache-dependency-path: |
             requirements.txt
@@ -56,7 +56,7 @@ jobs:
           git diff --check --cached
           test "$(git diff --cached --name-only)" = '.github/workflows/current-main-qualification-once.yml'
 
-  windows-control-plane:
+  windows_control_plane:
     runs-on: windows-2025
     timeout-minutes: 45
     steps:
@@ -101,7 +101,7 @@ jobs:
           $staged = (git diff --cached --name-only).Trim()
           if ($staged -ne '.github/workflows/current-main-qualification-once.yml') { throw "unexpected staged path: $staged" }
 
-  supply-chain:
+  supply_chain:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -155,7 +155,7 @@ jobs:
           category: '/language:python-current-main-qualification'
 
   publish:
-    needs: [linux-quality, windows-control-plane, supply-chain, codeql]
+    needs: [linux_quality, windows_control_plane, supply_chain, codeql]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -178,7 +178,7 @@ jobs:
           git push origin HEAD:main
 
   record:
-    needs: [linux-quality, windows-control-plane, supply-chain, codeql, publish]
+    needs: [linux_quality, windows_control_plane, supply_chain, codeql, publish]
     if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -186,9 +186,9 @@ jobs:
       - name: Record exact permanent-gate outcome
         env:
           GH_TOKEN: ${{ github.token }}
-          LINUX: ${{ needs['linux-quality'].result }}
-          WINDOWS: ${{ needs['windows-control-plane'].result }}
-          SUPPLY: ${{ needs['supply-chain'].result }}
+          LINUX: ${{ needs.linux_quality.result }}
+          WINDOWS: ${{ needs.windows_control_plane.result }}
+          SUPPLY: ${{ needs.supply_chain.result }}
           CODEQL: ${{ needs.codeql.result }}
           PUBLISH: ${{ needs.publish.result }}
         shell: bash

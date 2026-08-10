@@ -1,8 +1,11 @@
 name: Current main qualification once
 
 on:
-  issue_comment:
-    types: [created]
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/current-main-qualification-once.yml
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -16,10 +19,6 @@ concurrency:
 
 jobs:
   probe:
-    if: >-
-      github.event.issue.number == 13 &&
-      github.event.comment.user.login == github.repository_owner &&
-      contains(github.event.comment.body, '/qualify-current-main')
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -29,13 +28,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gh issue comment 13 --body "CURRENT_MAIN_EXACT_QUALIFICATION DISPATCHED tested_parent=${GITHUB_SHA} run=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          gh issue comment 13 --body "CURRENT_MAIN_DFT_QUALIFICATION DISPATCHED tested_parent=${GITHUB_SHA} run=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
   linux_quality:
-    if: >-
-      github.event.issue.number == 13 &&
-      github.event.comment.user.login == github.repository_owner &&
-      contains(github.event.comment.body, '/qualify-current-main')
     strategy:
       fail-fast: false
       matrix:
@@ -76,10 +71,6 @@ jobs:
           test "$(git diff --cached --name-only)" = '.github/workflows/current-main-qualification-once.yml'
 
   windows_control_plane:
-    if: >-
-      github.event.issue.number == 13 &&
-      github.event.comment.user.login == github.repository_owner &&
-      contains(github.event.comment.body, '/qualify-current-main')
     runs-on: windows-2025
     timeout-minutes: 45
     steps:
@@ -126,10 +117,6 @@ jobs:
           if ($staged -ne '.github/workflows/current-main-qualification-once.yml') { throw "unexpected staged path: $staged" }
 
   supply_chain:
-    if: >-
-      github.event.issue.number == 13 &&
-      github.event.comment.user.login == github.repository_owner &&
-      contains(github.event.comment.body, '/qualify-current-main')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -167,10 +154,6 @@ jobs:
           test "$(git diff --cached --name-only)" = '.github/workflows/current-main-qualification-once.yml'
 
   codeql:
-    if: >-
-      github.event.issue.number == 13 &&
-      github.event.comment.user.login == github.repository_owner &&
-      contains(github.event.comment.body, '/qualify-current-main')
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
@@ -189,10 +172,6 @@ jobs:
           category: '/language:python-current-main-qualification'
 
   publish:
-    if: >-
-      github.event.issue.number == 13 &&
-      github.event.comment.user.login == github.repository_owner &&
-      contains(github.event.comment.body, '/qualify-current-main')
     needs: [probe, linux_quality, windows_control_plane, supply_chain, codeql]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -218,11 +197,7 @@ jobs:
 
   record:
     needs: [probe, linux_quality, windows_control_plane, supply_chain, codeql, publish]
-    if: >-
-      always() &&
-      github.event.issue.number == 13 &&
-      github.event.comment.user.login == github.repository_owner &&
-      contains(github.event.comment.body, '/qualify-current-main')
+    if: always()
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:

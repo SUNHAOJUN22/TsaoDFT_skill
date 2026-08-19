@@ -1,0 +1,46 @@
+name: DFT contracts V17
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025]
+        python-version: ['3.11', '3.13']
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Compile V17 DFT contract surface
+        run: >-
+          python -m compileall -q
+          skills/tsao-dft-hpc-provenance/scripts/contracts_v17.py
+          tests/test_contracts_v17.py
+      - name: Run V17 DFT regression contracts
+        run: python -m unittest tests.test_contracts_v17 -v
+      - name: Validate canonical Skill
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f scripts/validate_skill.py ]]; then
+            python scripts/validate_skill.py --root . --report artifacts/skill-validation-v17.json
+          elif [[ -f scripts/validate_agent_skills.py ]]; then
+            python scripts/validate_agent_skills.py --root . --overlay-mode
+          else
+            echo 'No Skill validator found.' >&2
+            exit 1
+          fi

@@ -30,13 +30,17 @@ jobs:
           python-version: '3.12'
       - name: Apply verified V18 scientific-core payload
         run: python scripts/apply_tsao_skill_native_v18.py
-      - name: Remove one-shot delivery surfaces before validation
+      - name: Remove one-shot and obsolete workflow surfaces before validation
         shell: bash
         run: |
           set -euo pipefail
           rm -rf .tsao-skill-native-v18
           rm -f scripts/apply_tsao_skill_native_v18.py
           rm -f .github/workflows/apply-tsao-skill-native-v18.yml
+          rm -f .github/workflows/apply-skill-native-v15-fix1.yml
+          rm -f .github/workflows/apply-skill-native-v15-fix2.yml
+          rm -f .github/workflows/branch-hygiene-v15.yml
+          rm -f .github/workflows/contracts-v17.yml
       - name: Install locked quality environment
         shell: bash
         run: |

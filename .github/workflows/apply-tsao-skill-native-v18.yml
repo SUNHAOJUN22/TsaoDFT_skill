@@ -1,0 +1,104 @@
+name: Apply comprehensive skill-native V18
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .tsao-skill-native-v18/**
+      - scripts/apply_tsao_skill_native_v18.py
+      - .github/workflows/apply-tsao-skill-native-v18.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: tsao-dft-skill-native-v18
+  cancel-in-progress: false
+
+jobs:
+  apply-test-commit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12'
+      - name: Apply verified V18 scientific-core payload
+        run: python scripts/apply_tsao_skill_native_v18.py
+      - name: Remove one-shot delivery surfaces before validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .tsao-skill-native-v18
+          rm -f scripts/apply_tsao_skill_native_v18.py
+          rm -f .github/workflows/apply-tsao-skill-native-v18.yml
+      - name: Install locked quality environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -c constraints/py312.txt -r requirements-dev.txt
+          python -m pip check
+      - name: Normalize only V18 test surfaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m ruff check \
+            tests/test_parser_tst_v4.py \
+            tests/test_v4_dft_contracts.py \
+            tests/test_v4_dft_scientific_contracts.py \
+            tests/test_v5_dft_evidence_and_uncertainty.py \
+            tests/test_v5_model_acceptance.py \
+            tests/test_v6_scientific_acceptance_gate.py \
+            tests/test_v7_execution_and_scientific_acceptance.py \
+            --fix --exit-zero
+          python -m ruff format \
+            tests/test_parser_tst_v4.py \
+            tests/test_v4_dft_contracts.py \
+            tests/test_v4_dft_scientific_contracts.py \
+            tests/test_v5_dft_evidence_and_uncertainty.py \
+            tests/test_v5_model_acceptance.py \
+            tests/test_v6_scientific_acceptance_gate.py \
+            tests/test_v7_execution_and_scientific_acceptance.py
+          git diff --check
+      - name: Run authoritative repository quality gate
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/quality_gate.py 2>&1 | tee /tmp/v18-quality-gate.log
+      - name: Clean ignored runtime outputs
+        shell: bash
+        run: git clean -fdX
+      - name: Commit verified V18 source to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -A
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'Expected V18 source changes were not produced.' >&2
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'feat: close DFT parser, TST, ML, and quantity contracts V18'
+          git push origin HEAD:main
+      - name: Open diagnostic issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          printf 'Workflow run: %s/actions/runs/%s\nCommit: %s\n' '${{ github.server_url }}/${{ github.repository }}' '${{ github.run_id }}' '${{ github.sha }}' > /tmp/v18-failure.txt
+          for log in /tmp/v18-*.log; do
+            if [[ -f "$log" ]]; then
+              printf '\n===== %s =====\n' "$(basename "$log")" >> /tmp/v18-failure.txt
+              tail -n 240 "$log" >> /tmp/v18-failure.txt
+            fi
+          done
+          gh issue create --title 'V18 remediation failed (run ${{ github.run_id }})' --body-file /tmp/v18-failure.txt

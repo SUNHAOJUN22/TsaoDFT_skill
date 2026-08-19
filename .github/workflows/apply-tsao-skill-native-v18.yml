@@ -52,6 +52,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          sed -i 's/  # type: ignore\[index\]//g' tests/test_v5_dft_evidence_and_uncertainty.py
           python -m ruff check \
             tests/test_parser_tst_v4.py \
             tests/test_v4_dft_contracts.py \

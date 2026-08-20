@@ -21,14 +21,49 @@ jobs:
         with:
           python-version: '3.12'
       - run: python scripts/apply_tsao_skill_native_v18.py
+      - name: Collect every generated or modified payload surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import shutil
+          import subprocess
+          from pathlib import Path
+
+          root = Path.cwd()
+          capture = root / "_capture"
+          capture.mkdir()
+          raw = subprocess.check_output(
+              ["git", "status", "--porcelain=v1", "-z", "--untracked-files=all"]
+          ).decode("utf-8")
+          paths: set[str] = set()
+          for entry in raw.split("\0"):
+              if not entry:
+                  continue
+              path = entry[3:]
+              if " -> " in path:
+                  path = path.split(" -> ", 1)[1]
+              if path.startswith(".tsao-skill-native-v18/") or path.startswith("_capture/"):
+                  continue
+              paths.add(path)
+          for relative in sorted(paths):
+              source = root / relative
+              if not source.is_file():
+                  continue
+              target = capture / relative
+              target.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copy2(source, target)
+          (capture / "GENERATED_PATHS.txt").write_text(
+              "\n".join(sorted(paths)) + "\n",
+              encoding="utf-8",
+              newline="\n",
+          )
+          print({"captured_paths": len(paths)})
+          PY
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: dft-v18-generated-${{ github.run_id }}
-          path: |
-            skills/tsao-dft-hpc-provenance/scripts/contracts_v17.py
-            tests/test_v5_dft_evidence_and_uncertainty.py
-            tests/test_v6_scientific_acceptance_gate.py
-            tests/test_v7_execution_and_scientific_acceptance.py
+          name: dft-v18-generated-all-${{ github.run_id }}
+          path: _capture
           if-no-files-found: error
           retention-days: 2
       - name: Publish diagnostic artifact locator
@@ -37,5 +72,5 @@ jobs:
         shell: bash
         run: |
           gh issue create \
-            --title 'Temporary DFT V18 generated-source capture ${{ github.run_id }}' \
-            --body 'Artifact: dft-v18-generated-${{ github.run_id }}; run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}; commit: ${{ github.sha }}'
+            --title 'Temporary DFT V18 full generated-source capture ${{ github.run_id }}' \
+            --body 'Artifact: dft-v18-generated-all-${{ github.run_id }}; run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}; commit: ${{ github.sha }}'

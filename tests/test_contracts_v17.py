@@ -6,13 +6,7 @@ import sys
 import unittest
 from pathlib import Path
 
-MODULE_PATH = (
-    Path(__file__).resolve().parents[1]
-    / "skills"
-    / "tsao-dft-hpc-provenance"
-    / "scripts"
-    / "contracts_v17.py"
-)
+MODULE_PATH = Path(__file__).resolve().parents[1] / "skills" / "tsao-dft-hpc-provenance" / "scripts" / "contracts_v17.py"
 SPEC = importlib.util.spec_from_file_location("tsao_dft_contracts_v17", MODULE_PATH)
 if SPEC is None or SPEC.loader is None:
     raise RuntimeError(f"cannot load {MODULE_PATH}")

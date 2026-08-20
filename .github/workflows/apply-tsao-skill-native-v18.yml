@@ -30,6 +30,8 @@ jobs:
           python-version: '3.12'
       - name: Apply verified V18 scientific-core payload
         run: python scripts/apply_tsao_skill_native_v18.py
+      - name: Repair generated V18 static typing contracts
+        run: python .tsao-skill-native-v18/repair_mypy_contracts.py
       - name: Remove one-shot and obsolete workflow surfaces before validation
         shell: bash
         run: |
@@ -37,6 +39,7 @@ jobs:
           rm -rf .tsao-skill-native-v18
           rm -f scripts/apply_tsao_skill_native_v18.py
           rm -f .github/workflows/apply-tsao-skill-native-v18.yml
+          rm -f .github/workflows/capture-dft-v18-generated.yml
           rm -f .github/workflows/apply-skill-native-v15-fix1.yml
           rm -f .github/workflows/apply-skill-native-v15-fix2.yml
           rm -f .github/workflows/branch-hygiene-v15.yml
@@ -52,79 +55,53 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sed -i 's/  # type: ignore\[index\]//g' tests/test_v5_dft_evidence_and_uncertainty.py
           python - <<'PY'
           from pathlib import Path
           import re
 
+          path = Path("tests/test_v7_execution_and_scientific_acceptance.py")
+          text = path.read_text(encoding="utf-8")
           replacements = {
-              Path("tests/test_v5_dft_evidence_and_uncertainty.py"): {
-                  '    leakage = _labels(); leakage[1]["parent_id"] = "p1"': (
-                      '    leakage = _labels()\n'
-                      '    leakage[1]["parent_id"] = "p1"'
-                  ),
-                  '    mixed = _labels(); mixed[1]["method_fingerprint"] = "4" * 64': (
-                      '    mixed = _labels()\n'
-                      '    mixed[1]["method_fingerprint"] = "4" * 64'
-                  ),
-                  '    constant = _labels(); constant[1]["value"] = -1.0': (
-                      '    constant = _labels()\n'
-                      '    constant[1]["value"] = -1.0'
-                  ),
-                  '    self_approved = _accepted_card(); self_approved["independent_approval"]["issuer"] = "trainer-a"': (
-                      '    self_approved = _accepted_card()\n'
-                      '    self_approved["independent_approval"]["issuer"] = "trainer-a"'
-                  ),
-                  '    wrong_hash = _accepted_card(); wrong_hash["independent_approval"]["model_sha256"] = "9" * 64': (
-                      '    wrong_hash = _accepted_card()\n'
-                      '    wrong_hash["independent_approval"]["model_sha256"] = "9" * 64'
-                  ),
-              },
-              Path("tests/test_v7_execution_and_scientific_acceptance.py"): {
-                  'SHA = lambda c: c * 64': (
-                      'def sha(char: str) -> str:\n'
-                      '    return char * 64'
-                  ),
-                  '    bad = parser_record(); bad["parser_accepted"] = False; bad["status"] = "FATAL"': (
-                      '    bad = parser_record()\n'
-                      '    bad["parser_accepted"] = False\n'
-                      '    bad["status"] = "FATAL"'
-                  ),
-              },
+              'SHA = lambda c: c * 64': (
+                  'def sha(char: str) -> str:\n'
+                  '    return char * 64'
+              ),
+              '    bad = parser_record(); bad["parser_accepted"] = False; bad["status"] = "FATAL"': (
+                  '    bad = parser_record()\n'
+                  '    bad["parser_accepted"] = False\n'
+                  '    bad["status"] = "FATAL"'
+              ),
           }
-          for path, path_replacements in replacements.items():
-              text = path.read_text(encoding="utf-8")
-              for old, new in path_replacements.items():
-                  if old not in text:
-                      raise SystemExit(f"expected generated pattern is missing in {path}: {old}")
-                  text = text.replace(old, new, 1)
-              if path.name == "test_v7_execution_and_scientific_acceptance.py":
-                  text = text.replace("SHA(", "sha(")
-                  if "import importlib\n" not in text:
-                      text = text.replace("import json\n", "import importlib\nimport json\n", 1)
-                  import_pattern = re.compile(
-                      r"from execution_evidence_v7 import \(\n"
-                      r"(?P<body>(?:    [A-Za-z_][A-Za-z0-9_]*,\n)+)"
-                      r"\)\n"
-                      r"from scientific_acceptance_gate_v7 import evaluate_dft_acceptance_v7\n"
-                  )
-                  dynamic_imports = (
-                      '_execution_evidence = importlib.import_module("execution_evidence_v7")\n'
-                      '_scientific_acceptance_gate = importlib.import_module(\n'
-                      '    "scientific_acceptance_gate_v7"\n'
-                      ')\n'
-                      'ExecutionEvidenceError = _execution_evidence.ExecutionEvidenceError\n'
-                      'issue_execution_receipt = _execution_evidence.issue_execution_receipt\n'
-                      'issue_scientific_review = _execution_evidence.issue_scientific_review\n'
-                      'verify_scientific_review = _execution_evidence.verify_scientific_review\n'
-                      'evaluate_dft_acceptance_v7 = (\n'
-                      '    _scientific_acceptance_gate.evaluate_dft_acceptance_v7\n'
-                      ')\n'
-                  )
-                  text, count = import_pattern.subn(dynamic_imports, text, count=1)
-                  if count != 1:
-                      raise SystemExit("generated V18 bootstrap import block was not found exactly once")
-              path.write_text(text, encoding="utf-8", newline="\n")
+          for old, new in replacements.items():
+              if text.count(old) != 1:
+                  raise SystemExit(f"expected one generated V7 pattern: {old}")
+              text = text.replace(old, new, 1)
+          text = text.replace("SHA(", "sha(")
+          if "import importlib\n" not in text:
+              text = text.replace("import json\n", "import importlib\nimport json\n", 1)
+          import_pattern = re.compile(
+              r"from execution_evidence_v7 import \(\n"
+              r"(?P<body>(?:    [A-Za-z_][A-Za-z0-9_]*,\n)+)"
+              r"\)\n"
+              r"from scientific_acceptance_gate_v7 import evaluate_dft_acceptance_v7\n"
+          )
+          dynamic_imports = (
+              '_execution_evidence = importlib.import_module("execution_evidence_v7")\n'
+              '_scientific_acceptance_gate = importlib.import_module(\n'
+              '    "scientific_acceptance_gate_v7"\n'
+              ')\n'
+              'ExecutionEvidenceError = _execution_evidence.ExecutionEvidenceError\n'
+              'issue_execution_receipt = _execution_evidence.issue_execution_receipt\n'
+              'issue_scientific_review = _execution_evidence.issue_scientific_review\n'
+              'verify_scientific_review = _execution_evidence.verify_scientific_review\n'
+              'evaluate_dft_acceptance_v7 = (\n'
+              '    _scientific_acceptance_gate.evaluate_dft_acceptance_v7\n'
+              ')\n'
+          )
+          text, count = import_pattern.subn(dynamic_imports, text, count=1)
+          if count != 1:
+              raise SystemExit("generated V18 bootstrap import block was not found exactly once")
+          path.write_text(text, encoding="utf-8", newline="\n")
           PY
           targets=(
             skills/tsao-dft-hpc-provenance/scripts/contracts_v17.py
@@ -174,7 +151,7 @@ jobs:
           for log in /tmp/v18-*.log; do
             if [[ -f "$log" ]]; then
               printf '\n===== %s =====\n' "$(basename "$log")" >> /tmp/v18-failure.txt
-              tail -n 240 "$log" >> /tmp/v18-failure.txt
+              tail -n 260 "$log" >> /tmp/v18-failure.txt
             fi
           done
           gh issue create --title 'V18 remediation failed (run ${{ github.run_id }})' --body-file /tmp/v18-failure.txt

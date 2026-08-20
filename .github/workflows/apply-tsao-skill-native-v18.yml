@@ -59,18 +59,6 @@ jobs:
           path = Path("tests/test_v7_execution_and_scientific_acceptance.py")
           text = path.read_text(encoding="utf-8")
           text = text.replace(
-              "from execution_evidence_v7 import (",
-              "from execution_evidence_v7 import (  # noqa: E402 -- imported after repository-local path bootstrap",
-          )
-          text = text.replace(
-              "from scientific_acceptance_gate_v7 import (",
-              "from scientific_acceptance_gate_v7 import (  # noqa: E402 -- imported after repository-local path bootstrap",
-          )
-          text = text.replace(
-              "from scientific_acceptance_gate_v7 import evaluate_dft_acceptance_v7",
-              "from scientific_acceptance_gate_v7 import evaluate_dft_acceptance_v7  # noqa: E402 -- imported after repository-local path bootstrap",
-          )
-          text = text.replace(
               "SHA = lambda c: c * 64",
               "def sha(char: str) -> str:\n    return char * 64",
           )
@@ -89,6 +77,41 @@ jobs:
             tests/test_v7_execution_and_scientific_acceptance.py \
             --fix --unsafe-fixes --exit-zero
           python -m ruff format \
+            skills/tsao-dft-hpc-provenance/scripts/contracts_v17.py \
+            tests/test_scientific_contracts_v16.py \
+            tests/test_parser_tst_v4.py \
+            tests/test_v4_dft_contracts.py \
+            tests/test_v4_dft_scientific_contracts.py \
+            tests/test_v5_dft_evidence_and_uncertainty.py \
+            tests/test_v5_model_acceptance.py \
+            tests/test_v6_scientific_acceptance_gate.py \
+            tests/test_v7_execution_and_scientific_acceptance.py
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("tests/test_v7_execution_and_scientific_acceptance.py")
+          lines = path.read_text(encoding="utf-8").splitlines()
+          prefixes = (
+              "from execution_evidence_v7 import (",
+              "from scientific_acceptance_gate_v7 import (",
+          )
+          found = set()
+          for index, line in enumerate(lines):
+              stripped = line.lstrip()
+              for prefix in prefixes:
+                  if stripped.startswith(prefix):
+                      found.add(prefix)
+                      if "# noqa: E402" not in line:
+                          lines[index] = (
+                              line
+                              + "  # noqa: E402 -- imported after repository-local path bootstrap"
+                          )
+          missing = set(prefixes) - found
+          if missing:
+              raise SystemExit(f"generated V18 imports are missing: {sorted(missing)}")
+          path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+          PY
+          python -m ruff check \
             skills/tsao-dft-hpc-provenance/scripts/contracts_v17.py \
             tests/test_scientific_contracts_v16.py \
             tests/test_parser_tst_v4.py \

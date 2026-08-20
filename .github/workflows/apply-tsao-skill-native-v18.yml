@@ -63,6 +63,10 @@ jobs:
               "from execution_evidence_v7 import (  # noqa: E402 -- imported after repository-local path bootstrap",
           )
           text = text.replace(
+              "from scientific_acceptance_gate_v7 import (",
+              "from scientific_acceptance_gate_v7 import (  # noqa: E402 -- imported after repository-local path bootstrap",
+          )
+          text = text.replace(
               "from scientific_acceptance_gate_v7 import evaluate_dft_acceptance_v7",
               "from scientific_acceptance_gate_v7 import evaluate_dft_acceptance_v7  # noqa: E402 -- imported after repository-local path bootstrap",
           )

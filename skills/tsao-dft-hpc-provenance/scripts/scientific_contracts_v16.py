@@ -73,13 +73,7 @@ def tst_rate(
     boltzmann = 1.380649e-23
     planck = 6.62607015e-34
     gas_constant = 8.314462618
-    first_order_rate = (
-        transmission
-        * boltzmann
-        * temperature
-        / planck
-        * exp(-barrier / (gas_constant * temperature))
-    )
+    first_order_rate = transmission * boltzmann * temperature / planck * exp(-barrier / (gas_constant * temperature))
     rate = first_order_rate * standard_state ** (1 - molecularity)
     unit = "s^-1" if molecularity == 1 else f"L^{molecularity - 1} mol^{1 - molecularity} s^-1"
     return rate, unit

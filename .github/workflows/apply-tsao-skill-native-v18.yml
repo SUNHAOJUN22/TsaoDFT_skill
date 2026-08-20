@@ -55,6 +55,7 @@ jobs:
           sed -i 's/  # type: ignore\[index\]//g' tests/test_v5_dft_evidence_and_uncertainty.py
           python - <<'PY'
           from pathlib import Path
+          import re
 
           replacements = {
               Path("tests/test_v5_dft_evidence_and_uncertainty.py"): {
@@ -99,6 +100,30 @@ jobs:
                   text = text.replace(old, new, 1)
               if path.name == "test_v7_execution_and_scientific_acceptance.py":
                   text = text.replace("SHA(", "sha(")
+                  if "import importlib\n" not in text:
+                      text = text.replace("import json\n", "import importlib\nimport json\n", 1)
+                  import_pattern = re.compile(
+                      r"from execution_evidence_v7 import \(\n"
+                      r"(?P<body>(?:    [A-Za-z_][A-Za-z0-9_]*,\n)+)"
+                      r"\)\n"
+                      r"from scientific_acceptance_gate_v7 import evaluate_dft_acceptance_v7\n"
+                  )
+                  dynamic_imports = (
+                      '_execution_evidence = importlib.import_module("execution_evidence_v7")\n'
+                      '_scientific_acceptance_gate = importlib.import_module(\n'
+                      '    "scientific_acceptance_gate_v7"\n'
+                      ')\n'
+                      'ExecutionEvidenceError = _execution_evidence.ExecutionEvidenceError\n'
+                      'issue_execution_receipt = _execution_evidence.issue_execution_receipt\n'
+                      'issue_scientific_review = _execution_evidence.issue_scientific_review\n'
+                      'verify_scientific_review = _execution_evidence.verify_scientific_review\n'
+                      'evaluate_dft_acceptance_v7 = (\n'
+                      '    _scientific_acceptance_gate.evaluate_dft_acceptance_v7\n'
+                      ')\n'
+                  )
+                  text, count = import_pattern.subn(dynamic_imports, text, count=1)
+                  if count != 1:
+                      raise SystemExit("generated V18 bootstrap import block was not found exactly once")
               path.write_text(text, encoding="utf-8", newline="\n")
           PY
           targets=(
@@ -114,31 +139,6 @@ jobs:
           )
           python -m ruff check "${targets[@]}" --fix --unsafe-fixes --exit-zero
           python -m ruff format "${targets[@]}"
-          python - <<'PY'
-          from pathlib import Path
-
-          path = Path("tests/test_v7_execution_and_scientific_acceptance.py")
-          lines = path.read_text(encoding="utf-8").splitlines()
-          prefixes = (
-              "from execution_evidence_v7 import",
-              "from scientific_acceptance_gate_v7 import",
-          )
-          found: set[str] = set()
-          for index, line in enumerate(lines):
-              stripped = line.lstrip()
-              for prefix in prefixes:
-                  if stripped.startswith(prefix):
-                      found.add(prefix)
-                      if "# noqa: E402" not in line:
-                          lines[index] = (
-                              line
-                              + "  # noqa: E402 -- imported after repository-local path bootstrap"
-                          )
-          missing = set(prefixes) - found
-          if missing:
-              raise SystemExit(f"generated V18 imports are missing: {sorted(missing)}")
-          path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
-          PY
           python -m ruff check "${targets[@]}"
           python -m ruff format --check "${targets[@]}"
           git diff --check

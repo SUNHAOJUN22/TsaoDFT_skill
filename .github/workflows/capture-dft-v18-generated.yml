@@ -1,0 +1,32 @@
+name: Capture generated DFT V18 diagnostic sources
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/capture-dft-v18-generated.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12'
+      - run: python scripts/apply_tsao_skill_native_v18.py
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: dft-v18-generated-${{ github.run_id }}
+          path: |
+            skills/tsao-dft-hpc-provenance/scripts/contracts_v17.py
+            tests/test_v5_dft_evidence_and_uncertainty.py
+            tests/test_v6_scientific_acceptance_gate.py
+            tests/test_v7_execution_and_scientific_acceptance.py
+          if-no-files-found: error
+          retention-days: 2

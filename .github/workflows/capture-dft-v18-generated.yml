@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   capture:
@@ -30,3 +31,11 @@ jobs:
             tests/test_v7_execution_and_scientific_acceptance.py
           if-no-files-found: error
           retention-days: 2
+      - name: Publish diagnostic artifact locator
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh issue create \
+            --title 'Temporary DFT V18 generated-source capture ${{ github.run_id }}' \
+            --body 'Artifact: dft-v18-generated-${{ github.run_id }}; run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}; commit: ${{ github.sha }}'

@@ -56,46 +56,74 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          path = Path("tests/test_v7_execution_and_scientific_acceptance.py")
-          text = path.read_text(encoding="utf-8")
-          text = text.replace(
-              "SHA = lambda c: c * 64",
-              "def sha(char: str) -> str:\n    return char * 64",
-          )
-          text = text.replace("SHA(", "sha(")
-          path.write_text(text, encoding="utf-8", newline="\n")
+          replacements = {
+              Path("tests/test_v5_dft_evidence_and_uncertainty.py"): {
+                  '    leakage = _labels(); leakage[1]["parent_id"] = "p1"': (
+                      '    leakage = _labels()\n'
+                      '    leakage[1]["parent_id"] = "p1"'
+                  ),
+                  '    mixed = _labels(); mixed[1]["method_fingerprint"] = "4" * 64': (
+                      '    mixed = _labels()\n'
+                      '    mixed[1]["method_fingerprint"] = "4" * 64'
+                  ),
+                  '    constant = _labels(); constant[1]["value"] = -1.0': (
+                      '    constant = _labels()\n'
+                      '    constant[1]["value"] = -1.0'
+                  ),
+                  '    self_approved = _accepted_card(); self_approved["independent_approval"]["issuer"] = "trainer-a"': (
+                      '    self_approved = _accepted_card()\n'
+                      '    self_approved["independent_approval"]["issuer"] = "trainer-a"'
+                  ),
+                  '    wrong_hash = _accepted_card(); wrong_hash["independent_approval"]["model_sha256"] = "9" * 64': (
+                      '    wrong_hash = _accepted_card()\n'
+                      '    wrong_hash["independent_approval"]["model_sha256"] = "9" * 64'
+                  ),
+              },
+              Path("tests/test_v7_execution_and_scientific_acceptance.py"): {
+                  'SHA = lambda c: c * 64': (
+                      'def sha(char: str) -> str:\n'
+                      '    return char * 64'
+                  ),
+                  '    bad = parser_record(); bad["parser_accepted"] = False; bad["status"] = "FATAL"': (
+                      '    bad = parser_record()\n'
+                      '    bad["parser_accepted"] = False\n'
+                      '    bad["status"] = "FATAL"'
+                  ),
+              },
+          }
+          for path, path_replacements in replacements.items():
+              text = path.read_text(encoding="utf-8")
+              for old, new in path_replacements.items():
+                  if old not in text:
+                      raise SystemExit(f"expected generated pattern is missing in {path}: {old}")
+                  text = text.replace(old, new, 1)
+              if path.name == "test_v7_execution_and_scientific_acceptance.py":
+                  text = text.replace("SHA(", "sha(")
+              path.write_text(text, encoding="utf-8", newline="\n")
           PY
-          python -m ruff check \
-            skills/tsao-dft-hpc-provenance/scripts/contracts_v17.py \
-            tests/test_scientific_contracts_v16.py \
-            tests/test_parser_tst_v4.py \
-            tests/test_v4_dft_contracts.py \
-            tests/test_v4_dft_scientific_contracts.py \
-            tests/test_v5_dft_evidence_and_uncertainty.py \
-            tests/test_v5_model_acceptance.py \
-            tests/test_v6_scientific_acceptance_gate.py \
-            tests/test_v7_execution_and_scientific_acceptance.py \
-            --fix --unsafe-fixes --exit-zero
-          python -m ruff format \
-            skills/tsao-dft-hpc-provenance/scripts/contracts_v17.py \
-            tests/test_scientific_contracts_v16.py \
-            tests/test_parser_tst_v4.py \
-            tests/test_v4_dft_contracts.py \
-            tests/test_v4_dft_scientific_contracts.py \
-            tests/test_v5_dft_evidence_and_uncertainty.py \
-            tests/test_v5_model_acceptance.py \
-            tests/test_v6_scientific_acceptance_gate.py \
+          targets=(
+            skills/tsao-dft-hpc-provenance/scripts/contracts_v17.py
+            tests/test_scientific_contracts_v16.py
+            tests/test_parser_tst_v4.py
+            tests/test_v4_dft_contracts.py
+            tests/test_v4_dft_scientific_contracts.py
+            tests/test_v5_dft_evidence_and_uncertainty.py
+            tests/test_v5_model_acceptance.py
+            tests/test_v6_scientific_acceptance_gate.py
             tests/test_v7_execution_and_scientific_acceptance.py
+          )
+          python -m ruff check "${targets[@]}" --fix --unsafe-fixes --exit-zero
+          python -m ruff format "${targets[@]}"
           python - <<'PY'
           from pathlib import Path
 
           path = Path("tests/test_v7_execution_and_scientific_acceptance.py")
           lines = path.read_text(encoding="utf-8").splitlines()
           prefixes = (
-              "from execution_evidence_v7 import (",
-              "from scientific_acceptance_gate_v7 import (",
+              "from execution_evidence_v7 import",
+              "from scientific_acceptance_gate_v7 import",
           )
-          found = set()
+          found: set[str] = set()
           for index, line in enumerate(lines):
               stripped = line.lstrip()
               for prefix in prefixes:
@@ -111,16 +139,8 @@ jobs:
               raise SystemExit(f"generated V18 imports are missing: {sorted(missing)}")
           path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
           PY
-          python -m ruff check \
-            skills/tsao-dft-hpc-provenance/scripts/contracts_v17.py \
-            tests/test_scientific_contracts_v16.py \
-            tests/test_parser_tst_v4.py \
-            tests/test_v4_dft_contracts.py \
-            tests/test_v4_dft_scientific_contracts.py \
-            tests/test_v5_dft_evidence_and_uncertainty.py \
-            tests/test_v5_model_acceptance.py \
-            tests/test_v6_scientific_acceptance_gate.py \
-            tests/test_v7_execution_and_scientific_acceptance.py
+          python -m ruff check "${targets[@]}"
+          python -m ruff format --check "${targets[@]}"
           git diff --check
       - name: Run authoritative repository quality gate
         shell: bash

@@ -6,7 +6,11 @@ ROOT = Path(__file__).resolve().parents[1]
 REQUIREMENTS = ROOT / "requirements-dev.txt"
 PYPROJECT = ROOT / "pyproject.toml"
 CORE = ROOT / "skills/tsao-dft-hpc-provenance/scripts/scientific_contracts_core_v18.py"
-VASP_ADAPTER = ROOT / "skills/tsao-periodic-dft-materials/scripts/parse_vasp.py"
+PERIODIC_ADAPTERS = (
+    ROOT / "skills/tsao-periodic-dft-materials/scripts/parse_vasp.py",
+    ROOT / "skills/tsao-periodic-dft-materials/scripts/parse_qe.py",
+    ROOT / "skills/tsao-periodic-dft-materials/scripts/parse_cp2k.py",
+)
 
 
 def synchronize_dependencies() -> list[str]:
@@ -68,32 +72,41 @@ def distinguish_vasp_convergence_abort_from_fatal_abort() -> None:
     CORE.write_text(text, encoding="utf-8", newline="\n")
 
 
-def preserve_vasp_streaming_adapter_contract() -> None:
-    text = VASP_ADAPTER.read_text(encoding="utf-8")
+def preserve_periodic_streaming_adapter_contracts() -> list[str]:
+    repaired: list[str] = []
     old = '    text = source.read_text(encoding="utf-8", errors="replace") if source.is_file() else ""\n'
     new = '''    if source.is_file() and source.stat().st_size:\n        with source.open("rb") as handle, mmap.mmap(\n            handle.fileno(), 0, access=mmap.ACCESS_READ\n        ) as mapped:\n            text = mapped[:].decode("utf-8", errors="replace")\n    else:\n        text = ""\n'''
-    count = text.count(old)
-    if count == 1:
-        text = text.replace(old, new, 1)
-    elif count == 0 and new in text:
-        pass
-    else:
-        raise RuntimeError(f"expected one VASP read_text adapter site, found {count}")
-    compile(text, VASP_ADAPTER.as_posix(), "exec")
-    VASP_ADAPTER.write_text(text, encoding="utf-8", newline="\n")
+    for path in PERIODIC_ADAPTERS:
+        text = path.read_text(encoding="utf-8")
+        if "import mmap\n" not in text:
+            anchor = "import json\n"
+            if anchor not in text:
+                raise RuntimeError(f"JSON import anchor missing in {path}")
+            text = text.replace(anchor, anchor + "import mmap\n", 1)
+        count = text.count(old)
+        if count == 1:
+            text = text.replace(old, new, 1)
+        elif count == 0 and new in text:
+            pass
+        else:
+            raise RuntimeError(f"expected one read_text adapter site in {path}, found {count}")
+        compile(text, path.as_posix(), "exec")
+        path.write_text(text, encoding="utf-8", newline="\n")
+        repaired.append(path.name)
+    return repaired
 
 
 def main() -> int:
     requirements = synchronize_dependencies()
     close_resolved_key_type_boundary()
     distinguish_vasp_convergence_abort_from_fatal_abort()
-    preserve_vasp_streaming_adapter_contract()
+    repaired_adapters = preserve_periodic_streaming_adapter_contracts()
     print(
         {
             "synchronized_dev_dependencies": requirements,
             "resolved_key_type_boundary": "CLOSED",
             "vasp_ediff_abort_semantics": "CONVERGENCE_NOT_FATAL",
-            "vasp_adapter_streaming": "PATH_READ_TEXT_REMOVED",
+            "periodic_adapter_streaming": repaired_adapters,
         }
     )
     return 0

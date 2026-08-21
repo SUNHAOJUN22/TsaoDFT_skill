@@ -30,6 +30,8 @@ jobs:
           python-version: '3.12'
       - name: Apply complete V18 scientific-core payload
         run: python scripts/apply_tsao_skill_native_v18.py
+      - name: Normalize the generated V18 digest typing site
+        run: python .tsao-skill-native-v18/pre_repair_hotfix.py
       - name: Repair generated V18 typing, dependency, and test-runner contracts
         run: python .tsao-skill-native-v18/repair_mypy_contracts.py
       - name: Remove one-shot and obsolete workflow surfaces before validation

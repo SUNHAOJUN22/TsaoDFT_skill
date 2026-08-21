@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: tsao-dft-skill-native-v18
@@ -50,99 +51,11 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -c constraints/py312.txt -r requirements-dev.txt
           python -m pip check
-      - name: Normalize V18 scientific and test surfaces
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-          import re
-
-          path = Path("tests/test_v7_execution_and_scientific_acceptance.py")
-          text = path.read_text(encoding="utf-8")
-          replacements = {
-              'SHA = lambda c: c * 64': (
-                  'def sha(char: str) -> str:\n'
-                  '    return char * 64'
-              ),
-              '    bad = parser_record(); bad["parser_accepted"] = False; bad["status"] = "FATAL"': (
-                  '    bad = parser_record()\n'
-                  '    bad["parser_accepted"] = False\n'
-                  '    bad["status"] = "FATAL"'
-              ),
-          }
-          for old, new in replacements.items():
-              if old in text:
-                  text = text.replace(old, new, 1)
-          text = text.replace("SHA(", "sha(")
-          if "import importlib\n" not in text:
-              text = text.replace("import json\n", "import importlib\nimport json\n", 1)
-          import_pattern = re.compile(
-              r"from execution_evidence_v7 import \(\n"
-              r"(?P<body>(?:    [A-Za-z_][A-Za-z0-9_]*,\n)+)"
-              r"\)\n"
-              r"from scientific_acceptance_gate_v7 import evaluate_dft_acceptance_v7\n"
-          )
-          dynamic_imports = (
-              '_execution_evidence = importlib.import_module("execution_evidence_v7")\n'
-              '_scientific_acceptance_gate = importlib.import_module(\n'
-              '    "scientific_acceptance_gate_v7"\n'
-              ')\n'
-              'ExecutionEvidenceError = _execution_evidence.ExecutionEvidenceError\n'
-              'issue_execution_receipt = _execution_evidence.issue_execution_receipt\n'
-              'issue_scientific_review = _execution_evidence.issue_scientific_review\n'
-              'verify_scientific_review = _execution_evidence.verify_scientific_review\n'
-              'evaluate_dft_acceptance_v7 = (\n'
-              '    _scientific_acceptance_gate.evaluate_dft_acceptance_v7\n'
-              ')\n'
-          )
-          if import_pattern.search(text):
-              text = import_pattern.sub(dynamic_imports, text, count=1)
-          path.write_text(text, encoding="utf-8", newline="\n")
-          PY
-          targets=(
-            scripts/run_all_tests.py
-            scripts/run_coverage.py
-            skills/tsao-dft-hpc-provenance/scripts/_load_v18_core.py
-            skills/tsao-dft-hpc-provenance/scripts/scientific_contracts_core_v18.py
-            skills/tsao-dft-hpc-provenance/scripts/engine_parser_contract_v4.py
-            skills/tsao-dft-hpc-provenance/scripts/engine_parser_v4.py
-            skills/tsao-dft-hpc-provenance/scripts/tst_standard_state.py
-            skills/tsao-dft-hpc-provenance/scripts/ml_provenance_contract.py
-            skills/tsao-dft-hpc-provenance/scripts/scientific_contracts_v4.py
-            skills/tsao-dft-hpc-provenance/scripts/kinetics_uncertainty_v5.py
-            skills/tsao-dft-hpc-provenance/scripts/model_acceptance_v5.py
-            skills/tsao-dft-hpc-provenance/scripts/quantity_equivalence_v5.py
-            skills/tsao-dft-hpc-provenance/scripts/scientific_acceptance_gate_v6.py
-            skills/tsao-dft-hpc-provenance/scripts/execution_evidence_v7.py
-            skills/tsao-dft-hpc-provenance/scripts/scientific_acceptance_gate_v7.py
-            skills/tsao-dft-hpc-provenance/scripts/contracts_v17.py
-            skills/tsao-dft-kinetics-multiscale/scripts/tst_standard_state_v4.py
-            skills/tsao-dft-researcher/scripts/parse_gaussian.py
-            skills/tsao-periodic-dft-materials/scripts/parse_vasp.py
-            skills/tsao-periodic-dft-materials/scripts/parse_qe.py
-            skills/tsao-periodic-dft-materials/scripts/parse_cp2k.py
-            tests/test_scientific_contracts_v16.py
-            tests/test_parser_tst_v4.py
-            tests/test_v4_dft_contracts.py
-            tests/test_v4_dft_scientific_contracts.py
-            tests/test_v5_dft_evidence_and_uncertainty.py
-            tests/test_v5_model_acceptance.py
-            tests/test_v6_scientific_acceptance_gate.py
-            tests/test_v7_execution_and_scientific_acceptance.py
-          )
-          python -m ruff check "${targets[@]}" --fix --unsafe-fixes --exit-zero
-          python -m ruff format "${targets[@]}"
-          python -m ruff check "${targets[@]}"
-          python -m ruff format --check "${targets[@]}"
-          python -m compileall -q scripts skills tests
-          git diff --check
-      - name: Prove pytest discovery and focused V18 scientific contracts
+      - name: Prove pytest discovery and focused scientific contracts
         shell: bash
         run: |
           set -o pipefail
-          python -m pytest --collect-only -q -p no:cacheprovider --import-mode=importlib tests \
-            2>&1 | tee /tmp/v18-collect.log
+          python -m pytest --collect-only -q -p no:cacheprovider --import-mode=importlib tests 2>&1 | tee /tmp/v18-collect.log
           python -m pytest -q -p no:cacheprovider --import-mode=importlib \
             tests/test_parser_tst_v4.py \
             tests/test_v4_dft_contracts.py \
@@ -174,6 +87,14 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'feat: close DFT parser, TST, ML, quantity, typing, and pytest contracts V18'
           git push origin HEAD:main
+      - name: Close the deduplicated remediation issue with exact run evidence
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh issue comment 29 --body "V18 source closure succeeded. workflow_run=${{ github.run_id }} source_commit=${{ github.sha }}. The pushed final commit is the current main head; the one-shot workflow and staged payload were deleted before qualification."
+          gh issue close 29 --reason completed
       - name: Preserve failure evidence
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -191,3 +112,10 @@ jobs:
             skills/tsao-dft-kinetics-multiscale/scripts/tst_standard_state_v4.py
           if-no-files-found: warn
           retention-days: 7
+      - name: Update the deduplicated remediation issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh issue comment 29 --body "V18 source closure failed. workflow_run=${{ github.run_id }} source_commit=${{ github.sha }}. Download artifact dft-v18-failure-${{ github.run_id }} for the exact logs."

@@ -34,6 +34,8 @@ jobs:
         run: python .tsao-skill-native-v18/pre_repair_hotfix.py
       - name: Repair generated V18 typing, dependency, and test-runner contracts
         run: python .tsao-skill-native-v18/repair_mypy_contracts.py
+      - name: Synchronize the repaired dependency contract
+        run: python .tsao-skill-native-v18/post_repair_hotfix.py
       - name: Remove one-shot and obsolete workflow surfaces before validation
         shell: bash
         run: |
@@ -106,6 +108,9 @@ jobs:
             /tmp/v18-collect.log
             /tmp/v18-focused.log
             /tmp/v18-quality-gate.log
+            requirements-dev.txt
+            pyproject.toml
+            constraints/py312.txt
             scripts/run_all_tests.py
             scripts/run_coverage.py
             skills/tsao-dft-hpc-provenance/scripts/scientific_contracts_core_v18.py

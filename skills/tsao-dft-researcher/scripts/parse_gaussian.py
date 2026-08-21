@@ -418,7 +418,7 @@ def _excited_states(text: str) -> list[dict[str, Any]]:
     return output
 
 
-def parse_log(text: str) -> dict[str, Any]:
+def _parse_log_legacy(text: str) -> dict[str, Any]:
     normal_count = text.count("Normal termination of Gaussian")
     error = "Error termination" in text
     route_sections = _route_sections(text)
@@ -579,6 +579,42 @@ def parse_log(text: str) -> dict[str, Any]:
     }
 
 
+def _canonical_parser_record(text: str):
+    import importlib.util
+    import sys
+
+    contract = (
+        Path(__file__).resolve().parents[2] / "tsao-dft-hpc-provenance" / "scripts" / "engine_parser_contract_v4.py"
+    )
+    spec = importlib.util.spec_from_file_location("tsao_engine_parser_contract_v4", contract)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load {contract}")
+    module = importlib.util.module_from_spec(spec)
+    sys.path.insert(0, str(contract.parent))
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module.parse_engine_output("gaussian", text)
+
+
+def _apply_canonical_parser_guard(result: dict, text: str) -> dict:
+    decision = _canonical_parser_record(text)
+    guarded = dict(result)
+    guarded["parser_accepted"] = decision.parser_accepted
+    guarded["parser_contract_status"] = decision.status
+    guarded["parser_reason_codes"] = list(decision.reason_codes)
+    guarded["parser_segment_count"] = len(decision.jobs)
+    if not decision.parser_accepted:
+        guarded["status"] = decision.status
+        guarded["normal_termination"] = False
+    return guarded
+
+
+def parse_log(text: str) -> dict:
+    result = _parse_log_legacy(text)
+    source_text = text
+    return _apply_canonical_parser_guard(result, source_text)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("log", type=Path)
@@ -591,12 +627,12 @@ def main() -> int:
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-    if args.json:
+    if args.json or not result["parser_accepted"]:
         print(json.dumps(result, ensure_ascii=False, indent=2))
     else:
         for key, value in result.items():
             print(f"{key}: {value}")
-    return 0 if result["normal_termination"] else 1
+    return 0 if result["parser_accepted"] else 2
 
 
 if __name__ == "__main__":

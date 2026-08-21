@@ -27,7 +27,7 @@ def scan_last(data: mmap.mmap, pattern: re.Pattern[bytes]) -> tuple[bytes | None
     return value, count
 
 
-def parse(path: Path) -> dict:
+def _parse_legacy(path: Path) -> dict:
     done = False
     version = None
     last_energy = None
@@ -96,13 +96,50 @@ def parse(path: Path) -> dict:
     }
 
 
+def _canonical_parser_record(text: str):
+    import importlib.util
+    import sys
+
+    contract = (
+        Path(__file__).resolve().parents[2] / "tsao-dft-hpc-provenance" / "scripts" / "engine_parser_contract_v4.py"
+    )
+    spec = importlib.util.spec_from_file_location("tsao_engine_parser_contract_v4", contract)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load {contract}")
+    module = importlib.util.module_from_spec(spec)
+    sys.path.insert(0, str(contract.parent))
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module.parse_engine_output("qe", text)
+
+
+def parse(path: Path) -> dict:
+    result = _parse_legacy(path)
+    source = path
+    if source.is_file() and source.stat().st_size:
+        with source.open("rb") as handle, mmap.mmap(handle.fileno(), 0, access=mmap.ACCESS_READ) as mapped:
+            text = mapped[:].decode("utf-8", errors="replace")
+    else:
+        text = ""
+    decision = _canonical_parser_record(text)
+    guarded = dict(result)
+    guarded["parser_accepted"] = decision.parser_accepted
+    guarded["parser_contract_status"] = decision.status
+    guarded["parser_reason_codes"] = list(decision.reason_codes)
+    guarded["parser_segment_count"] = len(decision.jobs)
+    if not decision.parser_accepted:
+        guarded["status"] = decision.status
+        guarded["job_done"] = False
+    return guarded
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path)
     args = parser.parse_args()
     result = parse(args.output)
     print(json.dumps(result, indent=2))
-    return 0 if result["job_done"] else 1
+    return 0 if result["parser_accepted"] else 2
 
 
 if __name__ == "__main__":

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from math import exp, isfinite
-from typing import Iterable
 
 BOLTZMANN_J_K = 1.380649e-23
 PLANCK_J_S = 6.62607015e-34
@@ -88,6 +88,7 @@ def tst_rate_constant(
 
 
 def validate_quantity_shape(kind: str, shape: tuple[int, ...], *, atom_count: int | None = None) -> None:
+    expected: tuple[int, ...]
     if kind == "scalar":
         expected = ()
     elif kind == "forces":

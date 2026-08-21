@@ -64,13 +64,12 @@ def collect_coverage(config_file: Path) -> list[str]:
             f"--rcfile={config_file}",
             "--parallel-mode",
             "-m",
-            "unittest",
-            "discover",
-            "-s",
-            str(suite),
+            "pytest",
+            "-q",
             "-p",
-            "test_*.py",
-            "-v",
+            "no:cacheprovider",
+            "--import-mode=importlib",
+            str(suite),
         ]
         completed = subprocess.run(command, cwd=ROOT, capture_output=True, text=True, check=False)
         if completed.returncode:
@@ -197,6 +196,7 @@ def main() -> int:
                 failures.append(f"{relative} branch coverage {values['branch']:.2f} < {args.core_branch:.2f}")
         payload = {
             "ok": not failures,
+            "runner": "pytest-importlib",
             "total": {"statement": round(total_statement, 2), "branch": round(total_branch, 2)},
             "thresholds": {
                 "total_statement": args.total_statement,

@@ -1,18 +1,13 @@
 """Focused DFT parser, standard-state, and model-evidence tests."""
 
 import importlib.util
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import pytest
 
-
 MODULE_PATH = (
-    Path(__file__).parents[1]
-    / "skills"
-    / "tsao-dft-hpc-provenance"
-    / "scripts"
-    / "scientific_contracts_v16.py"
+    Path(__file__).parents[1] / "skills" / "tsao-dft-hpc-provenance" / "scripts" / "scientific_contracts_v16.py"
 )
 SPEC = importlib.util.spec_from_file_location("tsao_dft_contracts_v16", MODULE_PATH)
 assert SPEC is not None and SPEC.loader is not None

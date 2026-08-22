@@ -19,7 +19,7 @@ dev = [
   "hypothesis==6.160.0",
   "mypy==2.3.0",
   "pip-audit==2.10.1",
-  "pytest==8.4.2",
+  "pytest==9.0.3",
   "ruff==0.15.22",
   "types-PyYAML==6.0.12.20260518",
   "tomli>=2,<3; python_version < '3.11'",

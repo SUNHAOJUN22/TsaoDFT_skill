@@ -713,7 +713,7 @@ def assess_model_card(
             blockers.append("APPROVAL_SCOPE_MISMATCH")
         if approval.authorized_role != "independent_model_validator":
             blockers.append("APPROVAL_ROLE_MISMATCH")
-        active_now = (now or datetime.now(UTC)).astimezone(timezone.utc)
+        active_now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
         if (
             not parse_timestamp(approval.issued_at, "issued_at")
             <= active_now

@@ -1,0 +1,118 @@
+name: One-shot DFT Python 3.10 UTC convergence
+
+on:
+  push:
+    branches:
+      - remediation/scientific-contracts-v8
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dft-py310-utc-convergence
+  cancel-in-progress: false
+
+jobs:
+  converge:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONHASHSEED: "0"
+    steps:
+      - name: Check out exact remediation branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          ref: remediation/scientific-contracts-v8
+          fetch-depth: 0
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.10'
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+            constraints/py310.txt
+
+      - name: Install exact constrained validation stack
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -c constraints/py310.txt -r requirements-dev.txt
+          python -m pip check
+
+      - name: Replace Python 3.11-only UTC aliases and remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import re
+          from pathlib import Path
+
+          paths = (
+              Path('tests/test_v7_execution_and_scientific_acceptance.py'),
+              Path('tests/test_v5_model_acceptance.py'),
+              Path('skills/tsao-dft-hpc-provenance/scripts/scientific_contracts_core_v18.py'),
+          )
+          for path in paths:
+              text = path.read_text(encoding='utf-8')
+              old = 'from datetime import UTC, datetime'
+              if text.count(old) != 1:
+                  raise SystemExit(f'{path}: expected exactly one datetime.UTC import')
+              text = text.replace(old, 'from datetime import datetime, timezone')
+              text = text.replace('tzinfo=UTC', 'tzinfo=timezone.utc')
+              text = text.replace('.astimezone(UTC)', '.astimezone(timezone.utc)')
+              if re.search(r'\bUTC\b', text):
+                  raise SystemExit(f'{path}: unresolved Python 3.11-only UTC alias')
+              path.write_text(text, encoding='utf-8')
+          PY
+          rm .github/workflows/remediation-py310-utc.yml
+          python -m ruff check --fix \
+            tests/test_v7_execution_and_scientific_acceptance.py \
+            tests/test_v5_model_acceptance.py \
+            skills/tsao-dft-hpc-provenance/scripts/scientific_contracts_core_v18.py
+          python -m ruff format \
+            tests/test_v7_execution_and_scientific_acceptance.py \
+            tests/test_v5_model_acceptance.py \
+            skills/tsao-dft-hpc-provenance/scripts/scientific_contracts_core_v18.py
+
+      - name: Run complete Python 3.10 quality gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/quality_gate.py
+          python -m unittest tests.test_v5_model_acceptance tests.test_v7_execution_and_scientific_acceptance -v
+          python -m compileall -q scripts tests skills
+          git diff --check
+
+      - name: Verify bounded compatibility diff and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import subprocess
+
+          expected = {
+              '.github/workflows/remediation-py310-utc.yml',
+              'tests/test_v7_execution_and_scientific_acceptance.py',
+              'tests/test_v5_model_acceptance.py',
+              'skills/tsao-dft-hpc-provenance/scripts/scientific_contracts_core_v18.py',
+          }
+          rows = subprocess.check_output(['git', 'diff', '--name-status', 'HEAD'], text=True).splitlines()
+          statuses: dict[str, str] = {}
+          for row in rows:
+              status, *paths = row.split('\t')
+              for path in paths:
+                  statuses[path] = status
+          actual = set(statuses)
+          if actual != expected or statuses.get('.github/workflows/remediation-py310-utc.yml') != 'D':
+              raise SystemExit(f'unexpected compatibility diff: statuses={statuses!r}')
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix(compat): use timezone.utc on Python 3.10"
+          git push origin HEAD:remediation/scientific-contracts-v8

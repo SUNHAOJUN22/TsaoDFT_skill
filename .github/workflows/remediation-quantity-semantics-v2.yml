@@ -1,0 +1,152 @@
+name: One-shot DFT quantity semantics convergence v2
+
+on:
+  push:
+    branches:
+      - remediation/quantity-semantics-ci
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dft-quantity-semantics-convergence-v2
+  cancel-in-progress: false
+
+jobs:
+  apply-and-qualify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONHASHSEED: "0"
+    steps:
+      - name: Check out exact remediation branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          ref: remediation/quantity-semantics-ci
+          fetch-depth: 0
+
+      - name: Set up locked Python toolchain
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+            constraints/py312.txt
+
+      - name: Install exact validation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -c constraints/py312.txt -r requirements-dev.txt
+          python -m pip check
+
+      - name: Reconstruct and apply verified quantity patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .github/remediation/dft-quantity-patch/payload-*.b64 \
+            | tr -d '\r\n' \
+            | base64 --decode \
+            | gzip --decompress > /tmp/dft-quantity-contract.patch
+          printf '%s  %s\n' \
+            '0741f98f11674edc50a064b5c0cfb72037e06fb426232304f7534a1f78c769fc' \
+            /tmp/dft-quantity-contract.patch | sha256sum --check
+          git apply --index /tmp/dft-quantity-contract.patch
+          test ! -e .github/workflows/exact-tree-export.yml
+          test -f skills/tsao-dft-hpc-provenance/templates/engine-parser-result.schema.json
+          test -f templates/benchmark-result.schema.json
+          git rm -rf \
+            .github/remediation/dft-quantity-patch \
+            .github/remediation/dft-quantity-contract.patch.gz \
+            .github/workflows/remediation-quantity-semantics.yml \
+            .github/workflows/remediation-quantity-semantics-v2.yml
+
+      - name: Format and run focused scientific contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m ruff check --fix \
+            skills/tsao-dft-hpc-provenance/scripts/benchmark_bridge.py \
+            skills/tsao-dft-hpc-provenance/scripts/engine_parser_contract.py \
+            skills/tsao-dft-hpc-provenance/tests/test_engine_parser_contract.py \
+            skills/tsao-dft-hpc-provenance/tests/test_release_parser_bridge_coverage.py
+          python -m ruff format \
+            skills/tsao-dft-hpc-provenance/scripts/benchmark_bridge.py \
+            skills/tsao-dft-hpc-provenance/scripts/engine_parser_contract.py \
+            skills/tsao-dft-hpc-provenance/tests/test_engine_parser_contract.py \
+            skills/tsao-dft-hpc-provenance/tests/test_release_parser_bridge_coverage.py
+          python scripts/validate_governance.py
+          python scripts/validate_benchmark_contract.py
+          python -m pytest -q \
+            skills/tsao-dft-hpc-provenance/tests/test_engine_parser_contract.py \
+            skills/tsao-dft-hpc-provenance/tests/test_release_parser_bridge_coverage.py \
+            skills/tsao-dft-hpc-provenance/tests/test_release_core_remaining.py
+
+      - name: Run complete native quality gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/quality_gate.py
+          git diff --check HEAD
+          python - <<'PY'
+          import subprocess
+          from pathlib import Path
+
+          workflows = sorted(
+              path for path in subprocess.check_output(['git', 'ls-files'], text=True).splitlines()
+              if path.startswith('.github/workflows/')
+              and Path(path).name not in {
+                  'remediation-quantity-semantics.yml',
+                  'remediation-quantity-semantics-v2.yml',
+                  'exact-tree-export.yml',
+              }
+          )
+          assert workflows == ['.github/workflows/ci.yml'], workflows
+          assert not Path('.github/remediation').exists()
+          PY
+
+      - name: Verify closed diff and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import subprocess
+
+          required = {
+              '.github/remediation/dft-quantity-contract.patch.gz',
+              '.github/remediation/dft-quantity-patch/payload-00.b64',
+              '.github/remediation/dft-quantity-patch/payload-01.b64',
+              '.github/workflows/exact-tree-export.yml',
+              '.github/workflows/remediation-quantity-semantics.yml',
+              '.github/workflows/remediation-quantity-semantics-v2.yml',
+              'compute-contract-evidence.json',
+              'coverage-report.json',
+              'release-acceptance.json',
+              'skills/tsao-dft-hpc-provenance/scripts/benchmark_bridge.py',
+              'skills/tsao-dft-hpc-provenance/scripts/engine_parser_contract.py',
+              'skills/tsao-dft-hpc-provenance/templates/benchmark-result.schema.json',
+              'skills/tsao-dft-hpc-provenance/templates/engine-parser-result.schema.json',
+              'skills/tsao-dft-hpc-provenance/tests/test_engine_parser_contract.py',
+              'skills/tsao-dft-hpc-provenance/tests/test_release_parser_bridge_coverage.py',
+              'templates/benchmark-result.schema.json',
+          }
+          actual = set(
+              subprocess.check_output(['git', 'diff', '--name-only', 'HEAD'], text=True).splitlines()
+          )
+          missing = required - actual
+          unexpected = actual - required
+          if missing or unexpected:
+              raise SystemExit(
+                  f'unexpected final diff: missing={sorted(missing)!r} '
+                  f'unexpected={sorted(unexpected)!r} actual={sorted(actual)!r}'
+              )
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix(parser): enforce explicit DFT quantity kind and shape"
+          git push origin HEAD:remediation/quantity-semantics-ci

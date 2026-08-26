@@ -63,11 +63,7 @@ class SkillInteroperabilityV19Tests(unittest.TestCase):
 
     def test_nonfinite_or_boolean_quantities_are_invalid(self) -> None:
         for value in (True, False, float("nan"), float("inf"), -float("inf")):
-            valid = (
-                not isinstance(value, bool)
-                and isinstance(value, int | float)
-                and math.isfinite(float(value))
-            )
+            valid = not isinstance(value, bool) and isinstance(value, int | float) and math.isfinite(float(value))
             self.assertFalse(valid)
 
 

@@ -38,9 +38,7 @@ class SkillInteroperabilityV19Tests(unittest.TestCase):
         )
         self.assertFalse(contract["scientific_quantity"]["boolean_is_numeric"])
         self.assertFalse(contract["scientific_quantity"]["unknown_is_zero"])
-        self.assertFalse(
-            contract["status_lattice"]["software_pass_implies_external_acceptance"]
-        )
+        self.assertFalse(contract["status_lattice"]["software_pass_implies_external_acceptance"])
         self.assertEqual(
             contract["status_lattice"]["workflow_order"][-1],
             "accepted",
@@ -61,17 +59,11 @@ class SkillInteroperabilityV19Tests(unittest.TestCase):
         )
         self.assertEqual(status["status"], "NOT_RUN")
         self.assertEqual(capture["status"], "NOT_RUN")
-        self.assertTrue(
-            all(item["selected_skills"] is None for item in capture["decisions"])
-        )
+        self.assertTrue(all(item["selected_skills"] is None for item in capture["decisions"]))
 
     def test_nonfinite_or_boolean_quantities_are_invalid(self) -> None:
         for value in (True, False, float("nan"), float("inf"), -float("inf")):
-            valid = (
-                not isinstance(value, bool)
-                and isinstance(value, int | float)
-                and math.isfinite(float(value))
-            )
+            valid = not isinstance(value, bool) and isinstance(value, int | float) and math.isfinite(float(value))
             self.assertFalse(valid)
 
 

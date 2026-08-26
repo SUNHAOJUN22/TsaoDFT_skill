@@ -3,7 +3,7 @@ from __future__ import annotations
 import importlib.util
 import sys
 from dataclasses import replace
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -16,7 +16,7 @@ sys.modules[spec.name] = m
 spec.loader.exec_module(m)
 
 KEY = b"independent-model-approval-key-32bytes"
-NOW = datetime(2026, 8, 12, 10, tzinfo=UTC)
+NOW = datetime(2026, 8, 12, 10, tzinfo=timezone.utc)
 
 
 def artifact():

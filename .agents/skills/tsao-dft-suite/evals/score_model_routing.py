@@ -93,9 +93,7 @@ def score(eval_path: Path, capture_path: Path) -> dict[str, Any]:
             errors.append(f"duplicate decision id: {decision_id}")
             continue
         selected = decision.get("selected_skills")
-        if not isinstance(selected, list) or any(
-            not isinstance(item, str) for item in selected
-        ):
+        if not isinstance(selected, list) or any(not isinstance(item, str) for item in selected):
             errors.append(f"{decision_id}: selected_skills must be a string array")
             continue
         for key in ("request_sha256", "response_sha256"):
@@ -171,13 +169,16 @@ def main(argv: list[str] | None = None) -> int:
             "status": "FAIL",
             "errors": [str(exc)],
         }
-    text = json.dumps(
-        receipt,
-        ensure_ascii=False,
-        indent=2,
-        sort_keys=True,
-        allow_nan=False,
-    ) + "\n"
+    text = (
+        json.dumps(
+            receipt,
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+            allow_nan=False,
+        )
+        + "\n"
+    )
     if arguments.report is not None:
         arguments.report.write_text(text, encoding="utf-8", newline="\n")
     sys.stdout.write(text)

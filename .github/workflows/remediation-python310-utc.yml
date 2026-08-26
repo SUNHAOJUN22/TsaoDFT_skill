@@ -91,6 +91,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          git restore --source=HEAD -- coverage-report.json
           python - <<'PY'
           import subprocess
 

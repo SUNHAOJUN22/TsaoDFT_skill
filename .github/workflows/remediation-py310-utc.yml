@@ -1,4 +1,4 @@
-name: DFT Python 3.10 UTC source convergence v4
+name: DFT Python 3.10 UTC two-phase convergence v5
 
 on:
   push:
@@ -9,14 +9,14 @@ permissions:
   contents: write
 
 concurrency:
-  group: dft-py310-utc-source-convergence-v4
+  group: dft-py310-utc-two-phase-v5
   cancel-in-progress: false
 
 jobs:
   converge:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
-    timeout-minutes: 75
+    timeout-minutes: 90
     env:
       PIP_DISABLE_PIP_VERSION_CHECK: "1"
       PYTHONDONTWRITEBYTECODE: "1"
@@ -44,7 +44,7 @@ jobs:
           python -m pip install -c constraints/py310.txt -r requirements-dev.txt
           python -m pip check
 
-      - name: Replace Python 3.11-only UTC aliases
+      - name: Apply and commit Python 3.10 UTC compatibility fix
         shell: bash
         run: |
           set -euo pipefail
@@ -82,20 +82,6 @@ jobs:
             tests/test_v7_execution_and_scientific_acceptance.py \
             tests/test_v5_model_acceptance.py \
             skills/tsao-dft-hpc-provenance/scripts/scientific_contracts_core_v18.py
-
-      - name: Run complete Python 3.10 quality gate
-        shell: bash
-        run: |
-          set -euo pipefail
-          python scripts/quality_gate.py
-          python -m unittest tests.test_v5_model_acceptance tests.test_v7_execution_and_scientific_acceptance -v
-          python -m compileall -q scripts tests skills
-          git diff --check
-
-      - name: Verify bounded compatibility diff and commit source fix
-        shell: bash
-        run: |
-          set -euo pipefail
           python - <<'PY'
           import subprocess
 
@@ -110,8 +96,7 @@ jobs:
               status, *paths = row.split('\t')
               for path in paths:
                   statuses[path] = status
-          actual = set(statuses)
-          if actual != expected or any(statuses[path] != 'M' for path in expected):
+          if set(statuses) != expected or any(statuses[path] != 'M' for path in expected):
               raise SystemExit(f'unexpected compatibility diff: statuses={statuses!r}')
           PY
           git config user.name "github-actions[bot]"
@@ -121,4 +106,38 @@ jobs:
             tests/test_v5_model_acceptance.py \
             skills/tsao-dft-hpc-provenance/scripts/scientific_contracts_core_v18.py
           git commit -m "fix(compat): use timezone.utc on Python 3.10"
+          git push origin HEAD:remediation/scientific-contracts-v8
+
+      - name: Remove temporary workflow in the validation worktree
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/remediation-py310-utc.yml
+          git add -A
+          test ! -e .github/workflows/remediation-py310-utc.yml
+
+      - name: Run complete Python 3.10 quality gate without temporary workflow pollution
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/quality_gate.py
+          python -m unittest tests.test_v5_model_acceptance tests.test_v7_execution_and_scientific_acceptance -v
+          python -m compileall -q scripts tests skills
+          python -m ruff format --check .
+          python -m ruff check .
+          python -m mypy scripts tests skills
+          git diff --check
+
+      - name: Commit temporary workflow removal
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import subprocess
+
+          rows = subprocess.check_output(['git', 'diff', '--cached', '--name-status', 'HEAD'], text=True).splitlines()
+          if rows != ['D\t.github/workflows/remediation-py310-utc.yml']:
+              raise SystemExit(f'unexpected cleanup diff: {rows!r}')
+          PY
+          git commit -m "chore(ci): remove temporary Python 3.10 convergence workflow"
           git push origin HEAD:remediation/scientific-contracts-v8

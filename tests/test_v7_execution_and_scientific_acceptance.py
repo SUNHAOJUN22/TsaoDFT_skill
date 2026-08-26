@@ -3,7 +3,7 @@ from __future__ import annotations
 import importlib.util
 import sys
 from dataclasses import replace
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -23,7 +23,7 @@ evaluate_dft_acceptance_v7 = _scientific_acceptance_gate.evaluate_dft_acceptance
 
 KEY = b"dft-execution-authority-key-32bytes!!"
 REVIEW_KEY = b"dft-independent-review-key-32bytes!"
-NOW = datetime(2026, 8, 12, 10, tzinfo=UTC)
+NOW = datetime(2026, 8, 12, 10, tzinfo=timezone.utc)
 
 
 def sha(char: str) -> str:
@@ -150,7 +150,7 @@ def test_tamper_expiry_wrong_binding_and_self_review_fail_closed() -> None:
         )
     result = evaluate(run=replace(run, output_sha256=sha("0")), review=None)
     assert result.external_execution_status == "EXTERNAL_DFT_EXECUTION_NOT_VERIFIED"
-    expired = evaluate(run=run, review=None, now=datetime(2026, 8, 12, 12, tzinfo=UTC))
+    expired = evaluate(run=run, review=None, now=datetime(2026, 8, 12, 12, tzinfo=timezone.utc))
     assert expired.external_execution_status == "EXTERNAL_DFT_EXECUTION_NOT_VERIFIED"
 
 

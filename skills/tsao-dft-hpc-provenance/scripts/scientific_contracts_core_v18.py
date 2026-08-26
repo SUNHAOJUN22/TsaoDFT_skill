@@ -13,7 +13,7 @@ import math
 import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass, fields
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import cast
 
@@ -92,7 +92,7 @@ def parse_timestamp(value: str, name: str) -> datetime:
         raise DFTContractError(f"{name} must be ISO-8601") from exc
     if parsed.tzinfo is None:
         raise DFTContractError(f"{name} must include a timezone")
-    return parsed.astimezone(UTC)
+    return parsed.astimezone(timezone.utc)
 
 
 def canonical_json(value: object) -> str:
@@ -713,7 +713,7 @@ def assess_model_card(
             blockers.append("APPROVAL_SCOPE_MISMATCH")
         if approval.authorized_role != "independent_model_validator":
             blockers.append("APPROVAL_ROLE_MISMATCH")
-        active_now = (now or datetime.now(UTC)).astimezone(UTC)
+        active_now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
         if (
             not parse_timestamp(approval.issued_at, "issued_at")
             <= active_now
@@ -1067,7 +1067,7 @@ def verify_execution_receipt(
     for key, expected in expected_bindings.items():
         if getattr(receipt, key, None) != expected:
             raise DFTContractError(f"execution receipt binding mismatch: {key}")
-    active = now.astimezone(UTC)
+    active = now.astimezone(timezone.utc)
     if (
         not parse_timestamp(receipt.issued_at, "issued_at")
         <= active
@@ -1115,7 +1115,7 @@ def verify_scientific_review(
     for key_name, expected_value in expected.items():
         if getattr(review, key_name) != expected_value:
             raise DFTContractError(f"scientific review binding mismatch: {key_name}")
-    active = now.astimezone(UTC)
+    active = now.astimezone(timezone.utc)
     if not parse_timestamp(review.issued_at, "issued_at") <= active < parse_timestamp(review.expires_at, "expires_at"):
         raise DFTContractError("scientific review is expired or not yet valid")
     key = key_resolver(review.key_id)

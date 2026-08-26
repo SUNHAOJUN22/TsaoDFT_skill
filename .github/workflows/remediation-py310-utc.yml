@@ -1,4 +1,4 @@
-name: One-shot DFT Python 3.10 UTC convergence
+name: One-shot DFT Python 3.10 UTC convergence v2
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: dft-py310-utc-convergence
+  group: dft-py310-utc-convergence-v2
   cancel-in-progress: false
 
 jobs:

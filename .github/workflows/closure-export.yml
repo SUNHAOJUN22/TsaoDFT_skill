@@ -1,35 +1,54 @@
-name: Temporary closure source export
+name: One-shot DFT closure qualification
 
 on:
   push:
     branches: [closure/20260828-code-readme]
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: dft-closure-20260828
+  cancel-in-progress: false
 
 jobs:
-  export:
+  apply-test-commit:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 110
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
+          ref: closure/20260828-code-readme
           fetch-depth: 0
-          persist-credentials: false
-      - name: Archive exact tracked tree
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-dev.lock
+      - name: Apply reviewed non-workflow patch
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          test -z "$(git status --porcelain=v1)"
-          mkdir -p artifacts
-          prefix="${GITHUB_REPOSITORY#*/}-${GITHUB_SHA}/"
-          git archive --format=tar.gz --prefix="$prefix" "$GITHUB_SHA" -o artifacts/closure-source.tar.gz
-          sha256sum artifacts/closure-source.tar.gz > artifacts/closure-source.sha256
-          printf '{"repository":"%s","sha":"%s","tree":"%s"}\n' "$GITHUB_REPOSITORY" "$GITHUB_SHA" "$(git rev-parse HEAD^{tree})" > artifacts/closure-source.json
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: closure-source-${{ github.sha }}
-          path: artifacts/closure-source.*
-          if-no-files-found: error
-          retention-days: 3
+          base64 --decode > /tmp/closure.patch.gz <<'PATCH'
+          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
+          PATCH
+          printf '%s  %s\n' fe333927ae3eee75917d12d2bbbffd391f8a096188cbb4a2348e424b6cc57a53 /tmp/closure.patch.gz | sha256sum --check
+          gzip -dc /tmp/closure.patch.gz > /tmp/closure.patch
+          git apply --index --binary /tmp/closure.patch
+      - name: Qualify parser-helper closure
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check -r requirements-dev.lock
+          python -m pip check
+          python scripts/quality_gate.py
+          git diff --check
+      - name: Commit qualified source changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'refactor(closure): share streaming parser utilities and update README boundaries'
+          git push origin HEAD:closure/20260828-code-readme

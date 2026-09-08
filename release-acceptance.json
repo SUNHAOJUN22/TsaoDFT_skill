@@ -1,12 +1,12 @@
 {
   "artifacts": {
     "acceleration_doctrine_sha256": "7148873cf01189112b61abd82b7d2241741c591f3a8a3835a8f270b679883d53",
-    "acceptance_document_sha256": "c5dd9b8f959387ef8bf0682f928c91281569b94244e24a494a2fb97e301b9bc2",
-    "acceptance_schema_sha256": "2e4e85a047e0e4de1c86075e69af48b91bd0afa7eb793a2a53ac612a99dba2d0",
+    "acceptance_document_sha256": "608aee0e1490f72bd738349a3f0d287abcd036586bf6a590f6627bd0c8d0e431",
+    "acceptance_schema_sha256": "644505c9837c536f548156bcfaeeedf1fc78d59b367e653575285234213bcaa0",
     "capability_status_sha256": "51f8485811f0a41b281e11826a84f890455a55c88c54af60d8121b761ee6c8fd",
     "compute_contract_evidence_sha256": "c940050a6316dec3dbc6c1ccaed0f15969c815ba466752972216b4b8bdd471be",
     "permanent_ci_sha256": "3fdcb8ef819cfa62460735212932b26a50623143d7dfb9256de7e652a303542f",
-    "quality_gate_sha256": "35fb1ac7fbd78eb36340be4b4ad9c2866563fdb3061613d4ede52bd508657916",
+    "quality_gate_sha256": "22efd96a2e8e4ab80bfe66ca0b0a9e8a94bbbac79d2a71eed6b07e3e510b59bc",
     "scientific_claim_policy_sha256": "10b948ab4618635b89f748604c008d1c111b36810665073718c7dcf75ead9a98",
     "version_sha256": "166d180beb256bf52e170af554b55a923dffb66db4c19d2f84c1c58331137486"
   },
@@ -60,7 +60,7 @@
     "state": "EXTERNAL_HOLD"
   },
   "non_claims": [
-    "SOFTWARE_ACCEPTANCE_READY is limited to repository software and permanent validation contracts.",
+    "SOFTWARE_PREFLIGHT_READY is limited to repository software and permanent validation contracts.",
     "It does not establish execution on Gaussian, VASP, Quantum ESPRESSO, CP2K or any licensed solver.",
     "EXTERNAL_HOLD remains in force until fixed real-engine evidence passes numerical qualification before performance qualification.",
     "No CPU/GPU speedup or native/CUDA execution is inferred from this report."
@@ -107,7 +107,7 @@
     },
     "quality_gate_contract_complete": true,
     "quality_gate_stage_count": 29,
-    "scope": "repository software, contracts, documentation and permanent CI contract",
-    "state": "SOFTWARE_ACCEPTANCE_READY"
+    "scope": "static repository preflight only; actual stage execution is recorded by quality_gate.py",
+    "state": "SOFTWARE_PREFLIGHT_READY"
   }
 }

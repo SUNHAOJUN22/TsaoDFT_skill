@@ -29,7 +29,7 @@ WORKFLOW_PATH = ROOT / ".github" / "workflows" / "ci.yml"
 README_PATHS = (ROOT / "README.md", ROOT / "README_EN.md")
 
 SCHEMA_VERSION = "1.0"
-SOFTWARE_READY = "SOFTWARE_ACCEPTANCE_READY"
+SOFTWARE_READY = "SOFTWARE_PREFLIGHT_READY"
 EXTERNAL_HOLD = "EXTERNAL_HOLD"
 UNQUALIFIED = "UNQUALIFIED"
 REQUIRED_CI_JOBS = {"quality-gate", "windows-control-plane", "supply-chain", "codeql"}
@@ -330,7 +330,7 @@ def build_report() -> dict[str, Any]:
         "release": release,
         "software_acceptance": {
             "state": SOFTWARE_READY if not errors else UNQUALIFIED,
-            "scope": "repository software, contracts, documentation and permanent CI contract",
+            "scope": "static repository preflight only; actual stage execution is recorded by quality_gate.py",
             "quality_gate_stage_count": len(stage_names),
             "quality_gate_contract_complete": stage_names == list(REQUIRED_STAGES),
             "capability_count": capabilities["count"],
@@ -351,7 +351,7 @@ def build_report() -> dict[str, Any]:
         "artifacts": artifacts,
         "errors": errors,
         "non_claims": [
-            "SOFTWARE_ACCEPTANCE_READY is limited to repository software and permanent validation contracts.",
+            "SOFTWARE_PREFLIGHT_READY is limited to repository software and permanent validation contracts.",
             "It does not establish execution on Gaussian, VASP, Quantum ESPRESSO, CP2K or any licensed solver.",
             "EXTERNAL_HOLD remains in force until fixed real-engine evidence passes numerical qualification before performance qualification.",
             "No CPU/GPU speedup or native/CUDA execution is inferred from this report.",

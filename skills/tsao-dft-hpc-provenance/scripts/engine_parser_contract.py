@@ -50,7 +50,12 @@ CP2K_GRADIENT_RE = re.compile(rb"Max\. gradient\s*=\s*(" + FLOAT + rb")")
 def sha256_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
     """Compatibility entry point for the shared bounded artifact hasher."""
 
-    return _SCAN.sha256_file(path, chunk_size=chunk_size)
+    result = _SCAN.sha256_file(path, chunk_size=chunk_size)
+    if not isinstance(result, str):
+        raise TypeError("shared scanner must return a SHA-256 string")
+    if re.fullmatch(r"[0-9a-f]{64}", result) is None:
+        raise ValueError("shared scanner returned an invalid SHA-256 digest")
+    return result
 
 
 def base_result(engine: str, path: Path) -> dict[str, Any]:

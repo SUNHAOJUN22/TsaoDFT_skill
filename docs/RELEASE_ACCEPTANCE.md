@@ -2,16 +2,16 @@
 
 ## Acceptance decision
 
-The repository software is accepted only when the deterministic machine report states:
+Static preflight is complete only when the deterministic machine report states:
 
 ```text
-software_acceptance.state = SOFTWARE_ACCEPTANCE_READY
+software_acceptance.state = SOFTWARE_PREFLIGHT_READY
 external_execution.state = EXTERNAL_HOLD
 ```
 
-`SOFTWARE_ACCEPTANCE_READY` is deliberately scoped to repository software: source code, Schemas, adapters, documentation, governance, the permanent Linux/Windows CI contract and its regression gates. It does not claim execution on a licensed Gaussian, VASP, Quantum ESPRESSO, CP2K or other external solver.
+`SOFTWARE_PREFLIGHT_READY` describes static source, Schema, adapter, documentation and CI-contract consistency only; it does not attest that regression, coverage or security stages ran. It does not claim execution on a licensed Gaussian, VASP, Quantum ESPRESSO, CP2K or other external solver.
 
-The canonical acceptance artifact is:
+The deterministic preflight artifact is:
 
 ```text
 release-acceptance.json
@@ -66,6 +66,18 @@ For repository acceptance, deliver together:
 If external execution is not part of the current acceptance scope, record the final decision as:
 
 ```text
-Repository software: SOFTWARE_ACCEPTANCE_READY
+Static preflight: SOFTWARE_PREFLIGHT_READY
+Executed quality gates: require SOFTWARE_GATES_PASSED from this run
 External solver correctness/performance: EXTERNAL_HOLD
 ```
+
+## Executed quality-gate receipt
+
+`release-acceptance.json` is a deterministic static preflight, not proof that tests,
+coverage or security checks executed successfully. `quality_gate.py` invalidates
+any previous `quality-run-acceptance.json` at startup and writes a new per-run
+receipt after its selected stages finish. Only a complete run with all required
+stages successful can report `SOFTWARE_GATES_PASSED`; `--skip-tests` is
+`STATIC_GATES_ONLY`, and any failed or missing stage is `UNQUALIFIED`.
+The receipt identifies the GitHub commit/run/attempt when available. It is scoped
+to that quality-gate process, not other CI jobs, external solvers or scientific approval.

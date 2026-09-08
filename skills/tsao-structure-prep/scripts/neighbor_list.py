@@ -22,6 +22,7 @@ AUTO_CELL_LIST_ATOMS = 2048
 BOX_DETERMINANT_EPSILON = 1e-12
 MAX_MINIMUM_IMAGE_CANDIDATES = 100_000
 MIC_BOUND_EPSILON = 1e-12
+MAX_GEOMETRY_MAGNITUDE = math.sqrt(np.finfo(np.float64).max) / 8.0
 
 
 @dataclass(frozen=True)
@@ -49,6 +50,8 @@ def _coordinates(value: Any) -> np.ndarray:
         raise ValueError("coordinates must have shape (N, 3)")
     if not np.isfinite(coordinates).all():
         raise ValueError("coordinates must be finite")
+    if np.any(np.abs(coordinates) > MAX_GEOMETRY_MAGNITUDE):
+        raise ValueError("coordinates exceed the safe squared-distance range")
     return np.ascontiguousarray(coordinates)
 
 
@@ -82,6 +85,8 @@ def _cutoff(value: Any) -> float:
     cutoff = float(value)
     if not math.isfinite(cutoff) or cutoff <= 0:
         raise ValueError("cutoff must be a finite positive number")
+    if cutoff > MAX_GEOMETRY_MAGNITUDE:
+        raise ValueError("cutoff exceeds the safe squared-distance range")
     return cutoff
 
 

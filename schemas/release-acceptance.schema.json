@@ -34,7 +34,7 @@
         "capability_levels"
       ],
       "properties": {
-        "state": {"enum": ["SOFTWARE_ACCEPTANCE_READY", "UNQUALIFIED"]},
+        "state": {"enum": ["SOFTWARE_PREFLIGHT_READY", "UNQUALIFIED"]},
         "scope": {"type": "string", "minLength": 1},
         "quality_gate_stage_count": {"type": "integer", "minimum": 0},
         "quality_gate_contract_complete": {"type": "boolean"},

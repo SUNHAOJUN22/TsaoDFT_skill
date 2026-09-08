@@ -12,9 +12,9 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-630%20passing-16A34A" alt="630 tests passing">
-  <img src="https://img.shields.io/badge/quality%20gates-29%2F29-16A34A" alt="29 of 29 quality gates">
-  <img src="https://img.shields.io/badge/software-SOFTWARE__ACCEPTANCE__READY-16A34A" alt="Software acceptance ready">
+  <img src="https://img.shields.io/badge/tests-see%20current%20CI-64748B" alt="Tests: inspect the current commit CI">
+  <img src="https://img.shields.io/badge/quality%20gates-29%20defined-64748B" alt="29 required quality gates">
+  <img src="https://img.shields.io/badge/software-static%20preflight-64748B" alt="Static preflight is not executed acceptance">
   <img src="https://img.shields.io/badge/external%20qualification-EXTERNAL__HOLD-B45309" alt="External qualification EXTERNAL HOLD">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
@@ -38,7 +38,7 @@
 
 ## Acceptance state and modification specification
 
-- Repository software, Schemas, documentation and permanent CI: `SOFTWARE_ACCEPTANCE_READY`;
+- Static preflight uses `SOFTWARE_PREFLIGHT_READY`; legacy `SOFTWARE_ACCEPTANCE_READY` is not evidence of executed acceptance. Require this run's `quality-run-acceptance.json` state `SOFTWARE_GATES_PASSED` and success of all required CI jobs;
 - Real Gaussian/VASP/QE/CP2K correctness and performance: `EXTERNAL_HOLD`;
 - Machine acceptance: `python scripts/build_release_acceptance.py --out release-acceptance.json --json`;
 - Reusable modification prompt: [`docs/ACCEPTANCE_REWRITE_PROMPT.md`](docs/ACCEPTANCE_REWRITE_PROMPT.md);
@@ -360,7 +360,7 @@ The following figures are synthetic demonstrations, not production computational
 <table>
 <tr>
 <td width="50%"><img src="assets/demo/wavefunction-esp-gallery.svg" width="100%" alt="Wavefunction and ESP figure contract"></td>
-<td width="50%"><img src="assets/demo/scientific-acceleration-funnel.svg" width="100%" alt="Scientific evidence funnel"></td>
+<td><img src="assets/demo/scientific-acceleration-funnel.svg" width="100%" alt="Scientific evidence funnel"></td>
 </tr>
 </table>
 
@@ -380,9 +380,9 @@ PowerShell:
 pwsh -NoProfile -File .\scripts\quality_gate.ps1
 ```
 
-Permanent CI must pass Python 3.10/3.12/3.13, Windows PowerShell, dependency audit + CycloneDX SBOM, CodeQL, 29/29 repository quality stages and 630 tests / 9 suites.
+Permanent CI must pass Python 3.10/3.12/3.13, Windows PowerShell, dependency audit + CycloneDX SBOM, CodeQL and all 29/29 repository quality stages. The historical baseline was 630 tests / 9 suites; current counts and outcomes must come from the current commit run.
 
-The software baseline proves repository artifacts passed validation. It does not prove that an external DFT engine was executed or accelerated. External qualification remains `EXTERNAL_HOLD`.
+Static preflight validates repository contracts, not completed tests. Executed software acceptance requires the current commit quality receipt and CI results. External DFT execution and acceleration qualification remain `EXTERNAL_HOLD`.
 
 ---
 

@@ -12,9 +12,9 @@
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
-  <img src="https://img.shields.io/badge/tests-630%20passing-16A34A" alt="630 tests passing">
-  <img src="https://img.shields.io/badge/quality%20gates-29%2F29-16A34A" alt="29 of 29 quality gates">
-  <img src="https://img.shields.io/badge/software-SOFTWARE__ACCEPTANCE__READY-16A34A" alt="Software acceptance ready">
+  <img src="https://img.shields.io/badge/tests-see%20current%20CI-64748B" alt="Tests: inspect the current commit CI">
+  <img src="https://img.shields.io/badge/quality%20gates-29%20defined-64748B" alt="29 required quality gates">
+  <img src="https://img.shields.io/badge/software-static%20preflight-64748B" alt="Static preflight is not executed acceptance">
   <img src="https://img.shields.io/badge/external%20qualification-EXTERNAL__HOLD-B45309" alt="External qualification EXTERNAL HOLD">
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
@@ -38,7 +38,7 @@
 
 ## 验收状态与修改规范
 
-- 仓库软件、Schema、文档和永久 CI：`SOFTWARE_ACCEPTANCE_READY`；
+- 静态预检状态为 `SOFTWARE_PREFLIGHT_READY`；旧 `SOFTWARE_ACCEPTANCE_READY` 不再作为已执行验收依据。当前运行须另有 `quality-run-acceptance.json` 的 `SOFTWARE_GATES_PASSED`，且最终 CI 必需作业全部成功；
 - Gaussian、VASP、QE、CP2K 的真实正确性与性能：`EXTERNAL_HOLD`；
 - 机器验收：`python scripts/build_release_acceptance.py --out release-acceptance.json --json`；
 - 本轮自动改造 Prompt：[`docs/ACCEPTANCE_REWRITE_PROMPT.md`](docs/ACCEPTANCE_REWRITE_PROMPT.md)；
@@ -360,7 +360,7 @@ python scripts/build_release_acceptance.py --out release-acceptance.json --json
 <table>
 <tr>
 <td width="50%"><img src="assets/demo/wavefunction-esp-gallery.svg" width="100%" alt="Wavefunction and ESP figure contract"></td>
-<td width="50%"><img src="assets/demo/scientific-acceleration-funnel.svg" width="100%" alt="Scientific evidence funnel"></td>
+<td><img src="assets/demo/scientific-acceleration-funnel.svg" width="100%" alt="Scientific evidence funnel"></td>
 </tr>
 </table>
 
@@ -380,9 +380,9 @@ PowerShell：
 pwsh -NoProfile -File .\scripts\quality_gate.ps1
 ```
 
-永久 CI 必须通过：Python 3.10、3.12、3.13、Windows PowerShell、dependency audit + CycloneDX SBOM、CodeQL、29/29 repository quality stages、630 tests / 9 suites。
+永久 CI 必须通过：Python 3.10、3.12、3.13、Windows PowerShell、dependency audit + CycloneDX SBOM、CodeQL 和全部 29/29 repository quality stages。历史基线为 630 tests / 9 suites；当前测试数量与结论以当前提交的实际运行记录为准。
 
-当前软件基线证明仓库工件通过测试；它不证明外部 DFT 引擎已经运行或获得加速。外部资格继续为 `EXTERNAL_HOLD`。
+静态预检只验证仓库合同，不能证明本次测试通过；实际软件验收必须查阅当前提交的质量回执和 CI。外部 DFT 引擎执行与加速资格继续为 `EXTERNAL_HOLD`。
 
 ---
 

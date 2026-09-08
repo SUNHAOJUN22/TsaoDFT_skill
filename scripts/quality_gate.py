@@ -9,6 +9,7 @@ import os
 import subprocess
 import sys
 import time
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -162,6 +163,9 @@ def main() -> int:
     if args.timeout is not None and args.timeout <= 0:
         parser.error("--timeout must be positive")
 
+    receipt_path = ROOT / "quality-run-acceptance.json"
+    receipt_path.unlink(missing_ok=True)
+    run_id = uuid.uuid4().hex
     env = os.environ.copy()
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     results: list[dict[str, object]] = []
@@ -178,12 +182,26 @@ def main() -> int:
             break
 
     ok = len(results) == len(expected) and all(item["returncode"] == 0 for item in results)
+    acceptance_state = (
+        "UNQUALIFIED" if not ok else "STATIC_GATES_ONLY" if args.skip_tests else "SOFTWARE_GATES_PASSED"
+    )
     payload = {
+        "schema_version": "tsao-dft.executed-quality-gates/1",
+        "run_id": run_id,
+        "github_sha": os.environ.get("GITHUB_SHA"),
+        "github_run_id": os.environ.get("GITHUB_RUN_ID"),
+        "github_run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
+        "acceptance_state": acceptance_state,
+        "scope": "this quality-gate process only; not all CI jobs",
+        "external_execution": "NOT_EVALUATED",
+        "scientific_approval": "NOT_EVALUATED",
+        "required_stages": [stage.name for stage in expected],
         "ok": ok,
         "python": sys.version.split()[0],
         "seconds": round(time.monotonic() - started, 3),
         "stages": results,
     }
+    receipt_path.write_text(json.dumps(payload, indent=2, allow_nan=False) + "\n", encoding="utf-8")
     if args.json_output:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
     else:

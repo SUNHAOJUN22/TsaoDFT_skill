@@ -21,3 +21,6 @@ Thumbs.db
 *.wfx
 *.tga
 .research/leases/*.json
+
+# Per-execution evidence; never reuse a checked-in acceptance result.
+quality-run-acceptance.json

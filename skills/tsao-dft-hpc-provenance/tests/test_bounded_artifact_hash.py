@@ -86,10 +86,10 @@ class BoundedArtifactHashTests(unittest.TestCase):
                 self.parser.sha256_file(Path("artifact.out"), 17)
             shared.assert_called_once_with(Path("artifact.out"), chunk_size=17)
 
-        for value in (None, 0, b"a" * 64):
+        for nonstring in (None, 0, b"a" * 64):
             with (
-                self.subTest(value=value),
-                patch.object(self.parser._SCAN, "sha256_file", return_value=value) as shared,
+                self.subTest(value=nonstring),
+                patch.object(self.parser._SCAN, "sha256_file", return_value=nonstring) as shared,
                 self.assertRaisesRegex(TypeError, "SHA-256 string"),
             ):
                 self.parser.sha256_file(Path("artifact.out"), 17)

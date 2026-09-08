@@ -13,20 +13,20 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - name: Preserve every branch tip before deleting non-main refs
+      - name: Verify existing backups and clean remaining branch refs
         env:
           GH_TOKEN: ${{ github.token }}
           EXPECTED_REPOSITORY: SUNHAOJUN22/TsaoDFT_skill
-          RESTORED_PARENT: 0d65d8359b22efb97a2d4be33eb82aed0d4f9f6b
-          EXPECTED_BRANCHES: '{"archive/pre-tsaoscience-astra-pro-1":"c407a2f384ef62a4db7dedd07827a9be37712da6","closure/20260828-code-readme":"32895fa3bf35434cf66909ea16249b2a124285a3","closure/remove-one-shot-maintenance-scripts-20260831":"bbcd8d2c7ee20fdff684e41a218a1ffc14e6a9f9","remediation/permanent-ci-governance":"e70a21b6a578fc8931852d62efb127b2658edc95","remediation/quantity-semantics-ci":"5316c5408ec5f4181994c592fa2ea6a84afa89e5","remediation/remove-exact-tree-export":"85f226786609c93f60b0927267714f6411864245","remediation/scientific-contracts-v8":"cd341bbd9e9f6f54633b2fec7c948f864324646d","remediation/scientific-contracts-v9":"ca5ab5485a24cb9c417a24a0a6cf1feb24298e25"}'
+          RESTORED_PARENT: 3b26ca230c853fe03ab1c162407d5ccdf2b5599b
+          EXPECTED_BRANCHES: '{"remediation/quantity-semantics-ci":"5316c5408ec5f4181994c592fa2ea6a84afa89e5","remediation/remove-exact-tree-export":"85f226786609c93f60b0927267714f6411864245","remediation/scientific-contracts-v8":"cd341bbd9e9f6f54633b2fec7c948f864324646d","remediation/scientific-contracts-v9":"ca5ab5485a24cb9c417a24a0a6cf1feb24298e25"}'
         run: |
           python3 - <<'PY'
-          import json, os, pathlib, urllib.request, urllib.error, urllib.parse
+          import json, os, pathlib, time, urllib.request, urllib.error, urllib.parse
           repo=os.environ['GITHUB_REPOSITORY']
           if repo!=os.environ['EXPECTED_REPOSITORY'] or os.environ['GITHUB_REF']!='refs/heads/main': raise RuntimeError('Unexpected target')
           expected=json.loads(os.environ['EXPECTED_BRANCHES'])
           def api(method,path,body=None,missing=False):
-              req=urllib.request.Request('https://api.github.com/repos/'+repo+path,method=method,data=None if body is None else json.dumps(body).encode(),headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'})
+              req=urllib.request.Request('https://api.github.com/repos/'+repo+path,method=method,data=None if body is None else json.dumps(body).encode(),headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28','Cache-Control':'no-cache'})
               try:
                   with urllib.request.urlopen(req,timeout=30) as response:
                       raw=response.read(2000001)
@@ -45,12 +45,9 @@ jobs:
           for branch,sha in sorted(expected.items()):
               if branch=='main': raise RuntimeError('Never remove main')
               tag='recovery/20260908/branch/'+branch
-              old=api('GET',ref('tags',tag),missing=True)
-              if old is None: api('POST','/git/refs',{'ref':'refs/tags/'+tag,'sha':sha})
-              elif old['object']['sha']!=sha: raise RuntimeError('Tag collision')
-              if api('GET',ref('tags',tag))['object']['sha']!=sha: raise RuntimeError('Backup mismatch')
+              if api('GET',ref('tags',tag))['object']['sha']!=sha: raise RuntimeError('Existing backup mismatch')
               backups.append({'branch':branch,'sha':sha,'tag':tag})
-          report={'repository':repo,'workflow_sha':os.environ['GITHUB_SHA'],'run_id':os.environ['GITHUB_RUN_ID'],'backups':backups,'deleted':[],'main_untouched':True,'state':'BACKED_UP'}
+          report={'repository':repo,'workflow_sha':os.environ['GITHUB_SHA'],'run_id':os.environ['GITHUB_RUN_ID'],'backups':backups,'deleted':[],'main_untouched':True,'state':'BACKED_UP','resumes_run':'34208371548'}
           path=pathlib.Path(os.environ['RUNNER_TEMP'])/'branch-recovery.json'
           def save(): path.write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
           save()
@@ -59,9 +56,15 @@ jobs:
               if api('GET',ref('heads',item['branch']))['object']['sha']!=item['sha']: raise RuntimeError('Branch changed; retain')
               if api('GET',ref('tags',item['tag']))['object']['sha']!=item['sha']: raise RuntimeError('Backup changed; retain')
               api('DELETE','/git/refs/heads/'+urllib.parse.quote(item['branch'],safe=''))
-              if api('GET',ref('heads',item['branch']),missing=True) is not None: raise RuntimeError('Deletion unconfirmed')
+              for attempt in range(8):
+                  if api('GET',ref('heads',item['branch']),missing=True) is None: break
+                  time.sleep(1)
+              else: raise RuntimeError('Deletion not confirmed after bounded readback')
               report['deleted'].append(item['branch']);save()
-          report['remaining_branches']=[r['ref'][11:] for r in api('GET','/git/matching-refs/heads/')]
+          for attempt in range(8):
+              report['remaining_branches']=[r['ref'][11:] for r in api('GET','/git/matching-refs/heads/')]
+              if report['remaining_branches']==['main']: break
+              time.sleep(1)
           report['state']='MAIN_ONLY' if report['remaining_branches']==['main'] else 'INCOMPLETE'
           save();print(json.dumps(report,indent=2))
           if report['state']!='MAIN_ONLY': raise RuntimeError('Unexpected remaining branch')

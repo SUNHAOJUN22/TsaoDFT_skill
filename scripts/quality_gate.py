@@ -194,9 +194,7 @@ def main() -> int:
             break
 
     ok = len(results) == len(expected) and all(item["returncode"] == 0 for item in results)
-    acceptance_state = (
-        "UNQUALIFIED" if not ok else "STATIC_GATES_ONLY" if args.skip_tests else "SOFTWARE_GATES_PASSED"
-    )
+    acceptance_state = "UNQUALIFIED" if not ok else "STATIC_GATES_ONLY" if args.skip_tests else "SOFTWARE_GATES_PASSED"
     payload = {
         "schema_version": "tsao-dft.executed-quality-gates/1",
         "run_id": run_id,

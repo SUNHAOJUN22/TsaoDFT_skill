@@ -71,9 +71,29 @@ class BoundedArtifactHashTests(unittest.TestCase):
         self.assertTrue(all(size is not None and 0 < size <= 1024 * 1024 for size in stream.sizes))
 
     def test_parser_delegates_to_shared_scan_core(self) -> None:
-        with patch.object(self.parser._SCAN, "sha256_file", return_value="delegated") as shared:
-            self.assertEqual(self.parser.sha256_file(Path("artifact.out"), 17), "delegated")
+        expected = hashlib.sha256(b"delegated artifact").hexdigest()
+        with patch.object(self.parser._SCAN, "sha256_file", return_value=expected) as shared:
+            self.assertEqual(self.parser.sha256_file(Path("artifact.out"), 17), expected)
         shared.assert_called_once_with(Path("artifact.out"), chunk_size=17)
+
+    def test_parser_rejects_invalid_shared_digest_values(self) -> None:
+        for value in ("delegated", "", "a" * 63, "a" * 65, "g" * 64):
+            with (
+                self.subTest(value=value),
+                patch.object(self.parser._SCAN, "sha256_file", return_value=value) as shared,
+                self.assertRaisesRegex(ValueError, "invalid SHA-256"),
+            ):
+                self.parser.sha256_file(Path("artifact.out"), 17)
+            shared.assert_called_once_with(Path("artifact.out"), chunk_size=17)
+
+        for value in (None, 0, b"a" * 64):
+            with (
+                self.subTest(value=value),
+                patch.object(self.parser._SCAN, "sha256_file", return_value=value) as shared,
+                self.assertRaisesRegex(TypeError, "SHA-256 string"),
+            ):
+                self.parser.sha256_file(Path("artifact.out"), 17)
+            shared.assert_called_once_with(Path("artifact.out"), chunk_size=17)
 
     def test_missing_artifact_preserves_file_error(self) -> None:
         with tempfile.TemporaryDirectory() as directory, self.assertRaises(FileNotFoundError):

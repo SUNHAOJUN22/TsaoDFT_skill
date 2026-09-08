@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import subprocess
 import sys
@@ -115,6 +116,8 @@ def run_stage(
 ) -> dict[str, object]:
     started = time.monotonic()
     timeout = timeout_override if timeout_override is not None else stage.timeout_seconds
+    if not math.isfinite(timeout) or timeout <= 0:
+        raise ValueError("stage timeout must be finite and positive")
     try:
         process = subprocess.run(
             stage.command,
@@ -148,6 +151,15 @@ def run_stage(
             result["output"] = (stdout + stderr).rstrip()
         return result
 
+    except OSError as exc:
+        return {
+            "stage": stage.name,
+            "returncode": 127,
+            "seconds": round(time.monotonic() - started, 3),
+            "timed_out": False,
+            "error": f"{type(exc).__name__}: {exc}",
+        }
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -160,8 +172,8 @@ def main() -> int:
         help="Override the timeout for every stage in seconds; must be positive",
     )
     args = parser.parse_args()
-    if args.timeout is not None and args.timeout <= 0:
-        parser.error("--timeout must be positive")
+    if args.timeout is not None and (not math.isfinite(args.timeout) or args.timeout <= 0):
+        parser.error("--timeout must be finite and positive")
 
     receipt_path = ROOT / "quality-run-acceptance.json"
     receipt_path.unlink(missing_ok=True)

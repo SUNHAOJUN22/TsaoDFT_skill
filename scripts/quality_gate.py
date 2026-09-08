@@ -173,7 +173,7 @@ def main() -> int:
     )
     args = parser.parse_args()
     if args.timeout is not None and (not math.isfinite(args.timeout) or args.timeout <= 0):
-        parser.error("--timeout must be finite and positive")
+        parser.error("--timeout must be positive and finite")
 
     receipt_path = ROOT / "quality-run-acceptance.json"
     receipt_path.unlink(missing_ok=True)

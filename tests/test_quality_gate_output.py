@@ -42,7 +42,9 @@ class QualityGateOutputTests(unittest.TestCase):
                 json.dumps(result, allow_nan=False)
 
     def test_real_timeout_keeps_flushed_stdout_and_stderr(self):
-        code = "import os,time; os.write(1,b'out-before-timeout\\n'); os.write(2,b'err-before-timeout\\n'); time.sleep(10)"
+        code = (
+            "import os,time; os.write(1,b'out-before-timeout\\n'); os.write(2,b'err-before-timeout\\n'); time.sleep(10)"
+        )
         stage = quality_gate.Stage("real timeout", (sys.executable, "-c", code), timeout_seconds=1.0)
         result = quality_gate.run_stage(stage, os.environ.copy(), capture_output=True)
         self.assertEqual(result["returncode"], 124)
@@ -62,9 +64,12 @@ class QualityGateOutputTests(unittest.TestCase):
         stage = quality_gate.Stage("invalid bytes", (sys.executable, "-c", code))
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            with patch.object(quality_gate, "ROOT", root), patch.object(
-                quality_gate, "stages", return_value=[stage]
-            ), patch.object(sys, "argv", ["quality_gate.py", "--json"]), redirect_stdout(StringIO()):
+            with (
+                patch.object(quality_gate, "ROOT", root),
+                patch.object(quality_gate, "stages", return_value=[stage]),
+                patch.object(sys, "argv", ["quality_gate.py", "--json"]),
+                redirect_stdout(StringIO()),
+            ):
                 self.assertEqual(quality_gate.main(), 1)
             receipt = json.loads((root / "quality-run-acceptance.json").read_text(encoding="utf-8"))
         self.assertEqual(receipt["acceptance_state"], "UNQUALIFIED")

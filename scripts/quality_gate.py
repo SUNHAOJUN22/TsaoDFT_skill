@@ -107,6 +107,13 @@ def stages(include_tests: bool = True) -> list[Stage]:
     return items
 
 
+def _diagnostic_text(value: str | bytes | None) -> str:
+    """Keep captured diagnostics, including truncated or non-UTF-8 bytes."""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="backslashreplace")
+    return value or ""
+
+
 def run_stage(
     stage: Stage,
     env: dict[str, str],
@@ -123,6 +130,8 @@ def run_stage(
             stage.command,
             cwd=ROOT,
             text=True,
+            encoding="utf-8",
+            errors="backslashreplace",
             env=env,
             timeout=timeout,
             capture_output=capture_output,
@@ -146,8 +155,9 @@ def run_stage(
             "timeout_seconds": timeout,
         }
         if capture_output:
-            stdout = exc.stdout if isinstance(exc.stdout, str) else ""
-            stderr = exc.stderr if isinstance(exc.stderr, str) else ""
+            # TimeoutExpired retains bytes even when run(text=True) was used.
+            stdout = _diagnostic_text(exc.stdout)
+            stderr = _diagnostic_text(exc.stderr)
             result["output"] = (stdout + stderr).rstrip()
         return result
 

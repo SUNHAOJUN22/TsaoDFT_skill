@@ -91,10 +91,14 @@ def _cutoff(value: Any) -> float:
 
 
 def _orthogonal_box(box: np.ndarray) -> bool:
-    gram = box @ box.T
-    diagonal = np.diag(np.diag(gram))
-    scale = max(1.0, float(np.max(np.abs(np.diag(gram)))))
-    return bool(np.allclose(gram, diagonal, rtol=0.0, atol=1e-12 * scale))
+    """Classify orthogonality by angles, independent of lattice-vector lengths."""
+
+    norms = np.linalg.norm(box, axis=1)
+    if not np.isfinite(norms).all() or np.any(norms <= 0.0):
+        return False
+    directions = box / norms[:, None]
+    normalized_gram = directions @ directions.T
+    return bool(np.allclose(normalized_gram, np.eye(3), rtol=0.0, atol=1e-12))
 
 
 def _exact_minimum_image_single(

@@ -27,13 +27,24 @@ def metrics(y, prediction):
         raise ValueError("metrics require aligned non-empty one-dimensional arrays")
     if not np.isfinite(y).all() or not np.isfinite(prediction).all():
         raise ValueError("metric inputs must contain only finite values")
-    error = prediction - y
-    squared_error = float(error @ error)
-    centered = y - y.mean()
-    denominator = float(centered @ centered)
-    mae = float(np.mean(np.abs(error)))
-    rmse = math.sqrt(squared_error / y.size)
-    r2 = float(1 - squared_error / denominator) if denominator > 0 else None
+    # Normalize before subtraction, summation and squaring. Finite targets may
+    # otherwise produce infinite MSE even when their RMSE is representable.
+    scale = max(float(np.max(np.abs(y))), float(np.max(np.abs(prediction)))) or 1.0
+    scaled_y = y / scale
+    error = prediction / scale - scaled_y
+    mean_squared_error = float(np.mean(error * error))
+    centered = scaled_y - scaled_y.mean()
+    variance = float(np.mean(centered * centered))
+    mae = scale * float(np.mean(np.abs(error)))
+    rmse = scale * math.sqrt(mean_squared_error)
+    if np.all(y == y[0]):
+        r2 = None
+    elif variance == 0:
+        raise ValueError("target variance is outside the resolvable floating-point range")
+    else:
+        r2 = float(1 - mean_squared_error / variance)
+    if not all(math.isfinite(value) for value in (mae, rmse)) or (r2 is not None and not math.isfinite(r2)):
+        raise ValueError("metric results exceed the finite floating-point range")
     return {"mae": mae, "rmse": rmse, "r2": r2}
 
 
@@ -172,6 +183,16 @@ def main() -> int:
     prediction = intercept + standardized @ coefficients
     beta = np.concatenate(([intercept], coefficients))
 
+    try:
+        split_metrics = {
+            name: metrics(target[index], prediction[index]) for name, index in indices.items() if len(index)
+        }
+        if not np.isfinite(beta).all() or not np.isfinite(prediction - target).all():
+            raise ValueError("model outputs exceed the finite floating-point range")
+    except ValueError as exc:
+        print(json.dumps({"ok": False, "errors": [str(exc)]}, indent=2))
+        return 1
+
     args.out_dir.mkdir(parents=True, exist_ok=True)
     with (args.out_dir / "predictions.csv").open("w", newline="", encoding="utf-8") as handle:
         fields = [*list(rows[0]), "split", "prediction", "residual"]
@@ -205,12 +226,12 @@ def main() -> int:
         "preprocessing_fit_scope": "train_only",
         "standardization": {"mean": mean.tolist(), "std": std.tolist()},
         "coefficients": beta.tolist(),
-        "metrics": {name: metrics(target[index], prediction[index]) for name, index in indices.items() if len(index)},
+        "metrics": split_metrics,
         "counts": {name: len(index) for name, index in indices.items()},
         "scientific_interpretation": "baseline_only",
         "status": "validated",
     }
-    (args.out_dir / "model-card.json").write_text(json.dumps(card, indent=2), encoding="utf-8")
+    (args.out_dir / "model-card.json").write_text(json.dumps(card, indent=2, allow_nan=False), encoding="utf-8")
     print(
         json.dumps(
             {

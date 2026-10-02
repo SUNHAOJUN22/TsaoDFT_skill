@@ -11,7 +11,7 @@ import subprocess
 import sys
 import time
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -107,6 +107,22 @@ def stages(include_tests: bool = True) -> list[Stage]:
     return items
 
 
+def stages_for_reports(include_tests: bool, report_dir: Path | None) -> list[Stage]:
+    """Keep runtime-dependent reports separate from archived source evidence."""
+    items = stages(include_tests=include_tests)
+    if report_dir is None:
+        return items
+    result: list[Stage] = []
+    for stage in items:
+        command = stage.command
+        if stage.name == "release acceptance":
+            command = (*command[:-1], str(report_dir / "release-acceptance.json"))
+        elif stage.name == "coverage":
+            command = (*command, "--report", str(report_dir / "coverage-report.json"))
+        result.append(replace(stage, command=command))
+    return result
+
+
 def _diagnostic_text(value: str | bytes | None) -> str:
     """Keep captured diagnostics, including truncated or non-UTF-8 bytes."""
     if isinstance(value, bytes):
@@ -181,18 +197,22 @@ def main() -> int:
         default=None,
         help="Override the timeout for every stage in seconds; must be positive",
     )
+    parser.add_argument("--report-dir", type=Path, help="Write runtime reports outside archived source evidence")
     args = parser.parse_args()
     if args.timeout is not None and (not math.isfinite(args.timeout) or args.timeout <= 0):
         parser.error("--timeout must be positive and finite")
 
-    receipt_path = ROOT / "quality-run-acceptance.json"
+    report_dir = args.report_dir.resolve() if args.report_dir is not None else None
+    if report_dir is not None:
+        report_dir.mkdir(parents=True, exist_ok=True)
+    receipt_path = (report_dir or ROOT) / "quality-run-acceptance.json"
     receipt_path.unlink(missing_ok=True)
     run_id = uuid.uuid4().hex
     env = os.environ.copy()
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     results: list[dict[str, object]] = []
     started = time.monotonic()
-    expected = stages(include_tests=not args.skip_tests)
+    expected = stages_for_reports(not args.skip_tests, report_dir)
 
     for index, stage in enumerate(expected, start=1):
         result = run_stage(stage, env, timeout_override=args.timeout, capture_output=args.json_output)

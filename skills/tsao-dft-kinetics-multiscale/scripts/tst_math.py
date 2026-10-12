@@ -22,7 +22,7 @@ def finite_number(value: Any, label: str) -> float:
         raise ValueError(f"{label} must be finite numeric")
     try:
         result = float(value)
-    except (TypeError, ValueError) as exc:
+    except (TypeError, ValueError, OverflowError) as exc:
         raise ValueError(f"{label} must be finite numeric") from exc
     if not math.isfinite(result):
         raise ValueError(f"{label} must be finite numeric")
@@ -48,12 +48,19 @@ def log_tst_rate(
     temperature = positive_number(temperature_k, "temperature_k")
     transmission = positive_number(kappa, "kappa")
     path_degeneracy = positive_number(degeneracy, "degeneracy")
-    return (
-        math.log(transmission)
-        + math.log(path_degeneracy)
-        + math.log(KB_J_PER_K * temperature / H_J_S)
-        - barrier / (R_KCAL_PER_MOL_K * temperature)
+    # Keep the prefactor in log space: k_B*T/h can overflow or underflow
+    # even when compensation by kappa makes the final rate representable.
+    value = math.fsum(
+        (
+            math.log(transmission),
+            math.log(path_degeneracy),
+            math.log(KB_J_PER_K),
+            math.log(temperature),
+            -math.log(H_J_S),
+            -(barrier / temperature) / R_KCAL_PER_MOL_K,
+        )
     )
+    return finite_number(value, "log_rate")
 
 
 def rate_from_log(log_rate: Any) -> float:
@@ -86,7 +93,7 @@ def tst_rate_interval(
         raise ValueError("uncertainty_kcal_mol must be non-negative")
     temperature = positive_number(temperature_k, "temperature_k")
     central_log = log_tst_rate(delta_g_kcal_mol, temperature, kappa, degeneracy)
-    log_half_width = uncertainty / (R_KCAL_PER_MOL_K * temperature)
+    log_half_width = (uncertainty / temperature) / R_KCAL_PER_MOL_K
     lower_log = central_log - log_half_width
     upper_log = central_log + log_half_width
     return {

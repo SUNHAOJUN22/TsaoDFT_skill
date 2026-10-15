@@ -10,7 +10,7 @@ import pytest
 
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 sys.path.insert(0, str(SCRIPTS))
-from tst_math import H_J_S, KB_J_PER_K, log_tst_rate, tst_rate, tst_rate_interval  # noqa: E402
+from tst_math import H_J_S, KB_J_PER_K, log_tst_rate, tst_rate, tst_rate_interval  # noqa: E402  -- the local script directory must precede this import
 
 
 @pytest.mark.parametrize("temperature", [1e-310, 1e-300, 1e300, 1e308])

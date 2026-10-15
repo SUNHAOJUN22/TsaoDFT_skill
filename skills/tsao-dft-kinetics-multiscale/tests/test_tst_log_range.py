@@ -2,15 +2,25 @@
 
 from __future__ import annotations
 
+import importlib.util
 import math
 import sys
 from pathlib import Path
 
 import pytest
 
-SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
-sys.path.insert(0, str(SCRIPTS))
-from tst_math import H_J_S, KB_J_PER_K, log_tst_rate, tst_rate, tst_rate_interval  # noqa: E402  -- the local script directory must precede this import
+SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "tst_math.py"
+SPEC = importlib.util.spec_from_file_location("tsao_tst_math_log_range", SCRIPT)
+assert SPEC is not None and SPEC.loader is not None
+TST_MATH = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = TST_MATH
+SPEC.loader.exec_module(TST_MATH)
+
+H_J_S = TST_MATH.H_J_S
+KB_J_PER_K = TST_MATH.KB_J_PER_K
+log_tst_rate = TST_MATH.log_tst_rate
+tst_rate = TST_MATH.tst_rate
+tst_rate_interval = TST_MATH.tst_rate_interval
 
 
 @pytest.mark.parametrize("temperature", [1e-310, 1e-300, 1e300, 1e308])

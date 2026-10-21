@@ -100,7 +100,7 @@ TSAODFT_FULL_NUMERICAL_CORRECTNESS_PERFORMANCE_AND_REAL_ACCELERATION_V2
 1. 读取执行时最新 main HEAD，并记录：
    - 起始 commit SHA；
    - 最新永久 CI run；
-   - Python 3.10/3.12/3.13 状态；
+   - Python 3.11/3.12/3.13 状态；
    - 测试数、套件数和失败数；
    - statement/branch coverage；
    - 六个信任核心覆盖率；
@@ -374,7 +374,7 @@ TSAODFT_FULL_NUMERICAL_CORRECTNESS_PERFORMANCE_AND_REAL_ACCELERATION_V2
 5. 有严格数值等价测试；
 6. 有异常、空输入、极端值和资源不足测试；
 7. 有未安装编译器/运行时时的安全降级；
-8. 构建矩阵不破坏 Python 3.10/3.12/3.13 和 Windows 核心支持；
+8. 构建矩阵不破坏 Python 3.11/3.12/3.13 和 Windows 核心支持；
 9. 不增加无法审计的二进制或下载执行路径；
 10. 实测端到端收益显著且可复现。
 
@@ -476,7 +476,7 @@ TSAODFT_FULL_NUMERICAL_CORRECTNESS_PERFORMANCE_AND_REAL_ACCELERATION_V2
 - 测试数、套件数、失败数；
 - statement/branch coverage 前后对比；
 - 六个信任核心覆盖率；
-- Python 3.10/3.12/3.13；
+- Python 3.11/3.12/3.13；
 - Ruff/mypy/strict mypy/Bandit/repo audit/CodeQL/dependency audit/SBOM；
 - 真实 benchmark 的硬件、构建和证据等级；
 - 所有未验证声明和剩余阻断项；

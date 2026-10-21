@@ -5,9 +5,12 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
+import importlib.util
 import json
 import math
 import random
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -127,6 +130,8 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=17)
     parser.add_argument("--alpha", type=float, default=1.0)
     parser.add_argument("--solver", choices=SOLVERS, default="auto")
+    parser.add_argument("--validation-artifact", type=Path)
+    parser.add_argument("--validation-schema", default="tsao.dft-dataset-validation/v1")
     parser.add_argument("--out-dir", type=Path, required=True)
     args = parser.parse_args()
 
@@ -137,6 +142,10 @@ def main() -> int:
         errors.append("dataset is empty")
     if not features:
         errors.append("at least one feature is required")
+    if args.target in features or args.group in features or len(features) != len(set(features)):
+        errors.append("features must be unique and exclude the target and group identifier")
+    if rows and any(not row.get(args.group, "").strip() for row in rows):
+        errors.append("every row needs a nonempty group identifier")
     if not math.isfinite(args.alpha) or args.alpha < 0:
         errors.append("alpha must be finite and non-negative")
     if errors:
@@ -150,8 +159,45 @@ def main() -> int:
         print(json.dumps({"ok": False, "errors": [str(exc)]}, indent=2))
         return 1
 
-    assignment = split_groups(rows, args.group, args.seed)
-    split_labels = np.asarray([assignment[row[args.group]] for row in rows])
+    try:
+        if "split" in rows[0]:
+            assignment: dict[str, str] = {}
+            for row in rows:
+                label = row.get("split", "").strip()
+                if label not in {"train", "valid", "test"}:
+                    raise ValueError("declared splits must be train, valid or test")
+                group = row[args.group]
+                if group in assignment and assignment[group] != label:
+                    raise ValueError("parent/group leakage across declared splits")
+                assignment[group] = label
+        else:
+            assignment = split_groups(rows, args.group, args.seed)
+        split_labels = np.asarray([assignment[row[args.group]] for row in rows])
+        dataset_sha256 = hashlib.sha256(args.dataset.read_bytes()).hexdigest()
+        split_sha256 = hashlib.sha256(
+            json.dumps(assignment, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        validation = None
+        if args.validation_artifact:
+            contract = Path(__file__).resolve().parents[2] / "tsao-dft-hpc-provenance/scripts/ml_provenance_contract.py"
+            spec = importlib.util.spec_from_file_location("tsao_ml_entrypoint_contract", contract)
+            if spec is None or spec.loader is None:
+                raise RuntimeError("cannot load ML provenance contract")
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[spec.name] = module
+            spec.loader.exec_module(module)
+            artifact = module.DatasetValidationArtifact.from_mapping(
+                json.loads(args.validation_artifact.read_text(encoding="utf-8"))
+            )
+            validation = module.authorize_training(args.dataset, artifact, expected_schema=args.validation_schema)
+            if artifact.sample_count != len(rows) or artifact.split_sha256 != split_sha256:
+                raise ValueError("validation sample count or split identity does not match training")
+            observed_methods = {row.get("method_fingerprint", "").strip() for row in rows}
+            if "" in observed_methods or observed_methods != set(artifact.method_fingerprints):
+                raise ValueError("validation method fingerprints do not match dataset")
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        print(json.dumps({"ok": False, "errors": [str(exc)]}, indent=2))
+        return 1
     indices = {name: np.flatnonzero(split_labels == name) for name in ("train", "valid", "test")}
     if len(indices["train"]) < 2 or len(indices["test"]) < 1:
         print(json.dumps({"ok": False, "errors": ["insufficient grouped train/test samples"]}, indent=2))
@@ -195,7 +241,7 @@ def main() -> int:
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     with (args.out_dir / "predictions.csv").open("w", newline="", encoding="utf-8") as handle:
-        fields = [*list(rows[0]), "split", "prediction", "residual"]
+        fields = [*list(rows[0]), *[key for key in ("split", "prediction", "residual") if key not in rows[0]]]
         writer = csv.DictWriter(handle, fieldnames=fields)
         writer.writeheader()
         for index, row in enumerate(rows):
@@ -229,7 +275,16 @@ def main() -> int:
         "metrics": split_metrics,
         "counts": {name: len(index) for name, index in indices.items()},
         "scientific_interpretation": "baseline_only",
-        "status": "validated",
+        "status": "training_completed",
+        "scientific_qualification": "UNQUALIFIED",
+        "dataset_sha256": dataset_sha256,
+        "split_sha256": split_sha256,
+        "split_assignment": assignment,
+        "dataset_validation": validation,
+        "validation_artifact_sha256": hashlib.sha256(args.validation_artifact.read_bytes()).hexdigest()
+        if args.validation_artifact
+        else None,
+        "qualification_boundary": "Training metrics and a dataset receipt do not establish independent scientific model acceptance.",
     }
     (args.out_dir / "model-card.json").write_text(json.dumps(card, indent=2, allow_nan=False), encoding="utf-8")
     print(

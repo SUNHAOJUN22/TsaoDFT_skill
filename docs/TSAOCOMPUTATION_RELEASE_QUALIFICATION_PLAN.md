@@ -9,7 +9,7 @@ The repository-side release qualification for the evidence trust boundary, Parse
 
 The repository currently has:
 
-- Python 3.10, 3.12 and 3.13 permanent quality gates;
+- Python 3.11, 3.12 and 3.13 permanent quality gates;
 - Ruff lint and formatting;
 - ordinary mypy across 18 isolated targets;
 - strict mypy for `shell_contract.py`, `trust_boundary.py`, `engine_parser_contract.py` and `benchmark_bridge.py`;
@@ -36,7 +36,7 @@ A repository commit is release-qualified only when all of the following pass on 
 5. ordinary and strict trust-boundary mypy;
 6. Bandit and strict repository audit;
 7. all nine test suites;
-8. Python 3.10, 3.12 and 3.13 matrix jobs;
+8. Python 3.11, 3.12 and 3.13 matrix jobs;
 9. CodeQL, three dependency-audit layers and CycloneDX SBOM.
 
 Thresholds may not be met by narrowing the production denominator, excluding reachable code, adding blanket coverage pragmas or lowering the formal minima.

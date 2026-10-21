@@ -2,7 +2,7 @@
 
 ## Deterministic blocking gate
 
-Every `main` update must pass the offline quality gate on Python 3.10, 3.12 and 3.13. It validates dependency declarations, exact constraints, Agent eval contracts, capability claims, secret patterns, governed assets, local links, Ruff, mypy, Bandit, repository structure and all non-empty unittest suites.
+Every `main` update must pass the offline quality gate on Python 3.11, 3.12 and 3.13. It validates dependency declarations, exact constraints, Agent eval contracts, capability claims, secret patterns, governed assets, local links, Ruff, mypy, Bandit, repository structure and all non-empty unittest suites.
 
 GitHub Actions are pinned to complete commit SHAs. Workflow permissions are minimized per job. Dangerous write-capable triggers such as `pull_request_target`, `workflow_run`, issue comments or issue-triggered write jobs are prohibited.
 
@@ -10,7 +10,7 @@ GitHub Actions are pinned to complete commit SHAs. Workflow permissions are mini
 
 `requirements.txt`, `requirements-dev.txt` and `pyproject.toml` retain supported dependency ranges for the repository-style Skill collection. CI does not resolve those ranges afresh on every run: it installs against reviewed exact snapshots:
 
-- `constraints/py310.txt`;
+- `constraints/py311.txt`;
 - `constraints/py312.txt`;
 - `constraints/py313.txt`.
 

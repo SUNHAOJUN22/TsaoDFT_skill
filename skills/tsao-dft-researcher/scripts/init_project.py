@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -57,7 +57,7 @@ def main() -> int:
         (project_dir / rel).mkdir(parents=True, exist_ok=True)
 
     project_id = project_dir.name.replace(" ", "-").lower()
-    created_at = datetime.now(timezone.utc).isoformat()
+    created_at = datetime.now(UTC).isoformat()
     mapping = {
         "PROJECT_ID": project_id,
         "PROJECT_NAME": args.name or project_dir.name,

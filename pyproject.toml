@@ -2,13 +2,14 @@
 name = "tsao-dft-skill"
 version = "0.4.0a2"
 description = "Auditable molecular and periodic DFT, scientific visualization, ML, HPC and multiscale Agent Skills"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
   "PyYAML>=6.0,<7",
   "cryptography>=50,<51",
   "defusedxml>=0.7.1,<0.8",
   "jsonschema[format]>=4.26,<5",
   "matplotlib>=3.8,<4",
+  "Pillow>=13,<14",
   "numpy>=1.24,<3",
 ]
 
@@ -29,7 +30,7 @@ dev = [
 packaging-model = "repository-skill-suite"
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py311"
 line-length = 120
 extend-exclude = [
   ".git",

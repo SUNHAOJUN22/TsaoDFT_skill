@@ -6,11 +6,13 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import os
+import re
 import tempfile
 from pathlib import Path
 
-from tst_math import tst_rate
+from tst_math import log_tst_rate, positive_number, rate_from_log
 
 OUTPUT_FIELDS = (
     "k_tst_s-1_or_standard_state",
@@ -18,6 +20,8 @@ OUTPUT_FIELDS = (
     "kappa",
     "rate_unit",
     "standard_state",
+    "barrier_standard_state",
+    "activity_convention",
 )
 
 
@@ -31,12 +35,35 @@ def rate_unit(molecularity: int) -> str:
     return f"M^{1 - molecularity} s^-1"
 
 
+def standard_concentration(value: str) -> float:
+    match = re.fullmatch(r"\s*([-+]?\d*\.?\d+(?:[Ee][-+]?\d+)?)\s*(M|mol/L)\s*", value)
+    if match is None:
+        raise ValueError("standard state must declare a positive concentration in M or mol/L")
+    return positive_number(match.group(1), "standard concentration")
+
+
+def concentration_log_factor(molecularity: int, standard_state: str, barrier_reference: str, activity: str) -> float:
+    """Concentration factor with explicit, matching barrier reference state."""
+    rate_unit(molecularity)
+    if molecularity == 1:
+        return 0.0
+    concentration = standard_concentration(standard_state)
+    reference = standard_concentration(barrier_reference)
+    if concentration != reference:
+        raise ValueError("barrier reference and rate standard state differ; convert the barrier explicitly")
+    if activity not in {"a=c/c0", "a=c/c°", "ideal dilute activity"}:
+        raise ValueError("higher-order rates require the concentration activity convention a=c/c0")
+    return (1 - molecularity) * math.log(concentration)
+
+
 def transform_row(
     raw: dict[str | None, str | None],
     line_number: int,
     temperature: float,
     kappa: float,
     standard_state: str,
+    barrier_standard_state: str = "",
+    activity_convention: str = "",
 ) -> dict[str, object]:
     if None in raw:
         raise ValueError(f"row {line_number} has more fields than the CSV header")
@@ -52,7 +79,13 @@ def transform_row(
         molecularity = int(molecularity_text) if molecularity_text else 1
     except ValueError as exc:
         raise ValueError(f"row {line_number} contains an invalid numeric field") from exc
-    value = tst_rate(barrier, temperature, kappa, degeneracy)
+    rate_unit(molecularity)
+    declared_standard = text_row.get("standard_state", "").strip() or standard_state
+    barrier_reference = text_row.get("barrier_standard_state", "").strip() or barrier_standard_state
+    activity = text_row.get("activity_convention", "").strip() or activity_convention
+    log_rate = log_tst_rate(barrier, temperature, kappa, degeneracy)
+    log_rate += concentration_log_factor(molecularity, declared_standard, barrier_reference, activity)
+    value = rate_from_log(log_rate)
     row: dict[str, object] = dict(text_row)
     row.update(
         {
@@ -60,7 +93,9 @@ def transform_row(
             "temperature_K": temperature,
             "kappa": kappa,
             "rate_unit": rate_unit(molecularity),
-            "standard_state": standard_state,
+            "standard_state": declared_standard,
+            "barrier_standard_state": barrier_reference or "not_required_for_unimolecular_prefactor",
+            "activity_convention": activity or "unimolecular",
         }
     )
     return row
@@ -73,6 +108,8 @@ def main() -> int:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--kappa", type=float, default=1.0)
     parser.add_argument("--standard-state", default="unspecified")
+    parser.add_argument("--barrier-standard-state", default="")
+    parser.add_argument("--activity-convention", default="")
     args = parser.parse_args()
 
     temporary_path: Path | None = None
@@ -102,7 +139,17 @@ def main() -> int:
             writer.writeheader()
             row_count = 0
             for line_number, raw in enumerate(reader, start=2):
-                writer.writerow(transform_row(raw, line_number, args.temperature, args.kappa, args.standard_state))
+                writer.writerow(
+                    transform_row(
+                        raw,
+                        line_number,
+                        args.temperature,
+                        args.kappa,
+                        args.standard_state,
+                        args.barrier_standard_state,
+                        args.activity_convention,
+                    )
+                )
                 row_count += 1
             if row_count == 0:
                 raise ValueError("barrier table is empty")

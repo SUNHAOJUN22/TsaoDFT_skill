@@ -8,7 +8,7 @@ import sys
 import tempfile
 import unittest
 from contextlib import redirect_stdout
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
@@ -49,7 +49,7 @@ class ReleaseManifestCoverageTests(unittest.TestCase):
         public = private.public_key().public_bytes(
             serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
         )
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         attestation: dict[str, Any] = {
             "schema_version": "1.0",
             "attestation_id": "EXEC-1",

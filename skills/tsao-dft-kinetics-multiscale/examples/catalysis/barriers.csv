@@ -1,3 +1,3 @@
-reaction_id,delta_g_dagger_kcal_mol,path_degeneracy,molecularity
-R1,15.0,1,1
-R2,18.0,2,2
+reaction_id,delta_g_dagger_kcal_mol,path_degeneracy,molecularity,standard_state,barrier_standard_state,activity_convention
+R1,15.0,1,1,1 M,1 M,a=c/c0
+R2,18.0,2,2,1 M,1 M,a=c/c0

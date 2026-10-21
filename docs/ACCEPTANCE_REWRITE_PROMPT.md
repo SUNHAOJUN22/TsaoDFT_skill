@@ -34,7 +34,7 @@
 4. **验收与 CI**
    - 只修改唯一 `main`，不建 branch/PR，不 force push；
    - 更新 release acceptance、质量门顺序测试、README visual/math validator 测试；
-   - 运行 Linux Python 3.10/3.12/3.13、Windows PowerShell、SBOM、CodeQL；
+   - 运行 Linux Python 3.11/3.12/3.13、Windows PowerShell、SBOM、CodeQL；
    - 只有最终 HEAD 6/6 全绿才可报告完成。
 
 ## 非主张

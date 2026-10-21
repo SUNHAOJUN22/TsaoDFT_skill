@@ -82,8 +82,8 @@ class TstNumericsTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "positive integer"):
             self.uncertainty.rate_unit(0)
         self.assertEqual(self.uncertainty.rate_unit(1), "s^-1")
-        self.assertEqual(self.uncertainty.rate_unit(2), "M^-1 s^-1 (standard-state convention required)")
-        self.assertEqual(self.uncertainty.rate_unit(3), "concentration^(-2) s^-1")
+        self.assertEqual(self.uncertainty.rate_unit(2), "M^-1 s^-1")
+        self.assertEqual(self.uncertainty.rate_unit(3), "M^-2 s^-1")
 
     def test_eyring_cli_streams_rows_and_cleans_failed_output(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -91,7 +91,7 @@ class TstNumericsTests(unittest.TestCase):
             source = root / "barriers.csv"
             output = root / "rates.csv"
             source.write_text(
-                "reaction_id,delta_g_dagger_kcal_mol,path_degeneracy,molecularity\nr1,15,1,1\nr2,16,2,2\n",
+                "reaction_id,delta_g_dagger_kcal_mol,path_degeneracy,molecularity,standard_state,barrier_standard_state,activity_convention\nr1,15,1,1,1 M,1 M,a=c/c0\nr2,16,2,2,1 M,1 M,a=c/c0\n",
                 encoding="utf-8",
             )
             result = subprocess.run(

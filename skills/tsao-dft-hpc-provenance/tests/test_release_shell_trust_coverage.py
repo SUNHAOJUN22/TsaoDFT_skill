@@ -6,7 +6,7 @@ import importlib.util
 import json
 import tempfile
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
@@ -50,7 +50,7 @@ class ReleaseShellTrustCoverageTests(unittest.TestCase):
         public = private.public_key().public_bytes(
             serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
         )
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         attestation: dict[str, Any] = {
             "schema_version": "1.0",
             "attestation_id": "A-1",
@@ -176,13 +176,13 @@ class ReleaseShellTrustCoverageTests(unittest.TestCase):
         self.assertIsNone(self.shell.parse_timestamp("2026-01-01T00:00:00", "time", errors))
         self.assertEqual(
             self.shell.parse_timestamp("2026-01-01T00:00:00Z", "time", errors),
-            datetime(2026, 1, 1, tzinfo=timezone.utc),
+            datetime(2026, 1, 1, tzinfo=UTC),
         )
         self.assertGreaterEqual(len(errors), 3)
 
         expected = {"manifest_sha256": "a" * 64}
         valid, public = self.signed_attestation(expected, "execute-reviewed-manifest")
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         self.assertEqual(self.shell.verify_signed_attestation(valid, public, expected, now=now), [])
         self.assertTrue(self.shell.verify_signed_attestation({}, public, expected, now=now))
 

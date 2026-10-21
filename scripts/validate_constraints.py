@@ -9,7 +9,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SUPPORTED = {"py310": "3.10", "py312": "3.12", "py313": "3.13"}
+SUPPORTED = {"py311": "3.11", "py312": "3.12", "py313": "3.13"}
 PIN_RE = re.compile(r"^([A-Za-z0-9][A-Za-z0-9_.-]*)==([^\s;]+)$")
 REQUIREMENT_NAME_RE = re.compile(r"^([A-Za-z0-9][A-Za-z0-9_.-]*)")
 FORBIDDEN = {"pip", "setuptools", "wheel"}

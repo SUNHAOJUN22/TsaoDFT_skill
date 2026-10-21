@@ -9,7 +9,7 @@ import sys
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
@@ -60,7 +60,7 @@ class ReleaseCoreRemainingTests(unittest.TestCase):
         public = private.public_key().public_bytes(
             serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
         )
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         attestation: dict[str, Any] = {
             "schema_version": "1.0",
             "attestation_id": "REMAINING-1",
@@ -98,7 +98,7 @@ class ReleaseCoreRemainingTests(unittest.TestCase):
             sys.path[:] = original_path
 
     def test_shell_rejects_non_ed25519_at_second_guard(self) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         expected = {"manifest_sha256": "a" * 64}
         rsa_public = (
             generate_private_key(public_exponent=65537, key_size=2048)

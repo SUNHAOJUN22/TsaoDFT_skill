@@ -21,7 +21,7 @@ REQUIRED = {
     ".github/ISSUE_TEMPLATE/config.yml",
     ".github/ISSUE_TEMPLATE/bug_report.yml",
     ".github/pull_request_template.md",
-    "constraints/py310.txt",
+    "constraints/py311.txt",
     "constraints/py312.txt",
     "constraints/py313.txt",
     "docs/AGENT_SECURITY_MODEL.md",
@@ -107,7 +107,7 @@ def validate(root: Path = ROOT) -> list[str]:
         if "contents: write" in workflow_text:
             failures.append("permanent CI must not grant contents: write")
         for token in (
-            "constraints/py310.txt",
+            "constraints/py311.txt",
             "constraints/py312.txt",
             "constraints/py313.txt",
             "pip_audit --no-deps -r constraints/py312.txt",

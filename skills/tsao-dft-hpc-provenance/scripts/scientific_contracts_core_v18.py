@@ -13,7 +13,7 @@ import math
 import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass, fields
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import cast
 
@@ -55,7 +55,10 @@ class KineticsUncertaintyError(TSTContractError):
 def finite_real(value: object, name: str, *, nonnegative: bool = False, positive: bool = False) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise DFTContractError(f"{name} must be a non-Boolean real number")
-    number = float(value)
+    try:
+        number = float(value)
+    except OverflowError as exc:
+        raise DFTContractError(f"{name} exceeds the finite range") from exc
     if not math.isfinite(number):
         raise DFTContractError(f"{name} must be finite")
     if positive and number <= 0.0:
@@ -92,7 +95,7 @@ def parse_timestamp(value: str, name: str) -> datetime:
         raise DFTContractError(f"{name} must be ISO-8601") from exc
     if parsed.tzinfo is None:
         raise DFTContractError(f"{name} must include a timezone")
-    return parsed.astimezone(timezone.utc)
+    return parsed.astimezone(UTC)
 
 
 def canonical_json(value: object) -> str:
@@ -269,6 +272,10 @@ class QuantityRecord:
     component_convention: str | None = None
 
     def __post_init__(self) -> None:
+        try:
+            _validate_quantity_structure(self.quantity_kind, self.value, self.unit, self.shape, self.atom_mapping)
+        except DFTContractError as exc:
+            raise ParserContractError(str(exc)) from exc
         if self.quantity_kind == "atomic_forces_full":
             if self.aggregation != "full":
                 raise ParserContractError("full atomic forces require aggregation=full")
@@ -284,6 +291,8 @@ class QuantityRecord:
             if self.aggregation != "full" or self.shape not in {(6,), (3, 3)}:
                 raise ParserContractError("full stress requires Voigt-6 or 3x3 shape")
             _flatten_numeric(self.value, "value")
+            if not isinstance(self.component_convention, str) or not self.component_convention.strip():
+                raise ParserContractError("stress component convention is required")
         else:
             _flatten_numeric(self.value, "value")
 
@@ -298,6 +307,40 @@ def _nested_numeric(value: object, name: str) -> tuple[object, ...]:
         else:
             output.append(finite_real(item, name))
     return tuple(output)
+
+
+def _actual_shape(value: object) -> tuple[int, ...]:
+    if not isinstance(value, (list, tuple)):
+        finite_real(value, "quantity value")
+        return ()
+    if not value:
+        raise QuantityEquivalenceError("quantity arrays must not be empty")
+    child_shapes = [_actual_shape(item) for item in value]
+    if any(shape != child_shapes[0] for shape in child_shapes[1:]):
+        raise QuantityEquivalenceError("quantity arrays must be rectangular")
+    return (len(value), *child_shapes[0])
+
+
+def _validate_quantity_structure(
+    kind: str, values: object, unit: str, shape: tuple[int, ...], mapping: tuple[str, ...] | None
+) -> None:
+    if not isinstance(shape, tuple) or any(type(size) is not int or size <= 0 for size in shape):
+        raise QuantityEquivalenceError("shape must be a tuple of positive integers")
+    if _actual_shape(values) != shape:
+        raise QuantityEquivalenceError("declared shape does not match actual quantity values")
+    units_by_kind = {
+        "atomic_forces_full": {"eV/angstrom", "hartree/bohr"},
+        "stress_tensor_full": {"GPa", "Pa", "kPa", "MPa", "bar", "kbar"},
+        "stress_tensor": {"GPa", "Pa", "kPa", "MPa", "bar", "kbar"},
+    }
+    if kind in units_by_kind and unit not in units_by_kind[kind]:
+        raise QuantityEquivalenceError(f"unit {unit!r} is incompatible with {kind}")
+    if mapping is not None and (
+        not isinstance(mapping, tuple)
+        or any(not isinstance(item, str) or not item.strip() for item in mapping)
+        or len(mapping) != len(set(mapping))
+    ):
+        raise QuantityEquivalenceError("atom mapping must contain unique nonempty identifiers")
 
 
 def _flatten_numeric(value: object, name: str) -> tuple[float, ...]:
@@ -713,7 +756,7 @@ def assess_model_card(
             blockers.append("APPROVAL_SCOPE_MISMATCH")
         if approval.authorized_role != "independent_model_validator":
             blockers.append("APPROVAL_ROLE_MISMATCH")
-        active_now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+        active_now = (now or datetime.now(UTC)).astimezone(UTC)
         if (
             not parse_timestamp(approval.issued_at, "issued_at")
             <= active_now
@@ -744,6 +787,7 @@ class TypedQuantity:
     component_convention: str | None = None
 
     def __post_init__(self) -> None:
+        _validate_quantity_structure(self.quantity_kind, self.values, self.unit, self.shape, self.atom_mapping)
         if self.quantity_kind == "atomic_forces_full":
             if self.aggregation != "full" or len(self.shape) != 2 or self.shape[1] != 3:
                 raise QuantityEquivalenceError("full atomic forces require N x 3 shape and full aggregation")
@@ -769,6 +813,11 @@ def _unit_to_canonical(unit: str) -> float:
         "eV/angstrom": 1.0,
         "hartree/bohr": HARTREE_TO_EV / BOHR_TO_ANGSTROM,
         "GPa": 1.0,
+        "Pa": 1e-9,
+        "kPa": 1e-6,
+        "MPa": 1e-3,
+        "bar": 1e-4,
+        "kbar": 0.1,
     }
     try:
         return factors[unit]
@@ -777,6 +826,8 @@ def _unit_to_canonical(unit: str) -> float:
 
 
 def equivalent(left: TypedQuantity, right: TypedQuantity, *, rel_tol: float = 1e-12, abs_tol: float = 1e-12) -> bool:
+    rel_tol = finite_real(rel_tol, "rel_tol", nonnegative=True)
+    abs_tol = finite_real(abs_tol, "abs_tol", nonnegative=True)
     structural = (
         left.quantity_kind == right.quantity_kind
         and left.shape == right.shape
@@ -794,8 +845,11 @@ def equivalent(left: TypedQuantity, right: TypedQuantity, *, rel_tol: float = 1e
         return False
     lf = _unit_to_canonical(left.unit)
     rf = _unit_to_canonical(right.unit)
+    converted_left = [finite_real(value * lf, "converted left quantity") for value in lvalues]
+    converted_right = [finite_real(value * rf, "converted right quantity") for value in rvalues]
     return all(
-        math.isclose(a * lf, b * rf, rel_tol=rel_tol, abs_tol=abs_tol) for a, b in zip(lvalues, rvalues, strict=True)
+        math.isclose(a, b, rel_tol=rel_tol, abs_tol=abs_tol)
+        for a, b in zip(converted_left, converted_right, strict=True)
     )
 
 
@@ -1067,7 +1121,7 @@ def verify_execution_receipt(
     for key, expected in expected_bindings.items():
         if getattr(receipt, key, None) != expected:
             raise DFTContractError(f"execution receipt binding mismatch: {key}")
-    active = now.astimezone(timezone.utc)
+    active = now.astimezone(UTC)
     if (
         not parse_timestamp(receipt.issued_at, "issued_at")
         <= active
@@ -1115,7 +1169,7 @@ def verify_scientific_review(
     for key_name, expected_value in expected.items():
         if getattr(review, key_name) != expected_value:
             raise DFTContractError(f"scientific review binding mismatch: {key_name}")
-    active = now.astimezone(timezone.utc)
+    active = now.astimezone(UTC)
     if not parse_timestamp(review.issued_at, "issued_at") <= active < parse_timestamp(review.expires_at, "expires_at"):
         raise DFTContractError("scientific review is expired or not yet valid")
     key = key_resolver(review.key_id)

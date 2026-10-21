@@ -22,6 +22,7 @@ MATH_VALIDATOR = ROOT / "scripts/validate_readme_math.py"
 
 MD_IMAGE_RE = re.compile(r"!\[[^\]]*\]\(([^)\s]+)(?:\s+[^)]*)?\)")
 HTML_IMAGE_RE = re.compile(r"<img\s+[^>]*src=[\"']([^\"']+)[\"'][^>]*>", re.IGNORECASE)
+HTML_LINK_RE = re.compile(r"<a\s+[^>]*href=[\"']([^\"']+)[\"'][^>]*>", re.IGNORECASE)
 REQUIRED_DEMOS = {
     "assets/demo/workflow-architecture.svg",
     "assets/demo/wavefunction-esp-gallery.svg",
@@ -50,6 +51,18 @@ def image_refs(text: str) -> set[str]:
     return set(MD_IMAGE_RE.findall(text)) | set(HTML_IMAGE_RE.findall(text))
 
 
+def governed_refs(name: str, text: str) -> set[str]:
+    """Keep archived English SVGs governed without displaying them on the Chinese page."""
+    refs = image_refs(text)
+    if name == "README.md":
+        refs.update(
+            path
+            for path in HTML_LINK_RE.findall(text)
+            if path.startswith(("assets/demo/", "assets/ai/hero/")) and path.endswith(".svg")
+        )
+    return refs
+
+
 def load_math_validator() -> ModuleType:
     spec = importlib.util.spec_from_file_location("tsao_readme_math_validation", MATH_VALIDATOR)
     if spec is None or spec.loader is None:
@@ -72,8 +85,9 @@ def validate() -> tuple[list[str], list[str]]:
         "README_EN.md": README_EN.read_text(encoding="utf-8"),
     }
     refs_by_readme = {name: image_refs(text) for name, text in readmes.items()}
+    governed_by_readme = {name: governed_refs(name, text) for name, text in readmes.items()}
 
-    for name, refs in refs_by_readme.items():
+    for name, refs in governed_by_readme.items():
         local_refs = {ref for ref in refs if not ref.startswith(("http://", "https://"))}
         for ref in sorted(local_refs):
             rel = Path(ref)
@@ -107,10 +121,10 @@ def validate() -> tuple[list[str], list[str]]:
             failures.append("AI manifest entry has no path")
             continue
         path = ROOT / str(path_value)
-        for name, refs in refs_by_readme.items():
+        for name, refs in governed_by_readme.items():
             if str(path_value) not in refs:
-                failures.append(f"governed AI cover is not embedded in {name}: {path_value}")
-            if any(ref.startswith("assets/ai/modules/") for ref in refs):
+                failures.append(f"governed AI cover is not embedded or archived in {name}: {path_value}")
+            if any(ref.startswith("assets/ai/modules/") for ref in refs_by_readme[name]):
                 failures.append(f"{name} embeds deprecated AI module cards")
         if not path.is_file():
             failures.append(f"AI cover missing: {path_value}")
@@ -128,9 +142,17 @@ def validate() -> tuple[list[str], list[str]]:
             if item.get(key) is not expected:
                 failures.append(f"AI cover {path_value} has invalid {key}")
 
-    for name, refs in refs_by_readme.items():
+    for name, refs in governed_by_readme.items():
         for ref in sorted(REQUIRED_DEMOS - refs):
-            failures.append(f"curated README demo is not embedded in {name}: {ref}")
+            failures.append(f"curated README demo is not embedded or archived in {name}: {ref}")
+
+    for name, locale, other in (("README.md", "zh", "en"), ("README_EN.md", "en", "zh")):
+        if f"docs/assets/vision-{locale}.png" not in refs_by_readme[name]:
+            failures.append(f"{name} must display its localized vision image")
+        if f"docs/assets/vision-{other}.png" in refs_by_readme[name]:
+            failures.append(f"{name} displays the wrong vision language")
+    if any(ref.startswith(("assets/demo/", "assets/ai/")) for ref in refs_by_readme["README.md"]):
+        failures.append("README.md must link the English archival diagrams instead of displaying them")
 
     chinese = readmes["README.md"]
     english = readmes["README_EN.md"]

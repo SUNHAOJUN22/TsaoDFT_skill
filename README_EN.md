@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
-  <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
+  <img src="https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.11, 3.12 and 3.13">
   <img src="https://img.shields.io/badge/tests-see%20current%20CI-64748B" alt="Tests: inspect the current commit CI">
   <img src="https://img.shields.io/badge/quality%20gates-29%20defined-64748B" alt="29 required quality gates">
   <img src="https://img.shields.io/badge/software-static%20preflight-64748B" alt="Static preflight is not executed acceptance">
@@ -19,22 +19,97 @@
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
 
-> **AI image declaration | AI-GENERATED CONCEPTUAL ILLUSTRATION:** The governed AI cover and AI-assisted SVGs communicate system architecture, mathematical contracts and usage strategy only. Molecules, lattices, orbitals, bands, energy surfaces, servers and interfaces are not data produced by Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD or experiments. Every technical figure is labelled `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`; quantitative claims must come from accepted inputs, outputs, parsers, hashes and machine evidence.
+> **AI image declaration | AI-GENERATED CONCEPTUAL ILLUSTRATION:** The localized AI vision images, governed archival cover and AI-assisted SVGs communicate system architecture, mathematical contracts and usage strategy only. Molecules, lattices, orbitals, bands, energy surfaces, servers and interfaces are not data produced by Gaussian, VASP, Quantum ESPRESSO, CP2K, Multiwfn, VMD or experiments. Every technical figure is labelled `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`; quantitative claims must come from accepted inputs, outputs, parsers, hashes and machine evidence.
 
 <!-- LOCALIZED_VISION_EN:START -->
 ## Project vision: from Kohn–Sham equations to molecular and materials evidence
 
 <p align="center">
-  <img src="docs/localized-vision/tsao-dft-vision-en.svg" width="100%" alt="TsaoDFT English first-principles workflow and mathematical evidence architecture">
+  <img src="docs/assets/vision-en.png" width="100%" alt="TsaoDFT English first-principles workflow and mathematical evidence architecture">
 </p>
 
 > The equations explain method identity, periodic geometry, parsing, SCF and evidence gates in the code. The figure is not electron density, a band structure, an orbital or a real DFT result.
+
+> The Eyring equation in this concept image is the unimolecular baseline. Bimolecular and higher-order steps require the standard-concentration factor and barrier reference contract below.
 
 <!-- LOCALIZED_VISION_EN:END -->
 
 <p align="center">
   <img src="assets/ai/hero/tsao-dft-hero.svg" width="100%" alt="TsaoDFT evidence-first DFT research operating system conceptual overview">
 </p>
+
+
+## Delivery scope and code-backed entry points
+
+TsaoDFT organizes structure checks, periodic-log parsing, rate calculations, machine-learning baselines and computation evidence as independent Python tools. It ships testable contracts, reference algorithms and handoff files. Electronic-structure calculations still require a configured Gaussian, VASP, Quantum ESPRESSO or CP2K installation. The project vision is to trace every reported number to an input, method, final job and review record.
+
+| Task | Implemented entry point | Output and boundary |
+| --- | --- | --- |
+| Structure and periodic geometry | `skills/tsao-structure-prep/scripts/inspect_xyz.py` | Atomic geometry, neighbors and algorithm equivalence; no electronic-density calculation |
+| Periodic-output verification | `skills/tsao-periodic-dft-materials/scripts/parse_qe.py`, `parse_vasp.py`, `parse_cp2k.py` | Final-job convergence, energy, version, line/byte witnesses and full-artifact SHA-256 |
+| Eyring rates and intervals | `skills/tsao-dft-kinetics-multiscale/scripts/eyring_rates.py`, `propagate_barrier_uncertainty.py` | kcal/mol barriers and kelvin; higher-order reactions require concentration, barrier reference state and activity convention |
+| Ridge baseline | `skills/tsao-dft-ml-active-learning/scripts/train_ridge_baseline.py` | Fixed group splits, dataset/split hashes, predictions and model card; completion is `training_completed` / `UNQUALIFIED` |
+| Scientific qualification and delivery | `scripts/quality_gate.py` | Executed software-gate receipt; software success does not certify an external engine or scientific conclusion |
+
+### Install and run software gates
+
+The supported Python floor is now **3.11**, with a 3.11 / 3.12 / 3.13 CI matrix. The 2026-10-21 dependency audit requires Pillow 13.0.0, which fixes eight vulnerabilities in the former 12.3.0 pin and requires Python >=3.11 upstream. Python 3.10 is therefore no longer supported. Create a fresh environment and use the matching `constraints/py311.txt`, `py312.txt` or `py313.txt`; do not reuse a Python 3.10 environment. certifi is also updated to 2026.10.19. Sources: [Pillow 13.0.0](https://pypi.org/project/Pillow/13.0.0/), [certifi advisory](https://github.com/advisories/GHSA-6q48-6c7w-9gw2).
+
+Use an isolated Python 3.12 environment with the constrained dependencies. Store execution reports outside the checkout to keep machine-specific observations separate from source files.
+
+```bash
+python3.12 -m venv .venv
+. .venv/bin/activate
+python -m pip install -c constraints/py312.txt -r requirements-dev.txt
+python -m pip check
+python scripts/run_all_tests.py
+python scripts/quality_gate.py --report-dir ../tsao-dft-acceptance
+```
+
+The [seven-repository modification and six-hour acceptance prompt](docs/SEVEN_REPOSITORY_ACCEPTANCE_PROMPT.md) specifies parallel delivery. Its runner counts two sequential 10,800-second totals of successful test-process elapsed time. Installation, queues, idle waits and failed runs contribute no time. A complete independently checked receipt set is required; this is segmented regression, not uninterrupted service-soak qualification.
+
+### Higher-order rates require a barrier reference state
+
+For an elementary step of molecularity $m$, concentrations expressed numerically in mol/L and activity convention $a=c/c^\circ$:
+
+$$
+k_m=\kappa g\frac{k_B T}{h}\exp\left(-\frac{\Delta G^\ddagger_{c^\circ}}{RT}\right)(c^\circ)^{1-m},
+\qquad [k_m]=\mathrm{M}^{1-m}\mathrm{s}^{-1}.
+$$
+
+The implementation evaluates $\ln k_m=\ln\kappa+\ln g+\ln(k_BT/h)-\Delta G^\ddagger/(RT)+(1-m)\ln c^\circ$. `standard_state` and `barrier_standard_state` must agree. Otherwise calculation fails until the researcher supplies a justified reference-state conversion. Holding the **numerical barrier** fixed while changing 1 M to 0.1 M multiplies a bimolecular rate by ten. This tests the concentration factor; it is not a claim that a consistent reference-state transformation changes a physical prediction.
+
+```bash
+python skills/tsao-dft-kinetics-multiscale/scripts/eyring_rates.py \
+  skills/tsao-dft-kinetics-multiscale/examples/catalysis/barriers.csv --temperature 298.15 --out ../rates.csv
+python skills/tsao-dft-kinetics-multiscale/scripts/propagate_barrier_uncertainty.py \
+  --barrier 15 --uncertainty 1 --temperature 298.15 --molecularity 2 \
+  --standard-state '1 M' --barrier-standard-state '1 M' --activity-convention 'a=c/c0'
+```
+
+For a declared symmetric barrier bound $u_G$, $k_{\min,\max}=\exp[\ln k_m\mp u_G/(RT)]$. This interval excludes functional, solvent, transport and pathway uncertainty. Very small rates may underflow to zero while JSON retains their log rates. Overflow and nonfinite inputs are rejected.
+
+### Periodic logs: numerical evidence belongs to the final job
+
+```bash
+python skills/tsao-periodic-dft-materials/scripts/parse_qe.py pw.out
+python skills/tsao-periodic-dft-materials/scripts/parse_vasp.py OUTCAR
+python skills/tsao-periodic-dft-materials/scripts/parse_cp2k.py cp2k.out
+```
+
+All three entry points share a bounded line reader: at most 1 MiB per line, 1 GiB per artifact and 10,000 jobs. Exceeding a bound fails explicitly. A new job resets version, energy and convergence, so an empty final job cannot inherit an earlier energy. When `source_complete=false`, the hash covers consumed bytes only and cannot qualify a complete artifact. NaN, infinity, nonzero literals rounded to zero and unit-conversion overflow are rejected; finite small values remain valid. Accepted parsing still reports `scientific_acceptance=PENDING`.
+
+### Machine learning: distinguish completed training from scientific approval
+
+An existing `split` column is preserved and must use `train`, `valid` or `test`; a parent group may not span splits. A fixed-seed group split is used only when that column is absent. Features cannot include the target or group identifier. The model card records the raw CSV SHA-256, split hash and explicit `UNQUALIFIED` state.
+
+```bash
+python skills/tsao-dft-ml-active-learning/scripts/train_ridge_baseline.py dataset.csv \
+  --features descriptor_a,descriptor_b --target energy_eV --group parent_id \
+  --out-dir ../ridge-baseline
+```
+
+Optional `--validation-artifact validation.json` additionally binds the report schema, dataset hash, sample count, split hash and method fingerprints to this run. Identity checks on a supplied report do not perform independent scientific review. Report errors on a fixed held-out set; discuss generalization only after group isolation. Ensemble spread and OOD scores do not replace calibration.
 
 ## Acceptance state and modification specification
 
@@ -72,7 +147,7 @@ Public capability statements use four evidence levels:
 - `L2_VALIDATED_ADAPTER`: the adapter, Schema, strict input boundary and regression suite are validated; this is not proof of execution on a real licensed professional engine or target device.
 - `L3_EXECUTION_TESTED`: must bind real `engine/version/site/run_id` and immutable artifact SHA-256. HPC or acceleration L3 additionally binds build/hardware identity, a CPU reference, at least three repeats, numerical equivalence, parser acceptance, performance policy, a content-addressed evidence root and independent signed review.
 
-The repository neighbor-list, mmap parser, contract validators and release-acceptance builder are permanently tested software artifacts. They do not automatically promote external Gaussian, VASP, QE or CP2K capability to `L3_EXECUTION_TESTED`.
+The repository neighbor-list, bounded periodic stream parser, unified mmap parser, contract validators and release-acceptance builder are permanently tested software artifacts. They do not automatically promote external Gaussian, VASP, QE or CP2K capability to `L3_EXECUTION_TESTED`.
 
 ## Mathematical core: mapping equations to software contracts
 
@@ -190,7 +265,7 @@ $$
 \frac{k_f}{k_r}=\exp\!\left(-\frac{\Delta G_{\mathrm{rxn}}}{RT}\right).
 $$
 
-`tsao-dft-kinetics-multiscale` consumes only accepted standard-state and thermochemical evidence. Incompatible standard states or uncorrected free energies are not concatenated.
+The unimolecular expression assumes $m=1$ and $g=1$. Higher-order steps use the concentration factor and barrier reference contract above. The forward/reverse ratio connects to a thermodynamic equilibrium constant only under consistent activities, standard states and partition definitions; concentration-rate ratios require the relevant standard-concentration power. The CLI validates declarations, not the scientific validity of supplied thermochemistry.
 
 ### 8. ML uncertainty and OOD gating
 
@@ -202,7 +277,7 @@ $$
 u^2(\mathbf x)=\frac1{M-1}\sum_{m=1}^M\left(\hat y_m-\bar y\right)^2.
 $$
 
-If $u(\mathbf x)>u_{\max}$ or the OOD score exceeds its threshold, execution falls back to remote real DFT instead of emitting a high-confidence fabricated result.
+If $u(\mathbf x)>u_{\max}$ or an OOD score exceeds its threshold, the workflow should pause predictions and request real DFT verification. This is a workflow policy; the baseline script does not launch a remote solver.
 
 <p align="center">
   <img src="assets/demo/dft-mathematical-core.svg" width="100%" alt="Kohn-Sham mathematics mapped to TsaoDFT software contracts">
@@ -380,7 +455,7 @@ PowerShell:
 pwsh -NoProfile -File .\scripts\quality_gate.ps1
 ```
 
-Permanent CI must pass Python 3.10/3.12/3.13, Windows PowerShell, dependency audit + CycloneDX SBOM, CodeQL and all 29/29 repository quality stages. The historical baseline was 630 tests / 9 suites; current counts and outcomes must come from the current commit run.
+Permanent CI must pass Python 3.11/3.12/3.13, Windows PowerShell, dependency audit + CycloneDX SBOM, CodeQL and all 29/29 repository quality stages. The historical baseline was 630 tests / 9 suites; current counts and outcomes must come from the current commit run.
 
 Static preflight validates repository contracts, not completed tests. Executed software acceptance requires the current commit quality receipt and CI results. External DFT execution and acceleration qualification remain `EXTERNAL_HOLD`.
 
@@ -398,15 +473,15 @@ Static preflight validates repository contracts, not completed tests. Executed s
 ### Core mathematical contracts
 
 $$
-[-½∇² + V_eff[n]] ψᵢ = εᵢ ψᵢ
+\left[-\frac{1}{2}\nabla^2+V_{\mathrm{eff}}[n]\right]\psi_i=\varepsilon_i\psi_i
 $$
 
 $$
-n* = argminₙ ‖A(s − n)‖₂
+\mathbf n^\star=\operatorname*{arg\,min}_{\mathbf n\in\mathbb Z_{\mathcal P}}\lVert(\mathbf s-\mathbf n)\mathbf H\rVert_2
 $$
 
 $$
-|ΔE| ≤ τ_E ∧ maxᵢ ‖ΔFᵢ‖₂ ≤ τ_F
+|\Delta E|\le\tau_E\quad\land\quad\max_i\lVert\Delta\mathbf F_i\rVert_2\le\tau_F
 $$
 
 ### Usage strategy

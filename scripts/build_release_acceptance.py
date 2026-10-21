@@ -33,7 +33,7 @@ SOFTWARE_READY = "SOFTWARE_PREFLIGHT_READY"
 EXTERNAL_HOLD = "EXTERNAL_HOLD"
 UNQUALIFIED = "UNQUALIFIED"
 REQUIRED_CI_JOBS = {"quality-gate", "windows-control-plane", "supply-chain", "codeql"}
-REQUIRED_PYTHON_VERSIONS = ["3.10", "3.12", "3.13"]
+REQUIRED_PYTHON_VERSIONS = ["3.11", "3.12", "3.13"]
 REQUIRED_STAGES = (
     "demo assets",
     "dependency contract",

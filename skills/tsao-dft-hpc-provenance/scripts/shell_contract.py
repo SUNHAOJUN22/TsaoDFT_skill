@@ -8,7 +8,7 @@ import hashlib
 import json
 import re
 import shlex
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -148,7 +148,7 @@ def parse_timestamp(value: Any, field: str, errors: list[str]) -> datetime | Non
     if parsed.tzinfo is None:
         errors.append(f"{field} must include a timezone")
         return None
-    return parsed.astimezone(timezone.utc)
+    return parsed.astimezone(UTC)
 
 
 def verify_signed_attestation(
@@ -184,7 +184,7 @@ def verify_signed_attestation(
         errors.append("attestation identity must be non-empty")
     issued = parse_timestamp(attestation.get("issued_at"), "issued_at", errors)
     expires = parse_timestamp(attestation.get("expires_at"), "expires_at", errors)
-    current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    current = (now or datetime.now(UTC)).astimezone(UTC)
     if issued is not None and issued > current:
         errors.append("attestation issued_at is in the future")
     if expires is not None and expires <= current:

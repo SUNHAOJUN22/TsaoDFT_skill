@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml"><img src="https://github.com/SUNHAOJUN22/TsaoDFT_skill/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
-  <img src="https://img.shields.io/badge/Python-3.10%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.10, 3.12 and 3.13">
+  <img src="https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.13-3776AB" alt="Python 3.11, 3.12 and 3.13">
   <img src="https://img.shields.io/badge/tests-see%20current%20CI-64748B" alt="Tests: inspect the current commit CI">
   <img src="https://img.shields.io/badge/quality%20gates-29%20defined-64748B" alt="29 required quality gates">
   <img src="https://img.shields.io/badge/software-static%20preflight-64748B" alt="Static preflight is not executed acceptance">
@@ -19,22 +19,99 @@
   <img src="https://img.shields.io/badge/license-MIT-16A34A" alt="MIT license">
 </p>
 
-> **AI图像声明｜AI-GENERATED CONCEPTUAL ILLUSTRATION：** 唯一 AI 封面与 AI-assisted SVG 只表达系统结构、数理合同和使用策略。分子、晶格、轨道、能带、势能面、服务器与界面都不是 Gaussian、VASP、Quantum ESPRESSO、CP2K、Multiwfn、VMD 或实验产生的数据。所有技术图均标注 `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`；定量结论只能来自通过验收的输入、输出、Parser、哈希与机器证据。
+> **AI图像声明｜AI-GENERATED CONCEPTUAL ILLUSTRATION：** 中文/英文 AI 愿景图、归档封面与 AI-assisted SVG 只表达系统结构、数理合同和使用策略。分子、晶格、轨道、能带、势能面、服务器与界面都不是 Gaussian、VASP、Quantum ESPRESSO、CP2K、Multiwfn、VMD 或实验产生的数据。所有技术图均标注 `SYNTHETIC DEMO · NOT SCIENTIFIC DATA`；定量结论只能来自通过验收的输入、输出、Parser、哈希与机器证据。
 
 <!-- LOCALIZED_VISION_ZH:START -->
 ## 中文项目愿景图：从 Kohn–Sham 方程到材料与分子证据链
 
 <p align="center">
-  <img src="docs/localized-vision/tsao-dft-vision-zh.svg" width="100%" alt="TsaoDFT 中文第一性原理工作流与数理证据架构">
+  <img src="docs/assets/vision-zh.png" width="100%" alt="TsaoDFT 中文第一性原理工作流与数理证据架构">
 </p>
 
 > 图中公式用于解释代码中的方法身份、周期几何、Parser、SCF 与证据门；图不是电子密度、能带、轨道或真实 DFT 计算结果。
 
+> 图中 Eyring 式是一分子基准示意；双分子或更高反应级数必须使用下文代码合同的标准浓度因子与势垒参考态。
+
 <!-- LOCALIZED_VISION_ZH:END -->
 
 <p align="center">
-  <img src="assets/ai/hero/tsao-dft-hero.svg" width="100%" alt="TsaoDFT evidence-first DFT research operating system conceptual overview">
+  <a href="assets/ai/hero/tsao-dft-hero.svg">英文归档图：系统总体愿景</a>
 </p>
+
+
+本页直接展示中文愿景图。历史英文技术示意图保留为标明语言的归档链接，原始文件、哈希与合成数据标记继续接受治理检查。
+
+## 从代码出发：交付范围与推荐入口
+
+TsaoDFT 将结构检查、周期日志解析、速率计算、机器学习基线和计算证据组织成独立 Python 工具。仓库提供可测试的软件合同、参考算法与交接文件；真实电子结构求解仍需要用户配置并运行 Gaussian、VASP、Quantum ESPRESSO 或 CP2K。愿景是让每一个数值都能回到输入、方法、最终作业和审核记录。
+
+| 需求 | 实际入口 | 输出与适用边界 |
+| --- | --- | --- |
+| 结构与周期几何 | `skills/tsao-structure-prep/scripts/inspect_xyz.py` | 原子几何、邻居关系与算法等价；不计算电子密度 |
+| 周期输出核验 | `skills/tsao-periodic-dft-materials/scripts/parse_qe.py`、`parse_vasp.py`、`parse_cp2k.py` | 最终作业的收敛、能量、版本、行号、字节偏移与完整文件 SHA-256 |
+| Eyring 速率与区间 | `skills/tsao-dft-kinetics-multiscale/scripts/eyring_rates.py`、`propagate_barrier_uncertainty.py` | kcal/mol 势垒、K 温度；多分子反应必须提供标准浓度、势垒参考态与活度定义 |
+| Ridge 基线 | `skills/tsao-dft-ml-active-learning/scripts/train_ridge_baseline.py` | 固定分组划分、输入与划分哈希、预测和模型卡；训练完成为 `training_completed` / `UNQUALIFIED` |
+| 科学资格与交付 | `scripts/quality_gate.py` | 真实执行门禁回执；软件通过不等于外部引擎或科学结论已验收 |
+
+### 安装并运行软件门禁
+
+当前最低 Python 版本为 **3.11**，CI 矩阵为 3.11 / 3.12 / 3.13。2026-10-21 的依赖安全审计要求 Pillow 13.0.0（修复旧 12.3.0 中的八项漏洞），上游仅支持 Python >=3.11，因此不再声明 Python 3.10 兼容。升级时创建新环境，再安装对应 `constraints/py311.txt`、`py312.txt` 或 `py313.txt`；请勿复用旧3.10环境。certifi 同时升级至2026.10.19。来源：[Pillow 13.0.0](https://pypi.org/project/Pillow/13.0.0/)、[certifi安全公告](https://github.com/advisories/GHSA-6q48-6c7w-9gw2)。
+
+推荐在 Python 3.12 独立环境安装已约束依赖。验收报告置于源码目录外，避免把不同机器产生的运行回执混进源码。
+
+```bash
+python3.12 -m venv .venv
+. .venv/bin/activate
+python -m pip install -c constraints/py312.txt -r requirements-dev.txt
+python -m pip check
+python scripts/run_all_tests.py
+python scripts/quality_gate.py --report-dir ../tsao-dft-acceptance
+```
+
+跨七仓执行方案见 [完整并行修改与六小时验收 Prompt](docs/SEVEN_REPOSITORY_ACCEPTANCE_PROMPT.md)。执行器分别累计两个 10,800 秒的成功测试进程时间，完整验证后才可称六小时分段回归完成；安装、排队、等待与失败运行均不计入。该定义不等于六小时连续服务稳定性测试。
+
+### 多分子速率：参考态属于输入合同
+
+对 $m$ 分子基元步骤，浓度数值按 mol/L 计，且使用 $a=c/c^\circ$：
+
+$$
+k_m=\kappa g\frac{k_B T}{h}\exp\left(-\frac{\Delta G^\ddagger_{c^\circ}}{RT}\right)(c^\circ)^{1-m},
+\qquad [k_m]=\mathrm{M}^{1-m}\mathrm{s}^{-1}.
+$$
+
+程序在对数域计算 $\ln k_m=\ln\kappa+\ln g+\ln(k_BT/h)-\Delta G^\ddagger/(RT)+(1-m)\ln c^\circ$。`standard_state` 与 `barrier_standard_state` 必须一致；不一致时拒绝计算，由研究者先完成有依据的自由能参考态换算。1 M 改为 0.1 M 且保持相同**数值势垒**时，双分子速率因子增大十倍；这只是浓度因子的回归检验，不能当作同一物理体系换参考态后速率改变的结论。
+
+```bash
+python skills/tsao-dft-kinetics-multiscale/scripts/eyring_rates.py \
+  skills/tsao-dft-kinetics-multiscale/examples/catalysis/barriers.csv --temperature 298.15 --out ../rates.csv
+python skills/tsao-dft-kinetics-multiscale/scripts/propagate_barrier_uncertainty.py \
+  --barrier 15 --uncertainty 1 --temperature 298.15 --molecularity 2 \
+  --standard-state '1 M' --barrier-standard-state '1 M' --activity-convention 'a=c/c0'
+```
+
+对声明的对称势垒界限 $u_G$，区间为 $k_{\min,\max}=\exp[\ln k_m\mp u_G/(RT)]$；它不包含泛函、溶剂、传质或路径选择的不确定度。极小速率可数值下溢为零，JSON 同时保留对应对数速率；溢出与非有限输入被拒绝。
+
+### 周期日志：只接受最后一个作业的数值
+
+```bash
+python skills/tsao-periodic-dft-materials/scripts/parse_qe.py pw.out
+python skills/tsao-periodic-dft-materials/scripts/parse_vasp.py OUTCAR
+python skills/tsao-periodic-dft-materials/scripts/parse_cp2k.py cp2k.out
+```
+
+三个入口共享逐行有界读取器。每行最多 1 MiB，文件最多 1 GiB，最多 10,000 个作业；超出界限会明确失败。新作业重置版本、能量和收敛状态，后一个空作业不会继承前一个能量。`source_complete=false` 时哈希仅覆盖已消费的字节，结果不得用于完整工件验收。`NaN`、`Inf`、非零字面量转为零、单位换算溢出均拒绝，合法有限的小数仍保留。所有通过解析的结果继续保持 `scientific_acceptance=PENDING`。
+
+### 机器学习：训练完成与科学批准分别记录
+
+已有 `split` 列时仅接受 `train`、`valid`、`test`，同一 `parent_id` 不得跨组；没有该列时才采用固定种子的分组划分。训练特征不得包含目标或分组标识。模型卡记录原始 CSV 的 SHA-256、分组划分哈希及显式的 `UNQUALIFIED` 状态。
+
+```bash
+python skills/tsao-dft-ml-active-learning/scripts/train_ridge_baseline.py dataset.csv \
+  --features descriptor_a,descriptor_b --target energy_eV --group parent_id \
+  --out-dir ../ridge-baseline
+```
+
+可选 `--validation-artifact validation.json` 进一步要求校验报告 schema、数据集哈希、行数、划分哈希和方法指纹与本次训练一致。报告身份核验不会自动完成独立科学审核。模型误差必须按固定测试集报告，分组隔离后才可讨论泛化；ensemble 方差或 OOD 指标不替代误差校准。
 
 ## 验收状态与修改规范
 
@@ -60,7 +137,7 @@ python scripts/quality_gate.py
 6. **正确性资格先于性能资格。** 没有固定输入、真实引擎、许可证、build/site/run/hardware、科学容差与重复运行，就不得发布性能比。
 
 <p align="center">
-  <img src="assets/demo/workflow-architecture.svg" width="100%" alt="TsaoDFT auditable research loop synthetic demonstration">
+  <a href="assets/demo/workflow-architecture.svg">英文归档图：可审计科研闭环</a>
 </p>
 
 ## 能力等级不是宣传标签
@@ -72,7 +149,7 @@ python scripts/quality_gate.py
 - `L2_VALIDATED_ADAPTER`：适配器、Schema、严格输入边界和回归测试已经验证；它不等于已在真实授权专业软件、许可证和目标硬件上完成执行。
 - `L3_EXECUTION_TESTED`：必须绑定真实 `engine/version/site/run_id` 与不可变 artifact SHA-256。HPC 或加速 L3 还必须绑定 build/hardware identity、CPU reference、至少三次重复、数值等价、Parser 验收、性能政策、内容寻址 evidence root 和独立签名审查。
 
-当前仓库的 neighbor-list、mmap Parser、合同 validator 和 release acceptance 是永久门验证过的软件工件；它们不会自动把外部 Gaussian、VASP、QE 或 CP2K 提升为 `L3_EXECUTION_TESTED`。
+当前仓库的 neighbor-list、逐行有界周期 Parser 与统一 mmap Parser、合同 validator 和 release acceptance 是永久门验证过的软件工件；它们不会自动把外部 Gaussian、VASP、QE 或 CP2K 提升为 `L3_EXECUTION_TESTED`。
 
 ## 数理核心：公式如何映射到代码合同
 
@@ -190,7 +267,7 @@ $$
 \frac{k_f}{k_r}=\exp\!\left(-\frac{\Delta G_{\mathrm{rxn}}}{RT}\right).
 $$
 
-`tsao-dft-kinetics-multiscale` 只消费标准态、热化学和路径身份已通过校验的数据；不同标准态或未校正自由能不得直接拼接。
+单分子式对应 $m=1$、$g=1$。多分子步骤使用上文的浓度因子与势垒参考态合同。正逆速率比仅在一致的活度、标准态与配分定义下连接热力学平衡常数；浓度速率常数的比值还须包含相应标准浓度幂。CLI 验证输入合同，不能替用户证明热化学数据的科学有效性。
 
 ### 8. ML 不确定度与 OOD 门
 
@@ -202,14 +279,14 @@ $$
 u^2(\mathbf x)=\frac1{M-1}\sum_{m=1}^M\left(\hat y_m-\bar y\right)^2.
 $$
 
-当 $u(\mathbf x)>u_{\max}$ 或 OOD score 超阈值时，必须回退到远程真实 DFT，而不是继续输出高置信度伪结果。
+当 $u(\mathbf x)>u_{\max}$ 或 OOD score 超阈值时，使用策略应暂停预测并交接真实 DFT 验证；该条件是工作流门，基线脚本不会自动启动远程求解器。
 
 <p align="center">
-  <img src="assets/demo/dft-mathematical-core.svg" width="100%" alt="Kohn-Sham mathematics mapped to TsaoDFT software contracts">
+  <a href="assets/demo/dft-mathematical-core.svg">英文归档图：DFT 数学核心与代码映射</a>
 </p>
 
 <p align="center">
-  <img src="assets/demo/qualification-mathematics.svg" width="100%" alt="Numerical equivalence and performance qualification mathematics">
+  <a href="assets/demo/qualification-mathematics.svg">英文归档图：数值等价与性能资格</a>
 </p>
 
 ## 八个 Skills，一条证据链
@@ -286,11 +363,11 @@ python scripts/build_release_acceptance.py --out release-acceptance.json --json
 ```
 
 <p align="center">
-  <img src="assets/demo/evidence-qualification-pipeline.svg" width="100%" alt="Scoped acceleration evidence qualification pipeline">
+  <a href="assets/demo/evidence-qualification-pipeline.svg">英文归档图：证据资格流程</a>
 </p>
 
 <p align="center">
-  <img src="assets/demo/scientific-acceleration-funnel.svg" width="100%" alt="Scientific acceleration qualification funnel">
+  <a href="assets/demo/scientific-acceleration-funnel.svg">英文归档图：科学加速资格流程</a>
 </p>
 
 ## 已实现的软件加速层
@@ -306,17 +383,17 @@ python scripts/build_release_acceptance.py --out release-acceptance.json --json
 | 外部引擎性能 | `EXTERNAL_HOLD` | 官方 engine GPU/MPI build | 未发布加速比 |
 
 <p align="center">
-  <img src="assets/demo/hybrid-compute-architecture.svg" width="100%" alt="Hybrid Python native and external-engine architecture">
+  <a href="assets/demo/hybrid-compute-architecture.svg">英文归档图：混合计算架构</a>
 </p>
 
 <table>
 <tr>
-<td width="50%"><img src="assets/demo/cuda-x-decision-map.svg" width="100%" alt="CUDA-X library decision map"></td>
-<td width="50%"><img src="assets/demo/acceleration-registry-governance.svg" width="100%" alt="Canonical acceleration registry governance"></td>
+<td width="50%"><a href="assets/demo/cuda-x-decision-map.svg">英文归档图：CUDA-X 路径选择</a></td>
+<td width="50%"><a href="assets/demo/acceleration-registry-governance.svg">英文归档图：加速注册表治理</a></td>
 </tr>
 <tr>
-<td><img src="assets/demo/backend-portability-stack.svg" width="100%" alt="Backend portability stack"></td>
-<td><img src="assets/demo/native-acceleration-roadmap.svg" width="100%" alt="Profile-gated native acceleration roadmap"></td>
+<td><a href="assets/demo/backend-portability-stack.svg">英文归档图：后端可移植性</a></td>
+<td><a href="assets/demo/native-acceleration-roadmap.svg">英文归档图：原生加速路线</a></td>
 </tr>
 </table>
 
@@ -328,7 +405,7 @@ python scripts/build_release_acceptance.py --out release-acceptance.json --json
 - Gaussian：仓库负责预检、Parser、批处理与证据，除非产品明确支持，否则不声称电子结构核心加速。
 
 <p align="center">
-  <img src="assets/demo/windows-linux-execution-matrix.svg" width="100%" alt="Windows and Linux execution matrix">
+  <a href="assets/demo/windows-linux-execution-matrix.svg">英文归档图：Windows 与 Linux 执行矩阵</a>
 </p>
 
 ## ML、动力学与边缘闭环
@@ -344,12 +421,12 @@ python scripts/build_release_acceptance.py --out release-acceptance.json --json
 
 <table>
 <tr>
-<td width="50%"><img src="assets/demo/dft-ml-dashboard.svg" width="100%" alt="DFT ML provenance-aware dashboard"></td>
-<td width="50%"><img src="assets/demo/edge-hpc-closed-loop.svg" width="100%" alt="Edge to HPC scientific feedback loop"></td>
+<td width="50%"><a href="assets/demo/dft-ml-dashboard.svg">英文归档图：DFT 与机器学习合同</a></td>
+<td width="50%"><a href="assets/demo/edge-hpc-closed-loop.svg">英文归档图：边缘与 HPC 闭环</a></td>
 </tr>
 <tr>
-<td><img src="assets/demo/multiscale-kinetics.svg" width="100%" alt="DFT to kinetics multiscale handoff"></td>
-<td><img src="assets/demo/periodic-dft-materials.svg" width="100%" alt="Periodic DFT evidence chain"></td>
+<td><a href="assets/demo/multiscale-kinetics.svg">英文归档图：多尺度动力学交接</a></td>
+<td><a href="assets/demo/periodic-dft-materials.svg">英文归档图：周期 DFT 证据链</a></td>
 </tr>
 </table>
 
@@ -359,8 +436,8 @@ python scripts/build_release_acceptance.py --out release-acceptance.json --json
 
 <table>
 <tr>
-<td width="50%"><img src="assets/demo/wavefunction-esp-gallery.svg" width="100%" alt="Wavefunction and ESP figure contract"></td>
-<td><img src="assets/demo/scientific-acceleration-funnel.svg" width="100%" alt="Scientific evidence funnel"></td>
+<td width="50%"><a href="assets/demo/wavefunction-esp-gallery.svg">英文归档图：波函数与静电势图件合同</a></td>
+<td><a href="assets/demo/scientific-acceleration-funnel.svg">英文归档图：科学加速资格流程</a></td>
 </tr>
 </table>
 
@@ -380,7 +457,7 @@ PowerShell：
 pwsh -NoProfile -File .\scripts\quality_gate.ps1
 ```
 
-永久 CI 必须通过：Python 3.10、3.12、3.13、Windows PowerShell、dependency audit + CycloneDX SBOM、CodeQL 和全部 29/29 repository quality stages。历史基线为 630 tests / 9 suites；当前测试数量与结论以当前提交的实际运行记录为准。
+永久 CI 必须通过：Python 3.11、3.12、3.13、Windows PowerShell、dependency audit + CycloneDX SBOM、CodeQL 和全部 29/29 repository quality stages。历史基线为 630 tests / 9 suites；当前测试数量与结论以当前提交的实际运行记录为准。
 
 静态预检只验证仓库合同，不能证明本次测试通过；实际软件验收必须查阅当前提交的质量回执和 CI。外部 DFT 引擎执行与加速资格继续为 `EXTERNAL_HOLD`。
 
@@ -398,15 +475,15 @@ pwsh -NoProfile -File .\scripts\quality_gate.ps1
 ### 核心数理合同
 
 $$
-[-½∇² + V_eff[n]] ψᵢ = εᵢ ψᵢ
+\left[-\frac{1}{2}\nabla^2+V_{\mathrm{eff}}[n]\right]\psi_i=\varepsilon_i\psi_i
 $$
 
 $$
-n* = argminₙ ‖A(s − n)‖₂
+\mathbf n^\star=\operatorname*{arg\,min}_{\mathbf n\in\mathbb Z_{\mathcal P}}\lVert(\mathbf s-\mathbf n)\mathbf H\rVert_2
 $$
 
 $$
-|ΔE| ≤ τ_E ∧ maxᵢ ‖ΔFᵢ‖₂ ≤ τ_F
+|\Delta E|\le\tau_E\quad\land\quad\max_i\lVert\Delta\mathbf F_i\rVert_2\le\tau_F
 $$
 
 ### 使用策略

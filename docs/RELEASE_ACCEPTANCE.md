@@ -32,7 +32,7 @@ The report verifies all of the following without invoking an external engine:
 1. `VERSION` and `docs/CAPABILITY_STATUS.yaml` identify the same release.
 2. Every registered capability is implemented at `L2_VALIDATED_ADAPTER` or `L3_EXECUTION_TESTED` and its declared scripts exist.
 3. The quality-gate stage order is exact and includes release acceptance, coverage, Bandit, repository validation and the complete unit-test suite.
-4. The permanent workflow contains Linux Python 3.10/3.12/3.13, a real `windows-latest` control-plane job, supply-chain/SBOM audit and CodeQL.
+4. The permanent workflow contains Linux Python 3.11/3.12/3.13, a real `windows-latest` control-plane job, supply-chain/SBOM audit and CodeQL.
 5. Compute-contract evidence remains valid, invokes no external engine and publishes no performance ratio.
 6. The scientific-claim policy, acceleration doctrine, acceptance Schema, permanent CI and capability registry are content-addressed in the report.
 7. Any missing file, contract drift, malformed/non-finite JSON, capability downgrade, CI matrix change or evidence promotion changes the software state to `UNQUALIFIED`.

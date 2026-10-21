@@ -92,7 +92,7 @@
         },
         "python_versions": {
           "type": "array",
-          "items": {"type": "string", "pattern": "^3\\.(10|12|13)$"}
+          "items": {"type": "string", "pattern": "^3\\.(11|12|13)$"}
         },
         "windows_runner": {"type": "boolean"}
       }

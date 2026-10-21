@@ -6,7 +6,7 @@ import importlib.util
 import json
 import tempfile
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -176,7 +176,7 @@ class EvidenceTrustBoundaryTests(unittest.TestCase):
         public = private.public_key().public_bytes(
             serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo
         )
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         review = {
             "schema_version": "1.0",
             "attestation_id": "REVIEW-1",

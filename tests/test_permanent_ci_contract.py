@@ -34,11 +34,11 @@ class PermanentCIContractTests(unittest.TestCase):
         matrix = data["jobs"]["quality-gate"]["strategy"]["matrix"]["include"]
         versions = [item["python-version"] for item in matrix]
         constraints = [item["constraint"] for item in matrix]
-        self.assertEqual(versions, ["3.10", "3.12", "3.13"])
+        self.assertEqual(versions, ["3.11", "3.12", "3.13"])
         self.assertEqual(
             constraints,
             [
-                "constraints/py310.txt",
+                "constraints/py311.txt",
                 "constraints/py312.txt",
                 "constraints/py313.txt",
             ],

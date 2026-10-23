@@ -11,13 +11,13 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-import yaml
 from jsonschema import Draft202012Validator, FormatChecker
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
+from benchmark_contract import decode_json, decode_yaml  # noqa: E402 -- standalone Skill import contract
 from shell_contract import (  # noqa: E402 -- standalone Skill import contract
     canonical_json,
     sha256_bytes,
@@ -41,14 +41,14 @@ POLICY_FIELDS = {
 
 
 def load_json(path: Path) -> dict[str, Any]:
-    loaded = json.loads(path.read_text(encoding="utf-8"))
+    loaded = decode_json(path.read_text(encoding="utf-8"))
     if not isinstance(loaded, dict):
         raise ValueError(f"{path.name} root must be an object")
     return loaded
 
 
 def load_yaml(path: Path) -> dict[str, Any]:
-    loaded = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    loaded = decode_yaml(path.read_text(encoding="utf-8")) or {}
     if not isinstance(loaded, dict):
         raise ValueError(f"{path.name} root must be a mapping")
     return loaded

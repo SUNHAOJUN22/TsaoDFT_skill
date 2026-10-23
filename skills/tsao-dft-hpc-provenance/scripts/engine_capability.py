@@ -7,10 +7,17 @@ import argparse
 import hashlib
 import json
 import math
+import sys
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+import benchmark_contract as contract  # noqa: E402 -- standalone Skill import contract
 
 SCHEMA_VERSION = "1.0"
 ENGINES = {"vasp", "quantum-espresso", "cp2k"}
@@ -43,18 +50,11 @@ class CapabilityLoadError(ValueError):
     """Raised when an EngineCapability document cannot be decoded safely."""
 
 
-def _reject_constant(value: str) -> None:
-    raise CapabilityLoadError(f"non-finite JSON constant is forbidden: {value}")
-
-
 def load_mapping(path: Path) -> dict[str, Any]:
     try:
         text = path.read_text(encoding="utf-8")
-        if path.suffix.lower() == ".json":
-            loaded = json.loads(text, parse_constant=_reject_constant)
-        else:
-            loaded = yaml.safe_load(text)
-    except (OSError, UnicodeError, json.JSONDecodeError, yaml.YAMLError, CapabilityLoadError) as exc:
+        loaded = contract.decode_json(text) if path.suffix.lower() == ".json" else contract.decode_yaml(text)
+    except (OSError, UnicodeError, json.JSONDecodeError, yaml.YAMLError, contract.BenchmarkContractError) as exc:
         raise CapabilityLoadError(f"cannot load EngineCapability: {exc}") from exc
     if type(loaded) is not dict:
         raise CapabilityLoadError("EngineCapability root must be a mapping")

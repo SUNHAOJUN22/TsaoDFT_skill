@@ -184,6 +184,18 @@ $$
 
 The evidence contract requires parser acceptance, zero exit status, convergence and finite values. An earlier success marker cannot override a later fatal marker.
 
+Numeric ingestion also distinguishes genuine zero from nonzero underflow. With $\operatorname{fl}(x)$ denoting conversion from a decimal source literal to the runtime floating-point representation, the input boundary requires
+
+$$
+\operatorname{isfinite}(\operatorname{fl}(x))
+\quad\land\quad
+\bigl(x=0\;\lor\;\operatorname{fl}(x)\ne0\bigr).
+$$
+
+The public Gaussian parser applies this check to parsed energies, frequencies, orbitals, coordinates and other numeric fields. Overflow or nonzero underflow returns `parser_accepted=false`, `NUMERIC_RANGE_ERROR`, a nonzero exit code and strict JSON. Benchmark evidence, qualification, EngineCapability, bridge and trust-boundary JSON readers also reject nested duplicate keys, `NaN`, `Infinity` and nonzero underflow; JSONL records use the same rule. YAML readers for benchmark evidence, EngineCapability, the bridge and qualification policies likewise reject explicit duplicate keys, nonfinite numbers and nonzero underflow while preserving valid `<<` merges, merge-list precedence and explicit overrides of inherited values. JSON/YAML campaign tolerances cannot silently turn tiny nonzero numbers into zero. Genuine signed zeros, representable subnormals and JSON integer values remain intact. Resolve range errors through an explicit unit or representation change, not by replacing the input with zero to obtain a pass. Readers cannot reconstruct precision already lost by a caller before serialization.
+
+The unified mmap parser also checks range after Hartree/Ry-to-eV, force and pressure conversions: a finite source value can still overflow or underflow when scaled. Out-of-range force rows cannot be silently discarded to produce apparently complete data. These checks concern software parsing; `scientific_acceptance` still requires independent scientific review.
+
 ### 3. Forces, stress and geometry acceptance
 
 $$

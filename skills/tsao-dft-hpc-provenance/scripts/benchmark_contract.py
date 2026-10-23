@@ -7,9 +7,11 @@ import copy
 import hashlib
 import json
 import math
+from collections.abc import Callable, Hashable
 from pathlib import Path
 from typing import Any, cast
 
+import yaml
 from jsonschema import Draft202012Validator, FormatChecker
 from jsonschema.exceptions import SchemaError
 
@@ -42,16 +44,86 @@ def _parse_finite_float(value: str) -> float:
     parsed = float(value)
     if not math.isfinite(parsed):
         raise BenchmarkContractError(f"non-finite JSON number is forbidden: {value}")
+    if parsed == 0 and any(digit in "123456789" for digit in value.lower().split("e", 1)[0]):
+        raise BenchmarkContractError("non-zero JSON number underflows the finite range")
     return parsed
+
+
+def _reject_duplicate_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise BenchmarkContractError(f"duplicate JSON key is forbidden: {key!r}")
+        result[key] = value
+    return result
+
+
+def decode_json(text: str) -> Any:
+    """Decode evidence without ambiguous keys or silently erased nonzero values."""
+    return json.loads(
+        text,
+        parse_constant=_reject_constant,
+        parse_float=_parse_finite_float,
+        object_pairs_hook=_reject_duplicate_pairs,
+    )
+
+
+class _StrictSafeLoader(yaml.SafeLoader):
+    """Reject ambiguous source keys before expanding legitimate YAML merges."""
+
+    def __init__(self, stream: str) -> None:
+        super().__init__(stream)
+        self._checked_mappings: set[int] = set()
+
+    def flatten_mapping(self, node: yaml.MappingNode) -> None:
+        # Check each original mapping once: a shared alias may already have
+        # expanded inherited keys when another mapping merges it later.
+        if id(node) not in self._checked_mappings:
+            self._checked_mappings.add(id(node))
+            seen: set[Hashable] = set()
+            merge_marker = object()
+            for key_node, _ in node.value:
+                if key_node.tag == "tag:yaml.org,2002:merge":
+                    key = merge_marker
+                elif key_node.tag == "tag:yaml.org,2002:value":
+                    key = key_node.value
+                else:
+                    key = self.construct_object(key_node)
+                if not isinstance(key, Hashable):
+                    raise BenchmarkContractError("YAML mapping keys must be hashable")
+                if key in seen:
+                    raise BenchmarkContractError(f"duplicate YAML key is forbidden: {key!r}")
+                seen.add(key)
+        super().flatten_mapping(node)
+
+    def construct_strict_float(self, node: yaml.ScalarNode) -> float:
+        parsed = super().construct_yaml_float(node)
+        if not math.isfinite(parsed):
+            raise BenchmarkContractError("non-finite YAML number is forbidden")
+        significand = node.value.lower().split("e", 1)[0]
+        if parsed == 0 and any(digit in "123456789" for digit in significand):
+            raise BenchmarkContractError("non-zero YAML number underflows the finite range")
+        return parsed
+
+
+_StrictSafeLoader.add_constructor("tag:yaml.org,2002:float", _StrictSafeLoader.construct_strict_float)
+
+
+def decode_yaml(text: str) -> Any:
+    """Decode YAML evidence with the same unambiguous numeric boundary as JSON."""
+    loader = _StrictSafeLoader(text)
+    try:
+        return loader.get_single_data()
+    except yaml.YAMLError as exc:
+        raise BenchmarkContractError(f"invalid YAML document: {exc}") from exc
+    finally:
+        dispose: Callable[[], None] = loader.dispose
+        dispose()
 
 
 def load_json_mapping(path: Path) -> dict[str, Any]:
     try:
-        loaded = json.loads(
-            path.read_text(encoding="utf-8"),
-            parse_constant=_reject_constant,
-            parse_float=_parse_finite_float,
-        )
+        loaded = decode_json(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError, BenchmarkContractError) as exc:
         raise BenchmarkContractError(f"cannot load {path.name}: {exc}") from exc
     if type(loaded) is not dict:

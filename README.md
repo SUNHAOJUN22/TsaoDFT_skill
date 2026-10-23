@@ -186,6 +186,18 @@ $$
 
 代码合同要求 `parser_accepted=true`、正常退出、收敛标志成立且所有数值有限；仅出现“正常结束字符串”不能覆盖后出现的 fatal marker。
 
+数值读取还须区分真正的零与非零数下溢。设 $\operatorname{fl}(x)$ 为输入十进制数到运行时浮点数的转换，读取边界要求：
+
+$$
+\operatorname{isfinite}(\operatorname{fl}(x))
+\quad\land\quad
+\bigl(x=0\;\lor\;\operatorname{fl}(x)\ne0\bigr).
+$$
+
+Gaussian 公开解析器会对能量、频率、轨道和坐标等读取值执行这一检查；遇到溢出或非零下溢时返回 `parser_accepted=false`、`NUMERIC_RANGE_ERROR` 和非零退出码，并输出严格 JSON。基准证据、资格审查、EngineCapability、证据桥接和信任边界的 JSON 入口同时拒绝嵌套重复键、`NaN`、`Infinity` 与非零下溢；JSONL 每行沿用同一规则。基准证据、EngineCapability、证据桥接及资格政策的 YAML 入口也拒绝显式重复键、非有限数和非零下溢，保留合法 `<<` 合并、合并列表优先级及显式覆盖继承值。计算活动配置的 JSON/YAML 容差也不能把极小非零数静默变成零。真正的带符号零、可表示的次正规数和 JSON 大整数仍保留。遇到范围错误，应明确更换单位或数值表示；不要将输入手动改成零来获得通过。若调用方在序列化之前已经把非零数舍入为零，读取器无法恢复其原始精度。
+
+统一 mmap 解析器还在 Hartree/Ry 到 eV、力和压力单位转换之后检查范围；有限的源值乘以换算因子，也可能溢出或下溢。异常力矢量行不能被静默跳过后伪装为完整数据。这些检查属于软件解析验收，`scientific_acceptance` 仍需独立科学审查。
+
 ### 3. 力、应力与几何验收
 
 $$

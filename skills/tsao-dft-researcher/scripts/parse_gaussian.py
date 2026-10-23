@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import json
+import math
 import re
 from pathlib import Path
 from typing import Any
@@ -148,8 +149,18 @@ def _build_error_taxonomy_index() -> tuple[
 ERROR_LITERAL_EVIDENCE, ERROR_EVIDENCE_CATEGORIES, ERROR_ECP_CATEGORIES = _build_error_taxonomy_index()
 
 
+class NumericRangeError(ArithmeticError):
+    """A numeric source literal cannot be preserved as a finite nonzero float."""
+
+
 def fnum(value: str) -> float:
-    return float(value.replace("D", "E").replace("d", "e"))
+    token = value.replace("D", "E").replace("d", "e")
+    number = float(token)
+    if not math.isfinite(number):
+        raise NumericRangeError(f"non-finite Gaussian numeric value: {value}")
+    if number == 0 and any(digit in "123456789" for digit in token.lower().split("e", 1)[0]):
+        raise NumericRangeError(f"non-zero Gaussian numeric value underflows: {value}")
+    return number
 
 
 def _route_sections(text: str) -> list[str]:
@@ -300,7 +311,7 @@ def _orientation_blocks(text: str) -> list[list[dict[str, Any]]]:
                 if len(parts) >= 6 and all(re.match(r"^-?\d+$", p) for p in parts[:3]):
                     try:
                         center, atomic_number = int(parts[0]), int(parts[1])
-                        x, y, z = map(float, parts[-3:])
+                        x, y, z = map(fnum, parts[-3:])
                         symbol = (
                             ATOMIC_SYMBOLS[atomic_number]
                             if 0 <= atomic_number < len(ATOMIC_SYMBOLS)
@@ -428,7 +439,12 @@ def _parse_log_legacy(text: str) -> dict[str, Any]:
     charge_mult = re.findall(r"Charge\s*=\s*(-?\d+)\s+Multiplicity\s*=\s*(\d+)", text)
     charge = int(charge_mult[-1][0]) if charge_mult else None
     multiplicity = int(charge_mult[-1][1]) if charge_mult else None
-    scf = [fnum(x) for x in re.findall(rf"SCF Done:\s+E\([^)]*\)\s*=\s*({FLOAT})", text)]
+    scf = []
+    for token in re.findall(r"SCF Done:\s+E\([^)]*\)\s*=\s*(\S+)", text):
+        try:
+            scf.append(fnum(token))
+        except ValueError as exc:
+            raise NumericRangeError(f"invalid Gaussian SCF numeric value: {token}") from exc
     frequencies: list[float] = []
     for line in re.findall(r"Frequencies --\s+([^\n]+)", text):
         for token in line.split():
@@ -610,9 +626,17 @@ def _apply_canonical_parser_guard(result: dict, text: str) -> dict:
 
 
 def parse_log(text: str) -> dict:
-    result = _parse_log_legacy(text)
-    source_text = text
-    return _apply_canonical_parser_guard(result, source_text)
+    try:
+        result = _parse_log_legacy(text)
+    except NumericRangeError as exc:
+        result = _apply_canonical_parser_guard(_parse_log_legacy(""), text)
+        result["parser_accepted"] = False
+        result["normal_termination"] = False
+        result["status"] = result["parser_contract_status"] = "NUMERIC_RANGE_ERROR"
+        result["parser_reason_codes"].append("NUMERIC_RANGE_ERROR")
+        result["warnings"].append(str(exc))
+        return result
+    return _apply_canonical_parser_guard(result, text)
 
 
 def main() -> int:
@@ -626,9 +650,9 @@ def main() -> int:
     result["source"] = str(args.log.resolve())
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)
-        args.out.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+        args.out.write_text(json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
     if args.json or not result["parser_accepted"]:
-        print(json.dumps(result, ensure_ascii=False, indent=2))
+        print(json.dumps(result, ensure_ascii=False, indent=2, allow_nan=False))
     else:
         for key, value in result.items():
             print(f"{key}: {value}")

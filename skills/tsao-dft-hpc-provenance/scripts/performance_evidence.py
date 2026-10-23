@@ -152,7 +152,7 @@ def parse_scalar(value: str) -> Any:
     if not stripped:
         return ""
     try:
-        return json.loads(stripped)
+        return contract.decode_json(stripped)
     except json.JSONDecodeError:
         lowered = stripped.lower()
         if lowered == "true":
@@ -165,7 +165,9 @@ def parse_scalar(value: str) -> Any:
             return int(stripped)
         except ValueError:
             try:
-                return float(stripped)
+                return contract._parse_finite_float(stripped)
+            except contract.BenchmarkContractError:
+                raise
             except ValueError:
                 return stripped
 
@@ -186,9 +188,9 @@ def read_document(path: Path) -> Any:
     suffix = path.suffix.lower()
     text = path.read_text(encoding="utf-8")
     if suffix == ".json":
-        return json.loads(text)
+        return contract.decode_json(text)
     if suffix in {".yaml", ".yml"}:
-        return yaml.safe_load(text)
+        return contract.decode_yaml(text)
     raise ValueError(f"unsupported document type: {path}")
 
 
@@ -198,7 +200,7 @@ def load_records(path: Path) -> list[dict[str, Any]]:
         loaded = read_document(path)
         items = loaded if isinstance(loaded, list) else [loaded]
     elif suffix == ".jsonl":
-        items = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        items = [contract.decode_json(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
     elif suffix == ".csv":
         items = []
         with path.open(encoding="utf-8", newline="") as handle:
@@ -216,7 +218,7 @@ def load_records(path: Path) -> list[dict[str, Any]]:
 
 
 def load_policy(path: Path) -> dict[str, Any]:
-    loaded = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    loaded = contract.decode_yaml(path.read_text(encoding="utf-8")) or {}
     if not isinstance(loaded, dict):
         raise ValueError("performance qualification policy root must be a mapping")
     return loaded

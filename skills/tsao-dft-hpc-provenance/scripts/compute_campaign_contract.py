@@ -68,6 +68,17 @@ _UniqueKeySafeLoader.add_constructor(
 )
 
 
+def _construct_finite_yaml_float(loader: _UniqueKeySafeLoader, node: yaml.nodes.ScalarNode) -> float:
+    parsed = loader.construct_yaml_float(node)
+    significand = node.value.lower().split("e", 1)[0]
+    if parsed == 0 and any(digit in "123456789" for digit in significand):
+        raise CampaignContractError("non-zero YAML number underflows the finite range")
+    return parsed
+
+
+_UniqueKeySafeLoader.add_constructor("tag:yaml.org,2002:float", _construct_finite_yaml_float)
+
+
 def _reject_constant(value: str) -> None:
     raise CampaignContractError(f"non-finite JSON constant is forbidden: {value}")
 
@@ -76,6 +87,8 @@ def _parse_finite_float(value: str) -> float:
     parsed = float(value)
     if not math.isfinite(parsed):
         raise CampaignContractError(f"non-finite JSON number is forbidden: {value}")
+    if parsed == 0 and any(digit in "123456789" for digit in value.lower().split("e", 1)[0]):
+        raise CampaignContractError("non-zero JSON number underflows the finite range")
     return parsed
 
 

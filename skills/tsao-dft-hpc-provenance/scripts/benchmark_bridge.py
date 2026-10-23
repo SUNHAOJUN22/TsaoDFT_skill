@@ -15,14 +15,15 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
+from benchmark_contract import decode_json, decode_yaml  # noqa: E402 -- standalone Skill import contract
 from shell_contract import sha256_file  # noqa: E402 -- standalone Skill import contract
 
 
 def load_mapping(path: Path) -> dict[str, Any]:
     if path.suffix.lower() == ".json":
-        value = json.loads(path.read_text(encoding="utf-8"))
+        value = decode_json(path.read_text(encoding="utf-8"))
     else:
-        value = yaml.safe_load(path.read_text(encoding="utf-8"))
+        value = decode_yaml(path.read_text(encoding="utf-8"))
     if not isinstance(value, dict):
         raise ValueError(f"{path.name} root must be a mapping")
     return value

@@ -102,11 +102,21 @@ def _finalize(result: dict[str, Any], artifact: Any) -> dict[str, Any]:
     return result
 
 
-def _float(value: bytes) -> float:
-    parsed = float(value.replace(b"D", b"E").replace(b"d", b"e"))
+class NumericRangeError(ValueError):
+    """A parsed engine quantity cannot be represented without numeric data loss."""
+
+
+def _float(value: bytes, *, factor: float = 1.0) -> float:
+    token = value.replace(b"D", b"E").replace(b"d", b"e")
+    parsed = float(token)
     if not math.isfinite(parsed):
-        raise ValueError("engine output contains a non-finite numeric value")
-    return parsed
+        raise NumericRangeError("engine output contains a non-finite numeric value")
+    if parsed == 0 and any(digit in b"123456789" for digit in token.lower().split(b"e", 1)[0]):
+        raise NumericRangeError("non-zero engine numeric value underflows the finite range")
+    converted = parsed * factor
+    if not math.isfinite(converted) or (parsed != 0 and converted == 0):
+        raise NumericRangeError("engine numeric unit conversion exceeds the finite range")
+    return converted
 
 
 def _numbers(text: bytes) -> list[float]:
@@ -124,6 +134,8 @@ def _parse_force_block(data: mmap.mmap, bounds: tuple[int, int] | None) -> list[
             continue
         try:
             vector.extend(_float(value) for value in fields[-3:])
+        except NumericRangeError:
+            raise
         except ValueError:
             continue
     return vector or None
@@ -146,7 +158,7 @@ def parse_gaussian(path: Path) -> dict[str, Any]:
 
         scf_values = _SCAN.all_groups(data, GAUSSIAN_SCF_RE, start=final_start)
         if scf_values:
-            result["energy"]["value"] = _float(scf_values[-1]) * HARTREE_TO_EV
+            result["energy"]["value"] = _float(scf_values[-1], factor=HARTREE_TO_EV)
             result["electronic_converged"] = True
             result["scf_iterations"] = len(scf_values)
 
@@ -261,14 +273,14 @@ def parse_qe(path: Path) -> dict[str, Any]:
         ) or bool(re.search(rb"bfgs converged in", data, re.IGNORECASE))
         energy, energy_count = _SCAN.last_group(data, QE_ENERGY_RE)
         if energy is not None:
-            result["energy"]["value"] = _float(energy) * RY_TO_EV
+            result["energy"]["value"] = _float(energy, factor=RY_TO_EV)
             result["scf_iterations"] = energy_count
         force, _ = _SCAN.last_group(data, QE_FORCE_RE)
         if force is not None:
-            result["forces"]["values"] = [_float(force) * RY_BOHR_TO_EV_ANGSTROM]
+            result["forces"]["values"] = [_float(force, factor=RY_BOHR_TO_EV_ANGSTROM)]
         pressure, _ = _SCAN.last_group(data, QE_PRESSURE_RE)
         if pressure is not None:
-            result["stress"]["values"] = [_float(pressure) * KBAR_TO_GPA]
+            result["stress"]["values"] = [_float(pressure, factor=KBAR_TO_GPA)]
         if result["fatal_marker"]:
             result["failed_stage"] = "engine" if routine_error else "electronic"
             result["parser_acceptance_reasons"].append(f"QE fatal marker detected: {result['fatal_marker']}")
@@ -304,11 +316,11 @@ def parse_cp2k(path: Path) -> dict[str, Any]:
         ) or _SCAN.contains(data, b"Reevaluating energy at the minimum")
         energy, energy_count = _SCAN.last_group(data, CP2K_ENERGY_RE)
         if energy is not None:
-            result["energy"]["value"] = _float(energy) * HARTREE_TO_EV
+            result["energy"]["value"] = _float(energy, factor=HARTREE_TO_EV)
             result["scf_iterations"] = energy_count
         gradient, _ = _SCAN.last_group(data, CP2K_GRADIENT_RE)
         if gradient is not None:
-            result["forces"]["values"] = [_float(gradient) * HARTREE_TO_EV / 0.529177210903]
+            result["forces"]["values"] = [_float(gradient, factor=HARTREE_TO_EV / 0.529177210903)]
         if result["fatal_marker"]:
             result["failed_stage"] = "engine" if abort else "electronic"
             result["parser_acceptance_reasons"].append(f"CP2K fatal marker detected: {result['fatal_marker']}")

@@ -97,6 +97,41 @@ def test_anisotropic_skew_matches_independent_lattice_enumeration() -> None:
     np.testing.assert_allclose(nearest, expected, rtol=0, atol=1e-12)
 
 
+def test_near_orthogonal_cell_uses_exact_minimum_image_at_cutoff() -> None:
+    neighbors = load_neighbors()
+    box = np.asarray(
+        [
+            [1.0, 0.0, 0.0],
+            [2e-13, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+        ]
+    )
+    coordinates = np.vstack([np.zeros(3), np.asarray([0.5, 0.5, 0.0]) @ box])
+    periodic = (True, True, False)
+    cutoff = 0.7071067811865475
+    expected = brute_periodic_distance(coordinates[1] - coordinates[0], box, (0, 1))
+
+    np.testing.assert_allclose(expected, 0.7071067811864767, rtol=0, atol=1e-15)
+    assert expected <= cutoff
+
+    for backend in ("reference", "numpy", "cell-list"):
+        result = neighbors.pairs_within_cutoff(
+            coordinates,
+            cutoff,
+            box=box,
+            periodic=periodic,
+            backend=backend,
+        )
+        assert [(pair.i, pair.j) for pair in result.pairs] == [(0, 1)]
+        np.testing.assert_allclose(
+            result.pairs[0].distance_angstrom,
+            expected,
+            rtol=0,
+            atol=1e-15,
+        )
+    assert not neighbors._orthogonal_box(box)
+
+
 def test_orthogonality_decision_is_scale_invariant() -> None:
     neighbors = load_neighbors()
     base = np.asarray(

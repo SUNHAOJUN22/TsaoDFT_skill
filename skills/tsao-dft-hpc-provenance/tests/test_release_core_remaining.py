@@ -152,7 +152,8 @@ class ReleaseCoreRemainingTests(unittest.TestCase):
             root = Path(temporary)
             gaussian = root / "gaussian.log"
             gaussian.write_text(
-                "Gaussian 16 Revision C.01\nSCF Done: E(RPBE) = -1.0\nNormal termination of Gaussian\n",
+                "Gaussian 16 Revision C.01\n#p rpbe/sto-3g sp\n"
+                "SCF Done: E(RPBE) = -1.0\nNormal termination of Gaussian\n",
                 encoding="utf-8",
             )
             with patch.object(self.parser.re, "split", return_value=[]):

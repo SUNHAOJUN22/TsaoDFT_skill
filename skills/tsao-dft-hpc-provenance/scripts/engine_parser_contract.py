@@ -35,6 +35,8 @@ _SCAN = _load_scan_core()
 GAUSSIAN_VERSION_RE = re.compile(rb"Gaussian\s+(?:16[:,]?\s*)?.*?Revision\s+([A-Z0-9.]+)", re.IGNORECASE)
 GAUSSIAN_SCF_RE = re.compile(rb"SCF Done:\s+E\([^)]*\)\s*=\s*(" + FLOAT + rb")")
 GAUSSIAN_FREQUENCY_RE = re.compile(rb"Frequencies --\s+([^\r\n]+)")
+GAUSSIAN_OPT_ROUTE_RE = re.compile(rb"\bopt(?:\s*=|\b)", re.IGNORECASE)
+GAUSSIAN_FREQ_ROUTE_RE = re.compile(rb"\bfreq(?:\s*=|\b)", re.IGNORECASE)
 VASP_VERSION_RE = re.compile(rb"vasp\.([\d.]+)", re.IGNORECASE)
 VASP_ENERGY_RE = re.compile(rb"free\s+energy\s+TOTEN\s*=\s*(" + FLOAT + rb")\s+eV", re.IGNORECASE)
 VASP_ELAPSED_RE = re.compile(rb"Elapsed time \(sec\):\s*(" + FLOAT + rb")")
@@ -141,6 +143,30 @@ def _parse_force_block(data: mmap.mmap, bounds: tuple[int, int] | None) -> list[
     return vector or None
 
 
+def _last_route_section(lines: list[bytes]) -> bytes | None:
+    """Collect the last Gaussian route section, including unprefixed continuations."""
+    sections: list[bytes] = []
+    collecting = False
+    current: list[bytes] = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith(b"#"):
+            if collecting:
+                sections.append(b" ".join(current))
+            collecting = True
+            current = [stripped]
+        elif collecting:
+            if not stripped or stripped.startswith(b"---"):
+                sections.append(b" ".join(current))
+                collecting = False
+                current = []
+            else:
+                current.append(stripped)
+    if current:
+        sections.append(b" ".join(current))
+    return sections[-1] if sections else None
+
+
 def parse_gaussian(path: Path) -> dict[str, Any]:
     with _SCAN.mapped_artifact(path) as artifact:
         if artifact is None:
@@ -163,7 +189,10 @@ def parse_gaussian(path: Path) -> dict[str, Any]:
             result["scf_iterations"] = len(scf_values)
 
         final_lines = data[final_start:].splitlines()
-        route = b" ".join(line.strip() for line in final_lines if line.lstrip().startswith(b"#"))
+        route = _last_route_section(final_lines)
+        route_bytes = route or b""
+        opt_requested = GAUSSIAN_OPT_ROUTE_RE.search(route_bytes) is not None
+        freq_requested = GAUSSIAN_FREQ_ROUTE_RE.search(route_bytes) is not None
         frequencies: list[float] = []
         for value in _SCAN.all_groups(data, GAUSSIAN_FREQUENCY_RE, start=final_start):
             frequencies.extend(_numbers(value))
@@ -173,17 +202,26 @@ def parse_gaussian(path: Path) -> dict[str, Any]:
             b"Stationary point found",
             start=final_start,
         )
-        result["geometry_converged"] = geometry if b"opt" in route.lower() else None
+        result["geometry_converged"] = geometry if opt_requested else None
         if error:
             result["failed_stage"] = "engine"
             result["parser_acceptance_reasons"].append("final Link1 job ended with error termination")
         elif not normal:
             result["failed_stage"] = "termination"
             result["parser_acceptance_reasons"].append("final Link1 job lacks normal termination")
-        elif b"opt" in route.lower() and not geometry:
+        elif route is None:
+            result["failed_stage"] = "input"
+            result["parser_acceptance_reasons"].append("final Link1 job lacks a Gaussian route section")
+        elif not scf_values:
+            result["failed_stage"] = "electronic"
+            result["parser_acceptance_reasons"].append("final Link1 job lacks a converged SCF energy record")
+        elif opt_requested and not geometry:
             result["failed_stage"] = "geometry"
             result["parser_acceptance_reasons"].append("optimization route lacks completion marker")
-        elif b"freq" in route.lower() and len(imaginary) > 1:
+        elif freq_requested and not frequencies:
+            result["failed_stage"] = "scientific-gate"
+            result["parser_acceptance_reasons"].append("frequency route lacks parsed frequency records")
+        elif freq_requested and len(imaginary) > 1:
             result["failed_stage"] = "scientific-gate"
             result["parser_acceptance_reasons"].append("frequency result is a higher-order saddle candidate")
         else:

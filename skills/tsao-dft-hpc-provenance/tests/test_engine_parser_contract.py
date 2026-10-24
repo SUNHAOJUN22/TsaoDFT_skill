@@ -37,6 +37,17 @@ class EngineParserContractTests(unittest.TestCase):
         errors = list(Draft202012Validator(self.schema, format_checker=FormatChecker()).iter_errors(result))
         self.assertEqual(errors, [])
 
+    def test_gaussian_last_route_section_handles_route_boundaries(self):
+        self.assertEqual(
+            self.core._last_route_section([b"non-route", b"#p old", b"freq", b"#p final", b"opt", b"", b"ignored"]),
+            b"#p final opt",
+        )
+        self.assertEqual(
+            self.core._last_route_section([b"#p route", b"freq", b"---", b"ignored"]),
+            b"#p route freq",
+        )
+        self.assertIsNone(self.core._last_route_section([b"non-route"]))
+
     def test_missing_files_return_structured_failure(self):
         with tempfile.TemporaryDirectory() as temporary:
             missing = Path(temporary) / "missing.out"
@@ -58,6 +69,79 @@ class EngineParserContractTests(unittest.TestCase):
             self.assertFalse(result["parser_accepted"])
             self.assertEqual(result["fatal_marker"], "ERROR_TERMINATION")
             self.assertEqual(result["job_index"], 2)
+            self.assert_schema(result)
+
+    def test_gaussian_normal_termination_requires_route_and_scf_evidence(self):
+        cases = (
+            (
+                "missing route",
+                "SCF Done: E(RHF) = -1.0\nNormal termination of Gaussian\n",
+                "input",
+            ),
+            (
+                "missing SCF result",
+                "#p hf/sto-3g sp\nNormal termination of Gaussian\n",
+                "electronic",
+            ),
+        )
+        for name, text, stage in cases:
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as temporary:
+                path = Path(temporary) / "job.log"
+                path.write_text(text, encoding="utf-8")
+                result = self.core.parse_gaussian(path)
+                self.assertFalse(result["parser_accepted"])
+                self.assertEqual(result["failed_stage"], stage)
+                self.assert_schema(result)
+
+    def test_gaussian_frequency_route_requires_frequency_records(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "job.log"
+            path.write_text(
+                "#p hf/sto-3g freq\nSCF Done: E(RHF) = -1.0\nNormal termination of Gaussian\n",
+                encoding="utf-8",
+            )
+            result = self.core.parse_gaussian(path)
+            self.assertFalse(result["parser_accepted"])
+            self.assertEqual(result["failed_stage"], "scientific-gate")
+            self.assert_schema(result)
+
+    def test_gaussian_route_continuation_controls_frequency_gate(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "job.log"
+            path.write_text(
+                "#p hf/sto-3g\nfreq\nSCF Done: E(RHF) = -1.0\n"
+                "Frequencies -- -100.0 -80.0 200.0\nNormal termination of Gaussian\n",
+                encoding="utf-8",
+            )
+            result = self.core.parse_gaussian(path)
+            self.assertFalse(result["parser_accepted"])
+            self.assertEqual(result["failed_stage"], "scientific-gate")
+            self.assert_schema(result)
+
+    def test_gaussian_route_continuation_accepts_one_imaginary_frequency(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "job.log"
+            path.write_text(
+                "#p hf/sto-3g\nfreq\nSCF Done: E(RHF) = -1.0\n"
+                "Frequencies -- -100.0 100.0 200.0\nNormal termination of Gaussian\n",
+                encoding="utf-8",
+            )
+            result = self.core.parse_gaussian(path)
+            self.assertTrue(result["parser_accepted"])
+            self.assertIsNone(result["failed_stage"])
+            self.assert_schema(result)
+
+    def test_gaussian_optimization_continuation_requires_completion_marker(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "job.log"
+            path.write_text(
+                "#p hf/sto-3g\nopt\nSCF Done: E(RHF) = -1.0\nNormal termination of Gaussian\n",
+                encoding="utf-8",
+            )
+            result = self.core.parse_gaussian(path)
+            self.assertFalse(result["parser_accepted"])
+            self.assertFalse(result["geometry_converged"])
+            self.assertEqual(result["failed_stage"], "geometry")
             self.assert_schema(result)
 
     def test_vasp_fatal_warning_blocks(self):

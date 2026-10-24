@@ -47,7 +47,10 @@ def test_fatal_after_success_is_never_accepted(engine: str, text: str) -> None:
     "engine,text",
     [
         ("gaussian", "Entering Gaussian System\nError termination\nEntering Gaussian System\nNormal termination"),
-        ("qe", "Program PWSCF\nError in routine x\nProgram PWSCF\nJOB DONE"),
+        (
+            "qe",
+            "Program PWSCF\nError in routine x\nProgram PWSCF\nconvergence has been achieved\nJOB DONE",
+        ),
         ("cp2k", "PROGRAM STARTED AT\n*** ABORT\nPROGRAM STARTED AT\nPROGRAM ENDED AT"),
     ],
 )
@@ -71,8 +74,13 @@ def test_nonconvergence_dominates_success() -> None:
 
 
 def test_truncated_and_chunk_boundaries_are_fail_closed() -> None:
-    chunks = ["Program PW", "SCF\nJOB ", "DONE\n"]
+    chunks = ["Program PW", "SCF\nconvergence has been achieved\nJOB ", "DONE\n"]
     assert parser.parse_engine_stream("qe", chunks).parser_accepted is True
+    job_done_only = parser.parse_engine_output("qe", "Program PWSCF v.7.2\nJOB DONE.\n")
+    assert job_done_only.parser_accepted is False
+    assert job_done_only.status == "INCOMPLETE"
+    assert job_done_only.jobs[-1].complete is True
+    assert job_done_only.reason_codes == ("SCF_CONVERGENCE_MISSING",)
     limited = parser.parse_engine_stream("qe", ["Program PWSCF\n" + "x" * 100], max_bytes=10)
     assert limited.status == "TRUNCATED_BY_LIMIT" and not limited.parser_accepted
     incomplete = parser.parse_engine_output("gaussian", "Entering Gaussian System\nSCF Done")

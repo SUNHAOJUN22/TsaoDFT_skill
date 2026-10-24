@@ -38,13 +38,15 @@ GAUSSIAN_SCF_RE = re.compile(rb"SCF Done:\s+E\([^)]*\)\s*=\s*(" + FLOAT + rb")")
 GAUSSIAN_FREQUENCY_RE = re.compile(rb"Frequencies --\s+([^\r\n]+)")
 GAUSSIAN_OPT_ROUTE_RE = re.compile(rb"\bopt(?:\s*=|\b)", re.IGNORECASE)
 GAUSSIAN_FREQ_ROUTE_RE = re.compile(rb"\bfreq(?:\s*=|\b)", re.IGNORECASE)
-VASP_VERSION_RE = re.compile(rb"vasp\.([\d.]+)", re.IGNORECASE)
+VASP_VERSION_RE = re.compile(rb"(?im)^[ \t]*vasp\.([\d.]+)")
 VASP_ENERGY_RE = re.compile(rb"free\s+energy\s+TOTEN\s*=\s*(" + FLOAT + rb")\s+eV", re.IGNORECASE)
+VASP_SCF_ITERATION_RE = re.compile(rb"(?im)^[ \t]*(?:DAV|RMM|CG|SDA|CGA|DMP|DIA):[ \t]*(\d+)(?:[ \t]|$)")
 VASP_ELAPSED_RE = re.compile(rb"Elapsed time \(sec\):\s*(" + FLOAT + rb")")
 QE_VERSION_RE = re.compile(rb"Program PWSCF v\.([\w.\-]+)")
 QE_ERROR_RE = re.compile(rb"Error in routine", re.IGNORECASE)
 QE_BFGS_CONVERGED_RE = re.compile(rb"bfgs converged in", re.IGNORECASE)
 QE_ENERGY_RE = re.compile(rb"!\s+total energy\s+=\s*(" + FLOAT + rb")\s+Ry")
+QE_SCF_ITERATION_RE = re.compile(rb"(?im)^[ \t]*iteration[ \t]*#[ \t]*(\d+)(?:[ \t]|$)")
 QE_FORCE_BLOCK_RE = re.compile(rb"(?im)^[ \t]*Forces acting on atoms[^\r\n]*")
 QE_FORCE_UNIT_RE = re.compile(rb"\bRy/au\b", re.IGNORECASE)
 QE_ATOM_COUNT_RE = re.compile(rb"(?im)^[ \t]*number of atoms/cell[ \t]*=[ \t]*(\d+)[ \t]*\r?$")
@@ -313,7 +315,13 @@ def parse_vasp(path: Path) -> dict[str, Any]:
             return missing_result("vasp", path)
         data = artifact.data
         result = base_result("vasp", path)
-        result["engine_version"] = _SCAN.decode(_SCAN.first_group(data, VASP_VERSION_RE))
+        versions = tuple(VASP_VERSION_RE.finditer(data))
+        job_start = versions[-1].start() if versions else 0
+        result["engine_version"] = _SCAN.decode(versions[-1].group(1) if versions else None)
+        if versions:
+            result["job_index"] = len(versions)
+        if len(versions) > 1:
+            result["warnings"].append("multiple VASP runs detected; only the final run determines acceptance")
         fatal_rules = (
             ("BRMIX_FATAL", re.compile(rb"BRMIX: very serious problems", re.IGNORECASE)),
             ("ZBRENT_FATAL", re.compile(rb"ZBRENT: fatal error", re.IGNORECASE)),
@@ -321,31 +329,39 @@ def parse_vasp(path: Path) -> dict[str, Any]:
             ("SUBSPACE_FATAL", re.compile(rb"Sub-Space-Matrix is not hermitian", re.IGNORECASE)),
         )
         for label, pattern in fatal_rules:
-            if pattern.search(data):
+            if pattern.search(data, job_start):
                 result["fatal_marker"] = label
                 result["parser_acceptance_reasons"].append(f"fatal VASP marker detected: {label}")
                 break
-        normal = _SCAN.contains(data, b"General timing and accounting informations for this job")
-        electronic = _SCAN.contains(data, b"EDIFF is reached") or _SCAN.contains(
+        normal = _SCAN.contains(
+            data,
+            b"General timing and accounting informations for this job",
+            start=job_start,
+        )
+        electronic = _SCAN.contains(data, b"EDIFF is reached", start=job_start) or _SCAN.contains(
             data,
             b"aborting loop because EDIFF is reached",
+            start=job_start,
         )
         geometry = _SCAN.contains(
             data,
             b"reached required accuracy - stopping structural energy minimisation",
+            start=job_start,
         )
         result["normal_termination"] = normal and result["fatal_marker"] is None
         result["electronic_converged"] = electronic
         result["geometry_converged"] = geometry
-        energy, energy_count = _SCAN.last_group(data, VASP_ENERGY_RE)
+        energy, _ = _SCAN.last_group(data, VASP_ENERGY_RE, start=job_start)
         if energy is not None:
             result["energy"]["value"] = _float(energy)
-            result["scf_iterations"] = energy_count
-        elapsed, _ = _SCAN.last_group(data, VASP_ELAPSED_RE)
+        scf_markers = _SCAN.all_groups(data, VASP_SCF_ITERATION_RE, start=job_start)
+        if scf_markers:
+            result["scf_iterations"] = len(scf_markers)
+        elapsed, _ = _SCAN.last_group(data, VASP_ELAPSED_RE, start=job_start)
         result["elapsed_time_s"] = _float(elapsed) if elapsed is not None else None
         result["forces"]["values"] = _parse_force_block(
             data,
-            _SCAN.last_block(data, b"TOTAL-FORCE (eV/Angst)", b"total drift"),
+            _SCAN.last_block(data, b"TOTAL-FORCE (eV/Angst)", b"total drift", start=job_start),
         )
         if result["fatal_marker"]:
             result["failed_stage"] = "engine"
@@ -390,10 +406,12 @@ def parse_qe(path: Path) -> dict[str, Any]:
             b"End of BFGS Geometry Optimization",
             start=job_start,
         ) or bool(QE_BFGS_CONVERGED_RE.search(data, job_start))
-        energy, energy_count = _SCAN.last_group(data, QE_ENERGY_RE, start=job_start)
+        energy, _ = _SCAN.last_group(data, QE_ENERGY_RE, start=job_start)
         if energy is not None:
             result["energy"]["value"] = _float(energy, factor=RY_TO_EV)
-            result["scf_iterations"] = energy_count
+        scf_markers = _SCAN.all_groups(data, QE_SCF_ITERATION_RE, start=job_start)
+        if scf_markers:
+            result["scf_iterations"] = len(scf_markers)
         forces, force_warning = _parse_qe_forces(data, job_start)
         result["forces"]["values"] = forces
         if force_warning:

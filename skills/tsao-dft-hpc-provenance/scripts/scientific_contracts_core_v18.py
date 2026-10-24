@@ -138,7 +138,7 @@ _SUCCESS_MARKERS = {
 _CONVERGENCE_MARKERS = {
     "gaussian": ("normal termination",),
     "vasp": ("reached required accuracy", "ediff is reached"),
-    "qe": ("convergence has been achieved", "job done"),
+    "qe": ("convergence has been achieved",),
     "cp2k": ("scf run converged", "program ended at"),
 }
 
@@ -229,6 +229,8 @@ def _job_status(engine: str, segment: str, index: int) -> JobRecord:
         return JobRecord(index, "NONCONVERGED", False, True, complete, ("NONCONVERGENCE_MARKER_PRESENT",))
     if complete and converged:
         return JobRecord(index, "CONVERGED", False, False, True, ())
+    if complete:
+        return JobRecord(index, "INCOMPLETE", False, False, True, ("SCF_CONVERGENCE_MISSING",))
     return JobRecord(index, "INCOMPLETE", False, False, False, ("NORMAL_TERMINATION_MISSING",))
 
 

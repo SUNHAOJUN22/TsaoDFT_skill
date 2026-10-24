@@ -159,16 +159,22 @@ def last_block(
     data: mmap.mmap,
     start_marker: bytes,
     end_marker: bytes | None = None,
+    *,
+    start: int = 0,
 ) -> tuple[int, int] | None:
-    """Return byte bounds for the last block beginning at start_marker."""
+    """Return byte bounds for the last block beginning at start_marker.
 
-    start = data.rfind(start_marker)
-    if start < 0:
+    ``start`` bounds the search to the current engine job when an artifact
+    contains output from multiple runs.
+    """
+
+    block_start = data.rfind(start_marker, start)
+    if block_start < 0:
         return None
     if end_marker is None:
-        return start, len(data)
-    end = data.find(end_marker, start + len(start_marker))
-    return start, len(data) if end < 0 else end
+        return block_start, len(data)
+    end = data.find(end_marker, block_start + len(start_marker))
+    return block_start, len(data) if end < 0 else end
 
 
 def decode(value: bytes | None) -> str | None:

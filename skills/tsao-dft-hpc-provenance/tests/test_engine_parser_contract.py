@@ -157,6 +157,56 @@ class EngineParserContractTests(unittest.TestCase):
             self.assertFalse(result["parser_accepted"])
             self.assert_schema(result)
 
+    def test_vasp_appended_incomplete_run_does_not_inherit_prior_markers(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "OUTCAR"
+            path.write_text(
+                "vasp.6.4.3\nDAV: 1 -10.0 0.0 0.0 8 0.1\n"
+                "free energy TOTEN = -10.0 eV\nEDIFF is reached\n"
+                "General timing and accounting informations for this job\n"
+                "vasp.6.5.1\nRMM: 1 -9.0 0.0 0.0 8 0.1\n"
+                "free energy TOTEN = -9.0 eV\n",
+                encoding="utf-8",
+            )
+            result = self.core.parse_vasp(path)
+            self.assertFalse(result["parser_accepted"])
+            self.assertFalse(result["normal_termination"])
+            self.assertFalse(result["electronic_converged"])
+            self.assertEqual(result["failed_stage"], "termination")
+            self.assertEqual(result["engine_version"], "6.5.1")
+            self.assertEqual(result["job_index"], 2)
+            self.assertEqual(result["energy"]["value"], -9.0)
+            self.assertEqual(result["scf_iterations"], 1)
+            self.assert_schema(result)
+
+    def test_vasp_scf_count_uses_electronic_iteration_records(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "OUTCAR"
+            path.write_text(
+                "vasp.6.5.1\nDAV: 1 -10.0 0.0 0.0 8 0.1\n"
+                "RMM: 2 -10.1 -0.1 0.0 8 0.05\nDMP: 3 -10.2 -0.1 0.0 8 0.01\n"
+                "free energy TOTEN = -10.1 eV\nfree energy TOTEN = -10.2 eV\n"
+                "EDIFF is reached\nGeneral timing and accounting informations for this job\n",
+                encoding="utf-8",
+            )
+            result = self.core.parse_vasp(path)
+            self.assertTrue(result["parser_accepted"])
+            self.assertEqual(result["scf_iterations"], 3)
+            self.assert_schema(result)
+
+    def test_vasp_energy_records_without_iteration_markers_do_not_claim_a_count(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "OUTCAR"
+            path.write_text(
+                "vasp.6.5.1\nfree energy TOTEN = -10.1 eV\nfree energy TOTEN = -10.2 eV\n"
+                "EDIFF is reached\nGeneral timing and accounting informations for this job\n",
+                encoding="utf-8",
+            )
+            result = self.core.parse_vasp(path)
+            self.assertTrue(result["parser_accepted"])
+            self.assertIsNone(result["scf_iterations"])
+            self.assert_schema(result)
+
     def test_qe_late_routine_error_wins(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "pw.out"
@@ -168,6 +218,35 @@ class EngineParserContractTests(unittest.TestCase):
             result = self.core.parse_qe(path)
             self.assertEqual(result["fatal_marker"], "ERROR_IN_ROUTINE")
             self.assertFalse(result["parser_accepted"])
+            self.assert_schema(result)
+
+    def test_qe_scf_count_uses_iteration_records_not_energy_records(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "pw.out"
+            path.write_text(
+                "Program PWSCF v.7.4\n"
+                "iteration # 1 ecut= 40.00 Ry beta=0.70\n! total energy = -1.0 Ry\n"
+                "iteration # 2 ecut= 40.00 Ry beta=0.70\n! total energy = -1.1 Ry\n"
+                "iteration # 3 ecut= 40.00 Ry beta=0.70\n"
+                "convergence has been achieved\nJOB DONE.\n",
+                encoding="utf-8",
+            )
+            result = self.core.parse_qe(path)
+            self.assertTrue(result["parser_accepted"])
+            self.assertEqual(result["scf_iterations"], 3)
+            self.assert_schema(result)
+
+    def test_qe_energy_records_without_iteration_markers_do_not_claim_a_count(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "pw.out"
+            path.write_text(
+                "Program PWSCF v.7.4\n! total energy = -1.0 Ry\n! total energy = -1.1 Ry\n"
+                "convergence has been achieved\nJOB DONE.\n",
+                encoding="utf-8",
+            )
+            result = self.core.parse_qe(path)
+            self.assertTrue(result["parser_accepted"])
+            self.assertIsNone(result["scf_iterations"])
             self.assert_schema(result)
 
     def test_cp2k_late_abort_wins(self):

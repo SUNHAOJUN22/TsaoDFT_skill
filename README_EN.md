@@ -196,6 +196,8 @@ The public Gaussian parser applies this check to parsed energies, frequencies, o
 
 The unified mmap parser also checks range after Hartree/Ry-to-eV, force and pressure conversions: a finite source value can still overflow or underflow when scaled. Out-of-range force rows cannot be silently discarded to produce apparently complete data. These checks concern software parsing; `scientific_acceptance` still requires independent scientific review.
 
+Engine parser v1.2 emits QE forces only when the final force block in the final PWSCF job declares `Ry/au`, has a known atom count, contains exactly one three-component row for each atom index `1..N`, and closes with a `Total force` line. The result is a flat `3N` array ordered `x,y,z` per atom, converted with the project's fixed CODATA 2018 Rydberg and Bohr constants. This is the benchmark bridge's flat storage shape; it does not by itself satisfy the `TypedQuantity` contract, which requires an `N×3` shape and exact `atom_mapping`. QE `Total force` is a scalar norm and `P=` is scalar pressure; CP2K `Max. gradient` is also scalar. None is emitted as a force vector or stress tensor. Missing, unsupported-unit or incomplete data remains `null` with a warning, while the original output remains hash-addressed evidence. `parser_accepted` termination/SCF gates do not imply that all scientific observables are present. See [`engine_parser_contract.py`](skills/tsao-dft-hpc-provenance/scripts/engine_parser_contract.py).
+
 ### 3. Forces, stress and geometry acceptance
 
 $$

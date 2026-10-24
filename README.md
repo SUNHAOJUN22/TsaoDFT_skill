@@ -198,6 +198,8 @@ Gaussian 公开解析器会对能量、频率、轨道和坐标等读取值执�
 
 统一 mmap 解析器还在 Hartree/Ry 到 eV、力和压力单位转换之后检查范围；有限的源值乘以换算因子，也可能溢出或下溢。异常力矢量行不能被静默跳过后伪装为完整数据。这些检查属于软件解析验收，`scientific_acceptance` 仍需独立科学审查。
 
+引擎解析器 v1.2 只在最终 PWSCF 作业的最后一个完整 QE 力块包含已声明 `Ry/au` 单位、原子数以及恰好一次的 `1..N` 原子索引和三分量行时，才输出按原子 `x,y,z` 展平的 `3N` 力数组；换算使用项目固定的 CODATA 2018 Ry 与 Bohr 常数。该形状是 benchmark bridge 的扁平存储格式，不自动满足要求 `N×3` 形状和精确 `atom_mapping` 的 `TypedQuantity` 合同。QE `Total force` 是标量范数，`P=` 是标量压力；CP2K `Max. gradient` 也是标量。它们不会被伪装成力向量或应力张量；缺失、未知单位或不完整数据保留为 `null` 并告警，原始输出仍由 artifact 哈希留证。`parser_accepted` 的终止/SCF 门不保证所有科学观测量齐全。实现见 [`engine_parser_contract.py`](skills/tsao-dft-hpc-provenance/scripts/engine_parser_contract.py)。
+
 ### 3. 力、应力与几何验收
 
 $$

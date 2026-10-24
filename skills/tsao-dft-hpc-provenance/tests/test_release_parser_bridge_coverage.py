@@ -112,15 +112,156 @@ class ReleaseParserBridgeCoverageTests(unittest.TestCase):
     def test_qe_all_acceptance_routes(self) -> None:
         success = (
             "Program PWSCF v.7.4\nconvergence has been achieved\nEnd of BFGS Geometry Optimization\n"
+            "number of atoms/cell = 2\n! total energy = -1.0 Ry\n"
+            "Forces acting on atoms (cartesian axes, Ry/au):\n"
+            "atom 1 type 1 force = 0.100 0.200 0.300\n"
+            "atom 2 type 1 force = -0.400 0.500 -0.600\n"
+            "Total force = 0.9539392014169456\nP= 10\nJOB DONE.\n"
+        )
+        expected_factor = 13.605693122994 / 0.529177210903
+        expected_factor_si = 8.2387234983e-8 / (2 * 1.602176634e-9)
+        self.assertLessEqual(abs(expected_factor - expected_factor_si), 1e-8)
+        expected_force = [0.1, 0.2, 0.3, -0.4, 0.5, -0.6]
+        for sample in (success, success.replace("\n", "\r\n")):
+            temporary, path = self.parser_file(sample)
+            with temporary:
+                result = self.parser.parse_qe(path)
+                self.assertTrue(result["parser_accepted"])
+                self.assertTrue(result["geometry_converged"])
+                self.assertEqual(len(result["forces"]["values"]), 6)
+                for actual, source in zip(result["forces"]["values"], expected_force, strict=True):
+                    self.assertAlmostEqual(actual, source * expected_factor, places=12)
+                    self.assertLessEqual(abs(actual / source - expected_factor_si), 1e-8)
+                self.assertIsNone(result["stress"]["values"])
+                self.assertTrue(any("scalar pressure" in warning for warning in result["warnings"]))
+
+    def test_qe_rejects_scalar_and_incomplete_force_observables(self) -> None:
+        scalar_only = (
+            "Program PWSCF v.7.4\nconvergence has been achieved\n"
             "! total energy = -1.0 Ry\nTotal force = 0.5\nP= 10\nJOB DONE.\n"
         )
-        temporary, path = self.parser_file(success)
+        temporary, path = self.parser_file(scalar_only)
         with temporary:
             result = self.parser.parse_qe(path)
             self.assertTrue(result["parser_accepted"])
-            self.assertTrue(result["geometry_converged"])
-            self.assertIsNotNone(result["forces"]["values"])
-            self.assertEqual(result["stress"]["values"], [1.0])
+            self.assertIsNone(result["forces"]["values"])
+            self.assertIsNone(result["stress"]["values"])
+            self.assertTrue(any("scalar summary" in warning for warning in result["warnings"]))
+
+        valid_block = (
+            "number of atoms/cell = 2\n"
+            "Forces acting on atoms (cartesian axes, Ry/au):\n"
+            "atom 1 type 1 force = 0.1 0.2 0.3\n"
+            "atom 2 type 1 force = 0.4 0.5 0.6\n"
+            "Total force = 0.9539392014169456\n"
+        )
+        incomplete_final_block = valid_block + (
+            "Forces acting on atoms (cartesian axes, Ry/au):\natom 1 type 1 force = 0.7 0.8 0.9\n"
+        )
+        for force_text in (
+            incomplete_final_block,
+            valid_block.replace("atom 2 type 1 force = 0.4 0.5 0.6\n", ""),
+            valid_block.replace("number of atoms/cell = 2\n", ""),
+        ):
+            temporary, path = self.parser_file(
+                "Program PWSCF v.7.4\nconvergence has been achieved\n" + force_text + "JOB DONE.\n"
+            )
+            with temporary:
+                result = self.parser.parse_qe(path)
+                self.assertIsNone(result["forces"]["values"])
+                self.assertTrue(result["warnings"])
+
+        oversized_integer = "9" * 5000
+        malformed_blocks = (
+            (
+                "number of atoms/cell = 0\n",
+                "atom count",
+            ),
+            (
+                f"number of atoms/cell = {oversized_integer}\n",
+                "invalid atom count",
+            ),
+            (
+                "number of atoms/cell = 1\n",
+                "invalid atom index",
+            ),
+            (
+                "number of atoms/cell = 1\n",
+                "duplicate atom indices",
+            ),
+            (
+                "number of atoms/cell = 1\n",
+                "exactly one 3-component row",
+            ),
+        )
+        for prefix, warning_text in malformed_blocks:
+            atom_index = (
+                oversized_integer
+                if warning_text == "invalid atom index"
+                else "2"
+                if warning_text == "exactly one 3-component row"
+                else "1"
+            )
+            rows = f"atom {atom_index} type 1 force = 0.1 0.2 0.3\n" + (
+                "atom 1 type 1 force = 0.4 0.5 0.6\n" if warning_text == "duplicate atom indices" else ""
+            )
+            temporary, path = self.parser_file(
+                "Program PWSCF v.7.4\nconvergence has been achieved\n"
+                + prefix
+                + "Forces acting on atoms (cartesian axes, Ry/au):\n"
+                + rows
+                + "Total force = 0.5\nJOB DONE.\n"
+            )
+            with temporary:
+                result = self.parser.parse_qe(path)
+                self.assertIsNone(result["forces"]["values"])
+                self.assertTrue(any(warning_text in warning for warning in result["warnings"]))
+
+    def test_qe_does_not_reuse_force_block_from_an_earlier_pwscf_job(self) -> None:
+        text = (
+            "Program PWSCF v.7.4\nconvergence has been achieved\n"
+            "number of atoms/cell = 1\n"
+            "Forces acting on atoms (cartesian axes, Ry/au):\n"
+            "atom 1 type 1 force = 0.1 0.2 0.3\nTotal force = 0.3741657386773941\nJOB DONE.\n"
+            "Program PWSCF v.7.4\nconvergence has been achieved\n"
+            "! total energy = -1.0 Ry\nTotal force = 0.1\nJOB DONE.\n"
+        )
+        temporary, path = self.parser_file(text)
+        with temporary:
+            result = self.parser.parse_qe(path)
+            self.assertTrue(result["parser_accepted"])
+            self.assertIsNone(result["forces"]["values"])
+            self.assertTrue(any("scalar summary" in warning for warning in result["warnings"]))
+
+    def test_qe_final_job_scopes_energy_and_force_units(self) -> None:
+        valid_block = (
+            "number of atoms/cell = 1\n"
+            "Forces acting on atoms (cartesian axes, Ry/au):\n"
+            "atom 1 type 1 force = 0.1 0.2 0.3\nTotal force = 0.1\n"
+        )
+        unsupported_block = (
+            "Forces acting on atoms (cartesian axes, unknown):\n"
+            "atom 1 type 1 force = 0.4 0.5 0.6\nTotal force = 0.8774964387392122\n"
+        )
+        temporary, path = self.parser_file(
+            "Program PWSCF v.7.4\nconvergence has been achieved\n"
+            + valid_block
+            + "Program PWSCF v.7.4\nconvergence has been achieved\n"
+            + "JOB DONE.\n"
+        )
+        with temporary:
+            result = self.parser.parse_qe(path)
+            self.assertIsNone(result["energy"]["value"])
+            self.assertIsNone(result["forces"]["values"])
+            self.assertTrue(result["parser_accepted"])
+
+        temporary, path = self.parser_file(
+            "Program PWSCF v.7.4\nconvergence has been achieved\n" + valid_block + unsupported_block + "JOB DONE.\n"
+        )
+        with temporary:
+            result = self.parser.parse_qe(path)
+            self.assertIsNone(result["forces"]["values"])
+            self.assertTrue(any("unsupported or missing unit" in warning for warning in result["warnings"]))
 
         for text, stage in (
             ("convergence has been achieved\n", "termination"),
@@ -144,7 +285,8 @@ class ReleaseParserBridgeCoverageTests(unittest.TestCase):
             result = self.parser.parse_cp2k(path)
             self.assertTrue(result["parser_accepted"])
             self.assertTrue(result["geometry_converged"])
-            self.assertIsNotNone(result["forces"]["values"])
+            self.assertIsNone(result["forces"]["values"])
+            self.assertTrue(any("scalar convergence metric" in warning for warning in result["warnings"]))
 
         for text, stage in (
             ("SCF run converged\n", "termination"),

@@ -81,6 +81,60 @@ class BenchmarkBridgeTests(unittest.TestCase):
             self.assertEqual(record["scientific"]["results"]["energy_ev"], -10.0)
             self.assertNotIn("engine version", record["evidence_source"]["missing_fields"])
 
+    def test_qe_scalar_summaries_do_not_become_bridge_force_or_stress_observables(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "pw.in").write_text("&CONTROL\n calculation='scf'\n/\n", encoding="utf-8")
+            out = root / "pw.out"
+            out.write_text(
+                "Program PWSCF v.7.4\nconvergence has been achieved\n"
+                "! total energy = -1.0 Ry\nTotal force = 0.5\nP= 10\nJOB DONE.\n",
+                encoding="utf-8",
+            )
+            parsed = self.parser.parse_qe(out)
+            record = self.bridge.build_record(
+                "quantum-espresso",
+                parsed,
+                {
+                    "input": "pw.in",
+                    "executable": "pw.x",
+                    "scheduler": "slurm",
+                    "resources": {"nodes": 1, "tasks_per_node": 1, "cpus_per_task": 1},
+                    "acceleration": {
+                        "benchmark_plan_id": "PLAN-QE",
+                        "build_fingerprint_id": "BUILD-QE",
+                        "gpu_vendor": "none",
+                        "gpu_bind": "none",
+                    },
+                },
+                {
+                    "method_fingerprint_id": "MF-QE",
+                    "model_chemistry": {
+                        "method": "PBE",
+                        "basis_or_pseudopotential": "UPF-HASH",
+                        "corrections": "none",
+                    },
+                    "numerics": {"conv_thr": 1e-8},
+                },
+                root,
+                Path("pw.out"),
+                "qe-cpu-reference",
+                "scientific-reference",
+                1,
+                runtime={
+                    "site_id": "SITE-QE",
+                    "hardware_fingerprint_id": "HW-QE",
+                    "run_id": "RUN-QE",
+                    "timestamp": "2026-07-29T00:00:00Z",
+                },
+                scheduler_metrics={"job_id": "JOB-QE", "wall_time_s": 1},
+            )
+            self.assertTrue(parsed["parser_accepted"])
+            self.assertEqual(record["scientific"]["observable_set"], ["energy"])
+            self.assertIsNone(record["scientific"]["results"]["forces_ev_per_angstrom"])
+            self.assertIsNone(record["scientific"]["results"]["stress_gpa"])
+            self.assertTrue(record["scientific"]["parser_accepted"])
+
     def test_missing_fields_block_parser_acceptance(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

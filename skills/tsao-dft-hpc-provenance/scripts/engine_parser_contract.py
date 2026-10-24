@@ -11,10 +11,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
-PARSER_VERSION = "1.1"
+PARSER_VERSION = "1.2"
 HARTREE_TO_EV = 27.211386245988
 RY_TO_EV = 13.605693122994
-RY_BOHR_TO_EV_ANGSTROM = 25.71104309541616
+BOHR_TO_ANGSTROM = 0.529177210903
+RY_BOHR_TO_EV_ANGSTROM = RY_TO_EV / BOHR_TO_ANGSTROM
 KBAR_TO_GPA = 0.1
 FLOAT = rb"[-+]?\d*\.?\d+(?:[DEde][-+]?\d+)?"
 
@@ -41,8 +42,22 @@ VASP_VERSION_RE = re.compile(rb"vasp\.([\d.]+)", re.IGNORECASE)
 VASP_ENERGY_RE = re.compile(rb"free\s+energy\s+TOTEN\s*=\s*(" + FLOAT + rb")\s+eV", re.IGNORECASE)
 VASP_ELAPSED_RE = re.compile(rb"Elapsed time \(sec\):\s*(" + FLOAT + rb")")
 QE_VERSION_RE = re.compile(rb"Program PWSCF v\.([\w.\-]+)")
+QE_ERROR_RE = re.compile(rb"Error in routine", re.IGNORECASE)
+QE_BFGS_CONVERGED_RE = re.compile(rb"bfgs converged in", re.IGNORECASE)
 QE_ENERGY_RE = re.compile(rb"!\s+total energy\s+=\s*(" + FLOAT + rb")\s+Ry")
-QE_FORCE_RE = re.compile(rb"Total force =\s*(" + FLOAT + rb")")
+QE_FORCE_BLOCK_RE = re.compile(rb"(?im)^[ \t]*Forces acting on atoms[^\r\n]*")
+QE_FORCE_UNIT_RE = re.compile(rb"\bRy/au\b", re.IGNORECASE)
+QE_ATOM_COUNT_RE = re.compile(rb"(?im)^[ \t]*number of atoms/cell[ \t]*=[ \t]*(\d+)[ \t]*\r?$")
+QE_ATOM_FORCE_RE = re.compile(
+    rb"(?im)^[ \t]*atom[ \t]+(\d+)[ \t]+type[ \t]+\d+[ \t]+force[ \t]*=[ \t]*("
+    + FLOAT
+    + rb")[ \t]+("
+    + FLOAT
+    + rb")[ \t]+("
+    + FLOAT
+    + rb")[ \t]*(?:\r?$)"
+)
+QE_TOTAL_FORCE_RE = re.compile(rb"(?im)^[ \t]*Total force[ \t]*=[ \t]*(" + FLOAT + rb")")
 QE_PRESSURE_RE = re.compile(rb"P=\s*(" + FLOAT + rb")")
 CP2K_VERSION_RE = re.compile(rb"CP2K\| version string:\s*([^\r\n]+)")
 CP2K_ENERGY_RE = re.compile(rb"ENERGY\| Total FORCE_EVAL.*?energy \(a\.u\.\):\s*(" + FLOAT + rb")")
@@ -141,6 +156,66 @@ def _parse_force_block(data: mmap.mmap, bounds: tuple[int, int] | None) -> list[
         except ValueError:
             continue
     return vector or None
+
+
+def _parse_qe_forces(data: mmap.mmap, job_start: int) -> tuple[list[float] | None, str | None]:
+    """Return the final complete QE per-atom force vector in atom-index order.
+
+    QE's ``Total force`` line is a scalar norm, not a force vector. A block is
+    emitted only when its atom count, unique 1..N indices, three components per
+    atom and closing summary are all present in the final PWSCF job.
+    """
+
+    latest_header = None
+    for match in QE_FORCE_BLOCK_RE.finditer(data, job_start):
+        latest_header = match
+    if latest_header is None:
+        total_force, _ = _SCAN.last_group(data, QE_TOTAL_FORCE_RE, start=job_start)
+        if total_force is not None:
+            _float(total_force, factor=RY_BOHR_TO_EV_ANGSTROM)
+            return None, "QE Total force is a scalar summary; no per-atom force vector is available"
+        return None, None
+    if QE_FORCE_UNIT_RE.search(latest_header.group(0)) is None:
+        return None, "QE final per-atom force block has an unsupported or missing unit; force vector is unavailable"
+
+    natom_match = None
+    for match in QE_ATOM_COUNT_RE.finditer(data, job_start, latest_header.start()):
+        natom_match = match
+    if natom_match is None:
+        return None, "QE per-atom force block has no preceding atom count; force vector is unavailable"
+    try:
+        natom = int(natom_match.group(1))
+    except ValueError:
+        return None, "QE per-atom force block has an invalid atom count; force vector is unavailable"
+    if natom < 1:
+        return None, "QE per-atom force block has an invalid atom count; force vector is unavailable"
+
+    closing = QE_TOTAL_FORCE_RE.search(data, latest_header.end())
+    if closing is None:
+        return None, "QE final per-atom force block is incomplete; force vector is unavailable"
+    _float(closing.group(1), factor=RY_BOHR_TO_EV_ANGSTROM)
+
+    components_by_atom: dict[int, tuple[float, float, float]] = {}
+    for match in QE_ATOM_FORCE_RE.finditer(data, latest_header.end(), closing.start()):
+        try:
+            atom_index = int(match.group(1))
+        except ValueError:
+            return None, "QE final per-atom force block has an invalid atom index; force vector is unavailable"
+        if atom_index in components_by_atom:
+            return None, "QE final per-atom force block has duplicate atom indices; force vector is unavailable"
+        components_by_atom[atom_index] = (
+            _float(match.group(2), factor=RY_BOHR_TO_EV_ANGSTROM),
+            _float(match.group(3), factor=RY_BOHR_TO_EV_ANGSTROM),
+            _float(match.group(4), factor=RY_BOHR_TO_EV_ANGSTROM),
+        )
+
+    if (
+        len(components_by_atom) != natom
+        or min(components_by_atom, default=0) != 1
+        or max(components_by_atom, default=0) != natom
+    ):
+        return None, "QE final per-atom force block does not contain exactly one 3-component row for every atom"
+    return [value for atom_index in range(1, natom + 1) for value in components_by_atom[atom_index]], None
 
 
 def _last_route_section(lines: list[bytes]) -> bytes | None:
@@ -292,33 +367,41 @@ def parse_qe(path: Path) -> dict[str, Any]:
             return missing_result("quantum-espresso", path)
         data = artifact.data
         result = base_result("quantum-espresso", path)
-        result["engine_version"] = _SCAN.decode(_SCAN.first_group(data, QE_VERSION_RE))
-        routine_error = bool(re.search(rb"Error in routine", data, re.IGNORECASE))
-        nonconverged = _SCAN.contains(data, b"convergence NOT achieved")
-        done = _SCAN.contains(data, b"JOB DONE.")
+        latest_version = None
+        for match in QE_VERSION_RE.finditer(data):
+            latest_version = match
+        result["engine_version"] = _SCAN.decode(latest_version.group(1) if latest_version else None)
+        job_start = latest_version.start() if latest_version else 0
+        routine_error = bool(QE_ERROR_RE.search(data, job_start))
+        nonconverged = _SCAN.contains(data, b"convergence NOT achieved", start=job_start)
+        done = _SCAN.contains(data, b"JOB DONE.", start=job_start)
         result["fatal_marker"] = "ERROR_IN_ROUTINE" if routine_error else "SCF_NOT_CONVERGED" if nonconverged else None
         result["normal_termination"] = done and result["fatal_marker"] is None
         result["electronic_converged"] = (
             _SCAN.contains(
                 data,
                 b"convergence has been achieved",
+                start=job_start,
             )
             and not nonconverged
         )
         result["geometry_converged"] = _SCAN.contains(
             data,
             b"End of BFGS Geometry Optimization",
-        ) or bool(re.search(rb"bfgs converged in", data, re.IGNORECASE))
-        energy, energy_count = _SCAN.last_group(data, QE_ENERGY_RE)
+            start=job_start,
+        ) or bool(QE_BFGS_CONVERGED_RE.search(data, job_start))
+        energy, energy_count = _SCAN.last_group(data, QE_ENERGY_RE, start=job_start)
         if energy is not None:
             result["energy"]["value"] = _float(energy, factor=RY_TO_EV)
             result["scf_iterations"] = energy_count
-        force, _ = _SCAN.last_group(data, QE_FORCE_RE)
-        if force is not None:
-            result["forces"]["values"] = [_float(force, factor=RY_BOHR_TO_EV_ANGSTROM)]
-        pressure, _ = _SCAN.last_group(data, QE_PRESSURE_RE)
+        forces, force_warning = _parse_qe_forces(data, job_start)
+        result["forces"]["values"] = forces
+        if force_warning:
+            result["warnings"].append(force_warning)
+        pressure, _ = _SCAN.last_group(data, QE_PRESSURE_RE, start=job_start)
         if pressure is not None:
-            result["stress"]["values"] = [_float(pressure, factor=KBAR_TO_GPA)]
+            _float(pressure, factor=KBAR_TO_GPA)
+            result["warnings"].append("QE P= is scalar pressure; it is not emitted as a stress tensor")
         if result["fatal_marker"]:
             result["failed_stage"] = "engine" if routine_error else "electronic"
             result["parser_acceptance_reasons"].append(f"QE fatal marker detected: {result['fatal_marker']}")
@@ -358,7 +441,10 @@ def parse_cp2k(path: Path) -> dict[str, Any]:
             result["scf_iterations"] = energy_count
         gradient, _ = _SCAN.last_group(data, CP2K_GRADIENT_RE)
         if gradient is not None:
-            result["forces"]["values"] = [_float(gradient, factor=HARTREE_TO_EV / 0.529177210903)]
+            _float(gradient, factor=HARTREE_TO_EV / BOHR_TO_ANGSTROM)
+            result["warnings"].append(
+                "CP2K Max. gradient is a scalar convergence metric; per-atom force vectors are not parsed"
+            )
         if result["fatal_marker"]:
             result["failed_stage"] = "engine" if abort else "electronic"
             result["parser_acceptance_reasons"].append(f"CP2K fatal marker detected: {result['fatal_marker']}")

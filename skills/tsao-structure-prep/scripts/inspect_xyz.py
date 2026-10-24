@@ -389,7 +389,9 @@ def main() -> int:
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(text, encoding="utf-8")
-    print(text)
+    # Keep stdout valid JSON even when the active Windows console encoding cannot
+    # represent scientific symbols such as Å. JSON consumers recover them normally.
+    print(json.dumps(result, ensure_ascii=True, indent=2))
     return 0 if result["ok"] else 1
 
 

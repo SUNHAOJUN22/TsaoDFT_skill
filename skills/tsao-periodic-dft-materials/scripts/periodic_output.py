@@ -155,6 +155,7 @@ def parse_output(engine: str, source: Path) -> dict:
     offset = 0
     line_number = 0
     force_block = False
+    job_start_seen = False
     job_has_body = False
     stream_complete = True
     try:
@@ -182,8 +183,15 @@ def parse_output(engine: str, source: Path) -> dict:
                     if len(jobs) >= MAX_JOBS:
                         raise ValueError("job count exceeds parser budget")
                     job = _fresh(spec, line_number, offset)
+                    job_start_seen = True
                     force_block = False
                     job_has_body = False
+                elif start and not job_start_seen:
+                    # The initial _fresh record is only a placeholder when
+                    # preamble text precedes the first actual job marker.
+                    job["start_line"] = line_number
+                    job["start_byte"] = offset
+                    job_start_seen = True
                 if match := spec["version"].search(text):
                     job["version"] = match.group(1).strip()
                 fatal_view = folded.replace("aborting loop because ediff is reached", "ediff is reached")

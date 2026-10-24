@@ -25,6 +25,45 @@ class StreamingParserTests(unittest.TestCase):
         cls.vasp = load_module("parse_vasp")
         cls.qe = load_module("parse_qe")
         cls.cp2k = load_module("parse_cp2k")
+        cls.periodic_output = load_module("periodic_output")
+
+    def test_first_job_provenance_starts_after_utf8_preamble(self):
+        prefix = "launcher preamble café\nscheduler metadata\n"
+        outputs = {
+            "qe": (
+                "Program PWSCF v.7.2.0\n"
+                "!    total energy = -10.0 Ry\n"
+                "convergence has been achieved\n"
+                "JOB DONE.\n"
+            ),
+            "vasp": (
+                "vasp.6.4.3\n"
+                "free energy TOTEN = -10.0 eV\n"
+                "EDIFF is reached\n"
+                "General timing and accounting informations for this job\n"
+            ),
+            "cp2k": (
+                "PROGRAM STARTED AT 12:00\n"
+                "CP2K| version string: CP2K version 2026.1\n"
+                "ENERGY| Total FORCE_EVAL ( QS ) energy (a.u.): -3.0\n"
+                "SCF run converged\n"
+                "PROGRAM ENDED AT 12:30\n"
+            ),
+        }
+
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "engine.out"
+            for engine, output in outputs.items():
+                with self.subTest(engine=engine):
+                    path.write_bytes((prefix + output).encode("utf-8"))
+                    result = self.periodic_output.parse_output(engine, path)
+
+                    self.assertTrue(result["parser_accepted"])
+                    self.assertEqual(result["parser_segment_count"], 1)
+                    self.assertEqual(result["jobs"][-1]["start_line"], 3)
+                    self.assertEqual(
+                        result["jobs"][-1]["start_byte"], len(prefix.encode("utf-8"))
+                    )
 
     def test_vasp_streams_last_values_and_force_block(self):
         text = """vasp.6.4.3\nNIONS = 2\nfree energy TOTEN = -10.0 eV\nE-fermi : 1.2\nTOTAL-FORCE (eV/Angst)\n---\n0 0 0 0.3 0.4 0.0\n0 0 0 0.0 0.0 0.2\ntotal drift\nfree energy TOTEN = -11.5 eV\nE-fermi : 1.8\naborting loop because EDIFF is reached\nreached required accuracy - stopping structural energy minimisation\nElapsed time (sec): 44.5\nGeneral timing and accounting informations for this job\n"""

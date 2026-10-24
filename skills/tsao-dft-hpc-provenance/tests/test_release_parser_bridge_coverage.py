@@ -31,7 +31,7 @@ class ReleaseParserBridgeCoverageTests(unittest.TestCase):
     def parser_file(self, text: str, name: str = "out.log") -> tuple[tempfile.TemporaryDirectory[str], Path]:
         temporary = tempfile.TemporaryDirectory()
         path = Path(temporary.name) / name
-        path.write_text(text, encoding="utf-8")
+        path.write_bytes(text.encode("utf-8"))
         return temporary, path
 
     def test_gaussian_all_acceptance_routes(self) -> None:

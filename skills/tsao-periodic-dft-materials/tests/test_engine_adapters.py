@@ -47,6 +47,14 @@ class EngineAdapterTests(unittest.TestCase):
         self.assertAlmostEqual(poscar["cell_volume_angstrom3"], 8.0)
         self.assertEqual(poscar["effective_scale_factors"], [2.0, 2.0, 2.0])
 
+    def test_poscar_nonsingularity_check_is_scale_invariant(self):
+        report = self.run_poscar_preflight(
+            "scale-invariant raw cell\n1e20\n1e-20 0 0\n0 1e-20 0\n0 0 1e-20\nSi\n1\nDirect\n0 0 0\n"
+        )
+        poscar = report["poscar"]
+        self.assertEqual(poscar["lattice_vectors"], [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
+        self.assertAlmostEqual(poscar["cell_volume_angstrom3"], 1.0)
+
     def test_poscar_negative_scale_is_interpreted_as_target_volume(self):
         report = self.run_poscar_preflight("target-volume cell\n-64.0\n1 0 0\n0 2 0\n0 0 4\nSi\n1\nDirect\n0 0 0\n")
         poscar = report["poscar"]

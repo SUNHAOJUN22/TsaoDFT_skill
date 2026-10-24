@@ -70,9 +70,11 @@ def parse_poscar(path: Path) -> PoscarData:
 
     raw_matrix = np.asarray(raw_vectors, dtype=np.float64)
     singular_values = np.linalg.svd(raw_matrix, compute_uv=False)
+    # A relative condition check preserves equivalent cells under uniform POSCAR scaling.
     if (
         not np.isfinite(singular_values).all()
-        or singular_values[-1] <= np.finfo(np.float64).eps * max(1.0, float(singular_values[0])) * 64.0
+        or singular_values[0] <= 0.0
+        or singular_values[-1] / singular_values[0] <= np.finfo(np.float64).eps * 64.0
     ):
         raise ValueError("POSCAR lattice vectors must form a numerically nonsingular cell")
     raw_volume = abs(float(np.linalg.det(raw_matrix)))

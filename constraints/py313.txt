@@ -1,5 +1,5 @@
 # Resolved on ubuntu-24.04 with CPython 3.13 in GitHub Actions run 36964779248.
-# Base snapshot above; certifi 2026.10.19 and Pillow 13.0.0 security updates on 2026-10-21.
+# Base snapshot above; certifi and Pillow security updates on 2026-10-21; filelock security update on 2026-10-24.
 arrow==1.4.0
 ast_serialize==0.6.0
 attrs==26.1.0
@@ -15,7 +15,7 @@ cryptography==50.0.0
 cycler==0.12.1
 cyclonedx-python-lib==11.11.0
 defusedxml==0.7.1
-filelock==3.32.0
+filelock==4.2.4
 fonttools==4.63.0
 fqdn==1.6.0
 hypothesis==6.160.0

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -59,6 +60,26 @@ def parse_gpu_inventory(path: Path | None) -> list[dict[str, str]]:
     return rows
 
 
+def parse_exit_status(source: dict[str, Any], key: str, label: str, missing: list[str]) -> tuple[int | None, bool]:
+    """Parse an externally reported process status without coercion or guessing."""
+
+    value = source.get(key)
+    if value is None:
+        return None, False
+    if isinstance(value, bool):
+        missing.append(f"{label} is not an integer")
+        return None, True
+    if isinstance(value, int):
+        return value, False
+    if isinstance(value, str) and re.fullmatch(r"[+-]?\d+", value):
+        try:
+            return int(value), False
+        except ValueError:
+            pass
+    missing.append(f"{label} is not an integer")
+    return None, True
+
+
 def _artifact_path(artifact_root: Path, output_artifact: Path, missing: list[str]) -> tuple[Path, str]:
     root = artifact_root.resolve()
     source = output_artifact.resolve() if output_artifact.is_absolute() else (root / output_artifact).resolve()
@@ -93,11 +114,43 @@ def build_record(
     model = method_fingerprint.get("model_chemistry") or {}
     numerics = method_fingerprint.get("numerics") or {}
     source_path, relative_output = _artifact_path(artifact_root, output_artifact, missing)
-    if not source_path.is_file():
+    output_path_valid = "output artifact escapes artifact root" not in missing
+    artifact_present = source_path.is_file()
+    if not artifact_present:
         missing.append("output artifact")
         artifact_sha = "0" * 64
+        artifact_size_bytes = None
     else:
         artifact_sha = sha256_file(source_path)
+        artifact_size_bytes = source_path.stat().st_size
+    parser_binding_valid = output_path_valid and artifact_present
+    parser_source_artifact = parser_result.get("source_artifact")
+    if not isinstance(parser_source_artifact, dict):
+        parser_binding_valid = False
+        missing.append("parser source artifact metadata is unavailable")
+    else:
+        parser_source_sha = parser_source_artifact.get("sha256")
+        if not isinstance(parser_source_sha, str) or re.fullmatch(r"[0-9a-f]{64}", parser_source_sha) is None:
+            parser_binding_valid = False
+            missing.append("parser source artifact SHA-256 is unavailable or invalid")
+        elif parser_source_sha != artifact_sha:
+            parser_binding_valid = False
+            missing.append("parser source artifact SHA-256 does not match output artifact")
+        parser_source_size = parser_source_artifact.get("size_bytes")
+        if parser_source_size is not None:
+            if (
+                isinstance(parser_source_size, bool)
+                or not isinstance(parser_source_size, int)
+                or parser_source_size < 0
+            ):
+                parser_binding_valid = False
+                missing.append("parser source artifact size_bytes is invalid")
+            elif artifact_size_bytes is not None and parser_source_size != artifact_size_bytes:
+                parser_binding_valid = False
+                missing.append("parser source artifact size_bytes does not match output artifact")
+    if parser_result.get("engine") != engine:
+        parser_binding_valid = False
+        missing.append("parser result engine does not match bridge engine")
     engine_version = str(parser_result.get("engine_version") or "MISSING")
     if engine_version == "MISSING":
         missing.append("engine version")
@@ -149,12 +202,31 @@ def build_record(
     if not observables:
         missing.append("scientific observables")
     gpu_vendor = str(acceleration.get("gpu_vendor") or "none")
-    parser_accepted = bool(parser_result.get("parser_accepted")) and not missing
-    exit_status_value = runtime.get("exit_status")
-    if exit_status_value is None:
-        exit_status = 0 if parser_result.get("normal_termination") else 1
+    parser_accepted = parser_result.get("parser_accepted") is True and parser_binding_valid
+    runtime_exit_status, invalid_runtime_status = parse_exit_status(
+        runtime, "exit_status", "runtime.exit_status", missing
+    )
+    scheduler_exit_status, invalid_scheduler_status = parse_exit_status(
+        scheduler_metrics, "exit_status", "scheduler_metrics.exit_status", missing
+    )
+    if invalid_runtime_status or invalid_scheduler_status:
+        exit_status = -1
+    elif runtime_exit_status is not None and scheduler_exit_status is not None:
+        if runtime_exit_status == scheduler_exit_status:
+            exit_status = runtime_exit_status
+        else:
+            exit_status = -1
+            missing.append(
+                "runtime.exit_status="
+                f"{runtime_exit_status} conflicts with scheduler_metrics.exit_status={scheduler_exit_status}"
+            )
+    elif runtime_exit_status is not None:
+        exit_status = runtime_exit_status
+    elif scheduler_exit_status is not None:
+        exit_status = scheduler_exit_status
     else:
-        exit_status = int(exit_status_value)
+        exit_status = -1
+        missing.append("execution exit_status is unavailable")
     return {
         "schema_version": "1.1",
         "benchmark_plan_id": str(

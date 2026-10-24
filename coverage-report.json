@@ -2,8 +2,8 @@
   "ok": true,
   "runner": "pytest-importlib",
   "total": {
-    "statement": 92.81,
-    "branch": 82.38
+    "statement": 92.86,
+    "branch": 82.48
   },
   "thresholds": {
     "total_statement": 90.0,
@@ -45,9 +45,9 @@
     "skills/tsao-dft-hpc-provenance/scripts/benchmark_bridge.py": {
       "statement": 100.0,
       "branch": 100.0,
-      "statements": 138,
+      "statements": 193,
       "missing_statements": 0,
-      "branches": 50,
+      "branches": 80,
       "missing_branches": 0,
       "missing_lines": [],
       "missing_branch_arcs": {}
@@ -2475,9 +2475,9 @@
     "skills/tsao-dft-hpc-provenance/scripts/benchmark_bridge.py": {
       "statement": 100.0,
       "branch": 100.0,
-      "statements": 138,
+      "statements": 193,
       "missing_statements": 0,
-      "branches": 50,
+      "branches": 80,
       "missing_branches": 0,
       "missing_lines": [],
       "missing_branch_arcs": {}
@@ -4668,22 +4668,22 @@
       }
     },
     "skills/tsao-dft-hpc-provenance/tests/test_benchmark_bridge.py": {
-      "statement": 96.55,
-      "branch": 50.0,
-      "statements": 58,
+      "statement": 98.59,
+      "branch": 87.5,
+      "statements": 142,
       "missing_statements": 2,
-      "branches": 4,
+      "branches": 16,
       "missing_branches": 2,
       "missing_lines": [
         16,
-        159
+        356
       ],
       "missing_branch_arcs": {
         "15": [
           16
         ],
-        "158": [
-          159
+        "355": [
+          356
         ]
       }
     },
@@ -5198,20 +5198,20 @@
     "skills/tsao-dft-hpc-provenance/tests/test_release_parser_bridge_coverage.py": {
       "statement": 99.07,
       "branch": 90.91,
-      "statements": 215,
+      "statements": 216,
       "missing_statements": 2,
       "branches": 22,
       "missing_branches": 2,
       "missing_lines": [
         16,
-        458
+        459
       ],
       "missing_branch_arcs": {
         "15": [
           16
         ],
-        "457": [
-          458
+        "458": [
+          459
         ]
       }
     },
@@ -7334,66 +7334,66 @@
       }
     },
     "skills/tsao-periodic-dft-materials/scripts/periodic_output.py": {
-      "statement": 88.97,
-      "branch": 80.0,
-      "statements": 145,
+      "statement": 89.4,
+      "branch": 80.65,
+      "statements": 151,
       "missing_statements": 16,
-      "branches": 60,
+      "branches": 62,
       "missing_branches": 12,
       "missing_lines": [
         142,
-        168,
         169,
         170,
-        183,
-        232,
-        234,
-        235,
-        236,
+        171,
+        184,
         240,
         242,
+        243,
         244,
-        246,
-        256,
-        258,
-        260
+        248,
+        250,
+        252,
+        254,
+        264,
+        266,
+        268
       ],
       "missing_branch_arcs": {
         "141": [
           142
         ],
-        "167": [
-          168
+        "168": [
+          169
         ],
-        "182": [
-          183
+        "183": [
+          184
         ],
-        "225": [
-          233
+        "233": [
+          241
         ],
-        "227": [
-          232
-        ],
-        "239": [
+        "235": [
           240
         ],
-        "241": [
-          242
+        "247": [
+          248
         ],
-        "243": [
-          244
+        "249": [
+          250
         ],
-        "245": [
-          246
+        "251": [
+          252
         ],
-        "255": [
-          256
+        "253": [
+          254
         ],
-        "257": [
-          258
+        "263": [
+          264
         ],
-        "259": [
-          260
+        "265": [
+          266
+        ],
+        "267": [
+          268
         ]
       }
     },
@@ -7714,22 +7714,22 @@
       }
     },
     "skills/tsao-periodic-dft-materials/tests/test_streaming_parsers.py": {
-      "statement": 96.77,
-      "branch": 66.67,
-      "statements": 62,
+      "statement": 97.37,
+      "branch": 75.0,
+      "statements": 76,
       "missing_statements": 2,
-      "branches": 6,
+      "branches": 8,
       "missing_branches": 2,
       "missing_lines": [
         16,
-        78
+        110
       ],
       "missing_branch_arcs": {
         "15": [
           16
         ],
-        "77": [
-          78
+        "109": [
+          110
         ]
       }
     },

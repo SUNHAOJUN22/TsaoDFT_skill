@@ -354,6 +354,7 @@ class ReleaseParserBridgeCoverageTests(unittest.TestCase):
             (root / "input.in").write_text("input", encoding="utf-8")
             (root / "out").write_text("output", encoding="utf-8")
             parser_result = self.parser.base_result("vasp", root / "out")
+            parser_result["source_artifact"]["sha256"] = self.parser.sha256_file(root / "out")
             parser_result.update(
                 {
                     "engine_version": "6.5",
@@ -451,7 +452,7 @@ class ReleaseParserBridgeCoverageTests(unittest.TestCase):
             )
             self.assertFalse(missing_record["scientific"]["parser_accepted"])
             self.assertTrue(missing_record["evidence_source"]["missing_fields"])
-            self.assertEqual(missing_record["execution"]["exit_status"], 0)
+            self.assertEqual(missing_record["execution"]["exit_status"], -1)
 
 
 if __name__ == "__main__":

@@ -200,6 +200,8 @@ Gaussian 公开解析器会对能量、频率、轨道和坐标等读取值执�
 
 引擎解析器 v1.2 只在最终 PWSCF 作业的最后一个完整 QE 力块包含已声明 `Ry/au` 单位、原子数以及恰好一次的 `1..N` 原子索引和三分量行时，才输出按原子 `x,y,z` 展平的 `3N` 力数组；换算使用项目固定的 CODATA 2018 Ry 与 Bohr 常数。该形状是 benchmark bridge 的扁平存储格式，不自动满足要求 `N×3` 形状和精确 `atom_mapping` 的 `TypedQuantity` 合同。QE `Total force` 是标量范数，`P=` 是标量压力；CP2K `Max. gradient` 也是标量。它们不会被伪装成力向量或应力张量；缺失、未知单位或不完整数据保留为 `null` 并告警，原始输出仍由 artifact 哈希留证。`parser_accepted` 的终止/SCF 门不保证所有科学观测量齐全。实现见 [`engine_parser_contract.py`](skills/tsao-dft-hpc-provenance/scripts/engine_parser_contract.py)。
 
+基准桥接只接受与实际输出绑定的解析结果：`parser_result.engine` 必须匹配桥接引擎，`source_artifact.sha256` 必须匹配桥接时读取的输出文件；若解析结果还提供 `size_bytes`，也必须与文件大小一致。绑定失败会将解析接受状态置为 false，并把原因记录在 `evidence_source.missing_fields`。这些字段只证明所解析的字节与所引用的输出文件一致，不证明由哪个可执行程序或 HPC 作业生成。执行退出码必须来自运行时记录或调度器指标：`runtime.exit_status` 优先，缺失时回退到 `scheduler_metrics.exit_status`；两者都存在时必须相同。缺失、无效或冲突时，`execution.exit_status` 使用 `-1` 表示未知，并记录原因；不会从输出中的正常终止标记推断为零退出。解析器接受与进程成功分开，性能证据还要求退出码为零。
+
 ### 3. 力、应力与几何验收
 
 $$

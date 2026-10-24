@@ -4,6 +4,7 @@ import csv
 import importlib.util
 import json
 import math
+import os
 import subprocess
 import sys
 import tempfile
@@ -160,6 +161,59 @@ class BuildEnergyProfileTests(unittest.TestCase):
             for suffix in (".svg", ".pdf", ".png"):
                 self.assertFalse(prefix.with_suffix(suffix).exists())
             self.assertTrue(prefix.with_suffix(".csv").is_dir())
+
+    def test_output_csv_alias_to_input_is_rejected_without_overwrite(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "energies.csv"
+            original = (
+                b"label,g_hartree,method_fingerprint,source_artifact_sha256\n"
+                b"R,-100.0,method-sha,source-sha\n"
+                b"P,-100.1,method-sha,source-sha\n"
+            )
+            source.write_bytes(original)
+
+            with (
+                patch.object(
+                    self.module,
+                    "render_figures",
+                    side_effect=lambda staged, _rows: [
+                        staged[suffix].write_bytes(b"figure") for suffix in (".svg", ".pdf", ".png")
+                    ],
+                ),
+                self.assertRaisesRegex(self.module.EnergyProfileError, "conflicts with input"),
+            ):
+                self.module.generate_profile(source, "g_hartree", "first", source.with_suffix(""))
+
+            self.assertEqual(source.read_bytes(), original)
+            self.assertEqual(list(root.glob(".energies-energy-profile-*")), [])
+
+    def test_output_hardlink_to_input_is_rejected_without_overwrite(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "source.csv"
+            alias = root / "generated.csv"
+            self.write_source(source, [["R", -100.0], ["P", -100.1]])
+            original = source.read_bytes()
+            try:
+                os.link(source, alias)
+            except (OSError, NotImplementedError) as exc:
+                self.skipTest(f"hard links are unavailable: {exc}")
+
+            with (
+                patch.object(
+                    self.module,
+                    "render_figures",
+                    side_effect=lambda staged, _rows: [
+                        staged[suffix].write_bytes(b"figure") for suffix in (".svg", ".pdf", ".png")
+                    ],
+                ),
+                self.assertRaisesRegex(self.module.EnergyProfileError, "conflicts with input"),
+            ):
+                self.module.generate_profile(source, "g_hartree", "first", alias.with_suffix(""))
+
+            self.assertEqual(source.read_bytes(), original)
+            self.assertEqual(alias.read_bytes(), original)
 
 
 if __name__ == "__main__":

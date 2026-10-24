@@ -155,13 +155,29 @@ def publish_staged_outputs(staged: dict[str, Path], targets: dict[str, Path], st
         raise
 
 
+def _reject_input_output_aliases(input_path: Path, targets: dict[str, Path]) -> None:
+    resolved_input = input_path.resolve(strict=True)
+    for target in targets.values():
+        if target.resolve(strict=False) == resolved_input:
+            raise EnergyProfileError(f"output path conflicts with input: {target}")
+        try:
+            same_file = target.samefile(input_path)
+        except FileNotFoundError:
+            same_file = False
+        except OSError as exc:
+            raise EnergyProfileError(f"cannot verify output path does not alias input: {target}") from exc
+        if same_file:
+            raise EnergyProfileError(f"output path conflicts with input: {target}")
+
+
 def generate_profile(csv_file: Path, column: str, reference_spec: str, out: Path) -> list[Path]:
     raw_rows = read_energy_rows(csv_file, column)
     reference = select_reference(raw_rows, reference_spec)
     rows = build_relative_rows(raw_rows, reference)
 
-    out.parent.mkdir(parents=True, exist_ok=True)
     targets = {suffix: out.with_suffix(suffix) for suffix in OUTPUT_SUFFIXES}
+    _reject_input_output_aliases(csv_file, targets)
+    out.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=out.parent, prefix=f".{out.stem}-energy-profile-") as temporary:
         staging_dir = Path(temporary)
         staged = {suffix: staging_dir / target.name for suffix, target in targets.items()}

@@ -40,8 +40,23 @@ def parse_incar(path: Path) -> dict[str, str]:
     return d
 
 
+def _log_cell_volume(matrix: np.ndarray) -> float:
+    # POSCAR raw vectors may use any length scale. Test the directions after
+    # row normalization, retaining the existing relative singularity margin.
+    lengths = np.max(np.abs(matrix), axis=1)
+    if not np.isfinite(matrix).all() or np.any(lengths == 0.0):
+        raise ValueError("POSCAR lattice vectors must form a numerically nonsingular cell")
+    normalized = matrix / lengths[:, None]
+    singular_values = np.linalg.svd(normalized, compute_uv=False)
+    if singular_values[-1] <= np.finfo(np.float64).eps * float(singular_values[0]) * 64.0:
+        raise ValueError("POSCAR lattice vectors must form a numerically nonsingular cell")
+    _, log_volume = np.linalg.slogdet(normalized)
+    return float(log_volume + np.log(lengths).sum())
+
+
 def parse_poscar(path: Path) -> PoscarData:
-    lines = [x.rstrip() for x in path.read_text(encoding="utf-8", errors="replace").splitlines() if x.strip()]
+    # The first record is a comment and may be blank; do not shift fixed fields.
+    lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
     if len(lines) < 8:
         raise ValueError("POSCAR too short")
     try:
@@ -69,25 +84,20 @@ def parse_poscar(path: Path) -> PoscarData:
         raw_vectors.append(vector)
 
     raw_matrix = np.asarray(raw_vectors, dtype=np.float64)
-    singular_values = np.linalg.svd(raw_matrix, compute_uv=False)
-    # A relative condition check preserves equivalent cells under uniform POSCAR scaling.
-    if (
-        not np.isfinite(singular_values).all()
-        or singular_values[0] <= 0.0
-        or singular_values[-1] / singular_values[0] <= np.finfo(np.float64).eps * 64.0
-    ):
-        raise ValueError("POSCAR lattice vectors must form a numerically nonsingular cell")
-    raw_volume = abs(float(np.linalg.det(raw_matrix)))
-    if not math.isfinite(raw_volume) or raw_volume <= 0.0:
-        raise ValueError("POSCAR lattice cell volume must be finite and positive")
 
     scale = scale_factors[0] if len(scale_factors) == 1 else None
     if len(scale_factors) == 1 and scale_factors[0] < 0.0:
+        # A uniform target-volume scale needs the raw volume. Positive component
+        # scales may improve the cell's conditioning, so validate those only
+        # after applying the declared Cartesian transformation below.
+        raw_log_volume = _log_cell_volume(raw_matrix)
         target_volume = abs(scale_factors[0])
-        ratio = target_volume / raw_volume
-        if not math.isfinite(ratio) or ratio <= 0.0:
-            raise ValueError("negative POSCAR scale must specify a finite positive target volume")
-        effective_scale = ratio ** (1.0 / 3.0)
+        try:
+            effective_scale = math.exp((math.log(target_volume) - raw_log_volume) / 3.0)
+        except OverflowError as exc:
+            raise ValueError("negative POSCAR scale exceeds the finite effective-scale range") from exc
+        if effective_scale == 0.0:
+            raise ValueError("negative POSCAR scale underflows the effective-scale range")
         effective_scale_factors = [effective_scale] * 3
     elif len(scale_factors) == 1:
         effective_scale_factors = [scale_factors[0]] * 3
@@ -98,8 +108,11 @@ def parse_poscar(path: Path) -> PoscarData:
         scaled_matrix = raw_matrix * np.asarray(effective_scale_factors, dtype=np.float64)[None, :]
     if not np.isfinite(scaled_matrix).all():
         raise ValueError("scaled POSCAR lattice vectors exceed the finite range")
-    cell_volume = abs(float(np.linalg.det(scaled_matrix)))
-    if not math.isfinite(cell_volume) or cell_volume <= 0.0:
+    try:
+        cell_volume = math.exp(_log_cell_volume(scaled_matrix))
+    except OverflowError as exc:
+        raise ValueError("scaled POSCAR lattice cell volume must be finite and positive") from exc
+    if cell_volume <= 0.0:
         raise ValueError("scaled POSCAR lattice cell volume must be finite and positive")
 
     species = lines[5].split()
@@ -130,12 +143,14 @@ def parse_poscar(path: Path) -> PoscarData:
             raise ValueError(f"POSCAR coordinate row {index} must be finite")
         if selective and (len(fields) < 6 or any(value.upper() not in {"T", "F"} for value in fields[3:6])):
             raise ValueError(f"POSCAR selective-dynamics row {index} requires three T/F flags")
-        if coordinate_mode == "cartesian":
-            scaled_coordinates = [
-                value * factor for value, factor in zip(coordinates, effective_scale_factors, strict=True)
-            ]
-            if not all(math.isfinite(value) for value in scaled_coordinates):
-                raise ValueError(f"POSCAR Cartesian coordinate row {index} exceeds the finite range after scaling")
+        with np.errstate(over="ignore", invalid="ignore"):
+            scaled_coordinates = (
+                np.asarray(coordinates) * effective_scale_factors
+                if coordinate_mode == "cartesian"
+                else np.asarray(coordinates) @ scaled_matrix
+            )
+        if not np.isfinite(scaled_coordinates).all():
+            raise ValueError(f"POSCAR {coordinate_mode} coordinate row {index} exceeds the finite range after scaling")
     return {
         "comment": lines[0],
         "scale": scale,

@@ -149,6 +149,10 @@ def stage_splits(
             if file_identity(target) != previous[name]:
                 raise ValueError(f"split output changed while staging: {target}")
             if previous[name] is not None:
+                # os.replace publishes the staged inode, so preserve metadata
+                # from an existing output rather than widening its permissions
+                # to the process umask defaults (commonly 0644).
+                shutil.copystat(target, stage / f"{name}.csv", follow_symlinks=False)
                 shutil.copy2(target, stage / f"{name}.backup")
         published: dict[str, tuple[int, int, int, int, int] | None] = {}
         try:

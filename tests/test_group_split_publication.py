@@ -127,6 +127,22 @@ def test_normal_replacement_retains_all_records_and_unrelated_files(tmp_path: Pa
     assert (outputs / "notes.txt").read_bytes() == b"unrelated data\n"
 
 
+@pytest.mark.skipif(os.name != "posix", reason="POSIX permission-bit contract; Windows ACLs need separate validation")
+@pytest.mark.parametrize("mode", [0o600, 0o640])
+def test_successful_replacement_preserves_existing_output_permissions(tmp_path: Path, mode: int) -> None:
+    dataset = tmp_path / "source.csv"
+    dataset.write_bytes(PAYLOAD)
+    outputs = tmp_path / "splits"
+    outputs.mkdir()
+    existing_outputs(outputs)
+    for name in splitter.SPLITS:
+        (outputs / f"{name}.csv").chmod(mode)
+
+    splitter.split_dataset(dataset, "parent_id", outputs)
+
+    assert {((outputs / f"{name}.csv").stat().st_mode & 0o777) for name in splitter.SPLITS} == {mode}
+
+
 def test_active_writer_lock_preserves_previous_outputs(tmp_path: Path) -> None:
     dataset = tmp_path / "source.csv"
     dataset.write_bytes(PAYLOAD)

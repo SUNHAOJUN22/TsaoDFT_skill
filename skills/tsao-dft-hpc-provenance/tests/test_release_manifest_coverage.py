@@ -319,6 +319,9 @@ class ReleaseManifestCoverageTests(unittest.TestCase):
             self.assertTrue(errors)
 
             key = root / "key.pem"
+            # The key locator is part of the reviewed manifest, so finalize it
+            # before computing the full execution-object binding.
+            approved["approval_public_key"] = "key.pem"
             binding = {
                 "manifest_sha256": self.shell.manifest_sha256(approved),
                 "benchmark_plan_id": approved["acceleration"]["benchmark_plan_id"],

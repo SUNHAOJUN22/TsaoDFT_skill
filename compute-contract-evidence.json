@@ -13,7 +13,7 @@
   "benchmark_contract": {
     "ok": true,
     "canonical_contract": "nested-v1.1",
-    "canonical_schema_sha256": "728dd5467f8423de133049129c56d13cef708a9314a59eed42d088fc11bcf2e8",
+    "canonical_schema_sha256": "f951ed11c009da283025c63d01ab7fd9dffa81717d197e3f15467d821311df32",
     "root_mirror_synchronized": true,
     "native_semantic_schema_version": "1.1",
     "compatibility_view_present": false,

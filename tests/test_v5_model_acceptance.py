@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
+import json
 import sys
 from dataclasses import replace
 from datetime import UTC, datetime
@@ -16,11 +18,12 @@ sys.modules[spec.name] = m
 spec.loader.exec_module(m)
 
 KEY = b"independent-model-approval-key-32bytes"
+DATASET_KEY = b"independent-dataset-validation-key-32bytes"
 NOW = datetime(2026, 8, 12, 10, tzinfo=UTC)
 
 
 def artifact():
-    return m.DatasetValidationArtifact(
+    value = m.DatasetValidationArtifact(
         "DVA-1",
         "a" * 64,
         "b" * 64,
@@ -33,8 +36,9 @@ def artifact():
         "PASS",
         "independent-dataset-validator",
         "2026-08-12T09:00:00Z",
-        "signed",
+        "",
     )
+    return replace(value, signature=m.sign_approval(value.unsigned(), DATASET_KEY))
 
 
 def card(**updates):
@@ -44,7 +48,7 @@ def card(**updates):
         "e" * 64,
         "f" * 64,
         "1" * 64,
-        "d" * 64,
+        "b" * 64,
         {"descriptor_bounds": [-1, 1]},
         {"type": "calibrated_conformal", "coverage": 0.9},
         {"mae": 0.1, "coverage": 0.9},
@@ -56,7 +60,7 @@ def card(**updates):
 def approval(approver="reviewer-person"):
     value = m.ModelApproval(
         "A-1",
-        "1" * 64,
+        "e" * 64,
         "a" * 64,
         "predictive-dft-model",
         "tsao-dft",
@@ -67,6 +71,10 @@ def approval(approver="reviewer-person"):
         "nonce-1",
         "key-1",
         "",
+        dataset_validation_sha256=hashlib.sha256(
+            json.dumps(artifact().unsigned(), sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest(),
+        model_card_sha256=card().digest(),
     )
     return replace(value, signature=m.sign_approval(value.unsigned(), KEY))
 
@@ -78,6 +86,7 @@ def assess(c, a):
         expected_schema_sha256="b" * 64,
         approval=a,
         key_resolver=lambda key_id: KEY if key_id == "key-1" else None,
+        dataset_key_resolver=lambda issuer: DATASET_KEY if issuer == "independent-dataset-validator" else None,
         now=NOW,
     )
 

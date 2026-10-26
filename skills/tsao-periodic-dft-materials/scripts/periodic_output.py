@@ -7,11 +7,24 @@ acceptance; these adapters never launch an external electronic-structure engine.
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import math
 import re
+import sys
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import TypedDict
+
+_SCRIPT_DIR = Path(__file__).resolve().parent
+_SCAN_PATH = _SCRIPT_DIR / "_shared" / "engine_scan_core.py"
+if not _SCAN_PATH.is_file():
+    _SCAN_PATH = _SCRIPT_DIR.parents[1] / "tsao-dft-hpc-provenance/scripts/engine_scan_core.py"
+_SCAN_SPEC = importlib.util.spec_from_file_location("tsao_periodic_engine_scan", _SCAN_PATH)
+if _SCAN_SPEC is None or _SCAN_SPEC.loader is None:
+    raise RuntimeError(f"cannot load {_SCAN_PATH}")
+_SCAN = importlib.util.module_from_spec(_SCAN_SPEC)
+sys.modules[_SCAN_SPEC.name] = _SCAN
+_SCAN_SPEC.loader.exec_module(_SCAN)
 
 MAX_LINE_BYTES = 1024 * 1024
 MAX_ARTIFACT_BYTES = 1024 * 1024 * 1024
@@ -86,18 +99,6 @@ SPECS: dict[str, EngineSpec] = {
         "numbers": {"last_max_gradient": re.compile(r"Max\. gradient\s*=\s*" + FLOAT)},
     },
 }
-FATAL = (
-    "error termination",
-    "fatal error",
-    "error in routine",
-    "*** abort",
-    " abort",
-    "brmix: very serious problems",
-    "zbrent: fatal",
-    "edddav: call to zhegv failed",
-    "sub-space-matrix is not hermitian",
-    "segmentation fault",
-)
 NONCONVERGED = (
     "convergence not achieved",
     "scf run not converged",
@@ -156,7 +157,8 @@ def parse_output(engine: str, source: Path) -> dict:
     line_number = 0
     force_block = False
     job_start_seen = False
-    job_has_body = False
+    header_state = _SCAN.JobBoundaryState()
+    generic_header_pending = False
     stream_complete = True
     try:
         with path.open("rb") as handle:
@@ -173,19 +175,28 @@ def parse_output(engine: str, source: Path) -> dict:
                 text = raw.decode("utf-8", errors="strict")
                 folded = text.casefold()
                 generic_start = text.strip() == "--- JOB START ---"
-                start = bool(spec["start"].search(text)) or generic_start
-                # CP2K commonly prints both start-time and version headers for one job.
-                header_continuation = (
-                    engine == "cp2k" and start and not generic_start and not job_has_body and not job[spec["done_key"]]
-                )
-                if start and (job_has_body or job["version"] is not None) and not header_continuation:
+                if generic_start:
+                    start = True
+                    generic_header_pending = True
+                    header_state = _SCAN.JobBoundaryState()
+                elif engine in {"vasp", "cp2k"}:
+                    kind = _SCAN.job_header_kind(text, engine)
+                    start = kind is not None and header_state.advance(kind)
+                    if kind is not None and generic_header_pending:
+                        start = False
+                        generic_header_pending = False
+                else:
+                    start = bool(spec["start"].search(text))
+                    if start and generic_header_pending:
+                        start = False
+                        generic_header_pending = False
+                if start and job_start_seen:
                     jobs.append(job)
                     if len(jobs) >= MAX_JOBS:
                         raise ValueError("job count exceeds parser budget")
                     job = _fresh(spec, line_number, offset)
                     job_start_seen = True
                     force_block = False
-                    job_has_body = False
                 elif start and not job_start_seen:
                     # The initial _fresh record is only a placeholder when
                     # preamble text precedes the first actual job marker.
@@ -194,8 +205,7 @@ def parse_output(engine: str, source: Path) -> dict:
                     job_start_seen = True
                 if match := spec["version"].search(text):
                     job["version"] = match.group(1).strip()
-                fatal_view = folded.replace("aborting loop because ediff is reached", "ediff is reached")
-                job["fatal"] |= any(marker in fatal_view for marker in FATAL)
+                job["fatal"] |= _SCAN.has_fatal_marker(text, engine)
                 job["nonconverged"] |= any(marker in folded for marker in NONCONVERGED)
                 for key, markers in (
                     (spec["done_key"], spec["done"]),
@@ -204,10 +214,8 @@ def parse_output(engine: str, source: Path) -> dict:
                 ):
                     if any(marker in folded for marker in markers):
                         job[key] = True
-                        job_has_body = True
                 if match := spec["energy"].search(text):
                     job["energy_count"] += 1
-                    job_has_body = True
                     literal = match.group(1)
                     job[spec["energy_key"]] = _number(literal, spec["energy_key"], job, line_number, offset)
                     job["last_total_energy_eV"] = _number(

@@ -193,9 +193,9 @@ class ReleasePerformanceEvidenceEdgeCoverageTests(unittest.TestCase):
             {"scientific": {"results": {"forces_ev_per_angstrom": [0.0, 1.0]}}},
         ]
         self.assertIsNone(self.core.median_vector(incompatible, "forces_ev_per_angstrom"))
-        self.assertEqual(self.core.maximum_vector_difference(None, None), 0.0)
+        self.assertIsNone(self.core.maximum_vector_difference(None, None))
         self.assertIsNone(self.core.maximum_vector_difference([1.0], [1.0, 2.0]))
-        self.assertEqual(self.core.maximum_vector_difference([], []), 0.0)
+        self.assertIsNone(self.core.maximum_vector_difference([], []))
         self.assertEqual(self.core.maximum_vector_difference([1.0], [3.0]), 2.0)
 
         references = self.fixture.validated(self.fixture.reference_records())

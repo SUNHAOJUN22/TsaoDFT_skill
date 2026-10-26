@@ -290,7 +290,7 @@ def build_record(
         "performance": {
             "wall_time_s": float(wall_time),
             "cpu_time_s": float(scheduler_metrics.get("cpu_time_s") or 0.0),
-            "scf_iterations": int(parser_result.get("scf_iterations") or 0),
+            "scf_iterations": parser_result.get("scf_iterations"),
             "peak_host_memory_mb": float(scheduler_metrics.get("peak_host_memory_mb") or 0.0),
             "peak_device_memory_mb": None,
             "cpu_utilization_percent": None,

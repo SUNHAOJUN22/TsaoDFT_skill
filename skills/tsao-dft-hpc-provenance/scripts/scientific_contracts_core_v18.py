@@ -8,13 +8,17 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import importlib.util
 import json
 import math
 import re
+import sys
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import asdict, dataclass, fields
 from datetime import UTC, datetime
+from functools import cache
 from pathlib import Path
+from types import ModuleType
 from typing import cast
 
 K_B = 1.380649e-23
@@ -139,21 +143,8 @@ _CONVERGENCE_MARKERS = {
     "gaussian": ("normal termination",),
     "vasp": ("reached required accuracy", "ediff is reached"),
     "qe": ("convergence has been achieved",),
-    "cp2k": ("scf run converged", "program ended at"),
+    "cp2k": ("scf run converged",),
 }
-
-_FATAL_MARKERS = (
-    "error termination",
-    "fatal error",
-    "error in routine",
-    "*** abort",
-    " abort",
-    "brmix: very serious problems",
-    "zbrent: fatal",
-    "edddav: call to zhegv failed",
-    "sub-space-matrix is not hermitian",
-    "segmentation fault",
-)
 
 _NONCONVERGENCE_MARKERS = (
     "convergence not achieved",
@@ -197,6 +188,18 @@ def _engine_name(engine: str) -> str:
     return normalized
 
 
+@cache
+def _load_engine_scanner() -> ModuleType:
+    path = Path(__file__).with_name("engine_scan_core.py")
+    spec = importlib.util.spec_from_file_location("tsao_engine_job_scan", path)
+    if spec is None or spec.loader is None:
+        raise ParserContractError("cannot load engine job scanner")
+    scanner = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = scanner
+    spec.loader.exec_module(scanner)
+    return scanner
+
+
 def split_jobs(engine: str, text: str) -> list[str]:
     normalized = _engine_name(engine)
     if not isinstance(text, str):
@@ -204,7 +207,12 @@ def split_jobs(engine: str, text: str) -> list[str]:
     generic = re.split(r"(?im)^\s*---\s*JOB START\s*---\s*$", text)
     if len(generic) > 1:
         return [segment for segment in generic if segment.strip()]
-    starts = [match.start() for match in _START_MARKERS[normalized].finditer(text)]
+    if normalized in {"vasp", "cp2k"}:
+        # The byte and text APIs share startup/version grouping. Numeric
+        # observations are still checked independently in parser regressions.
+        starts = _load_engine_scanner().job_start_positions(text, normalized)
+    else:
+        starts = [match.start() for match in _START_MARKERS[normalized].finditer(text)]
     if len(starts) <= 1:
         return [text]
     return [
@@ -214,10 +222,7 @@ def split_jobs(engine: str, text: str) -> list[str]:
 
 def _job_status(engine: str, segment: str, index: int) -> JobRecord:
     folded = segment.casefold()
-    fatal_view = folded
-    if engine == "vasp":
-        fatal_view = fatal_view.replace("aborting loop because ediff is reached", "ediff is reached")
-    fatal = any(marker in fatal_view for marker in _FATAL_MARKERS)
+    fatal = _load_engine_scanner().has_fatal_marker(segment, engine)
     nonconverged = any(marker in folded for marker in _NONCONVERGENCE_MARKERS)
     success_markers = _SUCCESS_MARKERS[engine]
     convergence_markers = _CONVERGENCE_MARKERS[engine]
@@ -489,6 +494,7 @@ def authorize_training_v4(
 
 
 def validate_model_card_v4(card: Mapping[str, object]) -> dict[str, object]:
+    """Validate legacy structure only; use assess_model_card for trusted review."""
     required = {
         "status",
         "dataset_sha256",
@@ -515,7 +521,14 @@ def validate_model_card_v4(card: Mapping[str, object]) -> dict[str, object]:
     ):
         if not isinstance(card[key], Mapping) or not card[key]:
             raise MLProvenanceError(f"{key} must be a non-empty mapping")
-    return {"predictive_use_allowed": True, "truth_boundary": "EXTERNAL_DFT_EXECUTION_NOT_VERIFIED"}
+    return {
+        "structure_valid": True,
+        "status": "HOLD",
+        "predictive_use_allowed": False,
+        "reason_codes": ["APPROVAL_UNVERIFIED"],
+        "migration": "Use model_acceptance_v5.assess_model_card with external dataset and approval key resolvers.",
+        "truth_boundary": "EXTERNAL_DFT_EXECUTION_NOT_VERIFIED",
+    }
 
 
 def validate_labels(labels: Sequence[Mapping[str, object]]) -> dict[str, object]:
@@ -609,6 +622,8 @@ def validate_predictive_model_card(card: Mapping[str, object], *, now: str) -> d
     }
     if set(card) != required:
         raise ModelAcceptanceError("model card is incomplete")
+    if card["status"] != "ACCEPTED":
+        raise ModelAcceptanceError("model card status must declare ACCEPTED for structural review")
     for key in ("dataset_sha256", "model_sha256", "code_sha256", "environment_sha256"):
         require_sha256(card[key], key)
     trainer = card["trainer_identity"]
@@ -621,6 +636,8 @@ def validate_predictive_model_card(card: Mapping[str, object], *, now: str) -> d
     approval = card["independent_approval"]
     if not isinstance(approval, Mapping):
         raise ModelAcceptanceError("independent approval is required")
+    if not isinstance(approval.get("issuer"), str) or not str(approval["issuer"]).strip():
+        raise ModelAcceptanceError("independent approval issuer is required")
     if approval.get("issuer") == trainer:
         raise ModelAcceptanceError("self-issued approval is forbidden")
     if approval.get("model_sha256") != card["model_sha256"]:
@@ -634,7 +651,15 @@ def validate_predictive_model_card(card: Mapping[str, object], *, now: str) -> d
     expires = parse_timestamp(str(approval.get("expires_at")), "expires_at")
     if not issued <= current < expires:
         raise ModelAcceptanceError("approval is not currently valid")
-    return {"predictive_use_allowed": True, "truth_boundary": "EXTERNAL_DFT_EXECUTION_NOT_VERIFIED"}
+    # This mapping API has no trusted key resolver and cannot authenticate a
+    # signature string. Preserve structural validation without authorization.
+    return {
+        "status": "HOLD",
+        "structure_valid": True,
+        "predictive_use_allowed": False,
+        "blockers": ["APPROVAL_UNVERIFIED"],
+        "truth_boundary": "EXTERNAL_DFT_EXECUTION_NOT_VERIFIED",
+    }
 
 
 def _validate_finite_tree(value: object, name: str) -> None:
@@ -676,6 +701,17 @@ class DatasetValidationArtifact:
         exact_int(self.sample_count, "sample_count", minimum=1)
         if self.status != "PASS":
             raise ModelAcceptanceError("dataset validation artifact must be PASS")
+        for name in ("artifact_id", "quantity_kind", "unit", "method_fingerprint", "issuer"):
+            value = getattr(self, name)
+            if not isinstance(value, str) or not value.strip():
+                raise ModelAcceptanceError(f"dataset validation {name} is required")
+        parse_timestamp(self.issued_at, "dataset validation issued_at")
+        if not isinstance(self.signature, str):
+            raise ModelAcceptanceError("dataset validation signature must be a string")
+
+    def unsigned(self) -> dict[str, object]:
+        """The whole validation contract is authenticated, not just its dataset hash."""
+        return {field.name: getattr(self, field.name) for field in fields(self) if field.name != "signature"}
 
 
 @dataclass(frozen=True)
@@ -702,6 +738,26 @@ class ModelCard:
             except DFTContractError as exc:
                 raise ModelAcceptanceError(str(exc)) from exc
 
+    def digest(self) -> str:
+        """Identify every reviewed field, with a versioned model-review domain."""
+        payload = {field.name: _model_card_json_value(getattr(self, field.name)) for field in fields(self)}
+        return digest_mapping({"contract": "tsao.dft.model-card-review.v1", "card": payload})
+
+
+def _model_card_json_value(value: object) -> object:
+    """Copy Mapping views into unambiguous finite JSON for a signed review."""
+    if isinstance(value, Mapping):
+        if any(not isinstance(key, str) for key in value):
+            raise ModelAcceptanceError("model card JSON object keys must be strings")
+        return {key: _model_card_json_value(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_model_card_json_value(item) for item in value]
+    if value is None or isinstance(value, (str, bool, int)):
+        return value
+    if isinstance(value, float) and math.isfinite(value):
+        return value
+    raise ModelAcceptanceError("model card review content must be finite JSON")
+
 
 @dataclass(frozen=True)
 class ModelApproval:
@@ -717,9 +773,18 @@ class ModelApproval:
     nonce: str
     key_id: str
     signature: str
+    dataset_validation_sha256: str | None = None
+    model_card_sha256: str | None = None
 
     def unsigned(self) -> dict[str, object]:
-        return {field.name: getattr(self, field.name) for field in fields(self) if field.name != "signature"}
+        return {
+            field.name: getattr(self, field.name)
+            for field in fields(self)
+            if field.name != "signature"
+            and not (
+                field.name in {"dataset_validation_sha256", "model_card_sha256"} and getattr(self, field.name) is None
+            )
+        }
 
 
 def sign_approval(unsigned: Mapping[str, object], key: bytes) -> str:
@@ -733,14 +798,32 @@ def assess_model_card(
     expected_schema_sha256: str,
     approval: ModelApproval | None,
     key_resolver: Callable[[str], bytes | None] | None = None,
+    dataset_key_resolver: Callable[[str], bytes | None] | None = None,
     now: datetime | None = None,
 ) -> dict[str, object]:
     expected_schema = require_sha256(expected_schema_sha256, "expected_schema_sha256")
     if card.dataset_sha256 != dataset_artifact.dataset_sha256:
         raise ModelAcceptanceError("dataset SHA does not match validation artifact")
-    if dataset_artifact.schema_sha256 != expected_schema or card.schema_sha256 != dataset_artifact.split_sha256:
-        raise ModelAcceptanceError("schema or split SHA does not match the validated chain")
+    if dataset_artifact.schema_sha256 != expected_schema or card.schema_sha256 != expected_schema:
+        raise ModelAcceptanceError("schema SHA does not match the validated chain")
     blockers: list[str] = []
+    active_now = (now or datetime.now(UTC)).astimezone(UTC)
+    if parse_timestamp(dataset_artifact.issued_at, "dataset validation issued_at") > active_now:
+        blockers.append("DATASET_VALIDATION_NOT_CURRENT")
+    if dataset_artifact.issuer == card.trainer_identity:
+        blockers.append("TRAINER_CANNOT_VALIDATE_DATASET")
+    if not dataset_artifact.signature:
+        blockers.append("DATASET_VALIDATION_SIGNATURE_MISSING")
+    if dataset_key_resolver is None:
+        blockers.append("DATASET_VALIDATION_KEY_UNAVAILABLE")
+    else:
+        dataset_key = dataset_key_resolver(dataset_artifact.issuer)
+        if dataset_key is None:
+            blockers.append("DATASET_VALIDATION_KEY_UNAVAILABLE")
+        elif dataset_artifact.signature and not hmac.compare_digest(
+            dataset_artifact.signature, sign_approval(dataset_artifact.unsigned(), dataset_key)
+        ):
+            raise ModelAcceptanceError("dataset validation signature is invalid")
     if not card.applicability_domain:
         blockers.append("APPLICABILITY_DOMAIN_MISSING")
     if not card.uncertainty_model:
@@ -752,13 +835,20 @@ def assess_model_card(
     else:
         if approval.approver == card.trainer_identity:
             blockers.append("TRAINER_CANNOT_SELF_APPROVE")
-        if approval.model_sha256 != card.environment_sha256 or approval.dataset_sha256 != card.dataset_sha256:
+        if approval.model_sha256 != card.model_sha256 or approval.dataset_sha256 != card.dataset_sha256:
             blockers.append("APPROVAL_BINDING_MISMATCH")
+        if approval.dataset_validation_sha256 is None:
+            blockers.append("DATASET_VALIDATION_BINDING_MISSING")
+        elif approval.dataset_validation_sha256 != digest_mapping(dataset_artifact.unsigned()):
+            blockers.append("DATASET_VALIDATION_BINDING_MISMATCH")
+        if approval.model_card_sha256 is None:
+            blockers.append("MODEL_CARD_BINDING_MISSING")
+        elif approval.model_card_sha256 != card.digest():
+            blockers.append("MODEL_CARD_BINDING_MISMATCH")
         if approval.scope != "predictive-dft-model" or approval.audience != "tsao-dft":
             blockers.append("APPROVAL_SCOPE_MISMATCH")
         if approval.authorized_role != "independent_model_validator":
             blockers.append("APPROVAL_ROLE_MISMATCH")
-        active_now = (now or datetime.now(UTC)).astimezone(UTC)
         if (
             not parse_timestamp(approval.issued_at, "issued_at")
             <= active_now

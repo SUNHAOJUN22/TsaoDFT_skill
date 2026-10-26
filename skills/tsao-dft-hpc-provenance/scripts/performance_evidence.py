@@ -275,6 +275,39 @@ def verify_artifacts(record: dict[str, Any], artifact_root: Path | None) -> tupl
     return verified, errors
 
 
+def observable_errors(scientific: dict[str, Any], required: set[str] | None = None) -> list[str]:
+    """Validate individual observations before they can contribute to a median.
+
+    Standard vectors use the canonical flat representation: 3*N forces and
+    six Voigt or nine tensor stress components. Other declared names refer to
+    scalar entries of results.properties. Absence is never a measured zero.
+    """
+    declared = scientific.get("observable_set")
+    if not isinstance(declared, list) or not declared or not all(isinstance(item, str) and item for item in declared):
+        return ["scientific.observable_set must be a non-empty string list"]
+    expected = set(declared) | (required or set())
+    results = scientific.get("results")
+    if not isinstance(results, dict):
+        return ["scientific.results must be a mapping"]
+    properties = results.get("properties")
+    properties = properties if isinstance(properties, dict) else {}
+    errors = []
+    for name in sorted(expected):
+        if name == "energy":
+            if not is_finite_real(results.get("energy_ev")):
+                errors.append("required energy_ev is missing or non-finite")
+        elif name in {"forces", "stress"}:
+            field = "forces_ev_per_angstrom" if name == "forces" else "stress_gpa"
+            vector = results.get(field)
+            if not isinstance(vector, list) or not vector or not all(is_finite_real(item) for item in vector):
+                errors.append(f"required {field} is missing, empty or non-finite")
+            elif (name == "forces" and len(vector) % 3 != 0) or (name == "stress" and len(vector) not in {6, 9}):
+                errors.append(f"required {field} has an incompatible shape")
+        elif not is_finite_real(properties.get(name)):
+            errors.append(f"required property {name} is missing or non-finite")
+    return errors
+
+
 def validate_canonical_result(
     record: dict[str, Any], artifact_root: Path | None = None
 ) -> tuple[dict[str, Any], list[str], list[str]]:
@@ -365,11 +398,16 @@ def validate_canonical_result(
         isinstance(name, str) and name and is_finite_real(value) for name, value in properties.items()
     ):
         errors.append("scientific.results.properties must map non-empty names to finite numeric values")
+    # Failed attempts and unexecuted templates may retain absent observations;
+    # they are ineligible through parser_success. Accepted records may not.
+    if scientific.get("parser_accepted") is True:
+        errors.extend(observable_errors(scientific))
 
     performance = require_mapping(normalized.get("performance"), "performance", errors)
     require_number(performance, "wall_time_s", "performance", errors, minimum=0.0, exclusive=True)
     require_number(performance, "cpu_time_s", "performance", errors, minimum=0.0)
-    require_integer(performance, "scf_iterations", "performance", errors, minimum=0)
+    if performance.get("scf_iterations") is not None:
+        require_integer(performance, "scf_iterations", "performance", errors, minimum=0)
     require_number(performance, "peak_host_memory_mb", "performance", errors, minimum=0.0)
     require_integer(performance, "io_bytes", "performance", errors, minimum=0)
     for key in (
@@ -586,14 +624,12 @@ def reference_observables(records: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def maximum_vector_difference(candidate: Any, reference: Any) -> float | None:
-    if candidate is None and reference is None:
-        return 0.0
     if not isinstance(candidate, list) or not isinstance(reference, list) or len(candidate) != len(reference):
         return None
     if not all(is_finite_real(value) for value in [*candidate, *reference]):
         return None
     if not candidate:
-        return 0.0
+        return None
     return max(abs(float(left) - float(right)) for left, right in zip(candidate, reference, strict=True))
 
 
@@ -610,11 +646,30 @@ def numerical_equivalence(
     reasons: list[str] = []
     if len(reference_identity) != 1 or candidate_identity != reference_identity:
         reasons.append("scientific identity mismatch")
+    if not candidate_records or not reference_records:
+        reasons.append("candidate and reference observations are required")
+    # A populated optional field is compared only when every run supplies it;
+    # a missing reference run must not disappear while forming the baseline.
+    compared: set[str] = set()
+    for record in [*reference_records, *candidate_records]:
+        results = (record.get("scientific") or {}).get("results") or {}
+        for name, field in (("energy", "energy_ev"), ("forces", "forces_ev_per_angstrom"), ("stress", "stress_gpa")):
+            if results.get(field) is not None:
+                compared.add(name)
+        properties = results.get("properties") or {}
+        if isinstance(properties, dict):
+            compared.update(properties)
+    for role, records in (("reference", reference_records), ("candidate", candidate_records)):
+        for index, record in enumerate(records):
+            reasons.extend(
+                f"{role} run {index + 1}: {error}"
+                for error in observable_errors(record.get("scientific") or {}, compared)
+            )
     baseline = reference_observables(reference_records)
     maximums: dict[str, float | None] = {
-        "energy_abs_ev": 0.0,
-        "force_max_abs_ev_per_angstrom": 0.0,
-        "stress_max_abs_gpa": 0.0,
+        "energy_abs_ev": None,
+        "force_max_abs_ev_per_angstrom": None,
+        "stress_max_abs_gpa": None,
     }
     property_deviations: dict[str, float] = {}
     for record in candidate_records:
@@ -630,16 +685,16 @@ def numerical_equivalence(
         force_deviation = maximum_vector_difference(
             results.get("forces_ev_per_angstrom"), baseline.get("forces_ev_per_angstrom")
         )
-        if force_deviation is None:
+        if force_deviation is None and "forces" in compared:
             reasons.append("force vector missing, non-finite or incompatible")
-        else:
+        elif force_deviation is not None:
             maximums["force_max_abs_ev_per_angstrom"] = max(
                 float(maximums["force_max_abs_ev_per_angstrom"] or 0.0), force_deviation
             )
         stress_deviation = maximum_vector_difference(results.get("stress_gpa"), baseline.get("stress_gpa"))
-        if stress_deviation is None:
+        if stress_deviation is None and "stress" in compared:
             reasons.append("stress vector missing, non-finite or incompatible")
-        else:
+        elif stress_deviation is not None:
             maximums["stress_max_abs_gpa"] = max(float(maximums["stress_max_abs_gpa"] or 0.0), stress_deviation)
         candidate_properties = results.get("properties") or {}
         for name, reference_value in (baseline.get("properties") or {}).items():
@@ -758,10 +813,19 @@ def compare_evidence(records: list[dict[str, Any]], policy: dict[str, Any]) -> d
                 [performance_float(record, "cpu_time_s") for record in eligible],
                 outlier_threshold,
             ),
-            "scf_iterations": numeric_summary(
-                [performance_float(record, "scf_iterations") for record in eligible],
-                outlier_threshold,
-            ),
+            "scf_iterations": {
+                **numeric_summary(
+                    [
+                        performance_float(record, "scf_iterations")
+                        for record in eligible
+                        if (record.get("performance") or {}).get("scf_iterations") is not None
+                    ],
+                    outlier_threshold,
+                ),
+                "unknown_count": sum(
+                    (record.get("performance") or {}).get("scf_iterations") is None for record in eligible
+                ),
+            },
             "peak_host_memory_mb": max(
                 [performance_float(record, "peak_host_memory_mb") for record in eligible] or [0.0]
             ),

@@ -198,7 +198,9 @@ def _accepted_card() -> dict[str, object]:
 
 def test_model_acceptance_requires_independent_hash_bound_current_approval() -> None:
     result = models.validate_predictive_model_card(_accepted_card(), now="2026-08-12T12:00:00Z")
-    assert result["predictive_use_allowed"] is True
+    assert result["predictive_use_allowed"] is False
+    assert result["structure_valid"] is True
+    assert result["status"] == "HOLD"
     assert result["truth_boundary"] == "EXTERNAL_DFT_EXECUTION_NOT_VERIFIED"
     self_approved = _accepted_card()
     self_approval = self_approved["independent_approval"]

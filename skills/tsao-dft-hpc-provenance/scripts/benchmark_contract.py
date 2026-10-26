@@ -464,7 +464,7 @@ def _legacy_flat_to_nested(record: dict[str, Any], role_hint: str | None) -> tup
         "performance": {
             "wall_time_s": _float_or(record.get("wall_time_seconds"), 1.0),
             "cpu_time_s": _float_or(record.get("cpu_time_seconds"), 0.0),
-            "scf_iterations": _int_or(record.get("scf_iterations"), 0),
+            "scf_iterations": record.get("scf_iterations"),
             "peak_host_memory_mb": _float_or(record.get("peak_host_memory_bytes"), 0.0) / 1_000_000,
             "peak_device_memory_mb": (
                 _float_or(record.get("peak_device_memory_bytes"), 0.0) / 1_000_000

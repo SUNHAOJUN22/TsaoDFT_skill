@@ -19,6 +19,7 @@ ParserContractError = _core.ParserContractError
 QuantityRecord = _core.QuantityRecord
 JobRecord = _core.JobRecord
 ParserRecord = _core.ParserRecord
+split_jobs = _core.split_jobs
 
 
 def parse_engine_output(engine: str, text: str) -> Any:

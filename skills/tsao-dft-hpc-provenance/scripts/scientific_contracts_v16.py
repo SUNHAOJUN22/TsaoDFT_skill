@@ -80,6 +80,11 @@ def tst_rate(
 
 
 def model_acceptance(card: dict[str, object]) -> str:
+    """Legacy structural check, never an authenticated model-use authorization.
+
+    Migrate to model_acceptance_v5.assess_model_card with caller-supplied trusted
+    dataset and model approval key resolvers for an acceptance decision.
+    """
     required = {
         "dataset_sha256",
         "model_sha256",
@@ -102,4 +107,4 @@ def model_acceptance(card: dict[str, object]) -> str:
             return "INVALID_DIGEST"
     if card["independent_approval"] is not True:
         return "HOLD_INDEPENDENT_APPROVAL"
-    return "ACCEPTED"
+    return "HOLD_UNVERIFIED_APPROVAL_USE_V5"

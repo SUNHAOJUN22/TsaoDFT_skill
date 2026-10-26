@@ -4,7 +4,7 @@
     "acceptance_document_sha256": "e5d67947cfbfede729aaa3690e20759d2f7f8699ffd6fa56ce4042a543a6f16b",
     "acceptance_schema_sha256": "c083d00a5ec4d09ce8226f3c69af7bc46f120fac9508e8f8ffe175029d940e3b",
     "capability_status_sha256": "51f8485811f0a41b281e11826a84f890455a55c88c54af60d8121b761ee6c8fd",
-    "compute_contract_evidence_sha256": "c940050a6316dec3dbc6c1ccaed0f15969c815ba466752972216b4b8bdd471be",
+    "compute_contract_evidence_sha256": "035471fc21eb89f59ca0334862556bd789eb5cca22d2de7b8dc07d9fa9bd09b9",
     "permanent_ci_sha256": "930dcc441c3e2691f190f07dd5514c7bf196320e0f5809bf9154d3bc80f2366d",
     "quality_gate_sha256": "2ac03b8fc1791baab369fddd45a64cc7bd3bfca09920c8478f15789501fb7628",
     "scientific_claim_policy_sha256": "10b948ab4618635b89f748604c008d1c111b36810665073718c7dcf75ead9a98",

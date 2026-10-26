@@ -382,7 +382,7 @@
           "minimum": 0
         },
         "scf_iterations": {
-          "type": "integer",
+          "type": ["integer", "null"],
           "minimum": 0
         },
         "peak_host_memory_mb": {

@@ -24,6 +24,16 @@ OWNERSHIP_DIR = ".tsao-skill-ownership"
 MARKER_SCHEMA = 1
 INSTALL_LOCK = ".tsao-install.lock"
 IGNORED_COPY_NAMES = {"__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache"}
+RUNTIME_DEPENDENCIES = {
+    "tsao-dft-researcher": (
+        "engine_parser_contract_v4.py",
+        "_load_v18_core.py",
+        "scientific_contracts_core_v18.py",
+        "engine_scan_core.py",
+    ),
+    "tsao-periodic-dft-materials": ("engine_scan_core.py",),
+}
+RUNTIME_SOURCE = SKILLS_DIR / "tsao-dft-hpc-provenance" / "scripts"
 
 
 class InstallSafetyError(RuntimeError):
@@ -89,6 +99,9 @@ def validate_source(skill: str) -> list[str]:
     for rel in ["SKILL.md", "manifest.yaml", "agents/openai.yaml"]:
         if not (source / rel).is_file():
             failures.append(f"{skill}: missing {rel}")
+    for name in RUNTIME_DEPENDENCIES.get(skill, ()):
+        if not (RUNTIME_SOURCE / name).is_file():
+            failures.append(f"{skill}: missing parser runtime dependency {name}")
     return failures
 
 
@@ -208,6 +221,12 @@ def stage_copy(source: Path, destination: Path) -> Path:
             temporary,
             ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".pytest_cache", ".mypy_cache", ".ruff_cache"),
         )
+        dependencies = RUNTIME_DEPENDENCIES.get(source.name, ())
+        if dependencies:
+            bundled = temporary / "scripts" / "_shared"
+            bundled.mkdir()
+            for name in dependencies:
+                shutil.copyfile(RUNTIME_SOURCE / name, bundled / name)
     except Exception:
         if temporary.exists():
             shutil.rmtree(temporary)
@@ -289,6 +308,13 @@ def install_skill(
                 "destination": str(destination),
                 "source_digest": tree_digest(source),
                 "installed_digest": installed_digest,
+                "runtime_dependencies": {
+                    f"scripts/_shared/{name}": hashlib.sha256(
+                        (destination / "scripts" / "_shared" / name).read_bytes()
+                    ).hexdigest()
+                    for name in RUNTIME_DEPENDENCIES.get(skill, ())
+                    if method == "copy"
+                },
                 "backup": str(backup) if backup is not None else None,
             },
         )

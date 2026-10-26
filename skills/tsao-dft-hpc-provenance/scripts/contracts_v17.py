@@ -1,8 +1,21 @@
 from __future__ import annotations
 
+import importlib.util
+import re
+import sys
 from collections.abc import Iterable
 from dataclasses import dataclass
 from math import exp, isfinite
+from pathlib import Path
+
+_LOADER_PATH = Path(__file__).with_name("_load_v18_core.py")
+_LOADER_SPEC = importlib.util.spec_from_file_location("tsao_dft_v17_core_loader", _LOADER_PATH)
+if _LOADER_SPEC is None or _LOADER_SPEC.loader is None:
+    raise RuntimeError(f"cannot load {_LOADER_PATH}")
+_LOADER = importlib.util.module_from_spec(_LOADER_SPEC)
+sys.modules[_LOADER_SPEC.name] = _LOADER
+_LOADER_SPEC.loader.exec_module(_LOADER)
+_core = _LOADER.load_core()
 
 BOLTZMANN_J_K = 1.380649e-23
 PLANCK_J_S = 6.62607015e-34
@@ -17,6 +30,9 @@ FATAL_MARKERS = (
     "brmix: very serious problems",
     "convergence not achieved",
     "maximum number of electronic steps reached",
+    "scf run not converged",
+    "scf not converged",
+    "error in routine",
 )
 SUCCESS_MARKERS = (
     "normal termination",
@@ -35,9 +51,21 @@ class ParseDecision:
 
 
 def parse_termination(lines: Iterable[str]) -> ParseDecision:
-    normalized = [line.casefold() for line in lines]
+    text = "\n".join(lines)
+    folded = text.casefold()
+    engine = "gaussian"
+    if "cp2k" in folded or "program ended at" in folded or "program started at" in folded:
+        engine = "cp2k"
+    elif "pwscf" in folded or "job done" in folded:
+        engine = "qe"
+    elif "vasp" in folded or "reached required accuracy" in folded or "ediff is reached" in folded:
+        engine = "vasp"
+    final = _core.split_jobs(engine, text)[-1]
+    normalized = [line.casefold() for line in final.splitlines()]
     successes = tuple(marker for marker in SUCCESS_MARKERS if any(marker in line for line in normalized))
     fatals = tuple(marker for marker in FATAL_MARKERS if any(marker in line for line in normalized))
+    if re.search(r"\babort\b", final, re.IGNORECASE):
+        fatals += ("abort",)
     if fatals:
         return ParseDecision(
             status="FAILED",
@@ -45,7 +73,8 @@ def parse_termination(lines: Iterable[str]) -> ParseDecision:
             success_markers=successes,
             fatal_markers=fatals,
         )
-    if successes:
+    decision = _core.parse_engine_output(engine, final)
+    if decision.parser_accepted:
         return ParseDecision(
             status="CONVERGED",
             reason_codes=(),
@@ -54,8 +83,8 @@ def parse_termination(lines: Iterable[str]) -> ParseDecision:
         )
     return ParseDecision(
         status="INCOMPLETE",
-        reason_codes=("NO_TERMINAL_EVIDENCE",),
-        success_markers=(),
+        reason_codes=decision.reason_codes or ("NO_TERMINAL_EVIDENCE",),
+        success_markers=successes,
         fatal_markers=(),
     )
 

@@ -167,8 +167,13 @@ def _validate_approval(manifest: dict[str, Any], errors: list[str], approval_roo
         errors.append("approval_public_key is missing")
         return
     acceleration = manifest.get("acceleration") or {}
+    try:
+        reviewed_digest = manifest_sha256(manifest)
+    except ValueError as exc:
+        errors.append(f"invalid manifest binding: {exc}")
+        return
     expected = {
-        "manifest_sha256": manifest_sha256(manifest),
+        "manifest_sha256": reviewed_digest,
         "benchmark_plan_id": acceleration.get("benchmark_plan_id"),
         "candidate_id": manifest.get("candidate_id") or manifest.get("job_id"),
         "method_fingerprint_digest": sha256_object({"method_fingerprint_id": manifest.get("method_fingerprint_id")}),

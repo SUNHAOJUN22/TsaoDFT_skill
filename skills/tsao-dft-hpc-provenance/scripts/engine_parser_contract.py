@@ -64,6 +64,10 @@ QE_PRESSURE_RE = re.compile(rb"P=\s*(" + FLOAT + rb")")
 CP2K_VERSION_RE = re.compile(rb"CP2K\| version string:\s*([^\r\n]+)")
 CP2K_ENERGY_RE = re.compile(rb"ENERGY\| Total FORCE_EVAL.*?energy \(a\.u\.\):\s*(" + FLOAT + rb")")
 CP2K_GRADIENT_RE = re.compile(rb"Max\. gradient\s*=\s*(" + FLOAT + rb")")
+CP2K_SCF_STEPS_RE = re.compile(
+    rb"(?im)^[ \t]*(?:\*+[ \t]*)?SCF run (?:NOT )?converged"
+    rb"(?:[ \t]+in[ \t]+(\d+)[ \t]+steps\b)?"
+)
 
 
 def sha256_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
@@ -315,12 +319,12 @@ def parse_vasp(path: Path) -> dict[str, Any]:
             return missing_result("vasp", path)
         data = artifact.data
         result = base_result("vasp", path)
-        versions = tuple(VASP_VERSION_RE.finditer(data))
-        job_start = versions[-1].start() if versions else 0
+        starts = _SCAN.job_start_positions(data, "vasp")
+        job_start = starts[-1]
+        versions = tuple(VASP_VERSION_RE.finditer(data, job_start))
         result["engine_version"] = _SCAN.decode(versions[-1].group(1) if versions else None)
-        if versions:
-            result["job_index"] = len(versions)
-        if len(versions) > 1:
+        result["job_index"] = len(starts)
+        if len(starts) > 1:
             result["warnings"].append("multiple VASP runs detected; only the final run determines acceptance")
         fatal_rules = (
             ("BRMIX_FATAL", re.compile(rb"BRMIX: very serious problems", re.IGNORECASE)),
@@ -333,6 +337,9 @@ def parse_vasp(path: Path) -> dict[str, Any]:
                 result["fatal_marker"] = label
                 result["parser_acceptance_reasons"].append(f"fatal VASP marker detected: {label}")
                 break
+        if result["fatal_marker"] is None and _SCAN.has_fatal_marker(data, "vasp", start=job_start):
+            result["fatal_marker"] = "FATAL_MARKER"
+            result["parser_acceptance_reasons"].append("fatal VASP marker detected in final job")
         normal = _SCAN.contains(
             data,
             b"General timing and accounting informations for this job",
@@ -441,30 +448,45 @@ def parse_cp2k(path: Path) -> dict[str, Any]:
             return missing_result("cp2k", path)
         data = artifact.data
         result = base_result("cp2k", path)
-        version = _SCAN.decode(_SCAN.first_group(data, CP2K_VERSION_RE))
+        starts = _SCAN.job_start_positions(data, "cp2k")
+        job_start = starts[-1]
+        result["job_index"] = len(starts)
+        if len(starts) > 1:
+            result["warnings"].append("multiple CP2K runs detected; only the final run determines acceptance")
+        version = _SCAN.decode(_SCAN.first_group(data, CP2K_VERSION_RE, start=job_start))
         result["engine_version"] = version.strip() if version else None
-        abort = bool(re.search(rb"\bABORT\b", data))
-        nonconverged = _SCAN.contains(data, b"SCF run NOT converged")
-        ended = _SCAN.contains(data, b"PROGRAM ENDED AT")
-        result["fatal_marker"] = "ABORT" if abort else "SCF_NOT_CONVERGED" if nonconverged else None
+        abort = bool(re.compile(rb"\bABORT\b").search(data, job_start))
+        fatal = _SCAN.has_fatal_marker(data, "cp2k", start=job_start)
+        nonconverged = _SCAN.contains(data, b"SCF run NOT converged", start=job_start)
+        ended = _SCAN.contains(data, b"PROGRAM ENDED AT", start=job_start)
+        result["fatal_marker"] = (
+            "ABORT" if abort else "FATAL_MARKER" if fatal else "SCF_NOT_CONVERGED" if nonconverged else None
+        )
         result["normal_termination"] = ended and result["fatal_marker"] is None
-        result["electronic_converged"] = _SCAN.contains(data, b"SCF run converged") and not nonconverged
+        result["electronic_converged"] = (
+            _SCAN.contains(data, b"SCF run converged", start=job_start) and not nonconverged
+        )
         result["geometry_converged"] = _SCAN.contains(
             data,
             b"GEOMETRY OPTIMIZATION COMPLETED",
-        ) or _SCAN.contains(data, b"Reevaluating energy at the minimum")
-        energy, energy_count = _SCAN.last_group(data, CP2K_ENERGY_RE)
+            start=job_start,
+        ) or _SCAN.contains(data, b"Reevaluating energy at the minimum", start=job_start)
+        energy, _ = _SCAN.last_group(data, CP2K_ENERGY_RE, start=job_start)
         if energy is not None:
             result["energy"]["value"] = _float(energy, factor=HARTREE_TO_EV)
-            result["scf_iterations"] = energy_count
-        gradient, _ = _SCAN.last_group(data, CP2K_GRADIENT_RE)
+        # Inner SCF summaries report actual electronic steps. Do not count
+        # energy evaluations or add an outer-SCF aggregate a second time.
+        scf_steps = [match.group(1) for match in CP2K_SCF_STEPS_RE.finditer(data, job_start)]
+        if scf_steps and all(value is not None for value in scf_steps):
+            result["scf_iterations"] = sum(int(value) for value in scf_steps if value is not None)
+        gradient, _ = _SCAN.last_group(data, CP2K_GRADIENT_RE, start=job_start)
         if gradient is not None:
             _float(gradient, factor=HARTREE_TO_EV / BOHR_TO_ANGSTROM)
             result["warnings"].append(
                 "CP2K Max. gradient is a scalar convergence metric; per-atom force vectors are not parsed"
             )
         if result["fatal_marker"]:
-            result["failed_stage"] = "engine" if abort else "electronic"
+            result["failed_stage"] = "engine" if fatal else "electronic"
             result["parser_acceptance_reasons"].append(f"CP2K fatal marker detected: {result['fatal_marker']}")
         elif not ended:
             result["failed_stage"] = "termination"

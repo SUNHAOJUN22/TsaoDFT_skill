@@ -336,31 +336,68 @@ def _orientation_blocks(text: str) -> list[list[dict[str, Any]]]:
     return blocks
 
 
-def _orbital_energies(text: str) -> dict[str, Any]:
-    result: dict[str, Any] = {}
-    channels = {
-        "alpha_occ_hartree": r"Alpha\s+occ\. eigenvalues --\s+([^\n]+)",
-        "alpha_virt_hartree": r"Alpha\s+virt\. eigenvalues --\s+([^\n]+)",
-        "beta_occ_hartree": r"Beta\s+occ\. eigenvalues --\s+([^\n]+)",
-        "beta_virt_hartree": r"Beta\s+virt\. eigenvalues --\s+([^\n]+)",
+def _orbital_energies(text: str) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Select one closed orbital block after the final SCF, without fallback.
+
+    Gaussian population analysis can occur at multiple optimization steps:
+    https://gaussian.com/population/ . A closed block means a following nonblank
+    non-orbital record, all required occupied/virtual channels and valid numbers;
+    it does not certify basis completeness or scientific acceptance.
+    """
+    scf_records = list(re.finditer(r"SCF Done:\s+E\(([^)]*)\)", text))
+    selected = text[scf_records[-1].start() :] if scf_records else text
+    unrestricted = bool(scf_records and scf_records[-1].group(1).upper().startswith("U"))
+    channels = ("alpha_occ_hartree", "alpha_virt_hartree", "beta_occ_hartree", "beta_virt_hartree")
+    pattern = re.compile(r"^\s*(Alpha|Beta)\s+(occ|virt)\.\s+eigenvalues\s+--(.*)$")
+    blocks: list[tuple[list[tuple[int, str]], bool]] = []
+    current: list[tuple[int, str]] = []
+    for line in selected.splitlines():
+        match = pattern.match(line)
+        if match:
+            spin, occupation, values = match.groups()
+            rank = (2 if spin == "Beta" else 0) + (1 if occupation == "virt" else 0)
+            if current and rank < current[-1][0]:
+                blocks.append((current, True))
+                current = []
+            current.append((rank, values))
+        elif line.strip() and current:
+            blocks.append((current, True))
+            current = []
+    if current:
+        blocks.append((current, False))
+    metadata: dict[str, Any] = {
+        "selection_policy": "final_scf_last_block_no_fallback",
+        "scf_record_index": len(scf_records) or None,
+        "block_count": len(blocks),
+        "status": "NOT_OBSERVED",
     }
-    for key, pattern in channels.items():
-        vals: list[float] = []
-        for line in re.findall(pattern, text):
-            for token in line.split():
-                with contextlib.suppress(ValueError):
-                    vals.append(fnum(token))
-        if vals:
-            result[key] = vals
-    if result.get("alpha_occ_hartree"):
-        result["alpha_homo_hartree"] = result["alpha_occ_hartree"][-1]
-    if result.get("alpha_virt_hartree"):
-        result["alpha_lumo_hartree"] = result["alpha_virt_hartree"][0]
-    if result.get("beta_occ_hartree"):
-        result["beta_homo_hartree"] = result["beta_occ_hartree"][-1]
-    if result.get("beta_virt_hartree"):
-        result["beta_lumo_hartree"] = result["beta_virt_hartree"][0]
-    return result
+    if not blocks:
+        return {}, metadata
+    records, closed = blocks[-1]
+    result: dict[str, Any] = {}
+    valid = closed
+    for rank, values in records:
+        try:
+            parsed = [fnum(token) for token in values.split()]
+        except ValueError:
+            valid = False
+            continue
+        if not parsed:
+            valid = False
+        result.setdefault(channels[rank], []).extend(parsed)
+    # Beta output anywhere in this SCF or an unrestricted SCF method requires
+    # both spin channels in the selected block; a partial tail cannot borrow them.
+    beta_required = unrestricted or any(rank >= 2 for block, _ in blocks for rank, _ in block)
+    required = channels if beta_required else channels[:2]
+    if not valid or any(not result.get(key) for key in required):
+        metadata["status"] = "HOLD_INCOMPLETE_ORBITAL_BLOCK"
+        return {}, metadata
+    for spin in ("alpha", "beta"):
+        if result.get(f"{spin}_occ_hartree"):
+            result[f"{spin}_homo_hartree"] = result[f"{spin}_occ_hartree"][-1]
+            result[f"{spin}_lumo_hartree"] = result[f"{spin}_virt_hartree"][0]
+    metadata["status"] = "OBSERVED"
+    return result, metadata
 
 
 def _dipole(text: str) -> dict[str, float] | None:
@@ -551,6 +588,11 @@ def _parse_log_legacy(text: str) -> dict[str, Any]:
         warnings.append("IRC route detected but no completed path direction was found.")
 
     orientations = _orientation_blocks(text)
+    orbitals, orbital_block = _orbital_energies(text)
+    if orbital_block["status"] == "HOLD_INCOMPLETE_ORBITAL_BLOCK":
+        warnings.append(
+            "The final SCF orbital block is incomplete; no orbital values were borrowed from an earlier block."
+        )
     return {
         "status": status,
         "gaussian_version": _gaussian_version(text),
@@ -578,7 +620,8 @@ def _parse_log_legacy(text: str) -> dict[str, Any]:
         "spin_s2": spin_diag,
         "wavefunction_stability_requested": stable_requested,
         "wavefunction_stable_detected": stable_optimized,
-        "orbital_energies": _orbital_energies(text),
+        "orbital_energies": orbitals,
+        "orbital_block": orbital_block,
         "dipole_moment": _dipole(text),
         "nmr_shieldings": _nmr_shieldings(text),
         "excited_states": excited_states,
@@ -595,13 +638,14 @@ def _parse_log_legacy(text: str) -> dict[str, Any]:
     }
 
 
-def _canonical_parser_record(text: str):
+def _canonical_parser_context(text: str) -> tuple[Any, str]:
     import importlib.util
     import sys
 
-    contract = (
-        Path(__file__).resolve().parents[2] / "tsao-dft-hpc-provenance" / "scripts" / "engine_parser_contract_v4.py"
-    )
+    script_dir = Path(__file__).resolve().parent
+    contract = script_dir / "_shared" / "engine_parser_contract_v4.py"
+    if not contract.is_file():
+        contract = script_dir.parents[1] / "tsao-dft-hpc-provenance" / "scripts" / "engine_parser_contract_v4.py"
     spec = importlib.util.spec_from_file_location("tsao_engine_parser_contract_v4", contract)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"cannot load {contract}")
@@ -609,16 +653,23 @@ def _canonical_parser_record(text: str):
     sys.path.insert(0, str(contract.parent))
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
-    return module.parse_engine_output("gaussian", text)
+    decision = module.parse_engine_output("gaussian", text)
+    return decision, module.split_jobs("gaussian", text)[-1]
 
 
-def _apply_canonical_parser_guard(result: dict, text: str) -> dict:
-    decision = _canonical_parser_record(text)
+def _apply_canonical_parser_guard(result: dict, text: str, decision: Any) -> dict:
     guarded = dict(result)
     guarded["parser_accepted"] = decision.parser_accepted
     guarded["parser_contract_status"] = decision.status
     guarded["parser_reason_codes"] = list(decision.reason_codes)
     guarded["parser_segment_count"] = len(decision.jobs)
+    # Preserve the existing whole-log termination count as diagnostic metadata.
+    # All scientific observations and classifications belong to the final job.
+    guarded["normal_termination_count"] = text.count("Normal termination of Gaussian")
+    if len(decision.jobs) > 1:
+        guarded["warnings"].append(
+            "Multiple Gaussian jobs detected; scientific observations and classification use only the final job."
+        )
     if not decision.parser_accepted:
         guarded["status"] = decision.status
         guarded["normal_termination"] = False
@@ -626,17 +677,18 @@ def _apply_canonical_parser_guard(result: dict, text: str) -> dict:
 
 
 def parse_log(text: str) -> dict:
+    decision, final_job = _canonical_parser_context(text)
     try:
-        result = _parse_log_legacy(text)
+        result = _parse_log_legacy(final_job)
     except NumericRangeError as exc:
-        result = _apply_canonical_parser_guard(_parse_log_legacy(""), text)
+        result = _apply_canonical_parser_guard(_parse_log_legacy(""), text, decision)
         result["parser_accepted"] = False
         result["normal_termination"] = False
         result["status"] = result["parser_contract_status"] = "NUMERIC_RANGE_ERROR"
         result["parser_reason_codes"].append("NUMERIC_RANGE_ERROR")
         result["warnings"].append(str(exc))
         return result
-    return _apply_canonical_parser_guard(result, text)
+    return _apply_canonical_parser_guard(result, text, decision)
 
 
 def main() -> int:

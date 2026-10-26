@@ -51,7 +51,10 @@ def test_fatal_after_success_is_never_accepted(engine: str, text: str) -> None:
             "qe",
             "Program PWSCF\nError in routine x\nProgram PWSCF\nconvergence has been achieved\nJOB DONE",
         ),
-        ("cp2k", "PROGRAM STARTED AT\n*** ABORT\nPROGRAM STARTED AT\nPROGRAM ENDED AT"),
+        (
+            "cp2k",
+            "PROGRAM STARTED AT\n*** ABORT\nPROGRAM STARTED AT\nSCF run converged in 10 steps\nPROGRAM ENDED AT",
+        ),
     ],
 )
 def test_independent_later_complete_job_can_be_accepted(engine: str, text: str) -> None:
@@ -174,4 +177,10 @@ def test_model_card_cannot_self_accept_without_ad_uq_holdout_and_approval() -> N
             "issued_at": "2026-08-12T00:00:00Z",
         },
     }
-    assert ml.validate_model_card(complete)["predictive_use_allowed"] is True
+    # This legacy API has no external trust resolver. A signature-shaped string
+    # proves structure only; acceptance must use the authenticated v5 interface.
+    result = ml.validate_model_card(complete)
+    assert result["structure_valid"] is True
+    assert result["status"] == "HOLD"
+    assert result["predictive_use_allowed"] is False
+    assert result["reason_codes"] == ["APPROVAL_UNVERIFIED"]

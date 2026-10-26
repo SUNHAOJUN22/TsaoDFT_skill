@@ -32,7 +32,9 @@ Gaussian, VASP, Quantum ESPRESSO and CP2K produce `engine-parser-result.schema.j
 
 Final or fatal engine state takes precedence over an earlier success marker. Scientific acceptance remains `pending`.
 
-Deterministic bridge CLIs combine the Parser result with the HPC Manifest, method fingerprint, runtime provenance, scheduler metrics, GPU inventory and artifact hashes. Missing evidence is recorded in `missing_fields`; no placeholder is fabricated.
+Deterministic bridge CLIs combine the Parser result with the HPC Manifest, method fingerprint, runtime provenance, scheduler metrics, GPU inventory and artifact hashes. Missing identity or artifact evidence is recorded in `missing_fields` and remains imported-unverified.
+
+VASP and CP2K startup banners and their following version lines belong to the same job, including fatal preamble messages. Appended outputs use only the final job's state and numerical observations. CP2K termination alone does not establish electronic convergence. Its SCF count is the sum of explicit inner-cycle step summaries within the final job; outer-cycle summaries and energy lines are not additional SCF steps. If any cycle lacks a step count, the total remains `null`, independently of explicit SCF convergence.
 
 ## Numerical-equivalence-first rule
 
@@ -47,9 +49,13 @@ Before any effective speedup is calculated, the candidate and CPU reference must
 
 Energy, forces, stress and declared scalar properties must pass Policy tolerances. A failed numerical gate produces no effective speedup.
 
+Each parser-accepted record must supply every name in `scientific.observable_set`: `energy` maps to a finite `energy_ev`, `forces` to a nonempty flat vector of `3*N` components, `stress` to six Voigt or nine tensor components, and other names to finite entries in `results.properties`. Every reference and candidate run is checked before aggregation; a missing reference cannot disappear into a median. If an optional field is populated for comparison, every run must supply it. An undeclared optional field absent from every run stays absent, with a `null` deviation rather than a measured zero. Failed attempts and unexecuted templates may retain missing observations with `parser_accepted: false`; they cannot become eligible repeats.
+
 ## Statistics
 
 The default Policy requires three accepted repeats per candidate. Formal summaries use medians, not the fastest run, and include min/max, quartiles, IQR, MAD, modified-z outliers, failed runs, CPU-to-candidate and single-to-multi-GPU speedups, strong-scaling efficiency, GPU-hours, CPU-core-hours, memory, SCF iterations, I/O and optional energy-to-solution.
+
+Canonical `performance.scf_iterations` now accepts `null` for an unknown count. The bridge preserves that value; a known count is still a nonnegative integer. SCF summaries report the number of known counts in `count`, the missing counts in `unknown_count`, and statistics over known counts only. Downstream consumers must handle `null`; an unknown iteration count is neither zero work nor evidence of failed convergence.
 
 ## Signed review contract
 

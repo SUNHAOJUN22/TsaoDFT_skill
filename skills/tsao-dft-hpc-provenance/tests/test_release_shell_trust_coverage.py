@@ -153,7 +153,9 @@ class ReleaseShellTrustCoverageTests(unittest.TestCase):
 
     def test_hash_key_timestamp_and_attestation_edges(self) -> None:
         manifest = self.base_manifest()
-        self.assertEqual(self.shell.manifest_binding_payload(manifest)["job_id"], manifest["job_id"])
+        payload = self.shell.manifest_binding_payload(manifest)
+        self.assertEqual(payload["contract"], "tsao.execution-manifest-review.v2")
+        self.assertEqual(payload["manifest"], manifest)
         self.assertRegex(self.shell.manifest_sha256(manifest), r"^[0-9a-f]{64}$")
         self.assertRegex(self.shell.sha256_object({"b": 2, "a": 1}), r"^[0-9a-f]{64}$")
 

@@ -6,6 +6,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import math
 import re
 import shlex
 from datetime import UTC, datetime
@@ -107,20 +108,28 @@ def validate_module_or_source(value: Any, field: str, errors: list[str]) -> str:
 
 
 def manifest_binding_payload(manifest: dict[str, Any]) -> dict[str, Any]:
+    """Bind the entire reviewed manifest except the attestation that signs it.
+
+    The versioned domain deliberately invalidates the old selected-field digest.
+    New execution options are covered without maintaining a security allowlist.
+    """
+
+    def json_value(value: Any) -> Any:
+        if isinstance(value, dict):
+            if any(not isinstance(key, str) for key in value):
+                raise ValueError("manifest JSON object keys must be strings")
+            return {key: json_value(item) for key, item in value.items()}
+        if isinstance(value, list):
+            return [json_value(item) for item in value]
+        if value is None or isinstance(value, (str, bool, int)):
+            return value
+        if isinstance(value, float) and math.isfinite(value):
+            return value
+        raise ValueError("manifest binding requires finite JSON values")
+
     return {
-        "job_id": manifest.get("job_id"),
-        "engine": manifest.get("engine"),
-        "engine_version": manifest.get("engine_version"),
-        "method_fingerprint_id": manifest.get("method_fingerprint_id"),
-        "input": manifest.get("input"),
-        "workdir": manifest.get("workdir"),
-        "scheduler": manifest.get("scheduler"),
-        "resources": manifest.get("resources"),
-        "environment": manifest.get("environment"),
-        "acceleration": manifest.get("acceleration"),
-        "preflight": manifest.get("preflight"),
-        "parser": manifest.get("parser"),
-        "expected_outputs": manifest.get("expected_outputs"),
+        "contract": "tsao.execution-manifest-review.v2",
+        "manifest": json_value({key: value for key, value in manifest.items() if key != "approval_attestation"}),
     }
 
 

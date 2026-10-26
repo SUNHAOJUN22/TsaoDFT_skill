@@ -135,6 +135,24 @@ class BenchmarkBridgeTests(unittest.TestCase):
             self.assertEqual(record["scientific"]["results"]["energy_ev"], -10.0)
             self.assertNotIn("engine version", record["evidence_source"]["missing_fields"])
 
+    def test_unknown_scf_count_remains_unknown_through_bridge_and_validation(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "INCAR").write_text("ENCUT=500\n", encoding="utf-8")
+            output = root / "OUTCAR"
+            output.write_text(
+                "vasp.6.5.1\nfree energy TOTEN = -10 eV\nEDIFF is reached\n"
+                "General timing and accounting informations for this job\n",
+                encoding="utf-8",
+            )
+            parsed = self.parser.parse_vasp(output)
+            self.assertIsNone(parsed["scf_iterations"])
+            record = self.bridge_vasp_record(root, output, parsed, runtime={"exit_status": "0"})
+            self.assertIsNone(record["performance"]["scf_iterations"])
+            normalized, errors, _ = self.performance.validate_result(record, root)
+            self.assertEqual(errors, [])
+            self.assertTrue(normalized["scientific"]["parser_accepted"])
+
     def test_qe_scalar_summaries_do_not_become_bridge_force_or_stress_observables(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

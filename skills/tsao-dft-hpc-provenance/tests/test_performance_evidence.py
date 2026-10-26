@@ -345,14 +345,16 @@ class PerformanceEvidenceTests(unittest.TestCase):
         )
         self.assertEqual(status, "L2_ONLY")
 
-    def test_real_reviewed_evidence_can_be_scoped_qualified(self):
+    def test_legacy_review_status_does_not_establish_signed_qualification(self):
         records = self.validated([*self.reference_records(), *self.gpu_records()])
         summary = self.core.compare_evidence(records, self.policy)
         report = self.core.qualify_evidence(summary, self.policy, self.approved_review(), "a" * 64)
         self.assertEqual(
             report["candidates"]["gpu-1"]["status"],
-            "QUALIFIED_FOR_SCOPED_L3_PERFORMANCE_EVIDENCE",
+            "L2_ONLY",
         )
+        self.assertEqual(report["qualified_candidates"], [])
+        self.assertTrue(any("bound signed review" in reason for reason in report["candidates"]["gpu-1"]["reasons"]))
         self.assertFalse(report["public_capability_level_changed"])
 
     def test_pending_review_remains_l2_only(self):

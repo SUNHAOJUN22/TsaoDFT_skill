@@ -9,9 +9,38 @@ import csv
 import hashlib
 import json
 import math
+import os
+import shutil
+import tempfile
 from pathlib import Path
 
 SPLITS = ("train", "valid", "test")
+
+
+def file_identity(path: Path) -> tuple[int, int, int, int, int] | None:
+    try:
+        info = path.stat()
+    except FileNotFoundError:
+        return None
+    return info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns
+
+
+def output_paths(dataset: Path, out_dir: Path) -> dict[str, Path]:
+    """Reject destructive aliases before opening any output for writing."""
+    targets = {name: out_dir / f"{name}.csv" for name in SPLITS}
+    checked: list[Path] = []
+    for target in targets.values():
+        if target.resolve() == dataset.resolve() or (target.exists() and target.samefile(dataset)):
+            raise ValueError(f"split output aliases input dataset: {target}")
+        if target.is_symlink():
+            raise ValueError(f"split output must not be a symlink: {target}")
+        if target.exists():
+            if not target.is_file():
+                raise ValueError(f"split output is not a regular file: {target}")
+            if any(previous.exists() and target.samefile(previous) for previous in checked):
+                raise ValueError(f"split output alias collision: {target}")
+        checked.append(target)
+    return targets
 
 
 def bucket(group: str) -> float:
@@ -63,24 +92,91 @@ def write_splits(
     fieldnames: list[str],
     assignment: dict[str, str],
     group_column: str,
+    *,
+    expected_row_count: int | None = None,
 ) -> dict[str, int]:
+    targets = output_paths(dataset, out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    with contextlib.ExitStack() as stack:
-        handles = {
-            name: stack.enter_context((out_dir / f"{name}.csv").open("w", newline="", encoding="utf-8"))
-            for name in SPLITS
-        }
-        writers = {name: csv.DictWriter(handles[name], fieldnames=fieldnames) for name in SPLITS}
-        for writer in writers.values():
-            writer.writeheader()
-        row_counts = {name: 0 for name in SPLITS}
-        with dataset.open(encoding="utf-8", newline="") as source:
-            reader = csv.DictReader(source)
-            for row in reader:
-                name = assignment[row[group_column]]
-                writers[name].writerow(row)
-                row_counts[name] += 1
-    return row_counts
+    lock = out_dir / ".group-split.lock"
+    # Cooperative writers fail closed instead of replacing each other's files.
+    lock.touch(exist_ok=False)
+    try:
+        return stage_splits(dataset, out_dir, targets, fieldnames, assignment, group_column, expected_row_count)
+    finally:
+        lock.unlink()
+
+
+def stage_splits(
+    dataset: Path,
+    out_dir: Path,
+    targets: dict[str, Path],
+    fieldnames: list[str],
+    assignment: dict[str, str],
+    group_column: str,
+    expected_row_count: int | None,
+) -> dict[str, int]:
+    stage = Path(tempfile.mkdtemp(prefix=".group-split-", dir=out_dir))
+    retain_stage = False
+    try:
+        source_identity = file_identity(dataset)
+        previous = {name: file_identity(path) for name, path in targets.items()}
+        with contextlib.ExitStack() as stack:
+            handles = {
+                name: stack.enter_context((stage / f"{name}.csv").open("w", newline="", encoding="utf-8"))
+                for name in SPLITS
+            }
+            writers = {name: csv.DictWriter(handles[name], fieldnames=fieldnames) for name in SPLITS}
+            for writer in writers.values():
+                writer.writeheader()
+            row_counts = {name: 0 for name in SPLITS}
+            with dataset.open(encoding="utf-8", newline="") as source:
+                reader = csv.DictReader(source)
+                if reader.fieldnames != fieldnames:
+                    raise ValueError("dataset header changed between split passes")
+                for row in reader:
+                    group = row.get(group_column)
+                    if None in row or group not in assignment:
+                        raise ValueError("dataset rows changed between split passes")
+                    name = assignment[group]
+                    writers[name].writerow(row)
+                    row_counts[name] += 1
+        if source_identity != file_identity(dataset):
+            raise ValueError("dataset changed while staging splits")
+        if expected_row_count is not None and sum(row_counts.values()) != expected_row_count:
+            raise ValueError("dataset row count changed between split passes")
+        output_paths(dataset, out_dir)
+        for name, target in targets.items():
+            if file_identity(target) != previous[name]:
+                raise ValueError(f"split output changed while staging: {target}")
+            if previous[name] is not None:
+                shutil.copy2(target, stage / f"{name}.backup")
+        published: dict[str, tuple[int, int, int, int, int] | None] = {}
+        try:
+            for name, target in targets.items():
+                if file_identity(target) != previous[name]:
+                    raise ValueError(f"split output changed before publication: {target}")
+                os.replace(stage / f"{name}.csv", target)
+                published[name] = file_identity(target)
+        except BaseException:
+            try:
+                for name, installed_identity in reversed(list(published.items())):
+                    target = targets[name]
+                    if file_identity(target) != installed_identity:
+                        raise OSError(f"published output changed before rollback: {target}")
+                    if previous[name] is None:
+                        target.unlink()
+                    else:
+                        os.replace(stage / f"{name}.backup", target)
+            except OSError as rollback_error:
+                retain_stage = True
+                raise OSError(
+                    f"split rollback incomplete; recovery files retained at {stage}: {rollback_error}"
+                ) from rollback_error
+            raise
+        return row_counts
+    finally:
+        if not retain_stage:
+            shutil.rmtree(stage)
 
 
 def split_dataset(
@@ -93,7 +189,7 @@ def split_dataset(
     validate_fractions(train, valid)
     fieldnames, groups, row_count = scan_groups(dataset, group_column)
     assignment = {group: split_name(group, train, valid) for group in sorted(groups)}
-    row_counts = write_splits(dataset, out_dir, fieldnames, assignment, group_column)
+    row_counts = write_splits(dataset, out_dir, fieldnames, assignment, group_column, expected_row_count=row_count)
     group_counts = {name: sum(value == name for value in assignment.values()) for name in SPLITS}
     return {"row_count": row_count, "row_counts": row_counts, "group_counts": group_counts}
 

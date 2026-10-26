@@ -288,7 +288,7 @@ class ReleasePerformanceEvidenceEdgeCoverageTests(unittest.TestCase):
         )
         self.assertEqual(
             self.core.candidate_qualification_status(base, "PASS", self.policy, approved)[0],
-            "QUALIFIED_FOR_SCOPED_L3_PERFORMANCE_EVIDENCE",
+            "L2_ONLY",
         )
 
         self.assertIn("gpu", self.core.summary_markdown(summary))

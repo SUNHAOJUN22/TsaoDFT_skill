@@ -944,6 +944,11 @@ def candidate_qualification_status(
     policy: dict[str, Any],
     review: dict[str, Any],
 ) -> tuple[str, list[str]]:
+    """Compatibility precheck; this API has no key or bound review context.
+
+    Signed scoped qualification is performed by qualify_performance_evidence.py.
+    A caller-supplied review mapping cannot establish that verification occurred.
+    """
     reasons: list[str] = []
     if reference_status != "PASS":
         return "REFERENCE_MISSING", ["accepted CPU reference with sufficient repeats is missing"]
@@ -977,9 +982,11 @@ def candidate_qualification_status(
         reasons.append("all records must declare evidence_source.kind=real-engine")
     if (policy.get("require_independent_review", True)) and review.get("status") != "approved":
         reasons.append("independent review is not approved")
-    if reasons:
-        return "L2_ONLY", reasons
-    return "QUALIFIED_FOR_SCOPED_L3_PERFORMANCE_EVIDENCE", []
+    reasons.append(
+        "legacy precheck cannot verify a bound signed review; use qualify_performance_evidence.py "
+        "with the review public key and authoritative evidence inputs"
+    )
+    return "L2_ONLY", reasons
 
 
 def qualify_evidence(
@@ -1014,7 +1021,7 @@ def qualify_evidence(
         "qualified_candidates": qualified,
         "candidates": qualifications,
         "public_capability_level_changed": False,
-        "note": "Qualification is scoped evidence eligibility only; public capability promotion requires explicit reviewed registration.",
+        "note": "Legacy precheck only; signed scoped qualification requires qualify_performance_evidence.py. Public capability levels are unchanged.",
     }
 
 

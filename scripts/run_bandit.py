@@ -75,13 +75,40 @@ def run_bandit() -> tuple[list[dict[str, Any]], str]:
             text=True,
             check=False,
         )
+        output = (process.stdout or "") + (process.stderr or "")
+        # Bandit returns 1 for findings, not only for tool failures. Its JSON
+        # errors field separately records files that could not be scanned.
+        if process.returncode not in {0, 1}:
+            raise RuntimeError(f"Bandit exited abnormally with exit status {process.returncode}: {output}")
         if not report.is_file():
-            raise RuntimeError(f"Bandit did not create JSON output: {process.stdout}{process.stderr}")
+            raise RuntimeError(f"Bandit did not create JSON output: {output}")
         data = json.loads(report.read_text(encoding="utf-8"))
-        results = data.get("results", []) if isinstance(data, dict) else []
+        if not isinstance(data, dict):
+            raise RuntimeError("Bandit JSON root must be a mapping")
+        errors = data.get("errors")
+        if not isinstance(errors, list):
+            raise RuntimeError("Bandit JSON errors must be a list")
+        if errors:
+            raise RuntimeError(f"Bandit could not scan all files: {json.dumps(errors, ensure_ascii=False)}")
+        results = data.get("results")
         if not isinstance(results, list):
             raise RuntimeError("Bandit JSON results must be a list")
-        return [item for item in results if isinstance(item, dict)], (process.stdout or "") + (process.stderr or "")
+        for index, item in enumerate(results):
+            if not isinstance(item, dict):
+                raise RuntimeError(f"Bandit result[{index}] must be a mapping")
+            for field in ("filename", "test_id"):
+                if not isinstance(item.get(field), str) or not item[field].strip():
+                    raise RuntimeError(f"Bandit result[{index}] requires non-empty {field}")
+            if item.get("issue_severity") not in {"LOW", "MEDIUM", "HIGH"}:
+                raise RuntimeError(f"Bandit result[{index}] has invalid issue_severity")
+            if type(item.get("line_number")) is not int or item["line_number"] < 1:
+                raise RuntimeError(f"Bandit result[{index}] requires a positive integer line_number")
+        expected_status = 1 if results else 0
+        if process.returncode != expected_status:
+            raise RuntimeError(
+                f"Bandit exit status {process.returncode} contradicts its {len(results)} reported findings"
+            )
+        return results, output
 
 
 def validate() -> tuple[list[str], list[dict[str, Any]]]:

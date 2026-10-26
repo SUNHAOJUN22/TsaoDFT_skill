@@ -46,32 +46,41 @@ SUCCESS = {
 
 
 @pytest.mark.parametrize("engine", ["vasp", "cp2k"])
-def test_realistic_startup_version_pair_is_one_valid_job(tmp_path: Path, engine: str) -> None:
+@pytest.mark.parametrize("newline", ["\n", "\r\n"], ids=["LF", "CRLF"])
+def test_realistic_startup_version_pair_is_one_valid_job(tmp_path: Path, engine: str, newline: str) -> None:
     text = STARTS[engine] + SUCCESS[engine]
+    payload = text.replace("\n", newline).encode("utf-8")
     path = tmp_path / "synthetic.out"
-    path.write_text(text)
+    path.write_bytes(payload)
     result = streaming.parse_output(engine, path)
     assert result["parser_accepted"] is True
     assert result["parser_segment_count"] == 1
-    assert result["source_sha256"] == hashlib.sha256(text.encode()).hexdigest()
+    assert result["source_sha256"] == hashlib.sha256(payload).hexdigest()
+    assert result["source_bytes"] == len(payload)
+    if newline == "\r\n":
+        assert result["source_sha256"] != hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 @pytest.mark.parametrize("engine", ["vasp", "cp2k"])
-def test_final_startup_fatal_cannot_be_erased_by_its_version_header(tmp_path: Path, engine: str) -> None:
+@pytest.mark.parametrize("newline", ["\n", "\r\n"], ids=["LF", "CRLF"])
+def test_final_startup_fatal_cannot_be_erased_by_its_version_header(tmp_path: Path, engine: str, newline: str) -> None:
     prefix = "launcher café\n" + SUCCESS[engine]
     text = prefix + STARTS[engine] + "FATAL ERROR\n" + SUCCESS[engine].replace("-10.0", "-20.0")
+    payload = text.replace("\n", newline).encode("utf-8")
+    prefix_bytes = prefix.replace("\n", newline).encode("utf-8")
     path = tmp_path / "synthetic.out"
-    path.write_text(text)
+    path.write_bytes(payload)
     result = streaming.parse_output(engine, path)
     assert result["parser_accepted"] is False
     assert result["status"] == "FATAL"
     assert "FATAL_MARKER_PRESENT" in result["parser_reason_codes"]
     assert result["parser_segment_count"] == 2
-    assert result["start_byte"] == len(prefix.encode())
+    assert result["start_byte"] == len(prefix_bytes)
     assert result["start_line"] == prefix.count("\n") + 1
     assert result["energy_count"] == 1
     assert result["last_total_energy_eV"] == pytest.approx(-20.0 * (1 if engine == "vasp" else 27.211386245988))
-    assert result["source_bytes"] == len(text.encode())
+    assert result["source_bytes"] == len(payload)
+    assert result["source_sha256"] == hashlib.sha256(payload).hexdigest()
     assert result["source_complete"] is True
     assert result["scientific_acceptance"] == "PENDING"
 
@@ -79,7 +88,7 @@ def test_final_startup_fatal_cannot_be_erased_by_its_version_header(tmp_path: Pa
 @pytest.mark.parametrize("engine", ["vasp", "cp2k"])
 def test_startup_without_a_version_is_a_new_incomplete_job(tmp_path: Path, engine: str) -> None:
     path = tmp_path / "synthetic.out"
-    path.write_text(SUCCESS[engine] + STARTS[engine])
+    path.write_bytes((SUCCESS[engine] + STARTS[engine]).encode("utf-8"))
     result = streaming.parse_output(engine, path)
     assert result["parser_accepted"] is False
     assert result["last_total_energy_eV"] is None
@@ -90,7 +99,7 @@ def test_startup_without_a_version_is_a_new_incomplete_job(tmp_path: Path, engin
 @pytest.mark.parametrize("engine", ["vasp", "cp2k"])
 def test_failed_prior_job_does_not_reject_an_independent_later_success(tmp_path: Path, engine: str) -> None:
     path = tmp_path / "synthetic.out"
-    path.write_text(SUCCESS[engine] + "FATAL ERROR\n" + STARTS[engine] + SUCCESS[engine])
+    path.write_bytes((SUCCESS[engine] + "FATAL ERROR\n" + STARTS[engine] + SUCCESS[engine]).encode("utf-8"))
     result = streaming.parse_output(engine, path)
     assert result["parser_accepted"] is True
     assert result["parser_segment_count"] == 2
@@ -101,7 +110,7 @@ def test_failed_prior_job_does_not_reject_an_independent_later_success(tmp_path:
 @pytest.mark.parametrize("failure", ["ABORT", "*** ABORT", "FATAL ERROR"])
 def test_column_zero_failure_is_fatal_even_after_normal_termination(tmp_path: Path, failure: str) -> None:
     path = tmp_path / "synthetic.out"
-    path.write_text(SUCCESS["cp2k"] + failure + "\n")
+    path.write_bytes((SUCCESS["cp2k"] + failure + "\n").encode("utf-8"))
     result = streaming.parse_output("cp2k", path)
     assert result["parser_accepted"] is False
     assert result["status"] == "FATAL"
@@ -110,7 +119,7 @@ def test_column_zero_failure_is_fatal_even_after_normal_termination(tmp_path: Pa
 @pytest.mark.parametrize("engine", ["vasp", "cp2k"])
 def test_mapped_public_parser_also_rejects_explicit_fatal_in_final_startup(tmp_path: Path, engine: str) -> None:
     path = tmp_path / "synthetic.out"
-    path.write_text(SUCCESS[engine] + STARTS[engine] + "FATAL ERROR\n" + SUCCESS[engine])
+    path.write_bytes((SUCCESS[engine] + STARTS[engine] + "FATAL ERROR\n" + SUCCESS[engine]).encode("utf-8"))
     result = mapped.parse_engine_output(engine, path)
     assert result["parser_accepted"] is False
     assert result["fatal_marker"] is not None
@@ -119,7 +128,7 @@ def test_mapped_public_parser_also_rejects_explicit_fatal_in_final_startup(tmp_p
 @pytest.mark.parametrize("engine", ["vasp", "cp2k"])
 def test_public_periodic_cli_rejects_fatal_preamble(tmp_path: Path, engine: str) -> None:
     path = tmp_path / "synthetic.out"
-    path.write_text(SUCCESS[engine] + STARTS[engine] + "FATAL ERROR\n" + SUCCESS[engine])
+    path.write_bytes((SUCCESS[engine] + STARTS[engine] + "FATAL ERROR\n" + SUCCESS[engine]).encode("utf-8"))
     result = subprocess.run(
         [sys.executable, str(PERIODIC / f"parse_{engine}.py"), str(path)], capture_output=True, text=True, check=False
     )

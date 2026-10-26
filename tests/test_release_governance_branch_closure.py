@@ -110,28 +110,43 @@ class ReleaseGovernanceBranchClosureTests(unittest.TestCase):
             self.assertEqual(self.bandit.normalize_filename(str(ROOT / "scripts" / "a.py")), "scripts/a.py")
             self.assertTrue(self.bandit.normalize_filename("/outside/a.py").endswith("/outside/a.py"))
 
-            def completed_with(payload: Any, create_report: bool = True) -> Any:
+            def completed_with(payload: Any, create_report: bool = True, returncode: int = 0) -> Any:
                 def run(command: list[str], **_: Any) -> subprocess.CompletedProcess[str]:
                     if create_report:
                         Path(command[-1]).write_text(json.dumps(payload), encoding="utf-8")
-                    return subprocess.CompletedProcess(command, 0, stdout="out", stderr="err")
+                    return subprocess.CompletedProcess(command, returncode, stdout="out", stderr="err")
 
                 return run
 
+            complete_finding = {
+                "filename": "scripts/a.py",
+                "test_id": "B1",
+                "issue_severity": "LOW",
+                "line_number": 1,
+            }
             with patch.object(
                 self.bandit.subprocess,
                 "run",
-                side_effect=completed_with({"results": [{"test_id": "B1"}, "bad"]}),
+                side_effect=completed_with({"errors": [], "results": [complete_finding]}, returncode=1),
             ):
                 findings, output = self.bandit.run_bandit()
-            self.assertEqual(findings, [{"test_id": "B1"}])
+            self.assertEqual(findings, [complete_finding])
             self.assertEqual(output, "outerr")
 
             with (
                 patch.object(
                     self.bandit.subprocess,
                     "run",
-                    side_effect=completed_with({"results": {}}, create_report=True),
+                    side_effect=completed_with({"errors": [], "results": [complete_finding, "bad"]}),
+                ),
+                self.assertRaises(RuntimeError),
+            ):
+                self.bandit.run_bandit()
+            with (
+                patch.object(
+                    self.bandit.subprocess,
+                    "run",
+                    side_effect=completed_with({"errors": [], "results": {}}, create_report=True),
                 ),
                 self.assertRaises(RuntimeError),
             ):

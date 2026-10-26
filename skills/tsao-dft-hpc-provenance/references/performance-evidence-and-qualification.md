@@ -70,6 +70,15 @@ The review is a machine-readable Ed25519 attestation. Verification requires:
 
 A plain `status: approved` or unsigned YAML file is not an approval.
 
+The compatibility Python helpers `candidate_qualification_status`, `qualify_evidence`
+and `write_evidence_bundle` retain statistics, failure classifications and report
+files, but their signatures do not receive a verification key or the full bound
+prequalification context. Successful prechecks therefore remain `L2_ONLY`, even
+when the mapping says `approved` or disables the review requirement. Use
+`qualify_performance_evidence.py` with the authoritative schemas, original artifacts,
+signed review and review public key for scoped qualification. Its signature,
+scope, time and evidence-binding checks remain required by the formal review policy.
+
 ## Atomic content-addressed bundle
 
 Qualification first writes a temporary staging directory, verifies every document and atomically publishes:

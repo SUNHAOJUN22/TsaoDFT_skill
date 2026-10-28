@@ -147,3 +147,15 @@ Until real licensed engines, fixed inputs, accepted tolerances, stable
 CPU/GPU/MPI identities, repeated wall times and verified artifacts are supplied,
 external acceleration remains `EXTERNAL_HOLD` and no performance ratio is
 published.
+
+## Request-scoped periodic context / 请求级周期上下文
+
+NumPy and cell-list searches prepare the fixed-cell decomposition and projection
+once per request. The scalar reference, exact lattice enumeration, singular-cell
+checks and candidate budget remain unchanged. See the bilingual
+[periodic context contract](PERIODIC_CONTEXT_OPTIMIZATION.md) for operation-count
+regressions, immutable input handling and performance-claim boundaries.
+
+NumPy 与 cell-list 每次请求仅准备一次固定晶胞分解和投影；标量参考、精确晶格枚举、
+奇异晶胞检查和候选预算保持不变。详见[周期上下文合同](PERIODIC_CONTEXT_OPTIMIZATION.md)。
+这不是外部 DFT 引擎的提速认证。

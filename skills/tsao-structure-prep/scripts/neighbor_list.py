@@ -104,21 +104,64 @@ def _orthogonal_box(box: np.ndarray) -> bool:
     return bool(np.array_equal(normalized_gram, np.eye(3)))
 
 
+@dataclass(frozen=True, slots=True)
+class _PeriodicCellContext:
+    """Per-search geometry only; never cached across mutable user inputs."""
+
+    orthogonal: bool
+    basis: np.ndarray | None = None
+    projection: np.ndarray | None = None
+    sigma_min: float = 0.0
+
+
+def _prepare_periodic_cell(
+    box: np.ndarray | None,
+    periodic: tuple[bool, bool, bool],
+    point_count: int,
+) -> _PeriodicCellContext | None:
+    if box is None or not any(periodic) or point_count < 2:
+        return None
+    if _orthogonal_box(box):
+        return _PeriodicCellContext(orthogonal=True)
+    axes = tuple(axis for axis, enabled in enumerate(periodic) if enabled)
+    basis = box[list(axes), :].copy()
+    singular_values = np.linalg.svd(basis, compute_uv=False)
+    sigma_max, sigma_min = float(singular_values[0]), float(singular_values[-1])
+    singular_limit = np.finfo(np.float64).eps * max(1.0, sigma_max) * 64.0
+    if not math.isfinite(sigma_min) or sigma_min <= singular_limit:
+        raise ValueError("periodic box basis is numerically singular")
+    # Solve the three Cartesian unit right-hand sides together, once per cell.
+    # The unprepared scalar reference below deliberately keeps its own solve.
+    projection = np.linalg.lstsq(basis.T, np.eye(3), rcond=None)[0]
+    if not np.isfinite(projection).all():
+        raise ValueError("periodic minimum-image projection must be finite")
+    basis.setflags(write=False)
+    projection.setflags(write=False)
+    return _PeriodicCellContext(False, basis, projection, sigma_min)
+
+
 def _exact_minimum_image_single(
     delta: np.ndarray,
     box: np.ndarray,
     periodic: tuple[bool, bool, bool],
+    context: _PeriodicCellContext | None = None,
 ) -> np.ndarray:
-    periodic_axes = tuple(axis for axis, enabled in enumerate(periodic) if enabled)
-    basis = box[list(periodic_axes), :]
-    singular_values = np.linalg.svd(basis, compute_uv=False)
-    sigma_max = float(singular_values[0])
-    sigma_min = float(singular_values[-1])
-    singular_limit = np.finfo(np.float64).eps * max(1.0, sigma_max) * 64.0
-    if not math.isfinite(sigma_min) or sigma_min <= singular_limit:
-        raise ValueError("periodic box basis is numerically singular")
-
-    continuous_shift = np.linalg.lstsq(basis.T, delta, rcond=None)[0]
+    if context is None:
+        periodic_axes = tuple(axis for axis, enabled in enumerate(periodic) if enabled)
+        basis = box[list(periodic_axes), :]
+        singular_values = np.linalg.svd(basis, compute_uv=False)
+        sigma_max = float(singular_values[0])
+        sigma_min = float(singular_values[-1])
+        singular_limit = np.finfo(np.float64).eps * max(1.0, sigma_max) * 64.0
+        if not math.isfinite(sigma_min) or sigma_min <= singular_limit:
+            raise ValueError("periodic box basis is numerically singular")
+        continuous_shift = np.linalg.lstsq(basis.T, delta, rcond=None)[0]
+    else:
+        if context.basis is None or context.projection is None:
+            raise ValueError("exact minimum-image search requires a non-orthogonal cell")
+        basis = context.basis
+        sigma_min = context.sigma_min
+        continuous_shift = context.projection @ delta
     if not np.isfinite(continuous_shift).all():
         raise ValueError("periodic minimum-image projection must be finite")
     initial_shift = tuple(round(float(value)) for value in continuous_shift)
@@ -154,11 +197,12 @@ def _minimum_image(
     box: np.ndarray | None,
     inverse_box: np.ndarray | None,
     periodic: tuple[bool, bool, bool],
+    context: _PeriodicCellContext | None = None,
 ) -> np.ndarray:
     if box is None or inverse_box is None or not any(periodic):
         return delta
 
-    if _orthogonal_box(box):
+    if context.orthogonal if context is not None else _orthogonal_box(box):
         fractional = delta @ inverse_box
         for axis, enabled in enumerate(periodic):
             if enabled:
@@ -167,11 +211,11 @@ def _minimum_image(
 
     array = np.asarray(delta, dtype=np.float64)
     if array.shape == (3,):
-        return _exact_minimum_image_single(array, box, periodic)
+        return _exact_minimum_image_single(array, box, periodic, context)
     flat = array.reshape((-1, 3))
     if len(flat) == 0:
         return array.copy()
-    reduced = np.vstack([_exact_minimum_image_single(vector, box, periodic) for vector in flat])
+    reduced = np.vstack([_exact_minimum_image_single(vector, box, periodic, context) for vector in flat])
     return reduced.reshape(array.shape)
 
 
@@ -230,12 +274,13 @@ def numpy_pairs(
     periodic_axes = _periodic(periodic)
     box_matrix, inverse_box = _box(box, periodic_axes)
     cutoff_value = _cutoff(cutoff)
+    context = _prepare_periodic_cell(box_matrix, periodic_axes, len(points))
     cutoff_squared = cutoff_value * cutoff_value
     pairs: list[NeighborPair] = []
     evaluated = 0
     for i in range(max(0, len(points) - 1)):
         delta = points[i + 1 :] - points[i]
-        delta = _minimum_image(delta, box_matrix, inverse_box, periodic_axes)
+        delta = _minimum_image(delta, box_matrix, inverse_box, periodic_axes, context)
         squared = np.einsum("ij,ij->i", delta, delta)
         evaluated += int(squared.size)
         for offset in np.flatnonzero(squared <= cutoff_squared):
@@ -354,6 +399,7 @@ def cell_list_pairs(
     periodic_axes = _periodic(periodic)
     box_matrix, inverse_box = _box(box, periodic_axes)
     cutoff_value = _cutoff(cutoff)
+    context = _prepare_periodic_cell(box_matrix, periodic_axes, len(points))
     cutoff_squared = cutoff_value * cutoff_value
     working, origin, counts, widths = _cell_space(
         points,
@@ -386,7 +432,7 @@ def cell_list_pairs(
             for i, j in candidates:
                 if i > j:
                     i, j = j, i
-                delta = _minimum_image(points[j] - points[i], box_matrix, inverse_box, periodic_axes)
+                delta = _minimum_image(points[j] - points[i], box_matrix, inverse_box, periodic_axes, context)
                 squared = float(np.dot(delta, delta))
                 evaluated += 1
                 if squared <= cutoff_squared:

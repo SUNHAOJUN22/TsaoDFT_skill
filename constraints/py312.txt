@@ -1,5 +1,6 @@
 # Resolved on ubuntu-24.04 with CPython 3.12 in GitHub Actions run 36964779248.
 # Base snapshot above; certifi and Pillow security updates on 2026-10-21; filelock security update on 2026-10-24.
+# msgpack 1.2.3 on 2026-10-29: CVE-2026-114613 / GHSA-j586-36cw-2gc2; no audit suppression.
 arrow==1.4.0
 ast_serialize==0.6.0
 attrs==26.1.0
@@ -31,7 +32,7 @@ license-expression==30.4.4
 markdown-it-py==4.2.0
 matplotlib==3.11.1
 mdurl==0.1.2
-msgpack==1.2.1
+msgpack==1.2.3
 mypy==2.3.0
 mypy_extensions==1.1.0
 numpy==2.5.1

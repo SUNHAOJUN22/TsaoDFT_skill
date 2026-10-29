@@ -225,8 +225,9 @@ def _distance(
     box: np.ndarray | None,
     inverse_box: np.ndarray | None,
     periodic: tuple[bool, bool, bool],
+    context: _PeriodicCellContext | None = None,
 ) -> float:
-    delta = _minimum_image(right - left, box, inverse_box, periodic)
+    delta = _minimum_image(right - left, box, inverse_box, periodic, context)
     return float(np.linalg.norm(delta))
 
 
@@ -488,6 +489,10 @@ def nearest_pair_distance(
     if len(points) < 2:
         return None
 
+    # The adaptive upper bound is part of the same fixed-cell search. Reuse
+    # its decomposition for the sampled pairs as well as the final cutoff
+    # search; the independent scalar reference remains unprepared.
+    context = _prepare_periodic_cell(box_matrix, periodic_axes, len(points))
     working = points if inverse_box is None else points @ inverse_box
     sampled_pairs: set[tuple[int, int]] = set()
     for axis in range(3):
@@ -502,7 +507,9 @@ def nearest_pair_distance(
             sampled_pairs.add((min(left_index, right_index), max(left_index, right_index)))
     sampled_pairs.add((0, 1))
 
-    upper = min(_distance(points[i], points[j], box_matrix, inverse_box, periodic_axes) for i, j in sampled_pairs)
+    upper = min(
+        _distance(points[i], points[j], box_matrix, inverse_box, periodic_axes, context) for i, j in sampled_pairs
+    )
     if upper <= 0:
         return 0.0
     result = pairs_within_cutoff(

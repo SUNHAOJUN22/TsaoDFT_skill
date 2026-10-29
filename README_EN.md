@@ -322,7 +322,7 @@ If $u(\mathbf x)>u_{\max}$ or an OOD score exceeds its threshold, the workflow s
 
 ```bash
 python skills/tsao-structure-prep/scripts/inspect_xyz.py structure.xyz \
-  --backend reference --json
+  --backend python --json
 python skills/tsao-structure-prep/scripts/inspect_xyz.py structure.xyz \
   --backend numpy --json
 python skills/tsao-structure-prep/scripts/inspect_xyz.py periodic.xyz \
@@ -330,7 +330,13 @@ python skills/tsao-structure-prep/scripts/inspect_xyz.py periodic.xyz \
   --box 10 0 0 0 10 0 0 0 10 --json
 ```
 
-Use `reference` to establish small-system truth, then check `numpy` and `cell-list` equivalence. `evaluated_pair_count` is not DFT speedup evidence.
+Use the CLI's `python` scalar reference path to establish small-system truth, then check `numpy` and `cell-list` equivalence. The corresponding reference backend in the lower-level neighbor-list API is named `reference`. `evaluated_pair_count` is not DFT speedup evidence.
+
+Current implementation and scope for structure tasks:
+
+- **Implemented**: fixed-cell decomposition and projection are prepared and reused within each search; upper-bound sampling for the adaptive global nearest-distance search also reuses this context. Each new call prepares the current cell and periodic axes, without caching mutable cells across requests. The neighbor-search path reuses the minimum distance from a nonempty complete cutoff result; an empty result still triggers the exact global nearest-distance search. Exact minimum images for skewed cells, partial periodicity, deterministic ordering, resource limits and the independent scalar reference are preserved.
+- **Optional**: `--backend auto` selects an implementation by system size; `python`, `numpy` or `cell-list` can also be selected explicitly. These changes apply to geometry inspection. Measure the full task from preparation through inspection and JSON export, with cold starts and hot runs reported separately; fewer candidates or decompositions alone do not establish a whole-task speedup.
+- **Externally blocked**: real Gaussian, VASP, QE or CP2K execution still requires external programs, licenses and auditable inputs and outputs. Passing geometry regressions and software gates does not qualify electronic-structure solver speedup or `L3_EXECUTION_TESTED` support.
 
 ### Strategy B: unified parsers and artifact hashes
 

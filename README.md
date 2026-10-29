@@ -324,7 +324,7 @@ $$
 
 ```bash
 python skills/tsao-structure-prep/scripts/inspect_xyz.py structure.xyz \
-  --backend reference --json
+  --backend python --json
 python skills/tsao-structure-prep/scripts/inspect_xyz.py structure.xyz \
   --backend numpy --json
 python skills/tsao-structure-prep/scripts/inspect_xyz.py periodic.xyz \
@@ -332,7 +332,13 @@ python skills/tsao-structure-prep/scripts/inspect_xyz.py periodic.xyz \
   --box 10 0 0 0 10 0 0 0 10 --json
 ```
 
-先用 `reference` 建立小体系真值，再用 `numpy`/`cell-list` 做等价和候选缩减；`evaluated_pair_count` 不是 DFT speedup。
+先用 CLI 的 `python` 标量参考路径建立小体系真值，再用 `numpy`/`cell-list` 做等价和候选缩减；底层 neighbor-list API 对应的参考后端名为 `reference`。`evaluated_pair_count` 不是 DFT speedup。
+
+结构任务的当前实现与适用边界：
+
+- **已实现**：固定周期盒的分解与投影上下文按搜索准备并复用；自适应全局最近距离的上界采样也复用该上下文。新的调用按当前晶胞与周期轴重新准备，不跨请求缓存可变晶胞。邻居搜索路径在完整 cutoff 结果非空时直接复用其中的最小距离；结果为空时仍执行精确的全局最近距离搜索。倾斜晶胞的精确最小镜像、部分周期边界、确定性排序、资源上限和独立标量参考均保留。
+- **可选**：`--backend auto` 按体系规模选择实现，也可显式选择 `python`、`numpy` 或 `cell-list`。优化作用于几何检查任务；准备、检查与 JSON 导出的完整耗时应连同冷启动和热运行分别测量，候选数或分解次数的减少本身不代表整任务提速。
+- **外部受阻**：Gaussian、VASP、QE 或 CP2K 的真实执行仍依赖外部程序、许可证及可审核输入输出。几何回归与软件门禁通过不构成电子结构求解器提速或 `L3_EXECUTION_TESTED` 资格。
 
 ### 策略 B：统一 Parser 与工件哈希
 

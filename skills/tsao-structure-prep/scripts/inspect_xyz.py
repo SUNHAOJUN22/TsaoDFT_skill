@@ -226,12 +226,19 @@ def _pair_findings_neighbor(
         periodic=periodic,
         backend=_neighbor_backend_name(backend),
     )
-    minimum = _NEIGHBORS.nearest_pair_distance(
-        coordinates,
-        box=box,
-        periodic=periodic,
-        backend=_neighbor_backend_name(backend),
-    )
+    if search.pairs:
+        # The cutoff search is complete. If it contains any pair, the global
+        # nearest pair is necessarily inside the same cutoff, so a second
+        # search cannot add a smaller distance. Empty searches still require
+        # the exact adaptive global search below.
+        minimum = min(pair.distance_angstrom for pair in search.pairs)
+    else:
+        minimum = _NEIGHBORS.nearest_pair_distance(
+            coordinates,
+            box=box,
+            periodic=periodic,
+            backend=_neighbor_backend_name(backend),
+        )
     errors: list[str] = []
     bonds: list[dict[str, Any]] = []
     for pair in search.pairs:

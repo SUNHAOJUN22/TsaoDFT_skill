@@ -2,7 +2,7 @@
 name: tsao-dft-kinetics-multiscale
 description: "Convert validated DFT thermochemistry into transition-state-theory rates, reaction networks, microkinetic and multiscale handoffs for Cantera, RMG-Py, Pyomo/CatMAP and downstream reactor or population-balance models."
 license: MIT
-compatibility: Python 3.10+. Cantera, RMG-Py, Pyomo, CatMAP and reactor/population-balance software are optional external backends.
+compatibility: Python 3.11+. Cantera, RMG-Py, Pyomo, CatMAP and reactor/population-balance software are optional external backends.
 metadata: {"version": "0.4.0-alpha.2", "author": "SUNHAOJUN22", "repository": "https://github.com/SUNHAOJUN22/TsaoDFT_skill"}
 ---
 

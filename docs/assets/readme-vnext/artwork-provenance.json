@@ -1,0 +1,87 @@
+{
+  "schema": "tsao.readme-concept-art/v1",
+  "repository": "TsaoDFT_skill",
+  "generation_date_utc": "2026-11-02",
+  "artwork_tool": "OpenAI image_gen",
+  "artwork_scope": "Synthetic artistic concept. Not measured scientific data, a product screenshot, or engineering certification.",
+  "artwork_sha256": "432f020b52e002cf49558714e6290bf562b623bde7fa3fb630ac9b913e9982b9",
+  "composition": "Original AI PNG embedded without raster modification; exact localized facts and formulas are SVG outlines.",
+  "fonts": [
+    "Noto Sans CJK SC Regular",
+    "DejaVu Sans"
+  ],
+  "font_independent_rendering": true,
+  "implementation_references": [
+    "skills/tsao-dft-kinetics-multiscale/scripts/eyring_rates.py",
+    "skills/tsao-dft-kinetics-multiscale/scripts/propagate_barrier_uncertainty.py",
+    "skills/tsao-periodic-dft-materials/scripts/parse_vasp.py"
+  ],
+  "localized_assets": [
+    {
+      "locale": "zh-CN",
+      "path": "docs/assets/readme-vnext/hero.zh-CN.svg",
+      "bytes": 2633769,
+      "sha256": "26d822f86abd876691c0abba86eadbc2bda74b7a7e725040442d05cd1de94700",
+      "outlined_glyphs": 175,
+      "visible_text": {
+        "eyebrow": "第一性原理研究 · 科学控制面 · 方法溯源",
+        "headline": [
+          "从分子与晶体结构",
+          "走向可审核的计算证据"
+        ],
+        "features": [
+          "结构检查、周期几何与方法身份",
+          "最终作业解析、收敛与工件哈希",
+          "速率、区间与分组机器学习基线"
+        ],
+        "scope": "外部专业引擎需真实执行；资格状态 EXTERNAL_HOLD",
+        "cards": [
+          [
+            "一分子 Eyring 参考速率",
+            "k₁ = κ g (k_B T / h) exp(−ΔG‡ / RT)",
+            "T 用 K；ΔG‡ 与 R 单位一致；多分子步骤另需标准态"
+          ],
+          [
+            "由声明的势垒界限传播速率区间",
+            "k_min,max = exp[ln k ∓ u_G / (RT)]",
+            "u_G 是给定势垒界限；不包含未经量化的模型误差"
+          ]
+        ]
+      },
+      "synthetic_label": "AI 合成概念示意 · 非测量结果"
+    },
+    {
+      "locale": "en",
+      "path": "docs/assets/readme-vnext/hero.en.svg",
+      "bytes": 2611164,
+      "sha256": "6af3b62f660ab26065910f78c5a9c1dd2b2aee672413428ac3cff5d989cc4a10",
+      "outlined_glyphs": 68,
+      "visible_text": {
+        "eyebrow": "FIRST-PRINCIPLES RESEARCH / CONTROL / PROVENANCE",
+        "headline": [
+          "Molecules and crystals.",
+          "Evidence you can audit."
+        ],
+        "features": [
+          "Structure, periodic geometry and method identity",
+          "Final-job parsing, convergence and artifact hashes",
+          "Rates, bounds and grouped machine-learning baselines"
+        ],
+        "scope": "Professional engines require real execution; status stays EXTERNAL_HOLD",
+        "cards": [
+          [
+            "Unimolecular Eyring reference rate",
+            "k₁ = κ g (k_B T / h) exp(−ΔG‡ / RT)",
+            "T in K; compatible ΔG‡ / R units; higher molecularity needs a standard state"
+          ],
+          [
+            "Propagate declared barrier bounds into rate bounds",
+            "k_min,max = exp[ln k ∓ u_G / (RT)]",
+            "u_G is the supplied barrier bound, not an estimate of every model error"
+          ]
+        ]
+      },
+      "synthetic_label": "SYNTHETIC CONCEPT / AI ARTWORK / NOT MEASURED DATA"
+    }
+  ]
+}

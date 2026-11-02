@@ -2,7 +2,7 @@
 name: tsao-dft-ml-active-learning
 description: "Build leakage-aware DFT descriptor, surrogate, GNN, uncertainty, applicability-domain, active-learning, Bayesian/multi-objective optimization and inverse-design workflows with optional DeepChem, RDKit and scikit-learn backends."
 license: MIT
-compatibility: Python 3.10+. DeepChem, RDKit, scikit-learn and graph frameworks are optional external backends.
+compatibility: Python 3.11+. DeepChem, RDKit, scikit-learn and graph frameworks are optional external backends.
 metadata: {"version": "0.4.0-alpha.2", "author": "SUNHAOJUN22", "repository": "https://github.com/SUNHAOJUN22/TsaoDFT_skill"}
 ---
 

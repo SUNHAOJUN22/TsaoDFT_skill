@@ -2,7 +2,7 @@
 name: tsao-periodic-dft-materials
 description: "Plan and validate periodic DFT and materials workflows across VASP, Quantum ESPRESSO and CP2K handoffs: crystals, slabs, defects, adsorption, convergence, bands/DOS, charge fields, phonons, elastic properties, NEB and high-throughput campaigns."
 license: MIT
-compatibility: Python 3.10+ and PyYAML. VASP, Quantum ESPRESSO, CP2K, pymatgen, ASE, AiiDA, atomate2 and phonopy are external.
+compatibility: Python 3.11+ and PyYAML. VASP, Quantum ESPRESSO, CP2K, pymatgen, ASE, AiiDA, atomate2 and phonopy are external.
 metadata: {"version": "0.4.0-alpha.2", "author": "SUNHAOJUN22", "repository": "https://github.com/SUNHAOJUN22/TsaoDFT_skill"}
 ---
 
@@ -50,10 +50,10 @@ This Skill is the periodic counterpart to `tsao-dft-researcher`. It is engine-ne
 
 ## Deterministic periodic-DFT adapters
 
-- VASP: `preflight_vasp.py` and memory-mapped `parse_vasp.py`.
-- Quantum ESPRESSO: `preflight_qe.py` and memory-mapped `parse_qe.py`.
-- CP2K: `preflight_cp2k.py` and memory-mapped `parse_cp2k.py`.
-- The parsers retain selected last values and small terminal evidence blocks without decoding the complete output into Python memory.
+- VASP: `preflight_vasp.py` and bounded streaming `parse_vasp.py`.
+- Quantum ESPRESSO: `preflight_qe.py` and bounded streaming `parse_qe.py`.
+- CP2K: `preflight_cp2k.py` and bounded streaming `parse_cp2k.py`.
+- The periodic parsers retain only final-job observations, line/byte locations and bounded terminal evidence. They stream bytes with line, file and job-count limits; an incomplete scan cannot attest a complete artifact.
 - `analyze_convergence.py` evaluates a declared one-parameter convergence series.
 
 Adapters cover selected fields and remain L2 until a real site records L3 regression evidence.

@@ -2,7 +2,7 @@
 name: tsao-dft-suite
 description: "DFT-first root orchestrator for TsaoDFT. Route a scientific question through structure preparation, molecular or periodic DFT, HPC/provenance, wavefunction/material analysis, DFT+ML, kinetics, and optional domain profiles while enforcing method fingerprints, approval gates, and accepted-evidence handoffs."
 license: MIT
-compatibility: Python 3.10+ and PyYAML. Scientific engines remain external.
+compatibility: Python 3.11+ and PyYAML. Scientific engines remain external.
 metadata: {"version": "0.4.0-alpha.2", "author": "SUNHAOJUN22", "repository": "https://github.com/SUNHAOJUN22/TsaoDFT_skill"}
 ---
 

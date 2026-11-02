@@ -20,7 +20,17 @@ SOLVERS = ("auto", "primal", "dual")
 
 def read(path: Path) -> list[dict[str, str]]:
     with path.open(encoding="utf-8", newline="") as handle:
-        return list(csv.DictReader(handle))
+        reader = csv.DictReader(handle)
+        if reader.fieldnames is None or any(not name.strip() for name in reader.fieldnames):
+            raise ValueError("dataset requires nonempty CSV headers")
+        if len(set(reader.fieldnames)) != len(reader.fieldnames):
+            raise ValueError("dataset has duplicate CSV headers")
+        rows = []
+        for line, row in enumerate(reader, start=2):
+            if None in row or any(value is None for value in row.values()):
+                raise ValueError(f"dataset row {line} does not match the CSV header")
+            rows.append(row)
+        return rows
 
 
 def metrics(y, prediction):
@@ -135,7 +145,21 @@ def main() -> int:
     parser.add_argument("--out-dir", type=Path, required=True)
     args = parser.parse_args()
 
-    rows = read(args.dataset)
+    try:
+        protected_inputs = [args.dataset.resolve()]
+        if args.validation_artifact is not None:
+            protected_inputs.append(args.validation_artifact.resolve())
+        outputs = [args.out_dir / name for name in ("predictions.csv", "model-card.json")]
+        if any(
+            output.resolve() == source or (output.exists() and source.exists() and output.samefile(source))
+            for output in outputs
+            for source in protected_inputs
+        ):
+            raise ValueError("training outputs must not replace an input dataset or validation artifact")
+        rows = read(args.dataset)
+    except (OSError, UnicodeError, csv.Error, ValueError) as exc:
+        print(json.dumps({"ok": False, "errors": [str(exc)]}, indent=2))
+        return 1
     features = [value.strip() for value in args.features.split(",") if value.strip()]
     errors = []
     if not rows:

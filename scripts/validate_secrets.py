@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import re
 from collections.abc import Iterable
@@ -36,6 +37,29 @@ PATTERNS = {
     "google-api-key": re.compile(r"\bAIza[0-9A-Za-z_-]{35}\b"),
     "slack-token": re.compile(r"\bxox[baprs]-[0-9A-Za-z-]{20,}\b"),
 }
+MAX_TEXT_BYTES = 2 * 1024 * 1024
+GOVERNED_LARGE_ART = {
+    "docs/assets/readme-vnext/hero.zh-CN.svg",
+    "docs/assets/readme-vnext/hero.en.svg",
+}
+
+
+def governed_art_text(path: Path, root: Path) -> str | None:
+    """Scan outlined SVG text normally; only a verified PNG payload is omitted."""
+    if path.relative_to(root).as_posix() not in GOVERNED_LARGE_ART:
+        return None
+    source = Path(__file__).with_name("validate_readme_visuals.py")
+    spec = importlib.util.spec_from_file_location("secret_scan_art_contract", source)
+    if spec is None or spec.loader is None:
+        return None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    if module.validate_localized_art(root):
+        return None
+    text, count = re.subn(
+        r"data:image/png;base64,[A-Za-z0-9+/=]+", "VERIFIED_EMBEDDED_PNG", path.read_text(encoding="utf-8"), count=1
+    )
+    return text if count == 1 and len(text.encode("utf-8")) <= MAX_TEXT_BYTES else None
 
 
 def iter_files(root: Path) -> Iterable[Path]:
@@ -55,11 +79,14 @@ def validate(root: Path = ROOT) -> list[str]:
             continue
         if path.suffix.lower() not in TEXT_SUFFIXES and path.name not in {"VERSION", "LICENSE"}:
             continue
-        if path.stat().st_size > 2 * 1024 * 1024:
-            failures.append(f"text file too large for deterministic secret scan: {relative}")
-            continue
         try:
-            text = path.read_text(encoding="utf-8")
+            if path.stat().st_size > MAX_TEXT_BYTES:
+                text = governed_art_text(path, root)
+                if text is None:
+                    failures.append(f"text file too large for deterministic secret scan: {relative}")
+                    continue
+            else:
+                text = path.read_text(encoding="utf-8")
         except UnicodeDecodeError:
             continue
         for pattern_name, pattern in PATTERNS.items():

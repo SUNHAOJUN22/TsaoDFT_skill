@@ -25,11 +25,11 @@ PROFILE.math.push({
   ],
   "zh": {
     "name": "Eyring 速率的对数实现",
-    "note": "源码将势垒解释为 kcal/mol、温度为 K，采用 SI 的 k_B 与 h；所得单分子速率单位为 s⁻¹。对数表达式按这些固定单位下的数值计算，不是对任意有量纲变量直接取对数。前因子不先形成 k_BT/h，避免中间溢出或下溢；区间参数是给定的势垒半宽，不自动构成统计置信区间。二级反应还需外部明确标准态修正，量子隧穿、传递系数与实际机制仍需独立验证。极端温度回归仅验证浮点恒等式，不扩展过渡态理论的物理适用域。"
+    "note": "源码将势垒解释为 kcal/mol、温度为 K，采用 SI 的 k_B 与 h；所得单分子速率单位为 s⁻¹。对数表达式按这些固定单位下的数值计算，不是对任意有量纲变量直接取对数。前因子不先形成 k_BT/h，避免中间溢出或下溢；区间参数是给定的势垒半宽，不自动构成统计置信区间。多分子步骤由显式且一致的标准浓度与活度约定给出浓度因子；不同势垒参考态的自由能换算、量子隧穿和机制仍需独立验证。极端温度回归仅验证浮点恒等式，不扩展过渡态理论的物理适用域。"
   },
   "en": {
     "name": "Log-space Eyring implementation",
-    "note": "The implementation interprets barriers as kcal/mol and temperature as K, with SI k_B and h, yielding a unimolecular rate in s⁻¹. Logarithms act on numerical values in these fixed units, not arbitrary dimensioned quantities. The prefactor is never materialized as k_BT/h, avoiding intermediate overflow or underflow. Interval inputs are specified barrier half-widths, not automatically statistical confidence intervals. Bimolecular reactions require explicit external standard-state corrections; tunneling, transmission coefficients and mechanism validity require independent evidence. Extreme-temperature regression tests floating-point identities, not physical validity of transition-state theory."
+    "note": "The implementation interprets barriers as kcal/mol and temperature as K, with SI k_B and h, yielding a unimolecular rate in s⁻¹. Logarithms act on numerical values in these fixed units, not arbitrary dimensioned quantities. The prefactor is never materialized as k_BT/h, avoiding intermediate overflow or underflow. Interval inputs are specified barrier half-widths, not automatically statistical confidence intervals. Higher molecularity uses the declared concentration factor with matching barrier/rate standard states and activity convention; free-energy conversion between distinct reference states, tunneling and mechanism validity require independent evidence. Extreme-temperature regression tests floating-point identities, not physical validity of transition-state theory."
   },
   "code": [
     "skills/tsao-dft-kinetics-multiscale/scripts/tst_math.py",
@@ -100,13 +100,12 @@ function mathSection(lang) {
   }).join('\n\n');
 }
 function section(lang, markers = true) {
-  const zh = lang === 'zh', t = PROFILE[lang];
-  return [markers ? START : '', `## ${zh ? '当前实现：代码、数学与使用策略' : 'Current implementation: code, mathematics and usage'}`, '',
-    `![${zh ? '中文代码与数学合同概念图' : 'English code and mathematical-contract concept'}](docs/current-main/${PROFILE.slug}-current-main-${lang}.svg)`, '',
-    `> ${t.boundary}`, '', mathSection(lang), '', `### ${zh ? '使用与验收顺序' : 'Usage and acceptance sequence'}`, '',
-    ...t.strategy.map((item, index) => `${index + 1}. ${item}`), '', '```bash', ...PROFILE.commands, '```', '',
-    zh ? '每次修复均须绑定新提交重新测试。基线回归、两段各三小时的重复回归、浏览器图形检查和外部工程认证是不同证据，不可互相替代。没有原始回执时，不宣称已完成六小时验收。' : 'Retest every changed commit. Baseline regression, two three-hour regression segments, browser visual checks and external engineering qualification are distinct evidence classes. Without original receipts, no six-hour completion is claimed.', '',
-    `${zh ? '源码锚点' : 'Implementation anchors'}: ${PROFILE.code.map((path) => `[\`${path}\`](${path})`).join(' · ')}`, '', markers ? END : '',
+  const zh = lang === 'zh';
+  return [markers ? START : '', `## ${zh ? '可重生成的源码索引' : 'Regenerable source index'}`, '',
+    zh ? '本节由文档生成器维护；正文公式与操作示例以对应源码为准。生成器只校验文档固定点，不证明外部计算已经执行。' : 'This section is maintained by the documentation generator. Equations and usage above map to the cited source. Generation verifies document reproducibility, not external execution.', '',
+    `${zh ? '源码锚点' : 'Implementation anchors'}: ${PROFILE.code.map((path) => `[\`${path}\`](${path})`).join(' · ')}`, '',
+    `[${zh ? '归档：代码合同示意图' : 'Archive: code-contract illustration'}](docs/current-main/${PROFILE.slug}-current-main-${lang}.svg) · [${zh ? '文档边界' : 'Documentation boundaries'}](docs/CURRENT_MAIN_ACCEPTANCE.md)`, '',
+    markers ? END : '',
   ].join('\n').trim();
 }
 function inject(original, generated) {

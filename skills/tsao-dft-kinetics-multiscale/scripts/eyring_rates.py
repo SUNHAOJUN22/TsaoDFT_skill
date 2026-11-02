@@ -114,6 +114,8 @@ def main() -> int:
 
     temporary_path: Path | None = None
     try:
+        if args.out.resolve() == args.barriers.resolve():
+            raise ValueError("output must not replace the input barrier table")
         args.out.parent.mkdir(parents=True, exist_ok=True)
         with (
             args.barriers.open(encoding="utf-8", newline="") as source,
@@ -131,6 +133,10 @@ def main() -> int:
             reader = csv.DictReader(source)
             if reader.fieldnames is None:
                 raise ValueError("barrier table is missing a CSV header")
+            if any(not name.strip() for name in reader.fieldnames):
+                raise ValueError("barrier table CSV headers must be nonempty")
+            if len(set(reader.fieldnames)) != len(reader.fieldnames):
+                raise ValueError("barrier table has duplicate CSV headers")
             if "delta_g_dagger_kcal_mol" not in reader.fieldnames:
                 raise ValueError("barrier table is missing delta_g_dagger_kcal_mol")
             fieldnames = list(reader.fieldnames)

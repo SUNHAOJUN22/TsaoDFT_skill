@@ -4,8 +4,12 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import hashlib
 import importlib.util
+import io
+import json
 import re
 import sys
 from pathlib import Path
@@ -13,12 +17,19 @@ from types import ModuleType
 
 import yaml
 from defusedxml import ElementTree as ET
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 README = ROOT / "README.md"
 README_EN = ROOT / "README_EN.md"
 AI_MANIFEST = ROOT / "assets/ai/manifest.yaml"
 MATH_VALIDATOR = ROOT / "scripts/validate_readme_math.py"
+ART_MANIFEST = Path("docs/assets/readme-vnext/artwork-provenance.json")
+LOCALIZED_HEROES = {
+    "zh-CN": "docs/assets/readme-vnext/hero.zh-CN.svg",
+    "en": "docs/assets/readme-vnext/hero.en.svg",
+}
+SVG_TAGS = {"svg", "title", "desc", "defs", "linearGradient", "stop", "g", "path", "use", "rect", "circle", "image"}
 
 MD_IMAGE_RE = re.compile(r"!\[[^\]]*\]\(([^)\s]+)(?:\s+[^)]*)?\)")
 HTML_IMAGE_RE = re.compile(r"<img\s+[^>]*src=[\"']([^\"']+)[\"'][^>]*>", re.IGNORECASE)
@@ -52,15 +63,88 @@ def image_refs(text: str) -> set[str]:
 
 
 def governed_refs(name: str, text: str) -> set[str]:
-    """Keep archived English SVGs governed without displaying them on the Chinese page."""
+    """Govern archival links on both pages without forcing old images into the layout."""
     refs = image_refs(text)
-    if name == "README.md":
-        refs.update(
-            path
-            for path in HTML_LINK_RE.findall(text)
-            if path.startswith(("assets/demo/", "assets/ai/hero/")) and path.endswith(".svg")
-        )
+    refs.update(
+        path
+        for path in HTML_LINK_RE.findall(text)
+        if path.startswith(("assets/demo/", "assets/ai/hero/")) and path.endswith(".svg")
+    )
     return refs
+
+
+def validate_localized_art(root: Path) -> list[str]:
+    """Permit one hash-bound PNG per governed SVG, never arbitrary embedded content."""
+    errors: list[str] = []
+    try:
+        manifest = json.loads((root / ART_MANIFEST).read_text(encoding="utf-8"))
+        if not isinstance(manifest, dict) or manifest.get("schema") != "tsao.readme-concept-art/v1":
+            return ["localized art manifest has an unsupported schema"]
+        assets = manifest.get("localized_assets")
+        if not isinstance(assets, list) or len(assets) != 2:
+            return ["localized art requires exactly two governed language assets"]
+        if {item.get("locale") for item in assets if isinstance(item, dict)} != set(LOCALIZED_HEROES):
+            return ["localized art locales must be exactly zh-CN and en"]
+        for item in assets:
+            locale = item["locale"]
+            rel = LOCALIZED_HEROES[locale]
+            if item.get("path") != rel:
+                errors.append(f"localized art path is not allowlisted: {locale}")
+                continue
+            path = root / rel
+            if not path.resolve().is_relative_to(root.resolve()) or path.stat().st_size > 8 * 1024 * 1024:
+                errors.append(f"localized art path/size is unsafe: {rel}")
+                continue
+            raw = path.read_bytes()
+            if len(raw) != item.get("bytes") or hashlib.sha256(raw).hexdigest() != item.get("sha256"):
+                errors.append(f"localized art hash/size mismatch: {rel}")
+            svg = ET.fromstring(raw)
+            if svg.tag != "{http://www.w3.org/2000/svg}svg" or svg.get("lang") != locale or svg.get("role") != "img":
+                errors.append(f"localized art root/locale/role mismatch: {rel}")
+            if (
+                not svg.get("viewBox")
+                or not svg.findtext("{http://www.w3.org/2000/svg}title")
+                or not svg.findtext("{http://www.w3.org/2000/svg}desc")
+            ):
+                errors.append(f"localized art lacks accessible geometry/title/description: {rel}")
+            images = []
+            ids = {element.get("id") for element in svg.iter() if element.get("id")}
+            for element in svg.iter():
+                tag = element.tag.removeprefix("{http://www.w3.org/2000/svg}")
+                if tag not in SVG_TAGS:
+                    errors.append(f"localized art contains forbidden SVG element {tag}: {rel}")
+                for attribute, value in element.attrib.items():
+                    key = attribute.rsplit("}", 1)[-1].lower()
+                    if key.startswith("on") or key == "style" or "javascript:" in value.lower():
+                        errors.append(f"localized art contains active SVG attribute: {rel}")
+                    if "url(" in value and not re.fullmatch(r"url\(#[A-Za-z0-9_-]+\)", value):
+                        errors.append(f"localized art contains nonlocal paint reference: {rel}")
+                    if key == "href":
+                        if tag == "image":
+                            images.append(value)
+                        elif not value.startswith("#") or value[1:] not in ids:
+                            errors.append(f"localized art contains unresolved/external reference: {rel}")
+            if len(images) != 1 or not images[0].startswith("data:image/png;base64,"):
+                errors.append(f"localized art must embed exactly one PNG: {rel}")
+                continue
+            png = base64.b64decode(images[0].split(",", 1)[1], validate=True)
+            if not png.startswith(b"\x89PNG\r\n\x1a\n") or hashlib.sha256(png).hexdigest() != manifest.get(
+                "artwork_sha256"
+            ):
+                errors.append(f"localized art PNG signature/hash mismatch: {rel}")
+            with Image.open(io.BytesIO(png)) as picture:
+                if picture.format != "PNG" or picture.width * picture.height > 16_000_000:
+                    errors.append(f"localized art PNG format/dimensions invalid: {rel}")
+                picture.verify()
+            if not item.get("synthetic_label") or manifest.get("font_independent_rendering") is not True:
+                errors.append(f"localized art lacks synthetic/font-independent provenance: {rel}")
+        for reference in manifest.get("implementation_references", []):
+            path = root / reference
+            if not path.resolve().is_relative_to(root.resolve()) or not path.is_file():
+                errors.append(f"localized art references missing or unsafe implementation: {reference}")
+    except (OSError, UnicodeError, ValueError, TypeError, KeyError, binascii.Error, ET.ParseError) as exc:
+        errors.append(f"localized art validation failed: {exc}")
+    return errors
 
 
 def load_math_validator() -> ModuleType:
@@ -74,7 +158,7 @@ def load_math_validator() -> ModuleType:
 
 
 def validate() -> tuple[list[str], list[str]]:
-    failures: list[str] = []
+    failures: list[str] = validate_localized_art(ROOT)
     warnings: list[str] = []
     if not README.is_file() or not README_EN.is_file():
         missing = [str(path.relative_to(ROOT)) for path in (README, README_EN) if not path.is_file()]
@@ -146,10 +230,10 @@ def validate() -> tuple[list[str], list[str]]:
         for ref in sorted(REQUIRED_DEMOS - refs):
             failures.append(f"curated README demo is not embedded or archived in {name}: {ref}")
 
-    for name, locale, other in (("README.md", "zh", "en"), ("README_EN.md", "en", "zh")):
-        if f"docs/assets/vision-{locale}.png" not in refs_by_readme[name]:
+    for name, locale, other in (("README.md", "zh-CN", "en"), ("README_EN.md", "en", "zh-CN")):
+        if LOCALIZED_HEROES[locale] not in refs_by_readme[name]:
             failures.append(f"{name} must display its localized vision image")
-        if f"docs/assets/vision-{other}.png" in refs_by_readme[name]:
+        if LOCALIZED_HEROES[other] in refs_by_readme[name]:
             failures.append(f"{name} displays the wrong vision language")
     if any(ref.startswith(("assets/demo/", "assets/ai/")) for ref in refs_by_readme["README.md"]):
         failures.append("README.md must link the English archival diagrams instead of displaying them")

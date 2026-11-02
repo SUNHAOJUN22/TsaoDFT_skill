@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import hashlib
 import importlib.util
+import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -41,6 +44,37 @@ class SecretScannerTests(unittest.TestCase):
             (root / ".env").write_text("PLACEHOLDER=true\n", encoding="utf-8")
             failures = validator.validate(root)
             self.assertTrue(any("secret-bearing filename" in item for item in failures), failures)
+
+    def test_arbitrary_large_text_still_fails(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "large.svg").write_text("x" * (validator.MAX_TEXT_BYTES + 1), encoding="utf-8")
+            self.assertTrue(any("too large" in item for item in validator.validate(root)))
+
+    def test_hash_verified_art_still_scans_non_png_content(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            shutil.copytree(ROOT / "docs/assets/readme-vnext", root / "docs/assets/readme-vnext")
+            manifest_path = root / "docs/assets/readme-vnext/artwork-provenance.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["implementation_references"] = []
+            item = manifest["localized_assets"][0]
+            art = root / item["path"]
+            synthetic_key = "-----BEGIN " + "PRIVATE KEY-----"
+            changed = art.read_text(encoding="utf-8").replace("</desc>", synthetic_key + "</desc>").encode("utf-8")
+            art.write_bytes(changed)
+            item.update(bytes=len(changed), sha256=hashlib.sha256(changed).hexdigest())
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            failures = validator.validate(root)
+            self.assertTrue(any("private-key" in item for item in failures), failures)
+
+    def test_tampered_governed_art_does_not_bypass_size_limit(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            art = root / "docs/assets/readme-vnext/hero.en.svg"
+            art.parent.mkdir(parents=True)
+            art.write_text("x" * (validator.MAX_TEXT_BYTES + 1), encoding="utf-8")
+            self.assertTrue(any("too large" in item for item in validator.validate(root)))
 
 
 if __name__ == "__main__":

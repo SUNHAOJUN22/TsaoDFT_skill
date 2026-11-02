@@ -87,12 +87,17 @@ def tst_rate_interval(
     temperature_k: Any,
     kappa: Any = 1.0,
     degeneracy: Any = 1.0,
+    *,
+    log_rate_offset: Any = 0.0,
 ) -> dict[str, float]:
     uncertainty = finite_number(uncertainty_kcal_mol, "uncertainty_kcal_mol")
     if uncertainty < 0:
         raise ValueError("uncertainty_kcal_mol must be non-negative")
     temperature = positive_number(temperature_k, "temperature_k")
-    central_log = log_tst_rate(delta_g_kcal_mol, temperature, kappa, degeneracy)
+    # Standard-concentration factors can compensate an otherwise overflowing
+    # unimolecular rate. Apply all log-space factors before exponentiation.
+    offset = finite_number(log_rate_offset, "log_rate_offset")
+    central_log = math.fsum((log_tst_rate(delta_g_kcal_mol, temperature, kappa, degeneracy), offset))
     log_half_width = (uncertainty / temperature) / R_KCAL_PER_MOL_K
     lower_log = central_log - log_half_width
     upper_log = central_log + log_half_width

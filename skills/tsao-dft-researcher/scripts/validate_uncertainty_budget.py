@@ -38,6 +38,10 @@ def validate(data: Any) -> tuple[list[str], list[str], dict[str, Any]]:
     for key in ["schema_version", "project_id", "observable", "unit", "components", "combination_rule", "status"]:
         if key not in data:
             errors.append(f"missing {key}")
+    unit = data.get("unit")
+    if not isinstance(unit, str) or not unit.strip():
+        errors.append("unit must be a nonempty string")
+        unit = None
 
     components = data.get("components")
     if not isinstance(components, list):
@@ -51,13 +55,17 @@ def validate(data: Any) -> tuple[list[str], list[str], dict[str, Any]]:
         if not isinstance(component, dict):
             errors.append(f"components[{index}] must be a mapping")
             continue
-        if component.get("type") not in ALLOWED:
+        component_type = component.get("type")
+        if not isinstance(component_type, str) or component_type not in ALLOWED:
             errors.append(f"components[{index}] invalid type")
         raw_magnitude = component.get("magnitude")
         if isinstance(raw_magnitude, bool) or not isinstance(raw_magnitude, (int, float)):
             errors.append(f"components[{index}] magnitude must be finite numeric")
         else:
-            magnitude = float(raw_magnitude)
+            try:
+                magnitude = float(raw_magnitude)
+            except OverflowError:
+                magnitude = math.inf
             if not math.isfinite(magnitude):
                 errors.append(f"components[{index}] magnitude must be finite numeric")
             elif magnitude < 0:
@@ -68,21 +76,31 @@ def validate(data: Any) -> tuple[list[str], list[str], dict[str, Any]]:
             warnings.append(f"components[{index}] has no evidence/basis")
 
     rule = data.get("combination_rule")
-    if rule not in RULES:
+    if not isinstance(rule, str) or rule not in RULES:
         errors.append("invalid combination_rule")
 
     combined: float | None = None
-    if values and rule == "root_sum_square":
-        combined = math.hypot(*values)
-    elif values and rule == "sum_bounds":
-        combined = math.fsum(values)
+    # Never describe a partial valid subset as the budget's combined magnitude.
+    # Stable accumulation avoids intermediate overflow but cannot make an
+    # unrepresentable final magnitude a valid finite result.
+    if values and not errors:
+        try:
+            if rule == "root_sum_square":
+                combined = math.hypot(*values)
+            elif rule == "sum_bounds":
+                combined = math.fsum(values)
+            if combined is not None and not math.isfinite(combined):
+                raise OverflowError("nonfinite combined magnitude")
+        except OverflowError:
+            combined = None
+            errors.append("combined magnitude exceeds the finite floating-point range")
 
     if data.get("status") == "accepted" and (errors or warnings):
         errors.append("accepted uncertainty budget has unresolved errors/warnings")
     return (
         sorted(set(errors)),
         sorted(set(warnings)),
-        {"combined_magnitude": combined, "unit": data.get("unit")},
+        {"combined_magnitude": combined, "unit": unit},
     )
 
 
@@ -97,7 +115,11 @@ def main() -> int:
         errors = [f"uncertainty budget parse failed: {exc}"]
         warnings = []
         summary = {"combined_magnitude": None, "unit": None}
-    print(json.dumps({"ok": not errors, "errors": errors, "warnings": warnings, "summary": summary}, indent=2))
+    print(
+        json.dumps(
+            {"ok": not errors, "errors": errors, "warnings": warnings, "summary": summary}, indent=2, allow_nan=False
+        )
+    )
     return 0 if not errors else 1
 
 

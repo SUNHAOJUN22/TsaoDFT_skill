@@ -2,7 +2,7 @@
 name: tsao-structure-prep
 description: "Prepare and audit molecular and periodic structures before DFT: identity, bond/valence cleanup, tautomers and protonation, conformers, charge/multiplicity candidates, complexes, crystals, supercells, slabs, defects and adsorbate placements, with explicit provenance and model-review gates."
 license: MIT
-compatibility: Python 3.10+ and PyYAML. RDKit, Open Babel, pymatgen and ASE are optional external tools.
+compatibility: Python 3.11+ and PyYAML. RDKit, Open Babel, pymatgen and ASE are optional external tools.
 metadata: {"version": "0.4.0-alpha.2", "author": "SUNHAOJUN22", "repository": "https://github.com/SUNHAOJUN22/TsaoDFT_skill"}
 ---
 

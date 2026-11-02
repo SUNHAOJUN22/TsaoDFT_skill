@@ -7,7 +7,7 @@ import argparse
 import json
 
 from eyring_rates import concentration_log_factor, rate_unit
-from tst_math import rate_from_log, tst_rate_interval
+from tst_math import tst_rate_interval
 
 
 def main() -> int:
@@ -23,19 +23,17 @@ def main() -> int:
     parser.add_argument("--activity-convention", default="")
     args = parser.parse_args()
     try:
+        correction = concentration_log_factor(
+            args.molecularity, args.standard_state, args.barrier_standard_state, args.activity_convention
+        )
         interval = tst_rate_interval(
             args.barrier,
             args.uncertainty,
             args.temperature,
             args.kappa,
             args.degeneracy,
+            log_rate_offset=correction,
         )
-        correction = concentration_log_factor(
-            args.molecularity, args.standard_state, args.barrier_standard_state, args.activity_convention
-        )
-        for label in ("central", "lower", "upper"):
-            interval[f"{label}_ln_rate"] += correction
-            interval[f"{label}_rate"] = rate_from_log(interval[f"{label}_ln_rate"])
         unit = rate_unit(args.molecularity)
     except (ValueError, OverflowError) as exc:
         print(json.dumps({"ok": False, "errors": [str(exc)]}, indent=2))

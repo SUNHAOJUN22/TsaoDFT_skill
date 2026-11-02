@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Read VASP INCAR semicolon-separated tags, continued lines and quoted blocks without losing ionic-task, spin or DFT+U declarations. Parse NSW/IBRION/ISPIN as complete signed decimal integers within an explicit adapter range, preserving leading signs and rejecting fractional or overflowing values without float conversion. Reject unsupported brace scopes and malformed statements with a JSON preflight failure; scientific acceptance remains pending.
+- Infer relaxation only for positive NSW with explicit IBRION 1/2/3. Preserve static no-update cases and report MD, phonon and other unsupported modes as unknown with a review warning instead of treating all positive ionic-step counts as relaxation.
+
 ## 0.4.0-alpha.2 — 2026-07-31
 
 - Integrated the permanent quality-gate sequence `Ruff lint → Ruff format → isolated mypy → trust-boundary strict mypy → statement/branch coverage → Bandit → strict repository audit → all unittest suites`.

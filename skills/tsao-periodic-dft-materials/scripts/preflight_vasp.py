@@ -7,6 +7,7 @@ import argparse
 import json
 import math
 import re
+from collections.abc import Iterator
 from pathlib import Path
 from typing import TypedDict
 
@@ -28,16 +29,82 @@ class PoscarData(TypedDict):
     coordinate_mode: str
 
 
+def _incar_statements(text: str) -> Iterator[str]:
+    """Read flat INCAR statements without promoting quoted data to global tags.
+
+    VASP documents semicolons, backslash continuations and multiline double
+    quotes at https://vasp.at/wiki/INCAR. Scoped brace blocks require a separate
+    interpretation, so this selected-field preflight rejects them explicitly.
+    """
+    statement: list[str] = []
+    quoted = False
+    continued = False
+    for raw in text.splitlines():
+        continued = False
+        for index, character in enumerate(raw):
+            if character == '"':
+                quoted = not quoted
+                statement.append(character)
+            elif not quoted and character in "#!":
+                break
+            elif not quoted and character in "{}":
+                raise ValueError("scoped INCAR brace blocks are not supported by this preflight")
+            elif not quoted and character == ";":
+                yield "".join(statement).strip()
+                statement.clear()
+            elif not quoted and character == "\\" and index == len(raw) - 1:
+                continued = True
+            else:
+                statement.append(character)
+        if quoted:
+            statement.append("\n")
+        elif continued:
+            statement.append(" ")
+        else:
+            yield "".join(statement).strip()
+            statement.clear()
+    if quoted:
+        raise ValueError("INCAR has an unterminated double-quoted value")
+    if continued:
+        raise ValueError("INCAR has a continuation without a following line")
+
+
 def parse_incar(path: Path) -> dict[str, str]:
-    d: dict[str, str] = {}
+    declarations: dict[str, str] = {}
     if not path.exists():
-        return d
-    for raw in path.read_text(encoding="utf-8", errors="replace").splitlines():
-        line = raw.split("!", 1)[0].split("#", 1)[0].strip()
-        if "=" in line:
-            k, v = line.split("=", 1)
-            d[k.strip().upper()] = v.strip()
-    return d
+        return declarations
+    for statement in _incar_statements(path.read_text(encoding="utf-8", errors="replace")):
+        if "=" not in statement:
+            continue
+        key, value = (part.strip() for part in statement.split("=", 1))
+        if value.startswith('"') and value.endswith('"'):
+            value = value[1:-1].strip()
+        if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_/]*", key) or not value:
+            raise ValueError("INCAR statements require a tag name and a nonempty value")
+        declarations[key.upper()] = value
+    return declarations
+
+
+def _incar_integer(declarations: dict[str, str], key: str, default: int | None = None) -> int | None:
+    """Parse one complete integer declaration within this adapter's range.
+
+    The signed 64-bit bound is a preflight support limit, not certification of
+    an engine build's integer kind or a scientifically suitable step count.
+    """
+    text = declarations.get(key)
+    if text is None:
+        return default
+    if re.fullmatch(r"[+-]?[0-9]+", text) is None:
+        raise ValueError(f"{key} must be one signed decimal integer")
+    digits = text.lstrip("+-").lstrip("0") or "0"
+    # Bound conversion before int(): very long input must not depend on the
+    # interpreter's configurable integer-string limit, or pass through float.
+    if len(digits) > 19:
+        raise ValueError(f"{key} exceeds the preflight supported signed 64-bit range")
+    value = int(digits) * (-1 if text.startswith("-") else 1)
+    if not -(2**63) <= value < 2**63:
+        raise ValueError(f"{key} exceeds the preflight supported signed 64-bit range")
+    return value
 
 
 def _log_cell_volume(matrix: np.ndarray) -> float:
@@ -197,7 +264,11 @@ def validate(run: Path) -> dict:
     except Exception as exc:
         e.append(f"POSCAR: {exc}")
         pos = None
-    inc = parse_incar(run / "INCAR")
+    try:
+        inc = parse_incar(run / "INCAR")
+    except (OSError, ValueError) as exc:
+        e.append(f"INCAR: {exc}")
+        inc = {}
     kp = parse_kpoints(run / "KPOINTS")
     titles = potcar_titles(run / "POTCAR")
     if not inc:
@@ -218,18 +289,35 @@ def validate(run: Path) -> dict:
             e.append(f"POSCAR/POTCAR order mismatch: {pos['species']} vs {inferred}")
     elif not titles:
         w.append("POTCAR absent/unreadable; licensed potential mapping must be verified at the execution site")
-    ibrion = inc.get("IBRION")
-    nsw = (
-        int(float(inc.get("NSW", "0").split()[0]))
-        if inc.get("NSW", "0").split()[0].replace(".", "", 1).lstrip("-").isdigit()
-        else 0
-    )
-    task = "relax" if nsw > 0 else "static"
-    if task == "relax" and ibrion in (None, "-1"):
-        w.append("relax inferred from NSW but IBRION is absent/-1")
+    integer_controls: dict[str, int | None] = {}
+    valid_integer_controls = True
+    for key, default in (("NSW", 0), ("IBRION", None), ("ISPIN", None)):
+        try:
+            integer_controls[key] = _incar_integer(inc, key, default)
+        except ValueError as exc:
+            e.append(f"INCAR: {exc}")
+            integer_controls[key] = None
+            valid_integer_controls = False
+    nsw = integer_controls["NSW"]
+    ibrion = integer_controls["IBRION"]
+    task = "unknown"
+    if inc and valid_integer_controls:
+        # NSW counts ionic steps; it does not select the ionic algorithm.
+        # Keep the existing static/relax/unknown contract and leave MD,
+        # phonons and other modes to their mode-specific preflight.
+        if nsw is not None and nsw >= -1:
+            if ibrion == -1 or (nsw <= 0 and ibrion in (None, 1, 2, 3)):
+                task = "static"
+            elif nsw > 0 and ibrion in (1, 2, 3):
+                task = "relax"
+        if task == "unknown":
+            mode = "default (0 when NSW > 0)" if ibrion is None else str(ibrion)
+            w.append(f"task inference limited to static/relax; NSW={nsw}, IBRION={mode} requires mode-specific review")
+        elif task == "static" and nsw is not None and nsw > 0:
+            w.append("IBRION=-1 with NSW>0 repeats the structure without structural updates")
     if pos is not None and pos["selective_dynamics"] and task == "static":
-        w.append("selective dynamics present but NSW=0/static")
-    if inc.get("ISPIN") == "2" and "MAGMOM" not in inc:
+        w.append("selective dynamics present but no ionic structure update is inferred")
+    if integer_controls["ISPIN"] == 2 and "MAGMOM" not in inc:
         w.append("spin-polarized run lacks explicit MAGMOM")
     if any(k.startswith("LDAU") for k in inc) and "LDAUU" not in inc:
         e.append("DFT+U tags present without LDAUU")

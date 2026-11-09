@@ -8,6 +8,12 @@
 
 **AI image declaration — AI-GENERATED CONCEPTUAL ILLUSTRATION.** The cover combines original AI artwork with code-checked English labels and outlined mathematical typography. Structures, fields and surfaces are synthetic concepts, not orbitals, electron densities, experimental observations or actual engine results. Equations describe software algorithms with explicit assumptions. [Provenance and SHA-256](docs/assets/readme-vnext/artwork-provenance.json) are validated with the assets; historical figures remain linked in the archive below.
 
+## Scientific execution architecture — editable figure
+
+![Four-stage evidence flow](docs/assets/atlas-v2/architecture-en.svg)
+
+This source-editable vector diagram describes the software boundary, not a validated solver run or a measured scientific result.
+
 ## Delivery scope and status
 
 [pyproject.toml](pyproject.toml) declares version `0.4.0a2` and **Python 3.11 or later**. Preparation, process completion, parser acceptance and scientific acceptance are recorded separately, including for examples, illustrations and model cards.

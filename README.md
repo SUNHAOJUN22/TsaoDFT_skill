@@ -8,6 +8,12 @@
 
 **AI图像声明 — AI-GENERATED CONCEPTUAL ILLUSTRATION。** 上图使用原创 AI 艺术背景和按代码核对的中文、公式轮廓路径；图中结构、光场及表面是合成概念，不是轨道、电子密度、实验测量或真实引擎计算结果。公式解释的是适用条件明确的软件算法。[图像来源与 SHA-256](docs/assets/readme-vnext/artwork-provenance.json)与受控图件验证一起维护，旧图在文末保留归档链接。
 
+## 科学计算架构：可编辑矢量图
+
+![审查阶段与证据边界](docs/assets/atlas-v2/architecture-zh.svg)
+
+该图是重新绘制的方法学示意，不代表真实求解、实测数据或工业认证。所有技术结论以代码、运行日志和适用条件为准。
+
 ## DFT 研究的资格门
 
 ```mermaid

@@ -1,0 +1,356 @@
+{
+  "schema": "tsao.local-code-audit/v1",
+  "audit_date": "2026-11-16",
+  "baseline_commit": "f52107eaefcfe8ac05ba1544db0f0e917004e01e",
+  "python": "3.12.14",
+  "platform": "Linux",
+  "remote_branch_policy": "main only; verified by coordinator; no remote branch created",
+  "findings_fixed": [
+    {
+      "id": "DFT-STATE-1",
+      "paths": [
+        "skills/tsao-dft-kinetics-multiscale/scripts/check_thermodynamic_closure.py",
+        "skills/tsao-dft-kinetics-multiscale/scripts/validate_reaction_network.py"
+      ],
+      "problem": "An accepted network could declare a reaction energy inconsistent with the stoichiometric species energies; the network validator did not enforce barrier closure.",
+      "baseline_example": {
+        "species_energy_A": 0,
+        "species_energy_B": 20,
+        "reaction_free_energy": -2,
+        "forward_barrier": 15,
+        "reverse_barrier": 17,
+        "energy_unit": "kcal/mol",
+        "network_status": "accepted",
+        "previous_network_errors": [],
+        "previous_closure_ok": true
+      },
+      "fix": "Check species-derived reaction energy, retain independent barrier relation, and bind network admission to the same closure check."
+    },
+    {
+      "id": "DFT-ACTIVITY-2",
+      "paths": [
+        "skills/tsao-dft-hpc-provenance/scripts/scientific_contracts_core_v18.py",
+        "skills/tsao-dft-kinetics-multiscale/scripts/eyring_rates.py"
+      ],
+      "problem": "Public StandardState accepted labels for pressure, mole-fraction and nonideal activity models while concentration TST was computed.",
+      "fix": "Require the four supported aliases of a=c/c0 and align the CSV CLI canonical alias."
+    }
+  ],
+  "baseline_reproduction": {
+    "initial_cases": 17,
+    "failed": 11,
+    "passed": 6,
+    "note": "Includes missing new diagnostic fields as well as scientific failure assertions; not eleven independent scientific defects.",
+    "source_was_unchanged": true
+  },
+  "regression_cases": 23,
+  "invariants_tested": [
+    "Stoichiometric species-energy binding",
+    "Forward/reverse activation free-energy closure",
+    "Element-reference shift invariance",
+    "Closed-cycle free-energy consistency",
+    "Absolute declared-unit tolerance",
+    "Legacy barrier-only and irreversible admission",
+    "Missing/ambiguous state data fail closed",
+    "Input artifact preservation",
+    "Independent analytic Eyring rate",
+    "Explicit concentration standard-state conversion invariance"
+  ],
+  "full_tests": {
+    "suites": 9,
+    "passed": 1353,
+    "skipped": 3,
+    "subtests_passed": 1117,
+    "failed_suites": 0
+  },
+  "quality_gate": {
+    "command": [
+      "python",
+      "scripts/quality_gate.py",
+      "--report-dir",
+      "/workspace/scratch/8c4dfa282d4f/audit-2026-11-16/TsaoDFT_skill/quality-run"
+    ],
+    "returncode": 0,
+    "required_stages": 29,
+    "acceptance_state": "SOFTWARE_GATES_PASSED",
+    "seconds": 192.091,
+    "stages": [
+      {
+        "stage": "demo assets",
+        "returncode": 0,
+        "seconds": 0.064,
+        "timed_out": false
+      },
+      {
+        "stage": "dependency contract",
+        "returncode": 0,
+        "seconds": 0.064,
+        "timed_out": false
+      },
+      {
+        "stage": "CI constraints",
+        "returncode": 0,
+        "seconds": 0.032,
+        "timed_out": false
+      },
+      {
+        "stage": "acceleration contracts",
+        "returncode": 0,
+        "seconds": 0.164,
+        "timed_out": false
+      },
+      {
+        "stage": "benchmark contract",
+        "returncode": 0,
+        "seconds": 0.315,
+        "timed_out": false
+      },
+      {
+        "stage": "acceleration registry",
+        "returncode": 0,
+        "seconds": 0.064,
+        "timed_out": false
+      },
+      {
+        "stage": "engine capabilities",
+        "returncode": 0,
+        "seconds": 0.276,
+        "timed_out": false
+      },
+      {
+        "stage": "compute qualification",
+        "returncode": 0,
+        "seconds": 0.266,
+        "timed_out": false
+      },
+      {
+        "stage": "compute contract evidence",
+        "returncode": 0,
+        "seconds": 0.416,
+        "timed_out": false
+      },
+      {
+        "stage": "compute architecture audit",
+        "returncode": 0,
+        "seconds": 0.888,
+        "timed_out": false
+      },
+      {
+        "stage": "release acceptance",
+        "returncode": 0,
+        "seconds": 0.166,
+        "timed_out": false
+      },
+      {
+        "stage": "packaging model",
+        "returncode": 0,
+        "seconds": 0.064,
+        "timed_out": false
+      },
+      {
+        "stage": "catalog",
+        "returncode": 0,
+        "seconds": 0.064,
+        "timed_out": false
+      },
+      {
+        "stage": "Agent eval contracts",
+        "returncode": 0,
+        "seconds": 0.226,
+        "timed_out": false
+      },
+      {
+        "stage": "governance",
+        "returncode": 0,
+        "seconds": 0.065,
+        "timed_out": false
+      },
+      {
+        "stage": "capability claims",
+        "returncode": 0,
+        "seconds": 0.064,
+        "timed_out": false
+      },
+      {
+        "stage": "secret patterns",
+        "returncode": 0,
+        "seconds": 0.667,
+        "timed_out": false
+      },
+      {
+        "stage": "ignore markers",
+        "returncode": 0,
+        "seconds": 0.114,
+        "timed_out": false
+      },
+      {
+        "stage": "AI assets",
+        "returncode": 0,
+        "seconds": 0.064,
+        "timed_out": false
+      },
+      {
+        "stage": "README visuals",
+        "returncode": 0,
+        "seconds": 0.265,
+        "timed_out": false
+      },
+      {
+        "stage": "README links",
+        "returncode": 0,
+        "seconds": 0.064,
+        "timed_out": false
+      },
+      {
+        "stage": "Ruff lint",
+        "returncode": 0,
+        "seconds": 0.032,
+        "timed_out": false
+      },
+      {
+        "stage": "Ruff format",
+        "returncode": 0,
+        "seconds": 0.032,
+        "timed_out": false
+      },
+      {
+        "stage": "mypy",
+        "returncode": 0,
+        "seconds": 4.961,
+        "timed_out": false
+      },
+      {
+        "stage": "trust-boundary strict mypy",
+        "returncode": 0,
+        "seconds": 1.78,
+        "timed_out": false
+      },
+      {
+        "stage": "coverage",
+        "returncode": 0,
+        "seconds": 122.122,
+        "timed_out": false
+      },
+      {
+        "stage": "Bandit",
+        "returncode": 0,
+        "seconds": 2.493,
+        "timed_out": false
+      },
+      {
+        "stage": "repository",
+        "returncode": 0,
+        "seconds": 1.118,
+        "timed_out": false
+      },
+      {
+        "stage": "unit tests",
+        "returncode": 0,
+        "seconds": 55.176,
+        "timed_out": false
+      }
+    ],
+    "scope": "this quality-gate process only; not all CI jobs"
+  },
+  "coverage": {
+    "total": {
+      "statement": 93.03,
+      "branch": 83.13
+    },
+    "thresholds": {
+      "total_statement": 90.0,
+      "total_branch": 80.0,
+      "core_statement": 100.0,
+      "core_branch": 95.0
+    },
+    "trust_core": {
+      "skills/tsao-dft-hpc-provenance/scripts/shell_contract.py": {
+        "statement": 100.0,
+        "branch": 100.0,
+        "statements": 162,
+        "missing_statements": 0,
+        "branches": 72,
+        "missing_branches": 0,
+        "missing_lines": [],
+        "missing_branch_arcs": {}
+      },
+      "skills/tsao-dft-hpc-provenance/scripts/trust_boundary.py": {
+        "statement": 100.0,
+        "branch": 100.0,
+        "statements": 177,
+        "missing_statements": 0,
+        "branches": 72,
+        "missing_branches": 0,
+        "missing_lines": [],
+        "missing_branch_arcs": {}
+      },
+      "skills/tsao-dft-hpc-provenance/scripts/engine_parser_contract.py": {
+        "statement": 100.0,
+        "branch": 100.0,
+        "statements": 357,
+        "missing_statements": 0,
+        "branches": 132,
+        "missing_branches": 0,
+        "missing_lines": [],
+        "missing_branch_arcs": {}
+      },
+      "skills/tsao-dft-hpc-provenance/scripts/benchmark_bridge.py": {
+        "statement": 100.0,
+        "branch": 100.0,
+        "statements": 193,
+        "missing_statements": 0,
+        "branches": 80,
+        "missing_branches": 0,
+        "missing_lines": [],
+        "missing_branch_arcs": {}
+      },
+      "skills/tsao-dft-hpc-provenance/scripts/generate_job_script.py": {
+        "statement": 100.0,
+        "branch": 100.0,
+        "statements": 244,
+        "missing_statements": 0,
+        "branches": 104,
+        "missing_branches": 0,
+        "missing_lines": [],
+        "missing_branch_arcs": {}
+      },
+      "skills/tsao-dft-hpc-provenance/scripts/validate_hpc_manifest.py": {
+        "statement": 100.0,
+        "branch": 99.29,
+        "statements": 240,
+        "missing_statements": 0,
+        "branches": 140,
+        "missing_branches": 1,
+        "missing_lines": [],
+        "missing_branch_arcs": {
+          "234": [
+            236
+          ]
+        }
+      }
+    },
+    "ok": true
+  },
+  "file_sha256": {
+    "skills/tsao-dft-hpc-provenance/scripts/scientific_contracts_core_v18.py": "4844b14bb9b2814e9cf789b296ed5bd4a96c3aab4d3467a5eb500979c3c8e493",
+    "skills/tsao-dft-kinetics-multiscale/scripts/check_thermodynamic_closure.py": "aaea70fe9c41df143397da3cd427908f3a0ca76d2def2f6823f48e422287af88",
+    "skills/tsao-dft-kinetics-multiscale/scripts/eyring_rates.py": "77758e8dbcb764c1f95a2d387f0ac8822442a85f392b223b6f4c43269faf5497",
+    "skills/tsao-dft-kinetics-multiscale/scripts/validate_reaction_network.py": "409a4191df61b4dbc073e6af0d1d487c699e9966b48f92d46720059bf732f6df",
+    "skills/tsao-dft-kinetics-multiscale/tests/test_balance_scale_invariance.py": "c148033940f953a2192052d29d6aca4b21a81a0bd3b5e2c2cb00a1bc36aea967",
+    "tests/test_thermodynamic_state_binding.py": "2a7950c679fa91e0a76573b6f00694e12296df30db374589454cc0d50228e882"
+  },
+  "invariant_references": [
+    "https://www.cantera.org/stable/cxx/dc/d38/classCantera_1_1ThermoPhase.html",
+    "https://www.cantera.org/2.5/doxygen/html/d4/dc8/group__Stoichiometry.html",
+    "https://goldbook.iupac.org/terms/view/T06470"
+  ],
+  "external_execution": "NOT_EVALUATED",
+  "scientific_approval": "NOT_EVALUATED",
+  "limitations": [
+    "The arithmetic assumes the declared common temperature, phase, reference state and energy basis; it does not authenticate their provenance.",
+    "Barrier-only documents remain supported with species_energy_checked=false.",
+    "No pressure, surface-site or nonideal activity conversion is inferred.",
+    "No DFT engine, remote scientific job, paid service or experimental calibration executed.",
+    "Local Linux Python 3.12 only; wider Python/platform evidence comes from exact-head CI."
+  ]
+}

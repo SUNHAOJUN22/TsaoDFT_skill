@@ -371,6 +371,13 @@ class StandardState:
             raise TSTContractError("standard-state unit must be M or mol/L")
         if not isinstance(self.activity_convention, str) or not self.activity_convention.strip():
             raise TSTContractError("activity convention is required")
+        if self.activity_convention not in {
+            "dimensionless_activity_c_over_c0",
+            "a=c/c0",
+            "a=c/c°",
+            "ideal dilute activity",
+        }:
+            raise TSTContractError("unsupported activity convention; concentration TST requires a=c/c0")
 
 
 @dataclass(frozen=True)

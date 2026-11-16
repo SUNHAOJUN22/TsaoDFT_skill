@@ -51,7 +51,7 @@ def concentration_log_factor(molecularity: int, standard_state: str, barrier_ref
     reference = standard_concentration(barrier_reference)
     if concentration != reference:
         raise ValueError("barrier reference and rate standard state differ; convert the barrier explicitly")
-    if activity not in {"a=c/c0", "a=c/c°", "ideal dilute activity"}:
+    if activity not in {"a=c/c0", "a=c/c°", "ideal dilute activity", "dimensionless_activity_c_over_c0"}:
         raise ValueError("higher-order rates require the concentration activity convention a=c/c0")
     return (1 - molecularity) * math.log(concentration)
 

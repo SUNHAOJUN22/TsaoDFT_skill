@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import math
 from fractions import Fraction
@@ -72,7 +73,7 @@ def side_balance(
     return out
 
 
-def validate(data: Any) -> tuple[list[str], list[str]]:
+def validate(data: Any, *, energy_tolerance: float = 0.05) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
     if not isinstance(data, dict):
@@ -235,6 +236,16 @@ def validate(data: Any) -> tuple[list[str], list[str]]:
 
     if len(reaction_ids) != len(set(reaction_ids)):
         errors.append("duplicate reaction ids")
+    if not errors:
+        # Keep the standalone checker and network admission on one physical
+        # contract, including the link from species states to reaction energies.
+        path = Path(__file__).with_name("check_thermodynamic_closure.py")
+        spec = importlib.util.spec_from_file_location("tsao_network_thermodynamic_closure", path)
+        if spec is None or spec.loader is None:
+            raise RuntimeError(f"cannot load thermodynamic closure checker: {path}")
+        closure = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(closure)
+        errors.extend(closure.analyze(data, energy_tolerance)["errors"])
     if data.get("status") == "accepted" and (errors or warnings):
         errors.append("accepted network has unresolved errors/warnings")
     return sorted(set(errors)), sorted(set(warnings))
@@ -243,10 +254,16 @@ def validate(data: Any) -> tuple[list[str], list[str]]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("network", type=Path)
+    parser.add_argument(
+        "--energy-tolerance",
+        type=float,
+        default=0.05,
+        help="Absolute thermodynamic consistency tolerance in the declared energy_unit",
+    )
     args = parser.parse_args()
     try:
         data = yaml.safe_load(args.network.read_text(encoding="utf-8"))
-        errors, warnings = validate(data)
+        errors, warnings = validate(data, energy_tolerance=args.energy_tolerance)
     except (OSError, UnicodeError, yaml.YAMLError) as exc:
         errors = [f"reaction network parse failed: {exc}"]
         warnings = []

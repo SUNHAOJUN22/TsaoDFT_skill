@@ -30,7 +30,14 @@ class BalanceScaleInvarianceTests(unittest.TestCase):
 
     def scaled_network(self, scale):
         data = copy.deepcopy(self.base)
+        # This fixture isolates atom/charge/site conservation. Keep its state
+        # energies consistent at every stoichiometric normalization, including
+        # normalizations whose nonzero reaction energy would exceed binary64.
+        for species in data["species"]:
+            species["free_energy"] = 0.0
         for reaction in data["reactions"]:
+            reaction["reaction_free_energy"] = 0.0
+            reaction["reverse_barrier"] = reaction["forward_barrier"]
             for side in ("reactants", "products"):
                 reaction[side] = {key: value * scale for key, value in reaction[side].items()}
         return data

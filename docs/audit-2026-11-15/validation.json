@@ -1,0 +1,363 @@
+{
+  "schema": "tsao.local-code-audit/v1",
+  "audit_date": "2026-11-15",
+  "baseline_commit": "6b0c6c5aa405880b3c8d0847aee9e8fec66ce17d",
+  "environment": {
+    "platform": "Linux",
+    "python": "3.12.14",
+    "libraries": {
+      "numpy": "2.3.5",
+      "matplotlib": "3.10.8",
+      "Pillow": "13.0.0",
+      "PyYAML": "6.0.3",
+      "cryptography": "50.0.0",
+      "jsonschema": "4.26.0",
+      "pytest": "9.0.3",
+      "ruff": "0.15.22",
+      "mypy": "2.3.0",
+      "coverage": "7.15.2",
+      "bandit": "1.9.4"
+    },
+    "exact_ci_constraint_installation": false,
+    "note": "Local cached runtime NumPy 2.3.5 and matplotlib 3.10.8 satisfy project ranges; authoritative py312 CI constraints pin NumPy 2.5.1 and matplotlib 3.11.1. Test/lint/typing/security tools use their declared exact versions."
+  },
+  "remote_branch_policy": "main only; coordinator live inventory found no other branch or open PR",
+  "findings_fixed": [
+    {
+      "id": "DFT-1",
+      "path": "skills/tsao-dft-kinetics-multiscale/scripts/validate_reaction_network.py",
+      "problem": "A fixed absolute balance threshold erased conservation violations at small stoichiometric normalization; overflow could produce NaN comparisons that also passed.",
+      "fix": "Exact binary-rational products with relative scales for each element, charge and site balance; trace species retained."
+    },
+    {
+      "id": "DFT-2",
+      "path": "skills/tsao-dft-kinetics-multiscale/scripts/validate_reaction_network.py",
+      "problem": "Networks with balanced negative atom counts or site occupancies were accepted.",
+      "fix": "Reject negative composition/site entries while preserving signed charge and finite validation."
+    },
+    {
+      "id": "DFT-3",
+      "path": "skills/tsao-dft-kinetics-multiscale/scripts/check_thermodynamic_closure.py",
+      "problem": "Out-of-range integers and overflow in derived reverse barriers/closure residuals raised unstructured arithmetic exceptions.",
+      "fix": "Return structured validation errors without nonfinite report rows."
+    },
+    {
+      "id": "DFT-4",
+      "path": "skills/tsao-dft-ml-active-learning/scripts/train_ridge_baseline.py",
+      "problem": "Error metrics depended on a common energy-reference shift; small representable residuals could be erased by a much larger target range.",
+      "fix": "Center targets before scaling, normalize residuals and target spread independently, and combine squared scales exactly before rounding R-squared."
+    }
+  ],
+  "baseline_reproduction": {
+    "initial_pytest_summary": "12 failed, 10 passed, 10 subtests passed (failures include subtest failures)",
+    "negative_composition_site_summary": "3 failed, 2 passed, 7 deselected (failures include subtest failures)",
+    "mixed_scale_summary": "1 failed, 1 passed, 7 deselected"
+  },
+  "new_regression_test_methods": 15,
+  "complete_quality_gate": {
+    "command": [
+      "python",
+      "scripts/quality_gate.py",
+      "--report-dir",
+      "docs/audit-2026-11-15/final-runtime"
+    ],
+    "returncode": 0,
+    "acceptance_state": "SOFTWARE_GATES_PASSED",
+    "scope": "this quality-gate process only; not all CI jobs",
+    "seconds": 209.968,
+    "stages": [
+      {
+        "stage": "demo assets",
+        "returncode": 0,
+        "seconds": 0.065,
+        "timed_out": false
+      },
+      {
+        "stage": "dependency contract",
+        "returncode": 0,
+        "seconds": 0.065,
+        "timed_out": false
+      },
+      {
+        "stage": "CI constraints",
+        "returncode": 0,
+        "seconds": 0.065,
+        "timed_out": false
+      },
+      {
+        "stage": "acceleration contracts",
+        "returncode": 0,
+        "seconds": 0.849,
+        "timed_out": false
+      },
+      {
+        "stage": "benchmark contract",
+        "returncode": 0,
+        "seconds": 0.316,
+        "timed_out": false
+      },
+      {
+        "stage": "acceleration registry",
+        "returncode": 0,
+        "seconds": 0.064,
+        "timed_out": false
+      },
+      {
+        "stage": "engine capabilities",
+        "returncode": 0,
+        "seconds": 0.215,
+        "timed_out": false
+      },
+      {
+        "stage": "compute qualification",
+        "returncode": 0,
+        "seconds": 0.319,
+        "timed_out": false
+      },
+      {
+        "stage": "compute contract evidence",
+        "returncode": 0,
+        "seconds": 0.465,
+        "timed_out": false
+      },
+      {
+        "stage": "compute architecture audit",
+        "returncode": 0,
+        "seconds": 1.079,
+        "timed_out": false
+      },
+      {
+        "stage": "release acceptance",
+        "returncode": 0,
+        "seconds": 0.167,
+        "timed_out": false
+      },
+      {
+        "stage": "packaging model",
+        "returncode": 0,
+        "seconds": 0.065,
+        "timed_out": false
+      },
+      {
+        "stage": "catalog",
+        "returncode": 0,
+        "seconds": 0.064,
+        "timed_out": false
+      },
+      {
+        "stage": "Agent eval contracts",
+        "returncode": 0,
+        "seconds": 0.115,
+        "timed_out": false
+      },
+      {
+        "stage": "governance",
+        "returncode": 0,
+        "seconds": 0.066,
+        "timed_out": false
+      },
+      {
+        "stage": "capability claims",
+        "returncode": 0,
+        "seconds": 0.115,
+        "timed_out": false
+      },
+      {
+        "stage": "secret patterns",
+        "returncode": 0,
+        "seconds": 0.716,
+        "timed_out": false
+      },
+      {
+        "stage": "ignore markers",
+        "returncode": 0,
+        "seconds": 0.114,
+        "timed_out": false
+      },
+      {
+        "stage": "AI assets",
+        "returncode": 0,
+        "seconds": 0.065,
+        "timed_out": false
+      },
+      {
+        "stage": "README visuals",
+        "returncode": 0,
+        "seconds": 0.214,
+        "timed_out": false
+      },
+      {
+        "stage": "README links",
+        "returncode": 0,
+        "seconds": 0.064,
+        "timed_out": false
+      },
+      {
+        "stage": "Ruff lint",
+        "returncode": 0,
+        "seconds": 0.032,
+        "timed_out": false
+      },
+      {
+        "stage": "Ruff format",
+        "returncode": 0,
+        "seconds": 0.032,
+        "timed_out": false
+      },
+      {
+        "stage": "mypy",
+        "returncode": 0,
+        "seconds": 6.339,
+        "timed_out": false
+      },
+      {
+        "stage": "trust-boundary strict mypy",
+        "returncode": 0,
+        "seconds": 2.347,
+        "timed_out": false
+      },
+      {
+        "stage": "coverage",
+        "returncode": 0,
+        "seconds": 133.778,
+        "timed_out": false
+      },
+      {
+        "stage": "Bandit",
+        "returncode": 0,
+        "seconds": 2.576,
+        "timed_out": false
+      },
+      {
+        "stage": "repository",
+        "returncode": 0,
+        "seconds": 1.372,
+        "timed_out": false
+      },
+      {
+        "stage": "unit tests",
+        "returncode": 0,
+        "seconds": 58.226,
+        "timed_out": false
+      }
+    ]
+  },
+  "tests": {
+    "suites": [
+      {
+        "suite": "tests",
+        "passed": 805,
+        "skipped": 1,
+        "subtests_passed": 142
+      },
+      {
+        "suite": "skills/tsao-dft-catalysis-profile/tests",
+        "passed": 11,
+        "skipped": 0,
+        "subtests_passed": 7
+      },
+      {
+        "suite": "skills/tsao-dft-hpc-provenance/tests",
+        "passed": 263,
+        "skipped": 2,
+        "subtests_passed": 303
+      },
+      {
+        "suite": "skills/tsao-dft-kinetics-multiscale/tests",
+        "passed": 37,
+        "skipped": 0,
+        "subtests_passed": 13
+      },
+      {
+        "suite": "skills/tsao-dft-ml-active-learning/tests",
+        "passed": 31,
+        "skipped": 0,
+        "subtests_passed": 13
+      },
+      {
+        "suite": "skills/tsao-dft-researcher/tests",
+        "passed": 57,
+        "skipped": 0,
+        "subtests_passed": 529
+      },
+      {
+        "suite": "skills/tsao-dft-suite/tests",
+        "passed": 6,
+        "skipped": 0,
+        "subtests_passed": 0
+      },
+      {
+        "suite": "skills/tsao-periodic-dft-materials/tests",
+        "passed": 63,
+        "skipped": 0,
+        "subtests_passed": 90
+      },
+      {
+        "suite": "skills/tsao-structure-prep/tests",
+        "passed": 57,
+        "skipped": 0,
+        "subtests_passed": 20
+      }
+    ],
+    "passed": 1330,
+    "skipped": 3,
+    "subtests_passed": 1117,
+    "skip_reason": "Three PowerShell runtime checks require pwsh, which is unavailable in this Linux environment.",
+    "failed_suites": 0
+  },
+  "coverage": {
+    "total": {
+      "statement": 93.06,
+      "branch": 83.09
+    },
+    "thresholds": {
+      "total_statement": 90.0,
+      "total_branch": 80.0,
+      "core_statement": 100.0,
+      "core_branch": 95.0
+    },
+    "trust_core": {
+      "skills/tsao-dft-hpc-provenance/scripts/shell_contract.py": {
+        "statement": 100.0,
+        "branch": 100.0
+      },
+      "skills/tsao-dft-hpc-provenance/scripts/trust_boundary.py": {
+        "statement": 100.0,
+        "branch": 100.0
+      },
+      "skills/tsao-dft-hpc-provenance/scripts/engine_parser_contract.py": {
+        "statement": 100.0,
+        "branch": 100.0
+      },
+      "skills/tsao-dft-hpc-provenance/scripts/benchmark_bridge.py": {
+        "statement": 100.0,
+        "branch": 100.0
+      },
+      "skills/tsao-dft-hpc-provenance/scripts/generate_job_script.py": {
+        "statement": 100.0,
+        "branch": 100.0
+      },
+      "skills/tsao-dft-hpc-provenance/scripts/validate_hpc_manifest.py": {
+        "statement": 100.0,
+        "branch": 99.29
+      }
+    },
+    "failures": [],
+    "scope": "existing run_coverage configuration, including scripts and skills with their tests"
+  },
+  "bandit": "PASS using existing reviewed allowlist (21 reviewed findings); not a claim of zero raw findings",
+  "tested_file_sha256": {
+    "skills/tsao-dft-kinetics-multiscale/scripts/check_thermodynamic_closure.py": "0938aa79c02b9d815be0dd2a0bc906ecfe31cbb59e3b70a2e53e6fe90a9c2248",
+    "skills/tsao-dft-kinetics-multiscale/scripts/validate_reaction_network.py": "1120b012dee1312210dbd8cb3d65e076d751ed2297790fe22931607f0b842ab9",
+    "skills/tsao-dft-ml-active-learning/scripts/train_ridge_baseline.py": "208c077bce64d4ef21ee673d755e0e2d33432da3918ef542a54702f8c39b0cf9",
+    "tests/test_ridge_metric_range.py": "fea55aea6ac1596e92e011c281f67b10e9d42a5ddadeca73769e828687397877",
+    "skills/tsao-dft-kinetics-multiscale/tests/test_balance_scale_invariance.py": "5578cc7b17efca117e961fc26eec9b428cf787601c7ce581120718242e733317"
+  },
+  "scientific_approval": "NOT_EVALUATED",
+  "external_execution": "NOT_EVALUATED",
+  "limitations": [
+    "Linux Python 3.12.14 local gate only; exact-constraint Linux/Windows CI remains authoritative.",
+    "No real DFT/HPC engine, paid campaign or external scientific benchmark was executed.",
+    "Live dependency advisory and CodeQL jobs were not executed locally."
+  ]
+}

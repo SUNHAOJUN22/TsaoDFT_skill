@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+from fractions import Fraction
 from pathlib import Path
 from typing import Any
 
@@ -16,7 +17,11 @@ def finite_number(value: Any, label: str, errors: list[str], *, positive: bool =
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         errors.append(f"{label} must be finite numeric")
         return None
-    number = float(value)
+    try:
+        number = float(value)
+    except (OverflowError, ValueError):
+        errors.append(f"{label} must be finite numeric")
+        return None
     if not math.isfinite(number):
         errors.append(f"{label} must be finite numeric")
         return None
@@ -26,7 +31,9 @@ def finite_number(value: Any, label: str, errors: list[str], *, positive: bool =
     return number
 
 
-def balanced_value(value: Any, label: str, errors: list[str]) -> dict[str, float] | float | None:
+def balanced_value(
+    value: Any, label: str, errors: list[str], *, non_negative: bool = False
+) -> dict[str, float] | float | None:
     if isinstance(value, dict):
         result: dict[str, float] = {}
         for key, raw in value.items():
@@ -35,24 +42,33 @@ def balanced_value(value: Any, label: str, errors: list[str]) -> dict[str, float
                 continue
             number = finite_number(raw, f"{label}.{key}", errors)
             if number is not None:
+                if non_negative and number < 0:
+                    errors.append(f"{label}.{key} must be non-negative")
                 result[key] = number
         return result
-    return finite_number(value, label, errors)
+    number = finite_number(value, label, errors)
+    if number is not None and non_negative and number < 0:
+        errors.append(f"{label} must be non-negative")
+    return number
 
 
 def side_balance(
     side: dict[str, float],
     species: dict[str, dict[str, Any]],
     key: str,
-) -> dict[str, float]:
-    out: dict[str, float] = {}
+    *,
+    absolute: bool = False,
+) -> dict[str, Fraction]:
+    # Stoichiometric validation is a small exact reduction, not a solver hot
+    # path. Rational accumulation avoids both overflow and underflow in finite
+    # coefficient * composition products, including trace-species balances.
+    out: dict[str, Fraction] = {}
     for species_id, coefficient in side.items():
         value = species[species_id].get(key, {} if key == "composition" else 0)
-        if isinstance(value, dict):
-            for balance_key, amount in value.items():
-                out[balance_key] = out.get(balance_key, 0.0) + coefficient * float(amount)
-        else:
-            out[key] = out.get(key, 0.0) + coefficient * float(value)
+        entries = value.items() if isinstance(value, dict) else ((key, value),)
+        for balance_key, amount in entries:
+            term = Fraction(coefficient) * Fraction(float(amount))
+            out[balance_key] = out.get(balance_key, Fraction(0)) + (abs(term) if absolute else term)
     return out
 
 
@@ -116,10 +132,10 @@ def validate(data: Any) -> tuple[list[str], list[str]]:
         if not isinstance(composition, dict) or not composition:
             errors.append(f"species[{index}].composition must be a non-empty mapping")
         else:
-            balanced_value(composition, f"species[{index}].composition", errors)
+            balanced_value(composition, f"species[{index}].composition", errors, non_negative=True)
         balanced_value(item.get("charge"), f"species[{index}].charge", errors)
         if "site_occupancy" in item:
-            balanced_value(item.get("site_occupancy"), f"species[{index}].site_occupancy", errors)
+            balanced_value(item.get("site_occupancy"), f"species[{index}].site_occupancy", errors, non_negative=True)
         finite_number(item.get("free_energy"), f"species[{index}].free_energy", errors)
         if len(errors) != before:
             invalid_balance_species.add(species_id)
@@ -184,13 +200,16 @@ def validate(data: Any) -> tuple[list[str], list[str]]:
             ):
                 left = side_balance(normalized_sides["reactants"], species, balance_key)
                 right = side_balance(normalized_sides["products"], species, balance_key)
-                differences = {
-                    key: right.get(key, 0.0) - left.get(key, 0.0)
-                    for key in set(left) | set(right)
-                    if abs(right.get(key, 0.0) - left.get(key, 0.0)) > 1e-9
-                }
+                left_scale = side_balance(normalized_sides["reactants"], species, balance_key, absolute=True)
+                right_scale = side_balance(normalized_sides["products"], species, balance_key, absolute=True)
+                differences = {}
+                for key in set(left) | set(right):
+                    difference = right.get(key, Fraction(0)) - left.get(key, Fraction(0))
+                    scale = max(left_scale.get(key, Fraction(0)), right_scale.get(key, Fraction(0)))
+                    if scale and abs(difference) > Fraction(1, 10**9) * scale:
+                        differences[key] = float(difference / scale)
                 if differences:
-                    errors.append(f"{reaction_id} violates {label} balance: {differences}")
+                    errors.append(f"{reaction_id} violates {label} balance (relative residual): {differences}")
 
         if item.get("forward_barrier") is None:
             errors.append(f"{reaction_id} missing forward_barrier")

@@ -30,6 +30,41 @@ class RidgeMetricRangeTests(unittest.TestCase):
     def test_constant_target_keeps_undefined_r_squared_explicit(self):
         self.assertEqual(_MODULE.metrics([1e308, 1e308], [1e308, 1e308]), {"mae": 0, "rmse": 0, "r2": None})
 
+    def test_resolvable_small_errors_are_not_erased_by_large_target_range(self):
+        result = _MODULE.metrics([-1e308, 0, 1e308], [-1e308, 1e-200, 1e308])
+        self.assertAlmostEqual(result["mae"] / 1e-200, 1 / 3)
+        self.assertAlmostEqual(result["rmse"] / 1e-200, math.sqrt(1 / 3))
+        self.assertEqual(result["r2"], 1.0)
+
+    def test_r_squared_remains_defined_for_subnormal_target_variation(self):
+        unit = math.ulp(0.0)
+        result = _MODULE.metrics([0.0, unit], [unit, 0.0])
+        self.assertEqual(result["mae"], unit)
+        self.assertEqual(result["rmse"], unit)
+        self.assertEqual(result["r2"], -3.0)
+
+    def test_metric_values_do_not_depend_on_energy_reference(self):
+        for offset in (0.0, -1e12, 1e12, 1e15):
+            with self.subTest(offset=offset):
+                y = [offset + value for value in (0.0, 2.0, 4.0, 6.0)]
+                prediction = [offset + value for value in (1.0, 3.0, 5.0, 7.0)]
+                result = _MODULE.metrics(y, prediction)
+                self.assertAlmostEqual(result["mae"], 1.0, places=14)
+                self.assertAlmostEqual(result["rmse"], 1.0, places=14)
+                self.assertAlmostEqual(result["r2"], 0.8, places=14)
+
+    def test_opposite_extreme_targets_keep_representable_metrics(self):
+        result = _MODULE.metrics([-1e308, 1e308], [0.0, 0.0])
+        self.assertEqual(result["mae"], 1e308)
+        self.assertEqual(result["rmse"], 1e308)
+        self.assertEqual(result["r2"], 0.0)
+
+    def test_large_individual_residual_can_have_representable_rmse(self):
+        result = _MODULE.metrics([-1e308, 0.0, 0.0, 0.0], [1e308, 0.0, 0.0, 0.0])
+        self.assertEqual(result["mae"], 5e307)
+        self.assertEqual(result["rmse"], 1e308)
+        self.assertAlmostEqual(result["r2"], -13 / 3)
+
     def test_unrepresentable_metrics_fail_instead_of_emitting_nonfinite_json(self):
         with self.assertRaisesRegex(ValueError, "metric results"):
             _MODULE.metrics([-1e308], [1e308])

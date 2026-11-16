@@ -11,6 +11,7 @@ import json
 import math
 import random
 import sys
+from fractions import Fraction
 from pathlib import Path
 
 import numpy as np
@@ -40,22 +41,44 @@ def metrics(y, prediction):
         raise ValueError("metrics require aligned non-empty one-dimensional arrays")
     if not np.isfinite(y).all() or not np.isfinite(prediction).all():
         raise ValueError("metric inputs must contain only finite values")
-    # Normalize before subtraction, summation and squaring. Finite targets may
-    # otherwise produce infinite MSE even when their RMSE is representable.
-    scale = max(float(np.max(np.abs(y))), float(np.max(np.abs(prediction)))) or 1.0
-    scaled_y = y / scale
-    error = prediction / scale - scaled_y
+    # Subtract the common target origin before scaling so an arbitrary energy
+    # reference does not destroy small, representable target differences.
+    # Opposite extreme finite inputs may overflow subtraction; only those
+    # arrays need the scaled-subtraction fallback.
+    with np.errstate(over="ignore"):
+        shifted_y = y - y[0]
+        residual = prediction - y
+    shifted_finite = np.isfinite(shifted_y).all()
+    residual_finite = np.isfinite(residual).all()
+    target_scale = float(np.max(np.abs(shifted_y if shifted_finite else y))) or 1.0
+    error_scale = (
+        float(np.max(np.abs(residual)))
+        if residual_finite
+        else max(float(np.max(np.abs(y))), float(np.max(np.abs(prediction))))
+    ) or 1.0
+    # Error magnitude and target spread can differ by hundreds of exponents.
+    # Normalize independently so a wide target range cannot erase a small,
+    # representable prediction error.
+    scaled_y = shifted_y / target_scale if shifted_finite else y / target_scale - y[0] / target_scale
+    error = residual / error_scale if residual_finite else prediction / error_scale - y / error_scale
     mean_squared_error = float(np.mean(error * error))
     centered = scaled_y - scaled_y.mean()
     variance = float(np.mean(centered * centered))
-    mae = scale * float(np.mean(np.abs(error)))
-    rmse = scale * math.sqrt(mean_squared_error)
+    mae = error_scale * float(np.mean(np.abs(error)))
+    rmse = error_scale * math.sqrt(mean_squared_error)
     if np.all(y == y[0]):
         r2 = None
     elif variance == 0:
         raise ValueError("target variance is outside the resolvable floating-point range")
     else:
-        r2 = float(1 - mean_squared_error / variance)
+        # Recombine the scales exactly before the final rounding. Squaring a
+        # binary64 scale first would overflow or underflow even for finite R².
+        relative_error = (Fraction(error_scale) / Fraction(target_scale)) ** 2
+        relative_error *= Fraction(mean_squared_error) / Fraction(variance)
+        try:
+            r2 = float(1 - relative_error)
+        except OverflowError as exc:
+            raise ValueError("metric results exceed the finite floating-point range") from exc
     if not all(math.isfinite(value) for value in (mae, rmse)) or (r2 is not None and not math.isfinite(r2)):
         raise ValueError("metric results exceed the finite floating-point range")
     return {"mae": mae, "rmse": rmse, "r2": r2}

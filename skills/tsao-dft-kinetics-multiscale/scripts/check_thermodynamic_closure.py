@@ -16,7 +16,11 @@ def finite_number(value: Any, label: str, errors: list[str]) -> float | None:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         errors.append(f"{label} must be finite numeric")
         return None
-    result = float(value)
+    try:
+        result = float(value)
+    except (OverflowError, ValueError):
+        errors.append(f"{label} must be finite numeric")
+        return None
     if not math.isfinite(result):
         errors.append(f"{label} must be finite numeric")
         return None
@@ -68,14 +72,22 @@ def analyze(document: Any, tolerance: Any) -> dict[str, Any]:
         if forward is None or reaction_energy is None:
             continue
 
-        expected_reverse = math.fsum((forward, -reaction_energy))
+        try:
+            expected_reverse = math.fsum((forward, -reaction_energy))
+        except OverflowError:
+            errors.append(f"{reaction_id} expected reverse barrier exceeds the finite floating-point range")
+            continue
         reported_raw = raw.get("reverse_barrier")
         reported_reverse: float | None = None
         closure_error: float | None = None
         if reported_raw is not None:
             reported_reverse = finite_number(reported_raw, f"{label}.reverse_barrier", errors)
             if reported_reverse is not None:
-                closure_error = math.fsum((reported_reverse, -expected_reverse))
+                try:
+                    closure_error = math.fsum((reported_reverse, -expected_reverse))
+                except OverflowError:
+                    errors.append(f"{reaction_id} closure error exceeds the finite floating-point range")
+                    continue
                 if abs(closure_error) > threshold:
                     errors.append(f"{reaction_id} closure error {closure_error:.6g} exceeds {threshold}")
         rows.append(

@@ -298,9 +298,11 @@ def publish_content_addressed_bundle(
 
 def verify_content_addressed_bundle(path: Path) -> dict[str, Any]:
     errors: list[str] = []
+    if path.is_symlink() or not path.is_dir():
+        return {"ok": False, "errors": ["evidence bundle must be a non-symlink directory"]}
     root_path = path / "evidence-root.json"
-    if not root_path.is_file():
-        return {"ok": False, "errors": ["evidence-root.json is missing"]}
+    if root_path.is_symlink() or not root_path.is_file():
+        return {"ok": False, "errors": ["evidence-root.json must be a regular non-symlink file"]}
     try:
         root_manifest = load_json(root_path)
     except (OSError, ValueError, json.JSONDecodeError) as exc:
@@ -313,11 +315,20 @@ def verify_content_addressed_bundle(path: Path) -> dict[str, Any]:
         errors.append("evidence root files must be a mapping")
     else:
         expected_names = set(files) | {"evidence-root.json"}
-        observed_names = {item.name for item in path.iterdir() if item.is_file()}
+        entries = list(path.iterdir())
+        observed_names = {item.name for item in entries}
+        non_regular = sorted(item.name for item in entries if item.is_symlink() or not item.is_file())
         if observed_names != expected_names:
             errors.append(
                 f"bundle file set mismatch: expected {sorted(expected_names)}, found {sorted(observed_names)}"
             )
+            errors.extend(f"bundle file is missing: {name}" for name in sorted(expected_names - observed_names))
+        if non_regular:
+            errors.append(f"bundle entries must be regular non-symlink files: {non_regular}")
+        if observed_names != expected_names or non_regular:
+            # Check the complete flat inventory before reading any declared
+            # member, including manifest names that could leave the bundle.
+            return {"ok": False, "errors": sorted(set(errors)), "root_sha256": root_sha}
         for name, metadata in files.items():
             file_path = path / name
             if not file_path.is_file():

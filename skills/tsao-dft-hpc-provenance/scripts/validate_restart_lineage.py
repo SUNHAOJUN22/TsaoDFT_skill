@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import runpy
 from pathlib import Path
 from typing import Any
 
@@ -83,9 +84,11 @@ def main() -> int:
     parser.add_argument("lineage", type=Path)
     args = parser.parse_args()
     try:
-        data = yaml.safe_load(args.lineage.read_text(encoding="utf-8"))
+        runtime = Path(__file__).resolve().with_name("benchmark_contract.py")
+        decode_yaml = runpy.run_path(str(runtime))["decode_yaml"]
+        data = decode_yaml(args.lineage.read_text(encoding="utf-8"))
         errors, warnings = validate(data)
-    except (OSError, UnicodeError, yaml.YAMLError) as exc:
+    except (OSError, UnicodeError, ValueError, yaml.YAMLError) as exc:
         errors = [f"restart lineage parse failed: {exc}"]
         warnings = []
     print(json.dumps({"ok": not errors, "errors": errors, "warnings": warnings}, indent=2))

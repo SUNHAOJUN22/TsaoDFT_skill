@@ -25,6 +25,7 @@ MARKER_SCHEMA = 1
 INSTALL_LOCK = ".tsao-install.lock"
 IGNORED_COPY_NAMES = {"__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache"}
 RUNTIME_DEPENDENCIES = {
+    "tsao-dft-suite": ("benchmark_contract.py",),
     "tsao-dft-researcher": (
         "engine_parser_contract_v4.py",
         "_load_v18_core.py",

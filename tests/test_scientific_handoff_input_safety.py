@@ -19,11 +19,25 @@ ENERGY = (
     "  - coefficient: 1\n    method_fingerprint: PBE\n"
     "  - coefficient: -1\n    method_fingerprint: PBE\n"
 )
+HANDOFF = (ROOT / "skills/tsao-dft-suite/examples/handoff.yaml").read_text(encoding="utf-8")
+RESTART = (ROOT / "skills/tsao-dft-hpc-provenance/templates/restart-lineage.yaml").read_text(encoding="utf-8")
+FINGERPRINT = (
+    (ROOT / "skills/tsao-dft-suite/templates/method-fingerprint.yaml")
+    .read_text(encoding="utf-8")
+    .replace("method: unknown", "method: B3LYP")
+    .replace("basis_or_pseudopotential: unknown", "basis_or_pseudopotential: def2-SVP")
+    .replace("charge: unknown", "charge: 0")
+    .replace("multiplicity_or_magnetism: unknown", "multiplicity_or_magnetism: 1")
+    .replace("status: draft", "status: accepted")
+)
 COMMANDS = (
     ("tsao-periodic-dft-materials", "check_energy_compatibility.py", ENERGY),
     ("tsao-dft-kinetics-multiscale", "check_thermodynamic_closure.py", NETWORK),
     ("tsao-dft-kinetics-multiscale", "validate_reaction_network.py", NETWORK),
     ("tsao-dft-kinetics-multiscale", "export_cantera_handoff.py", NETWORK),
+    ("tsao-dft-suite", "validate_handoff.py", HANDOFF),
+    ("tsao-dft-suite", "validate_method_fingerprint.py", FINGERPRINT),
+    ("tsao-dft-hpc-provenance", "validate_restart_lineage.py", RESTART),
 )
 
 
@@ -31,10 +45,22 @@ def run_script(script: Path, source: Path, output: Path) -> subprocess.Completed
     command = [sys.executable, str(script), str(source)]
     if script.name == "export_cantera_handoff.py":
         command.extend(["--out", str(output)])
+    elif script.name in {"validate_handoff.py", "validate_method_fingerprint.py"}:
+        command.append("--json")
     return subprocess.run(command, capture_output=True, text=True, check=False)
 
 
 def duplicate_input(text: str) -> str:
+    if "child_method_fingerprint:" in text:
+        return text.replace(
+            "child_method_fingerprint: MF001", "child_method_fingerprint: changed\nchild_method_fingerprint: MF001"
+        )
+    if "blocking_unknowns:" in text:
+        return text.replace(
+            "blocking_unknowns: []", "blocking_unknowns: [unresolved spin and charge]\nblocking_unknowns: []"
+        )
+    if "spin_charge:" in text:
+        return text.replace("  charge: 0", "  charge: unknown\n  charge: 0")
     if "method_fingerprint:" in text:
         return text.replace("coefficient: -1\n", "coefficient: -1\n    method_fingerprint: B3LYP\n")
     return text.replace("reverse_barrier: 17.0", "reverse_barrier: 1.0\n    reverse_barrier: 17.0")
@@ -56,6 +82,37 @@ def test_scientific_clis_reject_ambiguous_yaml_before_acceptance(
     assert "Traceback" not in result.stderr
     assert source.read_text(encoding="utf-8") == payload
     assert not output.exists()
+
+
+@pytest.mark.parametrize(
+    "temperature,accepted",
+    [
+        ("298.15", True),
+        ("1", True),
+        ("0.125", True),
+        ("0", False),
+        ("-1", False),
+        (".nan", False),
+        (".inf", False),
+        ("true", False),
+        ("false", False),
+        ('"298.15"', False),
+        ("9" * 400, False),
+    ],
+)
+def test_method_fingerprint_temperature_requires_positive_finite_real(
+    tmp_path: Path, temperature: str, accepted: bool
+) -> None:
+    source = tmp_path / "method.yaml"
+    text = FINGERPRINT.replace("temperature_K: 298.15", f"temperature_K: {temperature}")
+    source.write_text(text, encoding="utf-8")
+    result = run_script(
+        ROOT / "skills/tsao-dft-suite/scripts/validate_method_fingerprint.py", source, tmp_path / "unused"
+    )
+    assert result.returncode == (0 if accepted else 1), result.stdout + result.stderr
+    assert json.loads(result.stdout)["ok"] is accepted
+    assert "Traceback" not in result.stderr
+    assert source.read_text(encoding="utf-8") == text
 
 
 @pytest.mark.parametrize("alias", ["same-path", "dotdot", "symlink", "hardlink"])
@@ -160,10 +217,14 @@ def test_copy_installed_scientific_clis_use_the_canonical_decoder(
         check=False,
     )
     assert installation.returncode == 0, installation.stdout + installation.stderr
-    assert not (target / "tsao-dft-hpc-provenance").exists()
     installed_script = target / skill / "scripts" / script
     canonical = ROOT / "skills/tsao-dft-hpc-provenance/scripts/benchmark_contract.py"
-    assert (installed_script.parent / "_shared/benchmark_contract.py").read_bytes() == canonical.read_bytes()
+    if skill == "tsao-dft-hpc-provenance":
+        installed_decoder = installed_script.parent / "benchmark_contract.py"
+    else:
+        assert not (target / "tsao-dft-hpc-provenance").exists()
+        installed_decoder = installed_script.parent / "_shared/benchmark_contract.py"
+    assert installed_decoder.read_bytes() == canonical.read_bytes()
     source = tmp_path / "input.yaml"
     output = tmp_path / "handoff.yaml"
     source.write_text(text, encoding="utf-8")

@@ -46,13 +46,17 @@ class SuiteTests(unittest.TestCase):
         data = yaml.safe_load((ROOT / "examples/handoff.yaml").read_text(encoding="utf-8"))
         data["structure_artifacts"] = {"not": "a-list"}
         data["resource_estimate"]["jobs"] = True
-        data["resource_estimate"]["cpu_hours"] = float("nan")
         result = self.run_handoff_text(yaml.safe_dump(data))
         self.assertEqual(result.returncode, 1)
         report = json.loads(result.stdout)
         self.assertIn("structure_artifacts must be a list", report["errors"])
         self.assertIn("resource_estimate.jobs must be finite numeric", report["errors"])
-        self.assertIn("resource_estimate.cpu_hours must be finite numeric", report["errors"])
+
+        data["resource_estimate"]["cpu_hours"] = float("nan")
+        result = self.run_handoff_text(yaml.safe_dump(data))
+        self.assertEqual(result.returncode, 1)
+        self.assertFalse(json.loads(result.stdout)["ok"])
+        self.assertIn("non-finite", result.stdout)
 
     def test_method_draft_reports_errors_but_parser_runs(self):
         result = subprocess.run(

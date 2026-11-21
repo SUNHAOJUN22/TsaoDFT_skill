@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
+import runpy
 from pathlib import Path
 
 import yaml
@@ -58,11 +60,17 @@ def validate(d: dict) -> tuple[list[str], list[str]]:
             if num.get(k) in (None, "unknown"):
                 w.append(f"periodic numerics unresolved: {k}")
     if ss.get("temperature_K") is not None:
-        try:
-            if float(ss["temperature_K"]) <= 0:
-                e.append("temperature_K must be positive")
-        except (TypeError, ValueError):
-            e.append("temperature_K must be numeric")
+        temperature = ss["temperature_K"]
+        if isinstance(temperature, bool) or not isinstance(temperature, (int, float)):
+            e.append("temperature_K must be a positive finite real number")
+        else:
+            try:
+                numeric = float(temperature)
+            except OverflowError:
+                e.append("temperature_K must be a positive finite real number")
+            else:
+                if not math.isfinite(numeric) or numeric <= 0:
+                    e.append("temperature_K must be a positive finite real number")
     if d.get("status") == "accepted" and (e or w):
         e.append("accepted fingerprint has unresolved errors/warnings")
     return e, w
@@ -73,8 +81,21 @@ def main() -> int:
     ap.add_argument("fingerprint", type=Path)
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
-    d = yaml.safe_load(a.fingerprint.read_text(encoding="utf-8")) or {}
-    e, w = validate(d)
+    e: list[str]
+    w: list[str]
+    try:
+        directory = Path(__file__).resolve().parent
+        runtime = directory / "_shared/benchmark_contract.py"
+        if not runtime.is_file():
+            runtime = directory.parents[1] / "tsao-dft-hpc-provenance/scripts/benchmark_contract.py"
+        decode_yaml = runpy.run_path(str(runtime))["decode_yaml"]
+        d = decode_yaml(a.fingerprint.read_text(encoding="utf-8"))
+        if not isinstance(d, dict):
+            e, w = ["method fingerprint root must be a mapping"], []
+        else:
+            e, w = validate(d)
+    except (OSError, UnicodeError, ValueError, yaml.YAMLError) as exc:
+        e, w = [f"method fingerprint parse failed: {exc}"], []
     r = {"ok": not e, "errors": e, "warnings": w}
     print(
         json.dumps(r, indent=2)

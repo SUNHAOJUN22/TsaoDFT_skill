@@ -22,13 +22,13 @@ RUNTIME = ROOT / "skills/tsao-dft-hpc-provenance/scripts"
             "tsao-periodic-dft-materials",
             "parse_cp2k.py",
             "examples/engine-adapters/cp2k/si.out",
-            ["engine_scan_core.py"],
+            ["engine_scan_core.py", "benchmark_contract.py"],
         ),
         (
             "tsao-periodic-dft-materials",
             "parse_vasp.py",
             "examples/engine-adapters/vasp/OUTCAR",
-            ["engine_scan_core.py"],
+            ["engine_scan_core.py", "benchmark_contract.py"],
         ),
         (
             "tsao-dft-researcher",

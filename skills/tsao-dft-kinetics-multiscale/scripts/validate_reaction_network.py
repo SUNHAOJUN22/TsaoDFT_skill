@@ -7,6 +7,7 @@ import argparse
 import importlib.util
 import json
 import math
+import runpy
 from fractions import Fraction
 from pathlib import Path
 from typing import Any
@@ -262,9 +263,14 @@ def main() -> int:
     )
     args = parser.parse_args()
     try:
-        data = yaml.safe_load(args.network.read_text(encoding="utf-8"))
+        directory = Path(__file__).resolve().parent
+        runtime = directory / "_shared/benchmark_contract.py"
+        if not runtime.is_file():
+            runtime = directory.parents[1] / "tsao-dft-hpc-provenance/scripts/benchmark_contract.py"
+        decode_yaml = runpy.run_path(str(runtime))["decode_yaml"]
+        data = decode_yaml(args.network.read_text(encoding="utf-8"))
         errors, warnings = validate(data, energy_tolerance=args.energy_tolerance)
-    except (OSError, UnicodeError, yaml.YAMLError) as exc:
+    except (OSError, UnicodeError, ValueError, yaml.YAMLError) as exc:
         errors = [f"reaction network parse failed: {exc}"]
         warnings = []
     print(json.dumps({"ok": not errors, "errors": errors, "warnings": warnings}, indent=2))

@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import runpy
 from pathlib import Path
 from typing import Any
 
@@ -57,9 +58,14 @@ def main() -> int:
     parser.add_argument("expression", type=Path)
     args = parser.parse_args()
     try:
-        data = yaml.safe_load(args.expression.read_text(encoding="utf-8"))
+        directory = Path(__file__).resolve().parent
+        runtime = directory / "_shared/benchmark_contract.py"
+        if not runtime.is_file():
+            runtime = directory.parents[1] / "tsao-dft-hpc-provenance/scripts/benchmark_contract.py"
+        decode_yaml = runpy.run_path(str(runtime))["decode_yaml"]
+        data = decode_yaml(args.expression.read_text(encoding="utf-8"))
         errors, fingerprints = validate(data)
-    except (OSError, UnicodeError, yaml.YAMLError) as exc:
+    except (OSError, UnicodeError, ValueError, yaml.YAMLError) as exc:
         errors = [f"energy expression parse failed: {exc}"]
         fingerprints = []
     print(json.dumps({"ok": not errors, "errors": errors, "fingerprints": fingerprints}, indent=2))

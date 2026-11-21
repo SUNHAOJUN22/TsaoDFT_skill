@@ -31,7 +31,8 @@ RUNTIME_DEPENDENCIES = {
         "scientific_contracts_core_v18.py",
         "engine_scan_core.py",
     ),
-    "tsao-periodic-dft-materials": ("engine_scan_core.py",),
+    "tsao-periodic-dft-materials": ("engine_scan_core.py", "benchmark_contract.py"),
+    "tsao-dft-kinetics-multiscale": ("benchmark_contract.py",),
 }
 RUNTIME_SOURCE = SKILLS_DIR / "tsao-dft-hpc-provenance" / "scripts"
 

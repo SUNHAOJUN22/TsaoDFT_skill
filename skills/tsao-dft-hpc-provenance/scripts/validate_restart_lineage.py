@@ -38,10 +38,21 @@ def validate(data: Any) -> tuple[list[str], list[str]]:
         if key not in data:
             errors.append(f"missing {key}")
 
+    for key in ["lineage_id", "engine", "parent_run_id", "child_run_id", "status"]:
+        value = data.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errors.append(f"{key} must be a non-blank string")
+    parent_run_id = data.get("parent_run_id")
+    if isinstance(parent_run_id, str) and parent_run_id.strip() and parent_run_id == data.get("child_run_id"):
+        errors.append("parent_run_id and child_run_id must identify distinct runs")
+
     checkpoint = data.get("parent_checkpoint")
     if not isinstance(checkpoint, dict):
         errors.append("parent_checkpoint must be a mapping")
         checkpoint = {}
+    checkpoint_path = checkpoint.get("path")
+    if not isinstance(checkpoint_path, str) or not checkpoint_path.strip():
+        errors.append("parent checkpoint path must be a non-blank string")
     digest = checkpoint.get("sha256")
     if not isinstance(digest, str) or SHA256_RE.fullmatch(digest) is None:
         errors.append("parent checkpoint sha256 invalid")
@@ -52,11 +63,11 @@ def validate(data: Any) -> tuple[list[str], list[str]]:
         ("parent_method_fingerprint", parent_fingerprint),
         ("child_method_fingerprint", child_fingerprint),
     ):
-        if not isinstance(value, str) or not value:
+        if not isinstance(value, str) or not value.strip():
             errors.append(f"{label} must be a non-empty string")
 
     mode = data.get("restart_mode")
-    if mode not in RESTART_MODES:
+    if not isinstance(mode, str) or mode not in RESTART_MODES:
         errors.append("invalid restart_mode")
     same_fingerprint = isinstance(parent_fingerprint, str) and bool(parent_fingerprint)
     same_fingerprint = same_fingerprint and parent_fingerprint == child_fingerprint
@@ -67,11 +78,11 @@ def validate(data: Any) -> tuple[list[str], list[str]]:
     if not isinstance(changes, list):
         errors.append("changes must be a list")
         changes = []
-    elif not all(isinstance(change, str) and change for change in changes):
+    elif not all(isinstance(change, str) and change.strip() for change in changes):
         errors.append("changes must contain non-empty strings")
     if changes and mode == "exact_restart":
         errors.append("exact_restart cannot declare scientific/numerical changes")
-    if mode in {"geometry_reuse", "wavefunction_guess_reuse"}:
+    if isinstance(mode, str) and mode in {"geometry_reuse", "wavefunction_guess_reuse"}:
         warnings.append("reuse is not an exact restart; child is a distinct run and must be preflighted")
 
     if data.get("status") == "accepted" and (errors or warnings):

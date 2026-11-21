@@ -16,6 +16,14 @@ ENGINES = {"gaussian", "orca", "psi4", "vasp", "quantum-espresso", "cp2k", "othe
 STATUS = {"draft", "reviewed", "accepted", "deprecated"}
 
 
+def _mapping(data: dict, key: str, errors: list[str]) -> dict:
+    value = data.get(key)
+    if not isinstance(value, dict):
+        errors.append(f"{key} must be a mapping")
+        return {}
+    return value
+
+
 def validate(d: dict) -> tuple[list[str], list[str]]:
     e = []
     w = []
@@ -34,16 +42,17 @@ def validate(d: dict) -> tuple[list[str], list[str]]:
     ]:
         if k not in d:
             e.append(f"missing {k}")
-    if d.get("domain") not in DOMAINS:
+    if not isinstance(d.get("domain"), str) or d["domain"] not in DOMAINS:
         e.append("invalid domain")
-    if d.get("engine") not in ENGINES:
+    if not isinstance(d.get("engine"), str) or d["engine"] not in ENGINES:
         e.append("unsupported engine label")
-    if d.get("status") not in STATUS:
+    if not isinstance(d.get("status"), str) or d["status"] not in STATUS:
         e.append("invalid status")
-    mc = d.get("model_chemistry") or {}
-    num = d.get("numerics") or {}
-    sc = d.get("spin_charge") or {}
-    ss = d.get("standard_state") or {}
+    mc = _mapping(d, "model_chemistry", e)
+    num = _mapping(d, "numerics", e)
+    sc = _mapping(d, "spin_charge", e)
+    ss = _mapping(d, "standard_state", e)
+    _mapping(d, "provenance", e)
     if d.get("domain") == "molecular":
         for k in ["method", "basis_or_pseudopotential", "solvent_or_electrostatics"]:
             if mc.get(k) in (None, "unknown"):
@@ -52,7 +61,7 @@ def validate(d: dict) -> tuple[list[str], list[str]]:
             e.append("molecular fingerprint requires explicit charge before acceptance")
         if sc.get("multiplicity_or_magnetism") in (None, "unknown"):
             e.append("molecular fingerprint requires multiplicity before acceptance")
-    if d.get("domain") in {"periodic", "cluster-periodic"}:
+    if d.get("domain") in ("periodic", "cluster-periodic"):
         for k in ["method", "basis_or_pseudopotential"]:
             if mc.get(k) in (None, "unknown"):
                 w.append(f"periodic method unresolved: {k}")

@@ -65,15 +65,15 @@ def validate(data: Any) -> tuple[list[str], list[str]]:
     for key in required:
         if key not in data:
             errors.append(f"missing {key}")
-    if data.get("source_skill") not in SKILLS:
+    if not isinstance(data.get("source_skill"), str) or data["source_skill"] not in SKILLS:
         errors.append("unknown source_skill")
-    if data.get("target_skill") not in SKILLS:
+    if not isinstance(data.get("target_skill"), str) or data["target_skill"] not in SKILLS:
         errors.append("unknown target_skill")
     if data.get("source_skill") == data.get("target_skill"):
         warnings.append("source_skill equals target_skill; handoff may be unnecessary")
-    if data.get("support_level") not in LEVELS:
+    if not isinstance(data.get("support_level"), str) or data["support_level"] not in LEVELS:
         errors.append("invalid support_level")
-    if data.get("approval_status") not in APPROVAL:
+    if not isinstance(data.get("approval_status"), str) or data["approval_status"] not in APPROVAL:
         errors.append("invalid approval_status")
 
     for field in sorted(COLLECTION_FIELDS):
@@ -105,7 +105,11 @@ def validate(data: Any) -> tuple[list[str], list[str]]:
             if isinstance(value, bool) or not isinstance(value, (int, float)):
                 errors.append(f"resource_estimate.{key} must be finite numeric")
                 continue
-            numeric = float(value)
+            try:
+                numeric = float(value)
+            except OverflowError:
+                errors.append(f"resource_estimate.{key} must be finite numeric")
+                continue
             if not math.isfinite(numeric):
                 errors.append(f"resource_estimate.{key} must be finite numeric")
             elif numeric < 0:

@@ -9,10 +9,25 @@ import itertools
 import json
 import math
 import sys
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
 Point = tuple[float, float]
+
+
+def _finite_literal(value: str) -> float:
+    converted = float(value)
+    if not math.isfinite(converted):
+        raise ValueError("convergence values must be finite")
+    if converted == 0:
+        try:
+            precise = Decimal(value)
+        except InvalidOperation as exc:
+            raise ValueError("invalid convergence numeric literal") from exc
+        if precise != 0:
+            raise ValueError("non-zero convergence value underflows the finite floating-point range")
+    return converted
 
 
 def _finite_number(value: object) -> float | None:
@@ -46,13 +61,10 @@ def load_points(path: Path, value_column: str, observable_column: str) -> tuple[
                 errors.append(f"row {line_number}: more fields than the CSV header")
                 continue
             try:
-                value = float(row[value_column])
-                observable = float(row[observable_column])
+                value = _finite_literal(row[value_column])
+                observable = _finite_literal(row[observable_column])
             except (KeyError, TypeError, ValueError) as exc:
                 errors.append(f"row {line_number}: {exc}")
-                continue
-            if not math.isfinite(value) or not math.isfinite(observable):
-                errors.append(f"row {line_number}: convergence values must be finite")
                 continue
             points.append((value, observable))
     points.sort(key=lambda point: point[0])
@@ -122,14 +134,16 @@ def main() -> int:
     parser.add_argument("csv", type=Path)
     parser.add_argument("--value-column", default="value")
     parser.add_argument("--observable-column", default="observable_value")
-    parser.add_argument("--absolute-threshold", type=float, required=True)
+    parser.add_argument("--absolute-threshold", required=True)
     parser.add_argument("--tail", type=int, default=2)
     args = parser.parse_args()
+    threshold: float | None = None
     try:
+        threshold = _finite_literal(args.absolute_threshold)
         points, errors = load_points(args.csv, args.value_column, args.observable_column)
-        report = analyze(points, args.absolute_threshold, args.tail, errors)
-    except (OSError, UnicodeError, csv.Error) as exc:
-        report = analyze([], args.absolute_threshold, args.tail, [f"convergence input failed: {exc}"])
+        report = analyze(points, threshold, args.tail, errors)
+    except (OSError, UnicodeError, csv.Error, ValueError) as exc:
+        report = analyze([], threshold, args.tail, [f"convergence input failed: {exc}"])
     print(json.dumps(report, indent=2, allow_nan=False))
     return 1 if not report["ok"] else 0 if report["converged_candidate"] else 2
 

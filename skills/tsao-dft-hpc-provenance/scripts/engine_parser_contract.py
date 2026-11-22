@@ -42,6 +42,9 @@ VASP_VERSION_RE = re.compile(rb"(?im)^[ \t]*vasp\.([\d.]+)")
 VASP_ENERGY_RE = re.compile(rb"free\s+energy\s+TOTEN\s*=\s*(" + FLOAT + rb")\s+eV", re.IGNORECASE)
 VASP_SCF_ITERATION_RE = re.compile(rb"(?im)^[ \t]*(?:DAV|RMM|CG|SDA|CGA|DMP|DIA):[ \t]*(\d+)(?:[ \t]|$)")
 VASP_ELAPSED_RE = re.compile(rb"Elapsed time \(sec\):\s*(" + FLOAT + rb")")
+VASP_FORCE_BLOCK_RE = re.compile(rb"(?m)^[ \t]*(?:POSITION[ \t]+)?TOTAL-FORCE \(eV/Angst\)[ \t]*\r?$")
+VASP_FORCE_END_RE = re.compile(rb"(?m)^[ \t]*total drift(?:[ \t]*:|[ \t]*\r?$)")
+VASP_ATOM_COUNT_RE = re.compile(rb"\bNIONS[ \t]*=[ \t]*([^ \t\r\n]*)")
 QE_VERSION_RE = re.compile(rb"Program PWSCF v\.([\w.\-]+)")
 QE_ERROR_RE = re.compile(rb"Error in routine", re.IGNORECASE)
 QE_BFGS_CONVERGED_RE = re.compile(rb"bfgs converged in", re.IGNORECASE)
@@ -146,22 +149,46 @@ def _numbers(text: bytes) -> list[float]:
     return [_float(value) for value in re.findall(FLOAT, text)]
 
 
-def _parse_force_block(data: mmap.mmap, bounds: tuple[int, int] | None) -> list[float] | None:
-    if bounds is None:
-        return None
-    vector: list[float] = []
-    start, end = bounds
-    for line in data[start:end].splitlines():
-        fields = line.split()
-        if len(fields) < 6:
-            continue
+def _parse_vasp_forces(data: mmap.mmap, job_start: int) -> tuple[list[float] | None, str | None]:
+    """Emit the last closed force table in full, checking NIONS when supplied."""
+    latest_header = None
+    for match in VASP_FORCE_BLOCK_RE.finditer(data, job_start):
+        latest_header = match
+    if latest_header is None:
+        return None, None
+    closing = VASP_FORCE_END_RE.search(data, latest_header.end())
+    if closing is None:
+        return None, "VASP final per-atom force block is incomplete; force vector is unavailable"
+
+    natom_match = None
+    for match in VASP_ATOM_COUNT_RE.finditer(data, job_start, latest_header.start()):
+        natom_match = match
+    natom = None
+    if natom_match is not None:
         try:
-            vector.extend(_float(value) for value in fields[-3:])
+            natom = int(natom_match.group(1))
+        except ValueError:
+            return None, "VASP per-atom force block has an invalid atom count; force vector is unavailable"
+        if natom < 1:
+            return None, "VASP per-atom force block has an invalid atom count; force vector is unavailable"
+
+    vector: list[float] = []
+    for line in data[latest_header.end() : closing.start()].splitlines():
+        if not line.strip() or not line.strip().strip(b"-"):
+            continue
+        fields = line.split()
+        if len(fields) != 6:
+            return None, "VASP final per-atom force block has a malformed row; force vector is unavailable"
+        try:
+            row = [_float(value) for value in fields]
         except NumericRangeError:
             raise
         except ValueError:
-            continue
-    return vector or None
+            return None, "VASP final per-atom force block has a malformed row; force vector is unavailable"
+        vector.extend(row[3:])
+    if not vector or (natom is not None and len(vector) != 3 * natom):
+        return None, "VASP final per-atom force block does not contain one 3-component row for every declared atom"
+    return vector, None
 
 
 def _parse_qe_forces(data: mmap.mmap, job_start: int) -> tuple[list[float] | None, str | None]:
@@ -366,10 +393,10 @@ def parse_vasp(path: Path) -> dict[str, Any]:
             result["scf_iterations"] = len(scf_markers)
         elapsed, _ = _SCAN.last_group(data, VASP_ELAPSED_RE, start=job_start)
         result["elapsed_time_s"] = _float(elapsed) if elapsed is not None else None
-        result["forces"]["values"] = _parse_force_block(
-            data,
-            _SCAN.last_block(data, b"TOTAL-FORCE (eV/Angst)", b"total drift", start=job_start),
-        )
+        forces, force_warning = _parse_vasp_forces(data, job_start)
+        result["forces"]["values"] = forces
+        if force_warning:
+            result["warnings"].append(force_warning)
         if result["fatal_marker"]:
             result["failed_stage"] = "engine"
         elif not normal:

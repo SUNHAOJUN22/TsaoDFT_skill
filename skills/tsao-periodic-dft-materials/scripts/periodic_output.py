@@ -30,6 +30,8 @@ MAX_LINE_BYTES = 1024 * 1024
 MAX_ARTIFACT_BYTES = 1024 * 1024 * 1024
 MAX_JOBS = 10000
 FLOAT = r"([-+]?\S+)"
+VASP_FORCE_HEADER_RE = re.compile(r"^[ \t]*(?:POSITION[ \t]+)?TOTAL-FORCE \(eV/Angst\)[ \t]*\r?$")
+VASP_FORCE_END_RE = re.compile(r"^[ \t]*total drift(?:[ \t]*:|[ \t]*\r?$)")
 
 
 class EngineSpec(TypedDict):
@@ -81,7 +83,7 @@ SPECS: dict[str, EngineSpec] = {
         "numbers": {
             "fermi_energy_eV": re.compile(r"E-fermi\s*:\s*" + FLOAT, re.I),
             "elapsed_seconds": re.compile(r"Elapsed time \(sec\):\s*" + FLOAT),
-            "nions": re.compile(r"NIONS\s*=\s*(\d+)"),
+            "nions": re.compile(r"\bNIONS[ \t]*=[ \t]*([^ \t\r\n]*)"),
         },
     },
     "cp2k": {
@@ -147,6 +149,23 @@ def _number(literal, field, job, line, offset, factor=1.0):
         return None
 
 
+def _finish_vasp_forces(job, *, closed, rows, maximum, malformed):
+    """Publish the maximum atomic norm only after the whole table is checked."""
+    if not closed:
+        warning = "VASP final per-atom force block is incomplete; maximum force is unavailable"
+    elif "nions" in job["numeric_witnesses"] and job["nions"] is None:
+        warning = "VASP per-atom force block has an invalid atom count; maximum force is unavailable"
+    elif malformed:
+        warning = "VASP final per-atom force block has a malformed row; maximum force is unavailable"
+    elif not rows or (job["nions"] is not None and rows != job["nions"]):
+        warning = "VASP final per-atom force block does not contain one 3-component row for every declared atom"
+    else:
+        job["max_force_eV_per_angstrom"] = maximum
+        return
+    job["max_force_eV_per_angstrom"] = None
+    job["warnings"].append(warning)
+
+
 def parse_output(engine: str, source: Path) -> dict:
     spec = SPECS[engine]
     path = source / "OUTCAR" if engine == "vasp" and source.is_dir() else source
@@ -156,6 +175,9 @@ def parse_output(engine: str, source: Path) -> dict:
     offset = 0
     line_number = 0
     force_block = False
+    force_rows = 0
+    force_maximum = None
+    force_malformed = False
     job_start_seen = False
     header_state = _SCAN.JobBoundaryState()
     generic_header_pending = False
@@ -191,6 +213,10 @@ def parse_output(engine: str, source: Path) -> dict:
                         start = False
                         generic_header_pending = False
                 if start and job_start_seen:
+                    if force_block:
+                        _finish_vasp_forces(
+                            job, closed=False, rows=force_rows, maximum=force_maximum, malformed=force_malformed
+                        )
                     jobs.append(job)
                     if len(jobs) >= MAX_JOBS:
                         raise ValueError("job count exceeds parser budget")
@@ -225,31 +251,56 @@ def parse_output(engine: str, source: Path) -> dict:
                     if match := pattern.search(text):
                         job[field] = _number(match.group(1), field, job, line_number, offset)
                         if field == "nions" and job[field] is not None:
-                            job[field] = int(job[field])
+                            try:
+                                job[field] = int(match.group(1))
+                            except ValueError:
+                                job[field] = None
+                            if job[field] is None or job[field] < 1:
+                                job[field] = None
+                                job["reason_codes"].append(f"INVALID_ATOM_COUNT:line={line_number}")
                 if engine == "vasp":
-                    if "TOTAL-FORCE (eV/Angst)" in text:
+                    if VASP_FORCE_HEADER_RE.match(text):
                         force_block = True
+                        force_rows = 0
+                        force_maximum = None
+                        force_malformed = False
                         job["max_force_eV_per_angstrom"] = None
-                    elif "total drift" in folded:
+                    elif force_block and VASP_FORCE_END_RE.match(text):
+                        _finish_vasp_forces(
+                            job, closed=True, rows=force_rows, maximum=force_maximum, malformed=force_malformed
+                        )
                         force_block = False
-                    elif force_block:
+                    elif force_block and text.strip() and text.strip().strip("-"):
                         fields = text.split()
                         if len(fields) == 6:
-                            force = [
-                                _number(token, "force_component", job, line_number, offset) for token in fields[-3:]
+                            force_rows += 1
+                            row = [
+                                _number(
+                                    token,
+                                    "force_position" if index < 3 else "force_component",
+                                    job,
+                                    line_number,
+                                    offset,
+                                )
+                                for index, token in enumerate(fields)
                             ]
-                            if all(value is not None for value in force):
-                                norm = math.hypot(*force)
+                            if all(value is not None for value in row):
+                                norm = math.hypot(*row[3:])
                                 if math.isfinite(norm):
-                                    job["max_force_eV_per_angstrom"] = max(
-                                        job["max_force_eV_per_angstrom"] or 0.0, norm
-                                    )
+                                    force_maximum = max(force_maximum or 0.0, norm)
                                 else:
+                                    force_malformed = True
                                     job["reason_codes"].append(f"NUMERIC_RANGE_ERROR:force_norm:line={line_number}")
+                            else:
+                                force_malformed = True
+                        else:
+                            force_malformed = True
                 offset += len(raw)
     except (OSError, UnicodeError, ValueError) as exc:
         job["reason_codes"].append(f"SOURCE_READ_ERROR:{exc}")
         stream_complete = False
+    if force_block:
+        _finish_vasp_forces(job, closed=False, rows=force_rows, maximum=force_maximum, malformed=force_malformed)
     jobs.append(job)
     reasons = list(job["reason_codes"])
     if job["fatal"]:

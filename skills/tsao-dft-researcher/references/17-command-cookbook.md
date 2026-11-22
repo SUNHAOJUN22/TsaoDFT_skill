@@ -25,6 +25,13 @@ python scripts/make_vmd_tcl.py figure-spec.yaml --out render.tcl --allow-missing
 python scripts/qa_bundle.py figure-spec.yaml --json
 ```
 
+The energy-profile CSV requires unique column headers and finite energies in
+Hartree. The energy column cannot use the reserved output names `label` or
+`relative_kcal_mol`; select an unambiguous header such as `g_hartree` instead.
+A nonzero input that underflows to zero, or a relative energy outside
+the supported numeric range after conversion to kcal/mol, is rejected before
+any existing output table or figure is replaced.
+
 ## VMD headless render
 
 ```bash

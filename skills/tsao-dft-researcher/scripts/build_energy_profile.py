@@ -9,6 +9,7 @@ import json
 import math
 import sys
 import tempfile
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import TypedDict
 
@@ -26,15 +27,23 @@ class EnergyRow(TypedDict):
     relative_kcal_mol: float
 
 
-def read_energy_rows(csv_file: Path, column: str) -> list[tuple[str, float]]:
+def validate_energy_column(column: str) -> None:
     if not column.strip():
         raise EnergyProfileError("energy column must be a non-empty string")
+    if column in {"label", "relative_kcal_mol"}:
+        raise EnergyProfileError(f"energy column name is reserved for profile output: {column}")
+
+
+def read_energy_rows(csv_file: Path, column: str) -> list[tuple[str, float]]:
+    validate_energy_column(column)
     rows: list[tuple[str, float]] = []
     labels: set[str] = set()
     with csv_file.open(newline="", encoding="utf-8-sig") as handle:
         reader = csv.DictReader(handle)
         if not reader.fieldnames or "label" not in reader.fieldnames or column not in reader.fieldnames:
             raise EnergyProfileError(f"CSV must contain 'label' and '{column}' columns")
+        if len(set(reader.fieldnames)) != len(reader.fieldnames):
+            raise EnergyProfileError("CSV contains duplicate column headers")
         for row_number, source_row in enumerate(reader, start=2):
             if None in source_row:
                 raise EnergyProfileError(f"CSV row {row_number} contains extra unnamed fields")
@@ -53,6 +62,17 @@ def read_energy_rows(csv_file: Path, column: str) -> list[tuple[str, float]]:
                 raise EnergyProfileError(f"CSV row {row_number} energy must be numeric") from exc
             if not math.isfinite(energy):
                 raise EnergyProfileError(f"CSV row {row_number} energy must be finite")
+            if energy == 0.0:
+                try:
+                    exact_energy = Decimal(energy_text)
+                except InvalidOperation as exc:
+                    raise EnergyProfileError(
+                        f"CSV row {row_number} energy is outside the supported numeric range"
+                    ) from exc
+                if exact_energy != 0:
+                    raise EnergyProfileError(
+                        f"CSV row {row_number} non-zero energy underflows the supported numeric range"
+                    )
             labels.add(label)
             rows.append((label, energy))
     if not rows:
@@ -76,17 +96,20 @@ def select_reference(raw_rows: list[tuple[str, float]], reference_spec: str) -> 
 def build_relative_rows(raw_rows: list[tuple[str, float]], reference: float) -> list[EnergyRow]:
     if not math.isfinite(reference):
         raise EnergyProfileError("reference energy must be finite")
-    return [
-        {
-            "label": label,
-            "energy": energy,
-            "relative_kcal_mol": math.fsum((energy, -reference)) * HARTREE_TO_KCAL_MOL,
-        }
-        for label, energy in raw_rows
-    ]
+    rows: list[EnergyRow] = []
+    for label, energy in raw_rows:
+        try:
+            relative = math.fsum((energy, -reference)) * HARTREE_TO_KCAL_MOL
+        except OverflowError as exc:
+            raise EnergyProfileError(f"relative energy for {label} is outside the supported numeric range") from exc
+        if not math.isfinite(relative):
+            raise EnergyProfileError(f"relative energy for {label} is outside the supported numeric range")
+        rows.append({"label": label, "energy": energy, "relative_kcal_mol": relative})
+    return rows
 
 
 def write_table(path: Path, rows: list[EnergyRow], column: str) -> None:
+    validate_energy_column(column)
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=["label", column, "relative_kcal_mol"])
         writer.writeheader()
